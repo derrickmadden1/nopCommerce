@@ -6,56 +6,23 @@ namespace Nop.Services.Security;
 /// <summary>
 /// Represents default values related to security services
 /// </summary>
-public static partial class NopSecurityDefaults
+public static partial class NopSecurityDefaults 
 {
-    #region reCAPTCHA
+    #region ACL
 
     /// <summary>
-    /// Gets a reCAPTCHA script URL
+    /// Gets a URL of the ACL docs page
     /// </summary>
-    /// <remarks>
-    /// {0} : Id of recaptcha instance on page
-    /// {1} : Render type
-    /// {2} : language if exists
-    /// </remarks>
-    public static string RecaptchaScriptPath => "api.js?onload=onloadCallback{0}&render={1}{2}";
+    public static string AclDocsLink => "https://docs.nopcommerce.com/running-your-store/customer-management/access-control-list.html";
 
     /// <summary>
-    /// Gets a reCAPTCHA validation URL
+    /// Gets a prefix of locale resources for permissions 
     /// </summary>
-    /// <remarks>
-    /// {0} : private key
-    /// {1} : response value
-    /// {2} : IP address
-    /// </remarks>
-    public static string RecaptchaValidationPath => "api/siteverify?secret={0}&response={1}&remoteip={2}";
+    public static string PermissionLocaleStringResourcesPrefix => "Security.Permission.";
 
     #endregion
 
-    #region Caching defaults
-
-    #region Access control list
-
-    /// <summary>
-    /// Gets a key for caching
-    /// </summary>
-    /// <remarks>
-    /// {0} : entity ID
-    /// {1} : entity name
-    /// </remarks>
-    public static CacheKey AclRecordCacheKey => new("Nop.aclrecord.{0}-{1}");
-
-    /// <summary>
-    /// Gets a key for caching
-    /// </summary>
-    /// <remarks>
-    /// {0} : entity name
-    /// </remarks>
-    public static CacheKey EntityAclRecordExistsCacheKey => new("Nop.aclrecord.exists.{0}");
-
-    #endregion
-
-    #region Permissions
+    #region Cache keys
 
     /// <summary>
     /// Gets a key for caching
@@ -82,7 +49,46 @@ public static partial class NopSecurityDefaults
     /// </remarks>
     public static CacheKey PermissionRecordsAllCacheKey => new("Nop.permissionrecord.all.{0}", NopEntityCacheDefaults<PermissionRecord>.AllPrefix);
 
+    /// <summary>
+    /// Gets a key for caching
+    /// </summary>
+    /// <remarks>
+    /// {0} : entity ID
+    /// {1} : entity name
+    /// </remarks>
+    public static CacheKey AclRecordCacheKey => new("Nop.aclrecord.{0}-{1}");
+
+    /// <summary>
+    /// Gets a key for caching
+    /// </summary>
+    /// <remarks>
+    /// {0} : entity name
+    /// </remarks>
+    public static CacheKey EntityAclRecordExistsCacheKey => new("Nop.aclrecord.exists.{0}");
+
     #endregion
+
+    #region reCAPTCHA
+
+    /// <summary>
+    /// Gets a reCAPTCHA script URL
+    /// </summary>
+    /// <remarks>
+    /// {0} : Id of recaptcha instance on page
+    /// {1} : Render type
+    /// {2} : language if exists
+    /// </remarks>
+    public static string RecaptchaScriptPath => "api.js?onload=onloadCallback{0}&render={1}{2}";
+
+    /// <summary>
+    /// Gets a reCAPTCHA validation URL
+    /// </summary>
+    /// <remarks>
+    /// {0} : private key
+    /// {1} : response value
+    /// {2} : IP address
+    /// </remarks>
+    public static string RecaptchaValidationPath => "api/siteverify?secret={0}&response={1}&remoteip={2}";
 
     #endregion
 }

@@ -5,6 +5,7 @@ using Nop.Services.Plugins;
 using Nop.Services.Security;
 using Nop.Web.Framework;
 using Nop.Web.Framework.Menu;
+using Nop.Web.Framework.Mvc.Filters;
 
 namespace Nop.Plugin.Misc.NopMobileApp;
 
@@ -53,7 +54,7 @@ public class NopMobilePlugin : BasePlugin, IAdminMenuPlugin, IMiscPlugin
 
     public async Task ManageSiteMapAsync(SiteMapNode rootNode)
     {
-        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManagePlugins))
+        if (!await _permissionService.AuthorizeAsync(StandardPermission.Configuration.MANAGE_PLUGINS))
             return;
 
         var config = rootNode.ChildNodes.FirstOrDefault(node => node.SystemName.Equals("Configuration"));

@@ -6,7 +6,7 @@ namespace Nop.Data.Mapping.Builders.Security;
 /// <summary>
 /// Represents a permission record entity builder
 /// </summary>
-public partial class PermissionRecordBuilder : NopEntityBuilder<PermissionRecord>
+public class PermissionRecordBuilder : NopEntityBuilder<PermissionRecord>
 {
     #region Methods
 

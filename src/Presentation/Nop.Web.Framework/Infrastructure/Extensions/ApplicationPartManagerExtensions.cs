@@ -220,6 +220,23 @@ public static partial class ApplicationPartManagerExtensions
         return false;
     }
 
+    private static void AutoInstallPluginIfExists(string aclPluginSystemName)
+    {
+        var pluginsInfo = new PluginsInfo(_fileProvider);
+        pluginsInfo.LoadPluginInfo();
+
+        if (pluginsInfo.InstalledPlugins.Any(p => p.SystemName.Equals(aclPluginSystemName)))
+            return;
+
+        var (aclPlugin, needToDeploy) = pluginsInfo.PluginDescriptors.FirstOrDefault(p => p.pluginDescriptor.SystemName.Equals(aclPluginSystemName));
+
+        if (aclPlugin == null || needToDeploy)
+            return;
+
+        pluginsInfo.PluginNamesToInstall.Add((aclPluginSystemName, null));
+        pluginsInfo.Save();
+    }
+
     #endregion
 
     #region Methods
@@ -257,6 +274,8 @@ public static partial class ApplicationPartManagerExtensions
 
                     _fileProvider.DirectoryMove(directory, moveTo);
                 }
+
+                AutoInstallPluginIfExists("Misc.Acl");
 
                 PluginsInfo = new PluginsInfo(_fileProvider);
                 PluginsInfo.LoadPluginInfo();

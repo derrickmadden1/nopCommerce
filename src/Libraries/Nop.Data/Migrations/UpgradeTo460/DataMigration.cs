@@ -2,14 +2,12 @@
 using FluentMigrator;
 using Nop.Core;
 using Nop.Core.Domain.Common;
-using Nop.Core.Domain.Configuration;
 using Nop.Core.Domain.Customers;
 using Nop.Core.Domain.Directory;
 using Nop.Core.Domain.Localization;
 using Nop.Core.Domain.Logging;
 using Nop.Core.Domain.Messages;
 using Nop.Core.Domain.ScheduleTasks;
-using Nop.Core.Domain.Security;
 using Nop.Core.Domain.Shipping;
 
 namespace Nop.Data.Migrations.UpgradeTo460;
@@ -227,41 +225,7 @@ public class DataMigration : Migration
                 }
             );
         }
-
-        //#5607
-        if (!_dataProvider.GetTable<PermissionRecord>().Any(pr => string.Compare(pr.SystemName, "EnableMultiFactorAuthentication", StringComparison.InvariantCultureIgnoreCase) == 0))
-        {
-            var multifactorAuthenticationPermissionRecord = _dataProvider.InsertEntity(
-                new PermissionRecord
-                {
-                    SystemName = "EnableMultiFactorAuthentication",
-                    Name = "Security. Enable Multi-factor authentication",
-                    Category = "Security"
-                }
-            );
-
-            var forceMultifactorAuthentication = _dataProvider.GetTable<Setting>()
-                    .FirstOrDefault(s =>
-                        string.Compare(s.Name, "MultiFactorAuthenticationSettings.ForceMultifactorAuthentication", StringComparison.InvariantCultureIgnoreCase) == 0 &&
-                        string.Compare(s.Value, "True", StringComparison.InvariantCultureIgnoreCase) == 0)
-                is not null;
-
-            var customerRoles = _dataProvider.GetTable<CustomerRole>();
-            if (!forceMultifactorAuthentication)
-                customerRoles = customerRoles.Where(cr => cr.SystemName == NopCustomerDefaults.AdministratorsRoleName || cr.SystemName == NopCustomerDefaults.RegisteredRoleName);
-
-            foreach (var role in customerRoles.ToList())
-            {
-                _dataProvider.InsertEntity(
-                    new PermissionRecordCustomerRoleMapping
-                    {
-                        CustomerRoleId = role.Id,
-                        PermissionRecordId = multifactorAuthenticationPermissionRecord.Id
-                    }
-                );
-            }
-        }
-
+        
         var lastEnabledUtc = DateTime.UtcNow;
         if (!_dataProvider.GetTable<ScheduleTask>().Any(st => string.Compare(st.Type, "Nop.Services.Common.ResetLicenseCheckTask, Nop.Services", StringComparison.InvariantCultureIgnoreCase) == 0))
         {

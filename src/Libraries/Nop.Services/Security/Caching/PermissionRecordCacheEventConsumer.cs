@@ -6,7 +6,7 @@ namespace Nop.Services.Security.Caching;
 /// <summary>
 /// Represents a permission record cache event consumer
 /// </summary>
-public partial class PermissionRecordCacheEventConsumer : CacheEventConsumer<PermissionRecord>
+public class PermissionRecordCacheEventConsumer : CacheEventConsumer<PermissionRecord>
 {
     /// <summary>
     /// Clear cache data

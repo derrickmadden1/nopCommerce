@@ -3,7 +3,7 @@
 /// <summary>
 /// Represents a permission record
 /// </summary>
-public partial class PermissionRecord : BaseEntity
+public class PermissionRecord : BaseEntity
 {
     /// <summary>
     /// Gets or sets the permission name

@@ -1,6 +1,7 @@
 ﻿using Nop.Core.Domain.Catalog;
 using Nop.Core.Domain.Discounts;
 using Nop.Core.Domain.Media;
+using Nop.Core.Events;
 using Nop.Services.Localization;
 using Nop.Services.Media;
 using Nop.Services.Security;
@@ -19,6 +20,7 @@ public partial class CopyProductService : ICopyProductService
     protected readonly IAclService _aclService;
     protected readonly ICategoryService _categoryService;
     protected readonly IDownloadService _downloadService;
+    protected readonly IEventPublisher _eventPublisher;
     protected readonly ILanguageService _languageService;
     protected readonly ILocalizationService _localizationService;
     protected readonly ILocalizedEntityService _localizedEntityService;
@@ -40,6 +42,7 @@ public partial class CopyProductService : ICopyProductService
     public CopyProductService(IAclService aclService,
         ICategoryService categoryService,
         IDownloadService downloadService,
+        IEventPublisher eventPublisher,
         ILanguageService languageService,
         ILocalizationService localizationService,
         ILocalizedEntityService localizedEntityService,
@@ -57,6 +60,7 @@ public partial class CopyProductService : ICopyProductService
         _aclService = aclService;
         _categoryService = categoryService;
         _downloadService = downloadService;
+        _eventPublisher = eventPublisher;
         _languageService = languageService;
         _localizationService = localizationService;
         _localizedEntityService = localizedEntityService;
@@ -852,12 +856,7 @@ public partial class CopyProductService : ICopyProductService
         var selectedStoreIds = await _storeMappingService.GetStoresIdsWithAccessAsync(product);
         foreach (var id in selectedStoreIds)
             await _storeMappingService.InsertStoreMappingAsync(productCopy, id);
-
-        //customer role mapping
-        var customerRoleIds = await _aclService.GetCustomerRoleIdsWithAccessAsync(product);
-        foreach (var id in customerRoleIds)
-            await _aclService.InsertAclRecordAsync(productCopy, id);
-
+        
         //tier prices
         await CopyTierPricesAsync(product, productCopy);
 
@@ -867,6 +866,8 @@ public partial class CopyProductService : ICopyProductService
 
         //associated products
         await CopyAssociatedProductsAsync(product, isPublished, copyMultimedia, copyAssociatedProducts, productCopy);
+
+        await _eventPublisher.PublishAsync(new PostCopyProductEvent(product, productCopy));
 
         return productCopy;
     }

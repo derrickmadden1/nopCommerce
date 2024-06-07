@@ -5,7 +5,6 @@ using Nop.Core.Domain.Localization;
 using Nop.Core.Domain.Logging;
 using Nop.Core.Domain.Media;
 using Nop.Core.Domain.Messages;
-using Nop.Core.Domain.Security;
 using Nop.Data.Mapping;
 
 namespace Nop.Data.Migrations.UpgradeTo470;
@@ -138,13 +137,7 @@ public class DataMigration : Migration
                 pageIndex++;
             }
         }
-
-        // new permission
-        if (_dataProvider.GetTable<PermissionRecord>().Any(pr => string.Compare(pr.SystemName, "AccessProfiling", StringComparison.InvariantCultureIgnoreCase) == 0))
-        {
-            _dataProvider.BulkDeleteEntitiesAsync<PermissionRecord>(pr => pr.SystemName == "AccessProfiling");
-        }
-
+        
         //#6890
         var productTableName = NameCompatibilityManager.GetTableName(typeof(Product));
 

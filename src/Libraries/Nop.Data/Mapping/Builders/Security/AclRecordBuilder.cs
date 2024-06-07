@@ -8,7 +8,7 @@ namespace Nop.Data.Mapping.Builders.Security;
 /// <summary>
 /// Represents a ACL record entity builder
 /// </summary>
-public partial class AclRecordBuilder : NopEntityBuilder<AclRecord>
+public class AclRecordBuilder : NopEntityBuilder<AclRecord>
 {
     #region Methods
 

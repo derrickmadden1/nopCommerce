@@ -297,10 +297,12 @@ public class Indexes : ForwardOnlyMigration
             .OnColumn(nameof(ActivityLog.CreatedOnUtc)).Descending()
             .WithOptions().NonClustered();
 
-        Create.Index("IX_AclRecord_EntityId_EntityName").OnTable(nameof(AclRecord))
-            .OnColumn(nameof(AclRecord.EntityId)).Ascending()
-            .OnColumn(nameof(AclRecord.EntityName)).Ascending()
-            .WithOptions().NonClustered();
+        //ACL
+        if (!Schema.Table(nameof(AclRecord)).Index("IX_AclRecord_EntityId_EntityName").Exists())
+            Create.Index("IX_AclRecord_EntityId_EntityName").OnTable(nameof(AclRecord))
+                .OnColumn(nameof(AclRecord.EntityId)).Ascending()
+                .OnColumn(nameof(AclRecord.EntityName)).Ascending()
+                .WithOptions().NonClustered();
     }
 
     #endregion

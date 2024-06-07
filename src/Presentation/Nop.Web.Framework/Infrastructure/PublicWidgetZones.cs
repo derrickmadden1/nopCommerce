@@ -4,6 +4,7 @@ public static partial class PublicWidgetZones
 {
     public static string AccountNavigationAfter => "account_navigation_after";
     public static string AccountNavigationBefore => "account_navigation_before";
+    public static string AclCustomerRoles => "acl_customer_roles";
     public static string AddressBottom => "address_bottom";
     public static string AdminHeaderLinksAfter => "admin_header_links_after";
     public static string ApplyVendorBottom => "applyvendor_bottom";

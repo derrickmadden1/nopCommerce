@@ -68,6 +68,12 @@ public partial interface ILocalizationService
     Task InsertLocaleStringResourceAsync(LocaleStringResource localeStringResource);
 
     /// <summary>
+    /// Inserts a locale string resource
+    /// </summary>
+    /// <param name="localeStringResource">Locale string resource</param>
+    void InsertLocaleStringResource(LocaleStringResource localeStringResource);
+
+    /// <summary>
     /// Updates the locale string resource
     /// </summary>
     /// <param name="localeStringResource">Locale string resource</param>
@@ -197,33 +203,7 @@ public partial interface ILocalizationService
     /// The task result contains the localized value
     /// </returns>
     Task<string> GetLocalizedEnumAsync<TEnum>(TEnum enumValue, int? languageId = null) where TEnum : struct;
-
-    /// <summary>
-    /// Get localized value of enum
-    /// We don't have UI to manage permission localizable name. That's why we're using this method
-    /// </summary>
-    /// <param name="permissionRecord">Permission record</param>
-    /// <param name="languageId">Language identifier; pass null to use the current working language</param>
-    /// <returns>
-    /// A task that represents the asynchronous operation
-    /// The task result contains the localized value
-    /// </returns>
-    Task<string> GetLocalizedPermissionNameAsync(PermissionRecord permissionRecord, int? languageId = null);
-
-    /// <summary>
-    /// Save localized name of a permission
-    /// </summary>
-    /// <param name="permissionRecord">Permission record</param>
-    /// <returns>A task that represents the asynchronous operation</returns>
-    Task SaveLocalizedPermissionNameAsync(PermissionRecord permissionRecord);
-
-    /// <summary>
-    /// Delete a localized name of a permission
-    /// </summary>
-    /// <param name="permissionRecord">Permission record</param>
-    /// <returns>A task that represents the asynchronous operation</returns>
-    Task DeleteLocalizedPermissionNameAsync(PermissionRecord permissionRecord);
-
+    
     /// <summary>
     /// Add a locale resource (if new) or update an existing one
     /// </summary>

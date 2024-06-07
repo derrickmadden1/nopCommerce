@@ -49,6 +49,12 @@ public partial interface ISettingService
     Task DeleteSettingsAsync(IList<Setting> settings);
 
     /// <summary>
+    /// Deletes settings
+    /// </summary>
+    /// <param name="settings">Settings</param>
+    void DeleteSettings(IList<Setting> settings);
+
+    /// <summary>
     /// Get setting by key
     /// </summary>
     /// <param name="key">Key</param>

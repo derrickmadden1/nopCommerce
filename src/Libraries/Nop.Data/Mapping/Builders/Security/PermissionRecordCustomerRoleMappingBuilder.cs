@@ -8,7 +8,7 @@ namespace Nop.Data.Mapping.Builders.Security;
 /// <summary>
 /// Represents a permission record customer role mapping entity builder
 /// </summary>
-public partial class PermissionRecordCustomerRoleMappingBuilder : NopEntityBuilder<PermissionRecordCustomerRoleMapping>
+public class PermissionRecordCustomerRoleMappingBuilder : NopEntityBuilder<PermissionRecordCustomerRoleMapping>
 {
     #region Methods
 

@@ -1,4 +1,5 @@
 ﻿using Nop.Core.Infrastructure;
+using Nop.Services.Security;
 using Nop.Web.Areas.Admin.Factories;
 using Nop.Web.Areas.Admin.Helpers;
 using Nop.Web.Framework.Factories;
@@ -22,12 +23,12 @@ public partial class NopStartup : INopStartup
         services.AddScoped<IInstallationLocalizationService, InstallationLocalizationService>();
 
         //common factories
-        services.AddScoped<IAclSupportedModelFactory, AclSupportedModelFactory>();
         services.AddScoped<IDiscountSupportedModelFactory, DiscountSupportedModelFactory>();
         services.AddScoped<ILocalizedModelFactory, LocalizedModelFactory>();
         services.AddScoped<IStoreMappingSupportedModelFactory, StoreMappingSupportedModelFactory>();
 
         //admin factories
+        services.AddScoped<IAclSupportedModelFactory, AclSupportedModelFactory>();
         services.AddScoped<IBaseAdminModelFactory, BaseAdminModelFactory>();
         services.AddScoped<IActivityLogModelFactory, ActivityLogModelFactory>();
         services.AddScoped<IAddressModelFactory, AddressModelFactory>();
@@ -70,7 +71,6 @@ public partial class NopStartup : INopStartup
         services.AddScoped<IReturnRequestModelFactory, ReturnRequestModelFactory>();
         services.AddScoped<IReviewTypeModelFactory, ReviewTypeModelFactory>();
         services.AddScoped<IScheduleTaskModelFactory, ScheduleTaskModelFactory>();
-        services.AddScoped<ISecurityModelFactory, SecurityModelFactory>();
         services.AddScoped<ISettingModelFactory, SettingModelFactory>();
         services.AddScoped<IShippingModelFactory, ShippingModelFactory>();
         services.AddScoped<IShoppingCartModelFactory, ShoppingCartModelFactory>();
@@ -117,6 +117,9 @@ public partial class NopStartup : INopStartup
     /// <param name="application">Builder for configuring an application's request pipeline</param>
     public void Configure(IApplicationBuilder application)
     {
+        var permission = EngineContext.Current.Resolve<IPermissionManager>();
+
+        permission.Configure();
     }
 
     /// <summary>

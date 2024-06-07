@@ -6,7 +6,6 @@ using Nop.Core;
 using Nop.Core.Caching;
 using Nop.Core.Configuration;
 using Nop.Core.Domain.Localization;
-using Nop.Core.Domain.Security;
 using Nop.Data;
 using Nop.Services.Configuration;
 using Nop.Services.ExportImport;
@@ -286,6 +285,18 @@ public partial class LocalizationService : ILocalizationService
             localeStringResource.ResourceName = localeStringResource.ResourceName.Trim().ToLowerInvariant();
 
         await _lsrRepository.InsertAsync(localeStringResource);
+    }
+
+    /// <summary>
+    /// Inserts a locale string resource
+    /// </summary>
+    /// <param name="localeStringResource">Locale string resource</param>
+    public virtual void InsertLocaleStringResource(LocaleStringResource localeStringResource)
+    {
+        if (!string.IsNullOrEmpty(localeStringResource?.ResourceName))
+            localeStringResource.ResourceName = localeStringResource.ResourceName.Trim().ToLowerInvariant();
+
+        _lsrRepository.Insert(localeStringResource);
     }
 
     /// <summary>
@@ -682,84 +693,7 @@ public partial class LocalizationService : ILocalizationService
 
         return result;
     }
-
-    /// <summary>
-    /// Get localized value of enum
-    /// We don't have UI to manage permission localizable name. That's why we're using this method
-    /// </summary>
-    /// <param name="permissionRecord">Permission record</param>
-    /// <param name="languageId">Language identifier; pass null to use the current working language</param>
-    /// <returns>
-    /// A task that represents the asynchronous operation
-    /// The task result contains the localized value
-    /// </returns>
-    public virtual async Task<string> GetLocalizedPermissionNameAsync(PermissionRecord permissionRecord, int? languageId = null)
-    {
-        ArgumentNullException.ThrowIfNull(permissionRecord);
-
-        //localized value
-        var workingLanguage = await _workContext.GetWorkingLanguageAsync();
-        var resourceName = $"{NopLocalizationDefaults.PermissionLocaleStringResourcesPrefix}{permissionRecord.SystemName}";
-        var result = await GetResourceAsync(resourceName, languageId ?? workingLanguage.Id, false, string.Empty, true);
-
-        //set default value if required
-        if (string.IsNullOrEmpty(result))
-            result = permissionRecord.Name;
-
-        return result;
-    }
-
-    /// <summary>
-    /// Save localized name of a permission
-    /// </summary>
-    /// <param name="permissionRecord">Permission record</param>
-    /// <returns>A task that represents the asynchronous operation</returns>
-    public virtual async Task SaveLocalizedPermissionNameAsync(PermissionRecord permissionRecord)
-    {
-        ArgumentNullException.ThrowIfNull(permissionRecord);
-
-        var resourceName = $"{NopLocalizationDefaults.PermissionLocaleStringResourcesPrefix}{permissionRecord.SystemName}";
-        var resourceValue = permissionRecord.Name;
-
-        foreach (var lang in await _languageService.GetAllLanguagesAsync(true))
-        {
-            var lsr = await GetLocaleStringResourceByNameAsync(resourceName, lang.Id, false);
-            if (lsr == null)
-            {
-                lsr = new LocaleStringResource
-                {
-                    LanguageId = lang.Id,
-                    ResourceName = resourceName,
-                    ResourceValue = resourceValue
-                };
-                await InsertLocaleStringResourceAsync(lsr);
-            }
-            else
-            {
-                lsr.ResourceValue = resourceValue;
-                await UpdateLocaleStringResourceAsync(lsr);
-            }
-        }
-    }
-
-    /// <summary>
-    /// Delete a localized name of a permission
-    /// </summary>
-    /// <param name="permissionRecord">Permission record</param>
-    /// <returns>A task that represents the asynchronous operation</returns>
-    public virtual async Task DeleteLocalizedPermissionNameAsync(PermissionRecord permissionRecord)
-    {
-        ArgumentNullException.ThrowIfNull(permissionRecord);
-
-        var resourceName = $"{NopLocalizationDefaults.PermissionLocaleStringResourcesPrefix}{permissionRecord.SystemName}";
-        foreach (var lang in await _languageService.GetAllLanguagesAsync(true))
-        {
-            var lsr = await GetLocaleStringResourceByNameAsync(resourceName, lang.Id, false);
-            if (lsr != null)
-                await DeleteLocaleStringResourceAsync(lsr);
-        }
-    }
-
+    
     /// <summary>
     /// Add a locale resource (if new) or update an existing one
     /// </summary>

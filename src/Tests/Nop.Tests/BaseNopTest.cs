@@ -118,9 +118,6 @@ public partial class BaseNopTest
         _serviceProvider.GetService<IInstallationService>()
             .InstallRequiredDataAsync(NopTestsDefaults.AdminEmail, NopTestsDefaults.AdminPassword, languagePackInfo, regionInfo, cultureInfo).Wait();
         _serviceProvider.GetService<IInstallationService>().InstallSampleDataAsync(NopTestsDefaults.AdminEmail).Wait();
-
-        var provider = (IPermissionProvider)Activator.CreateInstance(typeof(StandardPermissionProvider));
-        EngineContext.Current.Resolve<IPermissionService>().InstallPermissionsAsync(provider).Wait();
     }
 
     protected static T PropertiesShouldEqual<T, Tm>(T entity, Tm model, params string[] filter) where T : BaseEntity
@@ -310,6 +307,7 @@ public partial class BaseNopTest
         services.AddTransient<ICustomerReportService, CustomerReportService>();
         services.AddTransient<IPermissionService, PermissionService>();
         services.AddTransient<IAclService, AclService>();
+        services.AddTransient<IPermissionManager, PermissionManager>();
         services.AddTransient<IPriceCalculationService, PriceCalculationService>();
         services.AddTransient<IGeoLookupService, GeoLookupService>();
         services.AddTransient<ICountryService, CountryService>();
@@ -452,12 +450,12 @@ public partial class BaseNopTest
         services.AddWebOptimizer();
 
         //common factories
-        services.AddTransient<IAclSupportedModelFactory, AclSupportedModelFactory>();
         services.AddTransient<IDiscountSupportedModelFactory, DiscountSupportedModelFactory>();
         services.AddTransient<ILocalizedModelFactory, LocalizedModelFactory>();
         services.AddTransient<IStoreMappingSupportedModelFactory, StoreMappingSupportedModelFactory>();
 
         //admin factories
+        services.AddTransient<IAclSupportedModelFactory, AclSupportedModelFactory>();
         services.AddTransient<IBaseAdminModelFactory, BaseAdminModelFactory>();
         services.AddTransient<IActivityLogModelFactory, ActivityLogModelFactory>();
         services.AddTransient<IAddressAttributeModelFactory, AddressAttributeModelFactory>();
@@ -499,7 +497,6 @@ public partial class BaseNopTest
         services.AddTransient<IReturnRequestModelFactory, ReturnRequestModelFactory>();
         services.AddTransient<IReviewTypeModelFactory, ReviewTypeModelFactory>();
         services.AddTransient<IScheduleTaskModelFactory, ScheduleTaskModelFactory>();
-        services.AddTransient<ISecurityModelFactory, SecurityModelFactory>();
         services.AddTransient<ISettingModelFactory, SettingModelFactory>();
         services.AddTransient<IShippingModelFactory, ShippingModelFactory>();
         services.AddTransient<IShoppingCartModelFactory, ShoppingCartModelFactory>();

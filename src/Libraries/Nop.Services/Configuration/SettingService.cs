@@ -293,6 +293,18 @@ public partial class SettingService : ISettingService
     }
 
     /// <summary>
+    /// Deletes settings
+    /// </summary>
+    /// <param name="settings">Settings</param>
+    public virtual void DeleteSettings(IList<Setting> settings)
+    {
+        _settingRepository.Delete(settings);
+
+        //cache
+        ClearCache();
+    }
+
+    /// <summary>
     /// Gets a setting by identifier
     /// </summary>
     /// <param name="settingId">Setting identifier</param>

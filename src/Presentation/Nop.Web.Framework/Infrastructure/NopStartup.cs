@@ -162,6 +162,7 @@ public partial class NopStartup : INopStartup
         services.AddScoped<ICustomerRegistrationService, CustomerRegistrationService>();
         services.AddScoped<ICustomerReportService, CustomerReportService>();
         services.AddScoped<IPermissionService, PermissionService>();
+        services.AddScoped<IPermissionManager, PermissionManager>();
         services.AddScoped<IAclService, AclService>();
         services.AddScoped<IPriceCalculationService, PriceCalculationService>();
         services.AddScoped<IGeoLookupService, GeoLookupService>();
