@@ -11,12 +11,7 @@ public class DefaultPermissionConfigManager : IPermissionConfigManager
     public IList<PermissionConfig> AllConfigs => new List<PermissionConfig>
     {
         #region Customers
-
-        //new ("Admin area. Allow Customer Impersonation", StandardPermission.AllowCustomerImpersonation, "Customers", NopCustomerDefaults.AdministratorsRoleName),
-        //new ("Admin area. Manage Customers", StandardPermission.ManageCustomers, "Customers", NopCustomerDefaults.AdministratorsRoleName),
-        //new ("Admin area. Manage Vendors", StandardPermission.ManageVendors, "Customers", NopCustomerDefaults.AdministratorsRoleName),
-        //new ("Admin area. Manage Activity Log", StandardPermission.ManageActivityLog, "Configuration", NopCustomerDefaults.AdministratorsRoleName),
-
+        
         new ("Admin area. Customers. View", StandardPermission.Customers.CUSTOMERS_VIEW, nameof(StandardPermission.Customers), NopCustomerDefaults.AdministratorsRoleName),
         new ("Admin area. Customers. Create, edit, delete", StandardPermission.Customers.CUSTOMERS_CREATE_EDIT_DELETE, nameof(StandardPermission.Customers), NopCustomerDefaults.AdministratorsRoleName),
         new ("Admin area. Customers. Import and export", StandardPermission.Customers.CUSTOMERS_IMPORT_EXPORT, nameof(StandardPermission.Customers), NopCustomerDefaults.AdministratorsRoleName),
@@ -33,15 +28,7 @@ public class DefaultPermissionConfigManager : IPermissionConfigManager
         #endregion
 
         #region Orders
-
-        //new ("Admin area. Manage Orders", StandardPermission.ManageOrders, "Orders", NopCustomerDefaults.AdministratorsRoleName),
-        //new ("Admin area. Manage Gift Cards", StandardPermission.ManageGiftCards, "Orders", NopCustomerDefaults.AdministratorsRoleName),
-        //new ("Admin area. Manage Current Carts", StandardPermission.ManageCurrentCarts, "Orders", NopCustomerDefaults.AdministratorsRoleName),
-        //new ("Admin area. Access sales summary report", StandardPermission.SalesSummaryReport, "Orders", NopCustomerDefaults.AdministratorsRoleName),
-        //new ("Admin area. Manage Recurring Payments", StandardPermission.ManageRecurringPayments, "Orders", NopCustomerDefaults.AdministratorsRoleName),
-        //new ("Admin area. Manage Return Requests", StandardPermission.ManageReturnRequests, "Orders", NopCustomerDefaults.AdministratorsRoleName),
-        //new ("Admin area. Access order country report", StandardPermission.OrderCountryReport, "Orders", NopCustomerDefaults.AdministratorsRoleName),
-
+        
         new ("Admin area. Current Carts. Manage", StandardPermission.Orders.CURRENT_CARTS_MANAGE, nameof(StandardPermission.Orders), NopCustomerDefaults.AdministratorsRoleName),
         new ("Admin area. Orders. View", StandardPermission.Orders.ORDERS_VIEW, nameof(StandardPermission.Orders), NopCustomerDefaults.AdministratorsRoleName),
         new ("Admin area. Orders. Create, edit, delete", StandardPermission.Orders.ORDERS_CREATE_EDIT_DELETE, nameof(StandardPermission.Orders), NopCustomerDefaults.AdministratorsRoleName),
@@ -71,14 +58,7 @@ public class DefaultPermissionConfigManager : IPermissionConfigManager
         #endregion
 
         #region Catalog
-
-        //new ("Admin area. Manage Products", ManageProducts, "Catalog", NopCustomerDefaults.AdministratorsRoleName),
-        //new ("Admin area. Manage Categories", ManageCategories, "Catalog", NopCustomerDefaults.AdministratorsRoleName),
-        //new ("Admin area. Manage Manufacturers", ManageManufacturers, "Catalog", NopCustomerDefaults.AdministratorsRoleName),
-        //new ("Admin area. Manage Product Reviews", ManageProductReviews, "Catalog", NopCustomerDefaults.AdministratorsRoleName),
-        //new ("Admin area. Manage Product Tags", ManageProductTags, "Catalog", NopCustomerDefaults.AdministratorsRoleName),
-        //new ("Admin area. Manage Attributes", ManageAttributes, "Catalog", NopCustomerDefaults.AdministratorsRoleName),
-
+        
         new ("Admin area. Products. View", StandardPermission.Catalog.PRODUCTS_VIEW, nameof(StandardPermission.Catalog), NopCustomerDefaults.AdministratorsRoleName),
         new ("Admin area. Products. Create, edit, delete", StandardPermission.Catalog.PRODUCTS_CREATE_EDIT_DELETE, nameof(StandardPermission.Catalog), NopCustomerDefaults.AdministratorsRoleName),
         new ("Admin area. Products. Import and export", StandardPermission.Catalog.PRODUCTS_IMPORT_EXPORT, nameof(StandardPermission.Catalog), NopCustomerDefaults.AdministratorsRoleName),
@@ -102,12 +82,7 @@ public class DefaultPermissionConfigManager : IPermissionConfigManager
         #endregion
 
         #region Promotions
-
-        //new ("Admin area. Manage Affiliates", ManageAffiliates, "Promo", NopCustomerDefaults.AdministratorsRoleName),
-        //new ("Admin area. Manage Campaigns", ManageCampaigns, "Promo", NopCustomerDefaults.AdministratorsRoleName),
-        //new ("Admin area. Manage Discounts", ManageDiscounts, "Promo", NopCustomerDefaults.AdministratorsRoleName),
-        //new ("Admin area. Manage Newsletter Subscribers", ManageNewsletterSubscribers, "Promo", NopCustomerDefaults.AdministratorsRoleName),
-
+        
         new ("Admin area. Discounts. View", StandardPermission.Promotions.DISCOUNTS_VIEW, nameof(StandardPermission.Promotions), NopCustomerDefaults.AdministratorsRoleName),
         new ("Admin area. Discounts. Create, edit, delete", StandardPermission.Promotions.DISCOUNTS_CREATE_EDIT_DELETE, nameof(StandardPermission.Promotions), NopCustomerDefaults.AdministratorsRoleName),
         new ("Admin area. Affiliates. View", StandardPermission.Promotions.AFFILIATES_VIEW, nameof(StandardPermission.Promotions), NopCustomerDefaults.AdministratorsRoleName),
@@ -123,14 +98,7 @@ public class DefaultPermissionConfigManager : IPermissionConfigManager
         #endregion
 
         #region Content management
-
-        //new ("Admin area. Manage Polls", ManagePolls, "Content Management", NopCustomerDefaults.AdministratorsRoleName),
-        //new ("Admin area. Manage News", ManageNews, "Content Management", NopCustomerDefaults.AdministratorsRoleName),
-        //new ("Admin area. Manage Blog", ManageBlog, "Content Management", NopCustomerDefaults.AdministratorsRoleName),
-        //new ("Admin area. Manage Topics", ManageTopics, "Content Management", NopCustomerDefaults.AdministratorsRoleName),
-        //new ("Admin area. Manage Forums", ManageForums, "Content Management", NopCustomerDefaults.AdministratorsRoleName),
-        //new ("Admin area. Manage Message Templates", ManageMessageTemplates, "Content Management", NopCustomerDefaults.AdministratorsRoleName),
-       
+        
         new ("Admin area. Topics. View", StandardPermission.ContentManagement.TOPICS_VIEW, nameof(StandardPermission.ContentManagement), NopCustomerDefaults.AdministratorsRoleName),
         new ("Admin area. Topics. Create, edit, delete", StandardPermission.ContentManagement.TOPICS_CREATE_EDIT_DELETE, nameof(StandardPermission.ContentManagement), NopCustomerDefaults.AdministratorsRoleName),
         new ("Admin area. Message Templates. View", StandardPermission.ContentManagement.MESSAGE_TEMPLATES_VIEW, nameof(StandardPermission.ContentManagement), NopCustomerDefaults.AdministratorsRoleName),
@@ -151,22 +119,7 @@ public class DefaultPermissionConfigManager : IPermissionConfigManager
         #endregion
 
         #region Configuration
-
-        //new ("Admin area. Manage Widgets", ManageWidgets, "Configuration", NopCustomerDefaults.AdministratorsRoleName),
-        //new ("Admin area. Manage Countries", ManageCountries, "Configuration", NopCustomerDefaults.AdministratorsRoleName),
-        //new ("Admin area. Manage Languages", ManageLanguages, "Configuration", NopCustomerDefaults.AdministratorsRoleName),
-        //new ("Admin area. Manage Settings", ManageSettings, "Configuration", NopCustomerDefaults.AdministratorsRoleName),
-        //new ("Admin area. Manage Payment Methods", ManagePaymentMethods, "Configuration", NopCustomerDefaults.AdministratorsRoleName),
-        //new ("Admin area. Manage External Authentication Methods", ManageExternalAuthenticationMethods, "Configuration", NopCustomerDefaults.AdministratorsRoleName),
-        //new ("Admin area. Manage Multi-factor Authentication Methods", ManageMultifactorAuthenticationMethods, "Configuration", NopCustomerDefaults.AdministratorsRoleName),
-        //new ("Admin area. Manage Tax Settings", ManageTaxSettings, "Configuration", NopCustomerDefaults.AdministratorsRoleName),
-        //new ("Admin area. Manage Shipping Settings", ManageShippingSettings, "Configuration", NopCustomerDefaults.AdministratorsRoleName),
-        //new ("Admin area. Manage Currencies", ManageCurrencies, "Configuration", NopCustomerDefaults.AdministratorsRoleName),
-        //new ("Admin area. Manage ACL", ManageAcl, "Configuration", NopCustomerDefaults.AdministratorsRoleName),
-        //new ("Admin area. Manage Email Accounts", ManageEmailAccounts, "Configuration", NopCustomerDefaults.AdministratorsRoleName),
-        //new ("Admin area. Manage Stores", ManageStores, "Configuration", NopCustomerDefaults.AdministratorsRoleName),
-        //new ("Admin area. Manage Plugins", ManagePlugins, "Configuration", NopCustomerDefaults.AdministratorsRoleName),
-
+        
         new ("Admin area. Widgets. Manage", StandardPermission.Configuration.MANAGE_WIDGETS, nameof(StandardPermission.Configuration), NopCustomerDefaults.AdministratorsRoleName),
         new ("Admin area. Countries. Manage", StandardPermission.Configuration.MANAGE_COUNTRIES, nameof(StandardPermission.Configuration), NopCustomerDefaults.AdministratorsRoleName),
         new ("Admin area. Languages. Manage", StandardPermission.Configuration.MANAGE_LANGUAGES, nameof(StandardPermission.Configuration), NopCustomerDefaults.AdministratorsRoleName),
@@ -185,14 +138,7 @@ public class DefaultPermissionConfigManager : IPermissionConfigManager
         #endregion
 
         #region System
-
-        //new ("Admin area. Manage System Log",  ManageSystemLog, "Configuration", NopCustomerDefaults.AdministratorsRoleName),
-        //new ("Admin area. Manage Message Queue", ManageMessageQueue, "Configuration", NopCustomerDefaults.AdministratorsRoleName),
-        //new ("Admin area. Manage Maintenance", ManageMaintenance, "Configuration", NopCustomerDefaults.AdministratorsRoleName),
-        //new ("Admin area. HTML Editor. Manage pictures", HtmlEditorManagePictures, "Configuration", NopCustomerDefaults.AdministratorsRoleName),
-        //new ("Admin area. Manage Schedule Tasks", ManageScheduleTasks, "Configuration", NopCustomerDefaults.AdministratorsRoleName),
-        //new ("Admin area. Manage App Settings", ManageAppSettings, "Configuration", NopCustomerDefaults.AdministratorsRoleName),
-
+        
         new ("Admin area. System Log. Manage", StandardPermission.System.MANAGE_SYSTEM_LOG, nameof(StandardPermission.System), NopCustomerDefaults.AdministratorsRoleName),
         new ("Admin area. Message Queue. Manage", StandardPermission.System.MANAGE_MESSAGE_QUEUE, nameof(StandardPermission.System), NopCustomerDefaults.AdministratorsRoleName),
         new ("Admin area. Maintenance. Manage", StandardPermission.System.MANAGE_MAINTENANCE, nameof(StandardPermission.System), NopCustomerDefaults.AdministratorsRoleName),
@@ -203,23 +149,14 @@ public class DefaultPermissionConfigManager : IPermissionConfigManager
         #endregion
 
         #region Security
-
-        //new ("Security. Enable Multi-factor authentication", EnableMultiFactorAuthentication, "Security", NopCustomerDefaults.AdministratorsRoleName, NopCustomerDefaults.RegisteredRoleName),
-        //new ("Access admin area", AccessAdminPanel, "Security", NopCustomerDefaults.AdministratorsRoleName),
-
+        
         new ("Security. Enable Multi-factor authentication", StandardPermission.Security.ENABLE_MULTI_FACTOR_AUTHENTICATION, nameof(StandardPermission.Security), NopCustomerDefaults.AdministratorsRoleName, NopCustomerDefaults.RegisteredRoleName),
         new ("Access admin area", StandardPermission.Security.ACCESS_ADMIN_PANEL, nameof(StandardPermission.Security), NopCustomerDefaults.AdministratorsRoleName),
 
         #endregion
 
         #region Public store
-
-        //new ("Public store. Display Prices", DisplayPrices, "PublicStore", NopCustomerDefaults.AdministratorsRoleName, NopCustomerDefaults.RegisteredRoleName, NopCustomerDefaults.GuestsRoleName, NopCustomerDefaults.ForumModeratorsRoleName),
-        //new ("Public store. Enable shopping cart", EnableShoppingCart, "PublicStore", NopCustomerDefaults.AdministratorsRoleName, NopCustomerDefaults.RegisteredRoleName, NopCustomerDefaults.GuestsRoleName, NopCustomerDefaults.ForumModeratorsRoleName),
-        //new ("Public store. Enable wishlist", EnableWishlist, "PublicStore", NopCustomerDefaults.AdministratorsRoleName, NopCustomerDefaults.RegisteredRoleName, NopCustomerDefaults.GuestsRoleName, NopCustomerDefaults.ForumModeratorsRoleName),
-        //new ("Public store. Allow navigation", PublicStoreAllowNavigation, "PublicStore", NopCustomerDefaults.AdministratorsRoleName, NopCustomerDefaults.RegisteredRoleName, NopCustomerDefaults.GuestsRoleName, NopCustomerDefaults.ForumModeratorsRoleName),
-        //new ("Public store. Access a closed store", AccessClosedStore, "PublicStore", NopCustomerDefaults.AdministratorsRoleName),
-
+        
         new ("Public store. Display Prices", StandardPermission.PublicStore.DISPLAY_PRICES, nameof(StandardPermission.PublicStore), NopCustomerDefaults.AdministratorsRoleName, NopCustomerDefaults.RegisteredRoleName, NopCustomerDefaults.GuestsRoleName, NopCustomerDefaults.ForumModeratorsRoleName),
         new ("Public store. Enable shopping cart", StandardPermission.PublicStore.ENABLE_SHOPPING_CART, nameof(StandardPermission.PublicStore), NopCustomerDefaults.AdministratorsRoleName, NopCustomerDefaults.RegisteredRoleName, NopCustomerDefaults.GuestsRoleName, NopCustomerDefaults.ForumModeratorsRoleName),
         new ("Public store. Enable wishlist", StandardPermission.PublicStore.ENABLE_WISHLIST, nameof(StandardPermission.PublicStore), NopCustomerDefaults.AdministratorsRoleName, NopCustomerDefaults.RegisteredRoleName, NopCustomerDefaults.GuestsRoleName, NopCustomerDefaults.ForumModeratorsRoleName),

@@ -8,18 +8,14 @@ public partial class StandardPermission
     public partial class Customers
     {
         public const string GDPR_MANAGE = $"{nameof(Customers)}.GDPRManage";
-        
         public const string CUSTOMERS_VIEW = $"{nameof(Customers)}.CustomersView";
         public const string CUSTOMERS_CREATE_EDIT_DELETE = $"{nameof(Customers)}.CustomersCreateEditDelete";
         public const string CUSTOMERS_IMPORT_EXPORT = $"{nameof(Customers)}.CustomersImportExport";
         public const string CUSTOMERS_IMPERSONATION = $"{nameof(Customers)}.CustomersImpersonation";
-        
         public const string CUSTOMER_ROLES_VIEW = $"{nameof(Customers)}.CustomerRolesView";
         public const string CUSTOMER_ROLES_CREATE_EDIT_DELETE = $"{nameof(Customers)}.CustomerRolesCreateEditDelete";
-        
         public const string VENDORS_VIEW = $"{nameof(Customers)}.VendorsView";
         public const string VENDORS_CREATE_EDIT_DELETE = $"{nameof(Customers)}.VendorsCreateEditDelete";
-        
         public const string ACTIVITY_LOG_VIEW = $"{nameof(Customers)}.ActivityLogView";
         public const string ACTIVITY_LOG_DELETE = $"{nameof(Customers)}.ActivityLogDelete";
         public const string ACTIVITY_LOG_MANAGE_TYPES = $"{nameof(Customers)}.ActivityLogManageTypes";
