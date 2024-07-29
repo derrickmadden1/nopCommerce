@@ -72,6 +72,9 @@
     @NopHtml.GenerateScripts(ResourceLocation.Head)
     @NopHtml.GenerateInlineScripts(ResourceLocation.Head)
     <!--Powered by nopCommerce - https://www.nopCommerce.com-->
+
+    <!-- Freshchat -->
+    <script src="https://wchat.freshchat.com/js/widget.js"></script>
     
     @Html.Raw(commonSettings.HeaderCustomHtml)
 </head>
@@ -81,7 +84,15 @@
 
     @NopHtml.GenerateScripts(ResourceLocation.Footer)
     @NopHtml.GenerateInlineScripts(ResourceLocation.Footer)
-    
+
+    <!-- Freshchat Code-->
+    <script>
+        window.fcWidget.init({
+            token: "fddda2b9-3177-4e39-a52a-fd822b915830",
+            host: "https://wchat.freshchat.com"
+        });
+    </script>
+    <!-- End Freshchat Code-->
     @Html.Raw(commonSettings.FooterCustomHtml)
 </body>
 </html>
