@@ -11,6 +11,14 @@ namespace Nop.Services.Catalog;
 public partial interface ICategoryService
 {
     /// <summary>
+    /// Check the possibility of adding products to the category for the current vendor
+    /// </summary>
+    /// <param name="category">Category</param>
+    /// <param name="allCategories">All categories</param>
+    /// <returns>A task that represents the asynchronous operation</returns>
+    Task<bool> CanVendorAddProductsAsync(Category category, IList<Category> allCategories = null);
+
+    /// <summary>
     /// Clean up category references for a specified discount
     /// </summary>
     /// <param name="discount">Discount</param>
@@ -290,4 +298,12 @@ public partial interface ICategoryService
     /// The task result contains the category breadcrumb 
     /// </returns>
     Task<IList<Category>> GetCategoryBreadCrumbAsync(Category category, IList<Category> allCategories = null, bool showHidden = false);
+
+    /// <summary>
+    /// Update category store mappings
+    /// </summary>
+    /// <param name="category">Category</param>
+    /// <param name="limitedToStoresIds">A list of store ids for mapping</param>
+    /// <returns>A task that represents the asynchronous operation</returns>
+    Task UpdateCategoryStoreMappingsAsync(Category category, IList<int> limitedToStoresIds);
 }

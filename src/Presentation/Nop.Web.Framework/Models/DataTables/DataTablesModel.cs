@@ -28,6 +28,7 @@ public partial record DataTablesModel : BaseNopModel
 
         Filters = new List<FilterParameter>();
         ColumnCollection = new List<ColumnProperty>();
+        LayoutCollection = new List<LayoutOption>();
     }
 
     #endregion
@@ -115,11 +116,6 @@ public partial record DataTablesModel : BaseNopModel
     public string LengthMenu { get; set; }
 
     /// <summary>
-    /// Indicates where particular features appears in the DOM
-    /// </summary>
-    public string Dom { get; set; }
-
-    /// <summary>
     /// Feature control ordering (sorting) abilities in DataTables
     /// </summary>
     public bool Ordering { get; set; }
@@ -171,6 +167,11 @@ public partial record DataTablesModel : BaseNopModel
     /// Gets or set column collection 
     /// </summary>
     public IList<ColumnProperty> ColumnCollection { get; set; }
+
+    /// <summary>
+    /// Gets or set layout option collection 
+    /// </summary>
+    public List<LayoutOption> LayoutCollection {  get; set; }
 
     #endregion
 }

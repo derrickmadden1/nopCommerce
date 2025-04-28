@@ -298,6 +298,7 @@ public partial class CustomerModelFactory : ICustomerModelFactory
         }
 
         model.DisplayVatNumber = _taxSettings.EuVatEnabled;
+        model.VatNumberRequired = _taxSettings.EuVatRequired;
         model.VatNumberStatusNote = await _localizationService.GetLocalizedEnumAsync(customer.VatNumberStatus);
         model.FirstNameEnabled = _customerSettings.FirstNameEnabled;
         model.LastNameEnabled = _customerSettings.LastNameEnabled;
@@ -399,6 +400,7 @@ public partial class CustomerModelFactory : ICustomerModelFactory
 
         //VAT
         model.DisplayVatNumber = _taxSettings.EuVatEnabled;
+        model.VatNumberRequired = _taxSettings.EuVatRequired;
         if (_taxSettings.EuVatEnabled && _taxSettings.EuVatEnabledForGuests)
             model.VatNumber = customer.VatNumber;
 
@@ -609,6 +611,14 @@ public partial class CustomerModelFactory : ICustomerModelFactory
             ItemClass = "customer-orders"
         });
 
+        model.CustomerNavigationItems.Add(new CustomerNavigationItemModel
+        {
+            RouteName = "CustomerRecurringPayments",
+            Title = await _localizationService.GetResourceAsync("Account.CustomerRecurringPayments"),
+            Tab = (int)CustomerNavigationEnum.RecurringPayments,
+            ItemClass = "customer-recurring-payments"
+        });
+
         var store = await _storeContext.GetCurrentStoreAsync();
         var customer = await _workContext.GetCurrentCustomerAsync();
 
@@ -718,7 +728,7 @@ public partial class CustomerModelFactory : ICustomerModelFactory
             });
         }
 
-        if (_captchaSettings.Enabled && _customerSettings.AllowCustomersToCheckGiftCardBalance)
+        if (_customerSettings.AllowCustomersToCheckGiftCardBalance)
         {
             model.CustomerNavigationItems.Add(new CustomerNavigationItemModel
             {
@@ -843,15 +853,20 @@ public partial class CustomerModelFactory : ICustomerModelFactory
     /// <summary>
     /// Prepare the change password model
     /// </summary>
+    /// <param name="customer">Customer</param>
     /// <returns>
     /// A task that represents the asynchronous operation
     /// The task result contains the change password model
     /// </returns>
-    public virtual Task<ChangePasswordModel> PrepareChangePasswordModelAsync()
+    public virtual async Task<ChangePasswordModel> PrepareChangePasswordModelAsync(Customer customer)
     {
-        var model = new ChangePasswordModel();
+        ArgumentNullException.ThrowIfNull(customer);
 
-        return Task.FromResult(model);
+        return new ChangePasswordModel()
+        {
+            PasswordExpired = await _customerService.IsPasswordExpiredAsync(customer),
+            PasswordMustBeChanged = customer.MustChangePassword
+        };
     }
 
     /// <summary>
@@ -897,7 +912,7 @@ public partial class CustomerModelFactory : ICustomerModelFactory
     /// </returns>
     public virtual Task<CheckGiftCardBalanceModel> PrepareCheckGiftCardBalanceModelAsync()
     {
-        var model = new CheckGiftCardBalanceModel();
+        var model = new CheckGiftCardBalanceModel { DisplayCaptcha = _captchaSettings.Enabled && _captchaSettings.ShowOnCheckGiftCardBalance };
 
         return Task.FromResult(model);
     }

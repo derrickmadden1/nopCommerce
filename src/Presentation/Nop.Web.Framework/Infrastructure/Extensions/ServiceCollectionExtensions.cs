@@ -1,6 +1,4 @@
-﻿using System.Net;
-using System.Reflection;
-using System.Threading.RateLimiting;
+﻿using System.Threading.RateLimiting;
 using Azure.Identity;
 using Azure.Storage.Blobs;
 using FluentValidation;
@@ -32,7 +30,7 @@ using Nop.Web.Framework.Security.Captcha;
 using Nop.Web.Framework.Themes;
 using Nop.Web.Framework.Validators;
 using Nop.Web.Framework.WebOptimizer;
-using WebMarkupMin.AspNetCore8;
+using WebMarkupMin.AspNetCoreLatest;
 using WebMarkupMin.Core;
 using WebMarkupMin.NUglify;
 
@@ -51,10 +49,6 @@ public static class ServiceCollectionExtensions
     public static void ConfigureApplicationSettings(this IServiceCollection services,
         WebApplicationBuilder builder)
     {
-        //let the operating system decide what TLS protocol version to use
-        //see https://docs.microsoft.com/dotnet/framework/network-programming/tls
-        ServicePointManager.SecurityProtocol = SecurityProtocolType.SystemDefault;
-
         //create default file provider
         CommonHelper.DefaultFileProvider = new NopFileProvider(builder.Environment);
 
@@ -297,6 +291,7 @@ public static class ServiceCollectionExtensions
             options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
             options.LoginPath = NopAuthenticationDefaults.LoginPath;
             options.AccessDeniedPath = NopAuthenticationDefaults.AccessDeniedPath;
+            options.ReturnUrlParameter = NopAuthenticationDefaults.ReturnUrlParameter;
         });
 
         //add external authentication
@@ -307,6 +302,7 @@ public static class ServiceCollectionExtensions
             options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
             options.LoginPath = NopAuthenticationDefaults.LoginPath;
             options.AccessDeniedPath = NopAuthenticationDefaults.AccessDeniedPath;
+            options.ReturnUrlParameter = NopAuthenticationDefaults.ReturnUrlParameter;
         });
 
         //register and configure external authentication plugins now
@@ -388,6 +384,7 @@ public static class ServiceCollectionExtensions
     {
         //we use custom redirect executor as a workaround to allow using non-ASCII characters in redirect URLs
         services.AddScoped<IActionResultExecutor<RedirectResult>, NopRedirectResultExecutor>();
+        services.AddScoped<IActionResultExecutor<LocalRedirectResult>, NopLocalRedirectResultExecutor>();
     }
 
     /// <summary>

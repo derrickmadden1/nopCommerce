@@ -338,4 +338,20 @@ public partial interface IOrderProcessingService
     /// <param name="recurringPayment">Recurring payment</param>
     /// <returns>A task that represents the asynchronous operation</returns>
     Task<int> GetCyclesRemainingAsync(RecurringPayment recurringPayment);
+
+    /// <summary>
+    /// Gets process payment request
+    /// </summary>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task contains the process payment request
+    /// </returns>
+    Task<ProcessPaymentRequest> GetProcessPaymentRequestAsync();
+
+    /// <summary>
+    /// Sets process payment request
+    /// </summary>
+    /// <param name="processPaymentRequest">Process payment request. Pass null for delete</param>
+    /// <returns>A task that represents the asynchronous operation</returns>
+    Task SetProcessPaymentRequestAsync(ProcessPaymentRequest processPaymentRequest);
 }
