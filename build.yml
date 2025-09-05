@@ -1,5 +1,5 @@
 trigger:
-- upgrade-branch-4.60.1
+- main
 
 pool:
   vmImage: 'windows-latest'
