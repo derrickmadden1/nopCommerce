@@ -35,7 +35,7 @@ steps:
   inputs:
     command: 'publish'
     publishWebProjects: false
-    projects: 'Presentation\Nop.Web\Nop.Web.csproj'
+    projects: 'src\Presentation\Nop.Web\Nop.Web.csproj'
     workingDirectory: '$(System.DefaultWorkingDirectory)'    
     zipAfterPublish: false
     arguments: >
