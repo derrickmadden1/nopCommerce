@@ -214,7 +214,9 @@ public partial class AdminMapperConfiguration : Profile, IOrderedMapperProfile
 
         CreateMap<DataConfig, DataConfigModel>()
             .ForMember(model => model.DataProviderTypeValues, options => options.Ignore());
-        CreateMap<DataConfigModel, DataConfig>();
+        CreateMap<DataConfigModel, DataConfig>()
+            .ForMember(entity => entity.Collation, options => options.Ignore())
+            .ForMember(entity => entity.CharacterSet, options => options.Ignore());
 
         CreateMap<WebOptimizerConfig, WebOptimizerConfigModel>();
         CreateMap<WebOptimizerConfigModel, WebOptimizerConfig>()
@@ -1348,6 +1350,7 @@ public partial class AdminMapperConfiguration : Profile, IOrderedMapperProfile
 
         CreateMap<OrderSettings, OrderSettingsModel>()
             .ForMember(model => model.AllowAdminsToBuyCallForPriceProducts_OverrideForStore, options => options.Ignore())
+            .ForMember(model => model.AllowCustomersCancelOrders_OverrideForStore, options => options.Ignore())
             .ForMember(model => model.ShowProductThumbnailInOrderDetailsPage_OverrideForStore, options => options.Ignore())
             .ForMember(model => model.AnonymousCheckoutAllowed_OverrideForStore, options => options.Ignore())
             .ForMember(model => model.AttachPdfInvoiceToOrderProcessingEmail_OverrideForStore, options => options.Ignore())
