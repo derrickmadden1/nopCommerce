@@ -26,9 +26,7 @@ steps:
   inputs:
     command: test
     projects: |
-     ./src/Tests/Nop.Core.Tests/Nop.Core.Tests.csproj
-     ./src/Tests/Nop.Web.MVC.Tests/Nop.Web.MVC.Tests.csproj
-     ./src/Tests/Nop.Services.Tests/Nop.Services.Tests.csproj
+     ./src/Tests/Nop.Tests/Nop.Tests.csproj
     arguments: '--configuration $(BuildConfiguration) --collect "Code coverage"'
 - task: DotNetCoreCLI@2
   displayName: 'dotnet publish Nop Web csproj'
