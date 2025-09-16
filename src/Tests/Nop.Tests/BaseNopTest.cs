@@ -111,7 +111,7 @@ public partial class BaseNopTest
     {
         var dataProvider = _serviceProvider.GetService<IDataProviderManager>().DataProvider;
 
-        dataProvider.CreateDatabase(null);
+        dataProvider.CreateDatabase();
         dataProvider.InitializeDatabase();
 
         var installationService = _serviceProvider.GetService<IInstallationService>();
@@ -338,7 +338,7 @@ public partial class BaseNopTest
         services.AddTransient<ILanguageService, LanguageService>();
         services.AddTransient<IDownloadService, DownloadService>();
         services.AddTransient<IMessageTemplateService, MessageTemplateService>();
-        services.AddTransient<IMenuService, MenuService>();
+        services.AddScoped<IMenuService, MenuService>();
         services.AddTransient<IQueuedEmailService, QueuedEmailService>();
         services.AddTransient<INewsLetterSubscriptionService, NewsLetterSubscriptionService>();
         services.AddTransient<INewsLetterSubscriptionTypeService, NewsLetterSubscriptionTypeService>();
@@ -359,6 +359,7 @@ public partial class BaseNopTest
         services.AddTransient<IReturnRequestService, ReturnRequestService>();
         services.AddTransient<IRewardPointService, RewardPointService>();
         services.AddTransient<IShoppingCartService, ShoppingCartService>();
+        services.AddTransient<ICustomWishlistService, CustomWishlistService>();
         services.AddTransient<ICustomNumberFormatter, CustomNumberFormatter>();
         services.AddTransient<IPaymentService, PaymentService>();
         services.AddTransient<IEncryptionService, EncryptionService>();
@@ -444,22 +445,21 @@ public partial class BaseNopTest
         services
             // add common FluentMigrator services
             .AddFluentMigratorCore()
-            .AddScoped<IProcessorAccessor, TestProcessorAccessor>()
             // set accessor for the connection string
             .AddScoped<IConnectionStringAccessor>(_ => DataSettingsManager.LoadSettings())
             .AddScoped<IMigrationManager, MigrationManager>()
             .AddScoped<Lazy<IMigrationManager>>()
             .AddSingleton<IConventionSet, NopTestConventionSet>()
             .ConfigureRunner(rb =>
-                rb.WithVersionTable(new MigrationVersionInfo()).AddSqlServer().AddMySql5().AddPostgres().AddSQLite()
+                rb.WithVersionTable(new MigrationVersionInfo()).AddSQLite()
                     // define the assembly containing the migrations
                     .ScanIn(mAssemblies).For.Migrations());
 
         services.AddOptions<GeneratorOptions>().Configure(go => go.CompatibilityMode = CompatibilityMode.LOOSE);
 
-        services.AddTransient<IStoreContext, WebStoreContext>();
+        services.AddScoped<IStoreContext, WebStoreContext>();
         services.AddTransient<Lazy<IStoreContext>>();
-        services.AddTransient<IWorkContext, WebWorkContext>();
+        services.AddScoped<IWorkContext, WebWorkContext>();
         services.AddTransient<Lazy<IWorkContext>>();
         services.AddTransient<IThemeContext, ThemeContext>();
         services.AddTransient<Lazy<ILocalizationService>>();

@@ -853,6 +853,13 @@ public partial class InstallationService
                     EmailAccountId = eaGeneral.Id
                 },
                 new() {
+                    Name = MessageTemplateSystemNames.ORDER_CANCELLED_STORE_OWNER_NOTIFICATION,
+                    Subject = "%Store.Name%. Order #%Order.OrderNumber% cancelled",
+                    Body = $"<p>{Environment.NewLine}<a href=\"%Store.URL%\">%Store.Name%</a>{Environment.NewLine}<br />{Environment.NewLine}<br />{Environment.NewLine}Order #%Order.OrderNumber% has been cancelled by customer.{Environment.NewLine}<br />{Environment.NewLine}Customer: %Order.CustomerFullName%,{Environment.NewLine}<br />{Environment.NewLine}<br />{Environment.NewLine}<br />{Environment.NewLine}Order Number: %Order.OrderNumber%{Environment.NewLine}<br />{Environment.NewLine}Date Ordered: %Order.CreatedOn%{Environment.NewLine}<br />{Environment.NewLine}<br />{Environment.NewLine}%Order.Product(s)%{Environment.NewLine}</p>{Environment.NewLine}",
+                    IsActive = true,
+                    EmailAccountId = eaGeneral.Id
+                },
+                new() {
                     Name = MessageTemplateSystemNames.ORDER_CANCELLED_VENDOR_NOTIFICATION,
                     Subject = "%Store.Name%. Order #%Order.OrderNumber% cancelled",
                      Body = $"<p>{Environment.NewLine}<a href=\"%Store.URL%\">%Store.Name%</a>{Environment.NewLine}<br />{Environment.NewLine}<br />{Environment.NewLine}Order #%Order.OrderNumber% has been cancelled.{Environment.NewLine}<br />{Environment.NewLine}Customer: %Order.CustomerFullName%,{Environment.NewLine}<br />{Environment.NewLine}<br />{Environment.NewLine}<br />{Environment.NewLine}Order Number: %Order.OrderNumber%{Environment.NewLine}<br />{Environment.NewLine}Date Ordered: %Order.CreatedOn%{Environment.NewLine}<br />{Environment.NewLine}<br />{Environment.NewLine}%Order.Product(s)%{Environment.NewLine}</p>{Environment.NewLine}",
@@ -1337,7 +1344,10 @@ public partial class InstallationService
             RichEditorAdditionalSettings = null,
             UseRichEditorForCustomerEmails = false,
             UseRichEditorInMessageTemplates = false,
+            HideAdvertisementsOnAdminArea = false,
             CheckLicense = true,
+            LastNewsTitleAdminArea = string.Empty,
+            LicenseTerms = string.Empty,
             UseIsoDateFormatInJsonResult = true,
             ShowDocumentationReferenceLinks = true,
             UseStickyHeaderLayout = false,
@@ -1770,6 +1780,7 @@ public partial class InstallationService
             CustomOrderNumberMask = "{ID}",
             ExportWithProducts = true,
             AllowAdminsToBuyCallForPriceProducts = true,
+            AllowCustomersCancelOrders = true,
             ShowProductThumbnailInOrderDetailsPage = true,
             DisplayCustomerCurrencyOnOrders = false,
             DisplayOrderSummary = true,
