@@ -1,5 +1,4 @@
-﻿using System.Data;
-using FluentMigrator;
+﻿using FluentMigrator;
 using Nop.Core.Domain.Messages;
 using Nop.Data.Extensions;
 
