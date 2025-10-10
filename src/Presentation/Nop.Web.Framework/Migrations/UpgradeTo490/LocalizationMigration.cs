@@ -1,6 +1,5 @@
 ﻿using FluentMigrator;
 using Nop.Core.Domain.Messages;
-using Nop.Core.Domain.Vendors;
 using Nop.Core.Infrastructure;
 using Nop.Data;
 using Nop.Data.Migrations;
@@ -478,6 +477,7 @@ public class LocalizationMigration : MigrationBase
             ["Enums.Nop.Core.Domain.Translation.TranslationServiceType.DeepL"] = "DeepL",
             ["Admin.Translation.Translated.Success"] = "Pre-translation has been completed (all possible fields are pre-filled)",
             ["Admin.Translation.Translated.Warning"] = "Errors occurred during pre-translation, see details in the log",
+            ["Admin.Translation.Translated.NothingToTranslate"] = "Nothing to translate as all fields contain text",
 
             //#1921
             ["Admin.Configuration.Settings.ShoppingCart.AllowMultipleWishlist"] = "Allow multiple wishlists",
@@ -639,7 +639,7 @@ public class LocalizationMigration : MigrationBase
             ["Admin.Configuration.Settings.FilterLevel.DisplayOnHomePage"] = "Display on home page",
             ["Admin.Configuration.Settings.FilterLevel.DisplayOnHomePage.Hint"] = "Check to display filter levels on the home page.",
             ["Admin.Configuration.Settings.FilterLevel.DisplayOnProductDetailsPage"] = "Display on product details page",
-            ["Admin.Configuration.Settings.FilterLevel.DisplayOnProductDetailsPage.Hint"] = "Check to display filter levels on the product details page.",
+            ["Admin.Configuration.Settings.FilterLevel.DisplayOnProductDetailsPage.Hint"] = "Check to display compatible items (filter levels) on the product details page.",
 
             ["Admin.Configuration.Settings.FilterLevel.BlockTitle.Common"] = "Common",
             ["Admin.Configuration.Settings.FilterLevel.BlockTitle.Levels"] = "Levels",

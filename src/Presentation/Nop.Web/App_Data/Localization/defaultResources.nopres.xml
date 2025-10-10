@@ -7435,7 +7435,7 @@
     <Value>Display on product details page</Value>
   </LocaleResource>
   <LocaleResource Name="Admin.Configuration.Settings.FilterLevel.DisplayOnProductDetailsPage.Hint">
-    <Value>Check to display filter levels on the product details page.</Value>
+    <Value>Check to display compatible items (filter levels) on the product details page.</Value>
   </LocaleResource>
   <LocaleResource Name="Admin.Configuration.Settings.FilterLevel.Edit">
     <Value>Edit filter level</Value>
@@ -16903,6 +16903,9 @@
   </LocaleResource>
   <LocaleResource Name="Admin.System.Templates.Topic.DisplayOrder">
     <Value>Display order</Value>
+  </LocaleResource>
+  <LocaleResource Name="Admin.Translation.Translated.NothingToTranslate">
+    <Value>Nothing to translate as all fields contain text</Value>
   </LocaleResource>
   <LocaleResource Name="Admin.Translation.Translated.Success">
     <Value>Pre-translation has been completed (all possible fields are pre-filled)</Value>
