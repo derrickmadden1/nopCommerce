@@ -112,6 +112,7 @@ textarea, select {
   border: 1px solid #ddd;
   padding: 8px;
   vertical-align: middle;
+  direction: ltr;
 }
 
 input, textarea, select, button {
@@ -3503,12 +3504,11 @@ label, label + * {
 
 .button-row {
   display: flex;
-  gap: 12px;
-  flex-wrap: nowrap;
+  gap: 0 12px;
+  flex-wrap: wrap;
 }
 
 .button-2.custom-wishlist-button {
-  width: 132px;
   height: 36px;
   background-color: #cfd6e1;
   border: none;
@@ -3530,8 +3530,12 @@ label, label + * {
 }
 
 .button-2.custom-wishlist-button.add-new {
-  background: url(../images/new.png) left center no-repeat;
-  padding: 0 0 0 18px;
+  padding-inline-start: 0;
+}
+
+.button-2.custom-wishlist-button.add-new::before {
+  content: url(../images/new.png);
+  height: 13px;
 }
 
 .button-2.custom-wishlist-button:hover {
@@ -4312,6 +4316,10 @@ label, label + * {
   margin: 0 0 30px;
 }
 
+.change-password-page label {
+  vertical-align: top;
+}
+
 .change-password-recovery-link {
   text-align: right;
   font-size: 13px;
@@ -4795,7 +4803,7 @@ label, label + * {
 .estimate-shipping-popup {
   position: relative;
   background: #FFF;
-  padding: 25px 10px;
+  padding: 30px 10px;
   width: auto;
   max-width: 800px;
   margin: 0 auto;
@@ -4837,10 +4845,6 @@ label, label + * {
   position: relative;
   right: 8px;
   margin: 4% 50%;
-}
-
-.shipping-address .required {
-  margin-left: 0px;
 }
 
 .estimate-shipping-row {
@@ -4894,7 +4898,7 @@ label, label + * {
 }
 
 .estimate-shipping-address-control {
-  width: 100%;
+  width: calc(100% - 10px);
   height: 36px;
 }
 
@@ -7335,7 +7339,7 @@ label, label + * {
   /*** ESTIMATE SHIPPING POPUP ***/
 
   .estimate-shipping-popup {
-    padding: 25px;
+    padding: 30px;
   }
 }
 
@@ -8096,6 +8100,8 @@ label, label + * {
 
   .center-2 .inputs label {
     width: 136px;
+    min-height: 40px;
+    line-height: 40px;
   }
 
   .inputs.accept-consent label {

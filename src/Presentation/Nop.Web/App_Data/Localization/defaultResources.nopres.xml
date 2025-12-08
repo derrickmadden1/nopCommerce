@@ -6126,6 +6126,12 @@
   <LocaleResource Name="Admin.Configuration.Settings.Catalog.ArtificialIntelligence.Info">
     <Value><![CDATA[<p>Artificial intelligence functionality allows you to use third-party AI services such as <a href='https://www.deepseek.com/' target='_blank'>DeepSeek</a>, <a href='https://gemini.google.com/' target='_blank'>Gemini</a> or <a href='https://chatgpt.com/' target='_blank'>ChatGPT</a> to automatically generate content. This could be either product descriptions or meta tags for specific pages or entities.</p>]]></Value>
   </LocaleResource>
+  <LocaleResource Name="Admin.Configuration.Settings.Catalog.ArtificialIntelligence.LogRequests">
+    <Value>Log AI requests</Value>
+  </LocaleResource>
+  <LocaleResource Name="Admin.Configuration.Settings.Catalog.ArtificialIntelligence.LogRequests.Hint">
+    <Value>Check to enable logging of all requests to AI services.</Value>
+  </LocaleResource>
   <LocaleResource Name="Admin.Configuration.Settings.Catalog.ArtificialIntelligence.MetaDescriptionQuery">
     <Value>AI query to generate meta description</Value>
   </LocaleResource>
@@ -16412,6 +16418,18 @@
   <LocaleResource Name="Admin.System.Maintenance.ReIndexTables.ReIndexNow">
     <Value>Re-index</Value>
   </LocaleResource>
+  <LocaleResource Name="Admin.System.Maintenance.ShrinkDatabase">
+    <Value>Shrink database</Value>
+  </LocaleResource>
+  <LocaleResource Name="Admin.System.Maintenance.ShrinkDatabase.Complete">
+    <Value>Database shrinking completed</Value>
+  </LocaleResource>
+  <LocaleResource Name="Admin.System.Maintenance.ShrinkDatabase.Progress">
+    <Value>Processing...</Value>
+  </LocaleResource>
+  <LocaleResource Name="Admin.System.Maintenance.ShrinkDatabase.Text">
+    <Value>Reclaim disk space by reorganizing physical data storage</Value>
+  </LocaleResource>
   <LocaleResource Name="Admin.System.QueuedEmails">
     <Value>Message queue</Value>
   </LocaleResource>
@@ -18961,6 +18979,9 @@
   </LocaleResource>
   <LocaleResource Name="Literals.Nop.Core.Http.NopRouteNames.General.ContactUs">
     <Value>Contact us</Value>
+  </LocaleResource>
+  <LocaleResource Name="Literals.Nop.Core.Http.NopRouteNames.General.Login">
+    <Value>Login</Value>
   </LocaleResource>
   <LocaleResource Name="Literals.Nop.Core.Http.NopRouteNames.General.Search">
     <Value>Search</Value>
