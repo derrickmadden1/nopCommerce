@@ -335,7 +335,7 @@ public partial class ShoppingCartController : BasePublicController
     }
 
     protected virtual async Task<IActionResult> GetProductToCartDetailsAsync(List<string> addToCartWarnings, ShoppingCartType cartType,
-        Product product)
+        Product product, ShoppingCartItem updateCartItem = null, int? customWishlistId = null)
     {
         if (addToCartWarnings.Any())
         {
@@ -379,22 +379,37 @@ public partial class ShoppingCartController : BasePublicController
                 var customWishlists = await _customWishlistService.GetAllCustomWishlistsAsync(customer.Id);
                 var isGuest = await _customerService.IsGuestAsync(customer);
 
-                if (!isGuest && customWishlists.Any())
+                if (updateCartItem == null)
                 {
-                    var onclick = $"showMoveToWishlistModal({product.Id}); return false;";
-                    return Json(new
+                    if (!isGuest && customWishlists.Any())
                     {
-                        success = true,
-                        message = string.Format(await _localizationService.GetResourceAsync("Products.ProductHasBeenAddedToTheWishlistAndMoved.Link"), wishlistRouteUrl, onclick),
-                        updatetopwishlistsectionhtml = updateTopWishlistSectionHtml
-                    });
+                        var onclick = $"showMoveToWishlistModal({product.Id}); return false;";
+                        return Json(new
+                        {
+                            success = true,
+                            message = string.Format(await _localizationService.GetResourceAsync("Products.ProductHasBeenAddedToTheWishlistAndMoved.Link"), wishlistRouteUrl, onclick),
+                            updatetopwishlistsectionhtml = updateTopWishlistSectionHtml
+                        });
+                    }
+                    else
+                    {
+                        return Json(new
+                        {
+                            success = true,
+                            message = string.Format(await _localizationService.GetResourceAsync("Products.ProductHasBeenAddedToTheWishlist.Link"), wishlistRouteUrl),
+                            updatetopwishlistsectionhtml = updateTopWishlistSectionHtml
+                        });
+                    }
                 }
                 else
                 {
+                    if (customWishlistId != null)
+                        wishlistRouteUrl = Url.RouteUrl(NopRouteNames.General.WISHLIST, new { list = customWishlistId });
+                    
                     return Json(new
                     {
                         success = true,
-                        message = string.Format(await _localizationService.GetResourceAsync("Products.ProductHasBeenAddedToTheWishlist.Link"), wishlistRouteUrl),
+                        message = string.Format(await _localizationService.GetResourceAsync("Products.ProductHasBeenUpdatedInTheWishlist.Link"), wishlistRouteUrl),
                         updatetopwishlistsectionhtml = updateTopWishlistSectionHtml
                     });
                 }
@@ -828,7 +843,7 @@ public partial class ShoppingCartController : BasePublicController
         await SaveItemAsync(updatecartitem, addToCartWarnings, product, cartType, attributes, customerEnteredPriceConverted, rentalStartDate, rentalEndDate, quantity);
 
         //return result
-        return await GetProductToCartDetailsAsync(addToCartWarnings, cartType, product);
+        return await GetProductToCartDetailsAsync(addToCartWarnings, cartType, product, updatecartitem, customwishlistid);
     }
 
     //handle product attribute selection event. this way we return new price, overridden gtin/sku/mpn
