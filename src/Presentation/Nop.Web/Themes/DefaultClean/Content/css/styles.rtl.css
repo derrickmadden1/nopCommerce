@@ -1131,6 +1131,7 @@ label, label + * {
 }
 
 .footer-upper {
+  width: 95%;
   margin-inline: auto;
   border-bottom: 1px solid #ddd;
   overflow: hidden;
@@ -1139,13 +1140,6 @@ label, label + * {
   flex-flow: row wrap;
   justify-content: center;
   gap: 100px;
-}
-
-.footer-block {
-  width: 95%;
-  margin: 1px auto;
-  text-align: right;
-  font-size: 14px; /*reset zeroing*/
 }
 
 .footer-block .title {
