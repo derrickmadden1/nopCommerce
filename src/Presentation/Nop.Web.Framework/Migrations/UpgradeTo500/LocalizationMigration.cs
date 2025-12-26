@@ -167,6 +167,10 @@ public class LocalizationMigration : MigrationBase
             //#7898
             ["Admin.Configuration.Settings.Catalog.ArtificialIntelligence.LogRequests"] = "Log AI requests",
             ["Admin.Configuration.Settings.Catalog.ArtificialIntelligence.LogRequests.Hint"] = "Check to enable logging of all requests to AI services.",
+
+            //#7989
+            ["Products.ProductHasBeenUpdatedInTheWishlist.Link"] = "The product has been updated in your <a href=\"{0}\">wishlist</a>",
+
         }, languageId);
 
         #endregion
