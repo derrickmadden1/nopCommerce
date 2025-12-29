@@ -1,0 +1,11 @@
+﻿{
+  "Group": "Discount requirements",
+  "FriendlyName": "Multibuy product rules",
+  "SystemName": "DiscountRequirement.MultiBuy",
+  "Version": "5.00.1",
+  "SupportedVersions": [ "5.00" ],
+  "Author": "Rose Cottage Croft",
+  "DisplayOrder": 1,
+  "FileName": "Nop.Plugin.DiscountRules.MultiBuy.dll",
+  "Description": "This plugin allows you to configure multibuy discounts"
+}
