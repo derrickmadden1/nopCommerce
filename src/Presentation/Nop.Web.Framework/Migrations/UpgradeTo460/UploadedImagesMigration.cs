@@ -4,9 +4,9 @@ using Nop.Core.Domain.Media;
 using Nop.Core.Infrastructure;
 using Nop.Data;
 using Nop.Data.Migrations;
-using Nop.Services.Configuration;
 using Nop.Services.Media;
 using Nop.Services.Media.ElFinder;
+using Nop.Web.Framework.Extensions;
 using SkiaSharp;
 
 namespace Nop.Web.Framework.Migrations.UpgradeTo460;
@@ -16,24 +16,24 @@ public class UploadedImagesMigration : Migration
 {
     #region Fields
 
+    protected readonly INopDataProvider _dataProvider;
     protected readonly INopFileProvider _nopFileProvider;
     protected readonly IRepository<Picture> _pictureRepository;
     protected readonly IRepository<PictureBinary> _pictureBinaryRepository;
-    protected readonly ISettingService _settingService;
     protected readonly MediaSettings _mediaSettings;
 
     #endregion
 
-    public UploadedImagesMigration(INopFileProvider nopFileProvider,
+    public UploadedImagesMigration(INopDataProvider dataProvider,
+        INopFileProvider nopFileProvider,
         IRepository<Picture> pictureRepository,
         IRepository<PictureBinary> pictureBinaryRepository,
-        ISettingService settingService,
         MediaSettings mediaSettings)
     {
+        _dataProvider = dataProvider;
         _nopFileProvider = nopFileProvider;
         _pictureRepository = pictureRepository;
         _pictureBinaryRepository = pictureBinaryRepository;
-        _settingService = settingService;
         _mediaSettings = mediaSettings;
     }
 
@@ -111,7 +111,7 @@ public class UploadedImagesMigration : Migration
 
     public override void Up()
     {
-        if (!_settingService.GetSettingByKey("Media.Images.StoreInDB", true))
+        if (!this.GetSettingByKey("Media.Images.StoreInDB", true))
             return;
 
         const int pageSize = 400;
@@ -165,7 +165,7 @@ public class UploadedImagesMigration : Migration
 
                     if (_nopFileProvider.GetFileInfo(filePath).Exists)
                     {
-                        _pictureRepository.Delete(picture, false);
+                        _dataProvider.DeleteEntity(picture);
                         continue;
                     }
 
@@ -194,7 +194,7 @@ public class UploadedImagesMigration : Migration
                         mutex.ReleaseMutex();
                     }
 
-                    _pictureRepository.Delete(picture, false);
+                    _dataProvider.DeleteEntity(picture);
                 }
             }
         }
