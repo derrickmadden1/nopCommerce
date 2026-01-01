@@ -131,7 +131,6 @@ public partial class CommonModelFactory : ICommonModelFactory
         _mediaSettings = mediaSettings;
         _messagesSettings = messagesSettings;
         _localizationSettings = localizationSettings;
-        _newsSettings = newsSettings;
         _robotsTxtSettings = robotsTxtSettings;
         _sitemapXmlSettings = sitemapXmlSettings;
         _storeInformationSettings = storeInformationSettings;
