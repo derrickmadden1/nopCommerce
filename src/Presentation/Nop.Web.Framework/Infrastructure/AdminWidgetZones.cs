@@ -89,6 +89,14 @@ public static partial class AdminWidgetZones
     public static string EmailAccountDetailsTop => "admin_email_account_details_top";
     public static string EmailAccountListButtons => "admin_email_account_list_buttons";
     public static string ExternalAuthenticationListButtons => "admin_external_authentication_list_buttons";
+    public static string FilterLevelDetailsBottom => "admin_filter_level_details_bottom";
+    public static string FilterLevelDetailsButtons => "admin_filter_level_details_buttons";
+    public static string FilterLevelDetailsTop => "admin_filter_level_details_top";
+    public static string FilterLevelSettingsButtons => "admin_filter_level_settings_buttons";
+    public static string FilterLevelSettingsDetailsBlock => "admin_filter_level_common_settings_details_block";
+    public static string FilterLevelValueDetailsButtons => "admin_filter_level_value_details_buttons";
+    public static string FilterLevelValueDetailsBlock => "admin_filter_level_value_details_block";
+    public static string FilterLevelValueListButtons => "admin_filter_level_value_list_buttons";
     public static string ForumDetailsBottom => "admin_forum_details_bottom";
     public static string ForumDetailsButtons => "admin_forum_details_buttons";
     public static string ForumDetailsTop => "admin_forum_details_top";
@@ -137,10 +145,6 @@ public static partial class AdminWidgetZones
     public static string MessageTemplateListButtons => "admin_message_template_list_buttons";
     public static string MessageTemplateTestButtons => "admin_message_template_test_buttons";
     public static string MultiFactorAuthenticationListButtons => "admin_multifactor_authentication_list_buttons";
-    public static string NewsCommentListButtons => "admin_news_comment_list_buttons";
-    public static string NewsDetailsBlock => "admin_news_details_block";
-    public static string NewsDetailsButtons => "admin_news_details_buttons";
-    public static string NewsItemsDetailsBlock => "admin_news_items_details_block";
     public static string NewsLetterSubscriptionBottom => "admin_newsletter_subscription_bottom";
     public static string NewsLetterSubscriptionButtons => "admin_newsletter_subscription_buttons";
     public static string NewsLetterSubscriptionTop => "admin_newsletter_subscription_top";
@@ -149,8 +153,6 @@ public static partial class AdminWidgetZones
     public static string NewsLetterSubscriptionTypeButtons => "admin_newsletter_subscription_type_buttons";
     public static string NewsLetterSubscriptionTypeTop => "admin_newsletter_subscription_type_top";
     public static string NewsLetterSubscriptionTypeBottom => "admin_newsletter_subscription_type_bottom";
-    public static string NewsListButtons => "admin_news_list_buttons";
-    public static string NewsSettingsButtons => "admin_news_settings_buttons";
     public static string OnlineCustomerListButtons => "admin_online_customer_list_buttons";
     public static string OrderAddressDetailsBottom => "admin_order_address_details_bottom";
     public static string OrderAddressDetailsButtons => "admin_order_address_details_buttons";

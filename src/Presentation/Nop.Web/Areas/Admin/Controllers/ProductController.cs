@@ -8,6 +8,7 @@ using Nop.Core.Domain.Common;
 using Nop.Core.Domain.Customers;
 using Nop.Core.Domain.Directory;
 using Nop.Core.Domain.Discounts;
+using Nop.Core.Domain.FilterLevels;
 using Nop.Core.Domain.Localization;
 using Nop.Core.Domain.Media;
 using Nop.Core.Domain.Orders;
@@ -23,6 +24,7 @@ using Nop.Services.Configuration;
 using Nop.Services.Directory;
 using Nop.Services.Discounts;
 using Nop.Services.ExportImport;
+using Nop.Services.FilterLevels;
 using Nop.Services.Localization;
 using Nop.Services.Logging;
 using Nop.Services.Media;
@@ -63,6 +65,8 @@ public partial class ProductController : BaseAdminController
     protected readonly IDownloadService _downloadService;
     protected readonly IEventPublisher _eventPublisher;
     protected readonly IExportManager _exportManager;
+    protected readonly IFilterLevelValueModelFactory _filterLevelValueModelFactory;
+    protected readonly IFilterLevelValueService _filterLevelValueService;
     protected readonly IHttpClientFactory _httpClientFactory;
     protected readonly IImportManager _importManager;
     protected readonly ILanguageService _languageService;
@@ -115,6 +119,8 @@ public partial class ProductController : BaseAdminController
         IDownloadService downloadService,
         IEventPublisher eventPublisher,
         IExportManager exportManager,
+        IFilterLevelValueModelFactory filterLevelValueModelFactory,
+        IFilterLevelValueService filterLevelValueService,
         IHttpClientFactory httpClientFactory,
         IImportManager importManager,
         ILanguageService languageService,
@@ -162,6 +168,8 @@ public partial class ProductController : BaseAdminController
         _downloadService = downloadService;
         _eventPublisher = eventPublisher;
         _exportManager = exportManager;
+        _filterLevelValueModelFactory = filterLevelValueModelFactory;
+        _filterLevelValueService = filterLevelValueService;
         _httpClientFactory = httpClientFactory;
         _importManager = importManager;
         _languageService = languageService;
@@ -764,12 +772,12 @@ public partial class ProductController : BaseAdminController
         var existingCombinationPictures = await _productAttributeService.GetProductAttributeCombinationPicturesAsync(combination.Id);
         var productPictureIds = (await _pictureService.GetPicturesByProductIdAsync(product.Id)).Select(p => p.Id).ToList();
 
-        //delete manufacturers
+        //delete pictures
         foreach (var existingCombinationPicture in existingCombinationPictures)
             if (!model.PictureIds.Contains(existingCombinationPicture.PictureId) || !productPictureIds.Contains(existingCombinationPicture.PictureId))
                 await _productAttributeService.DeleteProductAttributeCombinationPictureAsync(existingCombinationPicture);
 
-        //add manufacturers
+        //add pictures
         foreach (var pictureId in model.PictureIds)
         {
             if (!productPictureIds.Contains(pictureId))
@@ -1184,11 +1192,31 @@ public partial class ProductController : BaseAdminController
             var previousStockQuantity = product.StockQuantity;
             var previousWarehouseId = product.WarehouseId;
             var previousProductType = product.ProductType;
+            var previousRequiredProductIds = product.RequiredProductIds;
 
             //product
             product = model.ToEntity(product);
 
             product.UpdatedOnUtc = DateTime.UtcNow;
+
+            var requireOtherProductsError = string.Empty;
+
+            if (product.RequireOtherProducts && !string.IsNullOrEmpty(product.RequiredProductIds))
+            {
+                var requiredProductIds = _productService.ParseRequiredProductIds(product);
+                
+                foreach (var requiredProduct in await _productService.GetProductsByIdsAsync(requiredProductIds.ToArray()))
+                {
+                    if (product.Id == requiredProduct.Id || await isCyclicallyRequired(requiredProduct)) 
+                        requireOtherProductsError = await _localizationService.GetResourceAsync("Admin.Catalog.Products.RelatedProducts.CyclicallyRelated");
+
+                    break;
+                }
+            }
+
+            if (!string.IsNullOrEmpty(requireOtherProductsError))
+                product.RequiredProductIds = previousRequiredProductIds;
+
             await _productService.UpdateProductAsync(product);
 
             //remove associated products
@@ -1299,7 +1327,19 @@ public partial class ProductController : BaseAdminController
             await _customerActivityService.InsertActivityAsync("EditProduct",
                 string.Format(await _localizationService.GetResourceAsync("ActivityLog.EditProduct"), product.Name), product);
 
-            _notificationService.SuccessNotification(await _localizationService.GetResourceAsync("Admin.Catalog.Products.Updated"));
+            if (string.IsNullOrEmpty(requireOtherProductsError))
+            {
+                _notificationService.SuccessNotification(await _localizationService.GetResourceAsync("Admin.Catalog.Products.Updated"));
+            }
+            else
+            {
+                _notificationService.ErrorNotification(requireOtherProductsError);
+
+                //prepare model
+                model = await _productModelFactory.PrepareProductModelAsync(model, product, true);
+
+                return View(model);
+            }
 
             if (!continueEditing)
                 return RedirectToAction("List");
@@ -1312,6 +1352,24 @@ public partial class ProductController : BaseAdminController
 
         //if we got this far, something failed, redisplay form
         return View(model);
+
+        async Task<bool> isCyclicallyRequired(Product productToCheck)
+        {
+            if (!product.RequireOtherProducts)
+                return false;
+
+            if (string.IsNullOrEmpty(productToCheck.RequiredProductIds))
+                return false;
+
+            var requiredProductIds = _productService.ParseRequiredProductIds(productToCheck);
+
+            if (requiredProductIds.Any(rp => rp == product.Id))
+                return true;
+
+            var products = await _productService.GetProductsByIdsAsync(requiredProductIds);
+
+            return await products.AnyAwaitAsync(async p => await isCyclicallyRequired(p));
+        }
     }
 
     [HttpPost]
@@ -1464,7 +1522,7 @@ public partial class ProductController : BaseAdminController
             {
                 model.GeneratedDescription = await _artificialIntelligenceService.CreateProductDescriptionAsync(
                     model.ProductName, model.Keywords, (ToneOfVoiceType)model.ToneOfVoiceId, model.Instructions,
-                    model.CustomToneOfVoice, model.LanguageId);
+                    model.CustomToneOfVoice, model.TargetLanguageId);
             }
             catch (NopException ex)
             {
@@ -1748,6 +1806,100 @@ public partial class ProductController : BaseAdminController
         ViewBag.RefreshPage = true;
 
         return View(new AddCrossSellProductSearchModel());
+    }
+
+    #endregion
+
+    #region Filter level values
+
+    [HttpPost]
+    [CheckPermission(StandardPermission.Catalog.FILTER_LEVEL_VALUE_VIEW)]
+    public virtual async Task<IActionResult> FilterLevelValueList(FilterLevelValueSearchModel searchModel)
+    {
+        //try to get a product with the specified id
+        var product = await _productService.GetProductByIdAsync(searchModel.ProductId)
+            ?? throw new ArgumentException("No product found with the specified id");
+
+        //a vendor should have access only to his products
+        var currentVendor = await _workContext.GetCurrentVendorAsync();
+        if (currentVendor != null && product.VendorId != currentVendor.Id)
+            return Content("This is not your product");
+
+        //prepare model
+        var model = await _productModelFactory.PrepareFilterLevelValueListModelAsync(searchModel, product);
+
+        return Json(model);
+    }
+
+    [HttpPost]
+    [CheckPermission(StandardPermission.Catalog.FILTER_LEVEL_VALUE_CREATE_EDIT_DELETE)]
+    public virtual async Task<IActionResult> FilterLevelValueDelete(int productId, int id)
+    {
+        //try to get a filter level value mapping with the specified id
+        var existingProductFilterLevelValues = await _filterLevelValueService.GetFilterLevelValueProductsByFilterLevelValueIdAsync(id);
+
+        var filterLevelValueMapping = existingProductFilterLevelValues.FirstOrDefault(pc => pc.ProductId == productId && pc.FilterLevelValueId == id)
+            ?? throw new ArgumentException("No filter level value mapping found with the specified id");
+
+        //a vendor should have access only to his products
+        var currentVendor = await _workContext.GetCurrentVendorAsync();
+        if (currentVendor != null)
+        {
+            var product = await _productService.GetProductByIdAsync(filterLevelValueMapping.ProductId);
+            if (product != null && product.VendorId != currentVendor.Id)
+                return Content("This is not your product");
+        }
+
+        await _filterLevelValueService.DeleteFilterLevelValueProductAsync(filterLevelValueMapping);
+
+        return new NullJsonResult();
+    }
+
+    [CheckPermission(StandardPermission.Catalog.FILTER_LEVEL_VALUE_CREATE_EDIT_DELETE)]
+    public virtual async Task<IActionResult> FilterLevelValuesAddPopup(int productId)
+    {
+        //prepare model
+        var model = await _filterLevelValueModelFactory.PrepareFilterLevelValueSearchModelAsync(new FilterLevelValueSearchModel());
+
+        return View(model);
+    }
+
+    [HttpPost]
+    [CheckPermission(StandardPermission.Catalog.FILTER_LEVEL_VALUE_CREATE_EDIT_DELETE)]
+    public virtual async Task<IActionResult> FilterLevelValuesAddPopupList(FilterLevelValueSearchModel searchModel)
+    {
+        //prepare model
+        var model = await _filterLevelValueModelFactory.PrepareFilterLevelValueListModelAsync(searchModel);
+
+        return Json(model);
+    }
+
+    [HttpPost]
+    [FormValueRequired("save")]
+    [CheckPermission(StandardPermission.Catalog.FILTER_LEVEL_VALUE_CREATE_EDIT_DELETE)]
+    public virtual async Task<IActionResult> FilterLevelValuesAddPopup(AddFilterLevelValueModel model)
+    {
+        var selectedFilterLevelValues = await _filterLevelValueService.GetFilterLevelValuesByIdsAsync(model.SelectedFilterLevelValueIds.ToArray());
+        if (selectedFilterLevelValues.Any())
+        {
+            foreach (var filterLevelValue in selectedFilterLevelValues)
+            {
+                //whether product filter level value with such parameters already exists
+                var existingProductFilterLevelValues = await _filterLevelValueService.GetFilterLevelValueProductsByFilterLevelValueIdAsync(filterLevelValue.Id);
+                if (existingProductFilterLevelValues.FirstOrDefault(pc => pc.ProductId == model.ProductId && pc.FilterLevelValueId == filterLevelValue.Id) != null)
+                    continue;
+
+                await _filterLevelValueService.InsertProductFilterLevelValueAsync(new FilterLevelValueProductMapping
+                {
+                    FilterLevelValueId = filterLevelValue.Id,
+                    ProductId = model.ProductId
+                });
+            }
+        }
+
+        ViewBag.RefreshPage = true;
+
+        return View(new FilterLevelValueSearchModel());
     }
 
     #endregion

@@ -1,4 +1,11 @@
 ﻿@model LogoModel
 <a href="@Url.RouteUrl(NopRouteNames.General.HOMEPAGE)">
-    <img alt="@Model.StoreName" src="@Model.LogoPath">
+    <img alt="@Model.StoreName"
+         src="@Model.LogoPath"
+         @(!string.IsNullOrEmpty(Model.SrcSet) ? Html.Raw($"srcset=\"{Model.SrcSet}\"") : null)
+         @(Model.Width.HasValue ? Html.Raw($"width=\"{Model.Width.Value}\"") : null)
+         @(Model.Height.HasValue ? Html.Raw($"height=\"{Model.Height.Value}\"") : null)
+         decoding="async"
+         loading="lazy"
+         fetchpriority="low">
 </a>

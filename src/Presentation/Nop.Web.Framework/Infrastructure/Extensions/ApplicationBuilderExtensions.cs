@@ -24,11 +24,10 @@ using Nop.Core.Infrastructure;
 using Nop.Data;
 using Nop.Services.Authentication;
 using Nop.Services.Common;
+using Nop.Services.Helpers;
 using Nop.Services.Installation;
-using Nop.Services.Localization;
 using Nop.Services.Logging;
 using Nop.Services.Media;
-using Nop.Services.Media.RoxyFileman;
 using Nop.Services.Security;
 using Nop.Services.Seo;
 using Nop.Web.Framework.Globalization;
@@ -353,16 +352,6 @@ public static class ApplicationBuilderExtensions
             ContentTypeProvider = provider
         });
 
-        if (DataSettingsManager.IsDatabaseInstalled())
-        {
-            application.UseStaticFiles(new StaticFileOptions
-            {
-                FileProvider = EngineContext.Current.Resolve<IRoxyFilemanFileProvider>(),
-                RequestPath = new PathString(NopRoxyFilemanDefaults.DefaultRootDirectory),
-                OnPrepareResponse = staticFileResponse
-            });
-        }
-
         if (appSettings.Get<CommonConfig>().ServeUnknownFileTypes)
         {
             application.UseStaticFiles(new StaticFileOptions
@@ -415,7 +404,7 @@ public static class ApplicationBuilderExtensions
 
         var fileProvider = EngineContext.Current.Resolve<INopFileProvider>();
 
-        var fontPaths = fileProvider.EnumerateFiles(fileProvider.MapPath("~/App_Data/Pdf/"), "*.ttf") ?? Enumerable.Empty<string>();
+        var fontPaths = fileProvider.EnumerateFiles(fileProvider.MapPath(NopCommonDefaults.PdfFontDirectoryPath), "*.ttf") ?? Enumerable.Empty<string>();
         foreach (var fp in fontPaths)
         {
             FontFactory.Register(fp, fileProvider.GetFileNameWithoutExtension(fp));
@@ -433,11 +422,11 @@ public static class ApplicationBuilderExtensions
             if (!DataSettingsManager.IsDatabaseInstalled())
                 return;
 
-            var languageService = EngineContext.Current.Resolve<ILanguageService>();
             var localizationSettings = EngineContext.Current.Resolve<LocalizationSettings>();
+            var syncCodeHelper = EngineContext.Current.Resolve<ISyncCodeHelper>();
 
             //prepare supported cultures
-            var cultures = languageService
+            var cultures = syncCodeHelper
                 .GetAllLanguages()
                 .OrderBy(language => language.DisplayOrder)
                 .Select(language => new CultureInfo(language.LanguageCulture))

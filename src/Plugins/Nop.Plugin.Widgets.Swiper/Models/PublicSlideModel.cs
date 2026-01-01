@@ -15,6 +15,10 @@ public record PublicSlideModel : BaseNopModel
     public string LinkUrl { get; set; }
     public string AltText { get; set; }
     public bool LazyLoading { get; set; }
+    // optional image metadata used to render width/height and responsive srcset
+    public int? Width { get; set; }
+    public int? Height { get; set; }
+    public string SrcSet { get; set; }
 
     #endregion
 }

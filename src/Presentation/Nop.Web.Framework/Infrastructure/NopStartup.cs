@@ -25,6 +25,7 @@ using Nop.Services.Directory;
 using Nop.Services.Discounts;
 using Nop.Services.Events;
 using Nop.Services.ExportImport;
+using Nop.Services.FilterLevels;
 using Nop.Services.Forums;
 using Nop.Services.Gdpr;
 using Nop.Services.Helpers;
@@ -33,10 +34,9 @@ using Nop.Services.Installation;
 using Nop.Services.Localization;
 using Nop.Services.Logging;
 using Nop.Services.Media;
-using Nop.Services.Media.RoxyFileman;
+using Nop.Services.Media.ElFinder;
 using Nop.Services.Menus;
 using Nop.Services.Messages;
-using Nop.Services.News;
 using Nop.Services.Orders;
 using Nop.Services.Payments;
 using Nop.Services.Plugins;
@@ -139,6 +139,7 @@ public partial class NopStartup : INopStartup
         //services
         services.AddScoped<IBackInStockSubscriptionService, BackInStockSubscriptionService>();
         services.AddScoped<ICategoryService, CategoryService>();
+        services.AddScoped<IFilterLevelValueService, FilterLevelValueService>();
         services.AddScoped<ICompareProductsService, CompareProductsService>();
         services.AddScoped<IRecentlyViewedProductsService, RecentlyViewedProductsService>();
         services.AddScoped<IManufacturerService, ManufacturerService>();
@@ -147,6 +148,7 @@ public partial class NopStartup : INopStartup
         services.AddScoped<IProductAttributeParser, ProductAttributeParser>();
         services.AddScoped<IProductAttributeService, ProductAttributeService>();
         services.AddScoped<IProductService, ProductService>();
+        services.AddScoped<IProductReviewService, ProductReviewService>();
         services.AddScoped<ICopyProductService, CopyProductService>();
         services.AddScoped<ISpecificationAttributeService, SpecificationAttributeService>();
         services.AddScoped<IProductTemplateService, ProductTemplateService>();
@@ -221,7 +223,6 @@ public partial class NopStartup : INopStartup
         services.AddScoped<IPollService, PollService>();
         services.AddScoped<IBlogService, BlogService>();
         services.AddScoped<ITopicService, TopicService>();
-        services.AddScoped<INewsService, NewsService>();
         services.AddScoped<IDateTimeHelper, DateTimeHelper>();
         services.AddScoped<INopHtmlHelper, NopHtmlHelper>();
         services.AddScoped<IScheduleTaskService, ScheduleTaskService>();
@@ -229,7 +230,7 @@ public partial class NopStartup : INopStartup
         services.AddScoped<IImportManager, ImportManager>();
         services.AddScoped<IPdfService, PdfService>();
         services.AddScoped<IUploadService, UploadService>();
-        services.AddScoped<IThemeProvider, ThemeProvider>();
+        services.AddSingleton<IThemeProvider, ThemeProvider>();
         services.AddScoped<IThemeContext, ThemeContext>();
         services.AddScoped<IExternalAuthenticationService, ExternalAuthenticationService>();
         services.AddSingleton<IRoutePublisher, RoutePublisher>();
@@ -242,6 +243,7 @@ public partial class NopStartup : INopStartup
         services.AddScoped<INopUrlHelper, NopUrlHelper>();
         services.AddScoped<IWidgetModelFactory, WidgetModelFactory>();
         services.AddScoped<IMenuService, MenuService>();
+        services.AddScoped<ISyncCodeHelper, SyncCodeHelper>();
 
         //attribute services
         services.AddScoped(typeof(IAttributeService<,>), typeof(AttributeService<,>));
@@ -276,7 +278,7 @@ public partial class NopStartup : INopStartup
             services.AddScoped(setting, serviceProvider =>
             {
                 var storeId = DataSettingsManager.IsDatabaseInstalled()
-                    ? serviceProvider.GetRequiredService<IStoreContext>().GetCurrentStore()?.Id ?? 0
+                    ? serviceProvider.GetRequiredService<IStoreContext>().GetCurrentStoreAsync().Result?.Id ?? 0
                     : 0;
 
                 return serviceProvider.GetRequiredService<ISettingService>().LoadSettingAsync(setting, storeId).Result;
@@ -289,9 +291,8 @@ public partial class NopStartup : INopStartup
         //picture service
         services.AddScoped<IPictureService, PictureService>();
 
-        //roxy file manager
-        services.AddScoped<IRoxyFilemanService, RoxyFilemanService>();
-        services.AddScoped<IRoxyFilemanFileProvider, RoxyFilemanFileProvider>();
+        //elFinder file manager
+        services.AddSingleton<IElFinderService, ElFinderService>();
 
         //installation service
         services.AddScoped<IInstallationService, InstallationService>();

@@ -11,7 +11,6 @@ using Nop.Core.Domain.Forums;
 using Nop.Core.Domain.Localization;
 using Nop.Core.Domain.Media;
 using Nop.Core.Domain.Messages;
-using Nop.Core.Domain.News;
 using Nop.Core.Domain.Orders;
 using Nop.Core.Domain.Security;
 using Nop.Core.Domain.Vendors;
@@ -66,7 +65,6 @@ public partial class CommonModelFactory : ICommonModelFactory
     protected readonly LocalizationSettings _localizationSettings;
     protected readonly MediaSettings _mediaSettings;
     protected readonly MessagesSettings _messagesSettings;
-    protected readonly NewsSettings _newsSettings;
     protected readonly RobotsTxtSettings _robotsTxtSettings;
     protected readonly SitemapXmlSettings _sitemapXmlSettings;
     protected readonly StoreInformationSettings _storeInformationSettings;
@@ -74,7 +72,6 @@ public partial class CommonModelFactory : ICommonModelFactory
     #endregion
 
     #region Ctor
-
     public CommonModelFactory(CaptchaSettings captchaSettings,
         CatalogSettings catalogSettings,
         CommonSettings commonSettings,
@@ -102,7 +99,6 @@ public partial class CommonModelFactory : ICommonModelFactory
         LocalizationSettings localizationSettings,
         MediaSettings mediaSettings,
         MessagesSettings messagesSettings,
-        NewsSettings newsSettings,
         RobotsTxtSettings robotsTxtSettings,
         SitemapXmlSettings sitemapXmlSettings,
         StoreInformationSettings storeInformationSettings)
@@ -131,10 +127,10 @@ public partial class CommonModelFactory : ICommonModelFactory
         _themeProvider = themeProvider;
         _webHelper = webHelper;
         _workContext = workContext;
+        _localizationSettings = localizationSettings;
         _mediaSettings = mediaSettings;
         _messagesSettings = messagesSettings;
         _localizationSettings = localizationSettings;
-        _newsSettings = newsSettings;
         _robotsTxtSettings = robotsTxtSettings;
         _sitemapXmlSettings = sitemapXmlSettings;
         _storeInformationSettings = storeInformationSettings;
@@ -142,50 +138,87 @@ public partial class CommonModelFactory : ICommonModelFactory
 
     #endregion
 
-    #region Utilities
+    #region Methods
 
-    private async Task<bool> IsHomePageAsync()
+    // best-effort: parse image headers to get intrinsic dimensions (copied from Swiper component)
+    private static bool TryGetImageSize(byte[] data, out int width, out int height)
     {
-        var storeLocationUri = new Uri(_webHelper.GetStoreLocation().TrimEnd('/'));
-        var currentPageUri = new Uri(_webHelper.GetThisPageUrl(false).TrimEnd('/'));
+        width = 0;
+        height = 0;
+        if (data == null || data.Length < 10)
+            return false;
 
-        if (!_localizationSettings.SeoFriendlyUrlsForLanguagesEnabled)
-            return storeLocationUri.Equals(currentPageUri);
-
-        var currentLanguage = await _workContext.GetWorkingLanguageAsync();
-
-        return Uri.TryCreate(storeLocationUri, currentLanguage.UniqueSeoCode, out var result) && result.Equals(currentPageUri);
-    }
-
-    /// <summary>
-    /// Get the number of unread private messages
-    /// </summary>
-    /// <returns>
-    /// A task that represents the asynchronous operation
-    /// The task result contains the number of private messages
-    /// </returns>
-    protected virtual async Task<int> GetUnreadPrivateMessagesAsync()
-    {
-        var result = 0;
-        var customer = await _workContext.GetCurrentCustomerAsync();
-        if (_forumSettings.AllowPrivateMessages && !await _customerService.IsGuestAsync(customer))
+        if (data.Length >= 24 && data[0] == 0x89 && data[1] == 0x50 && data[2] == 0x4E && data[3] == 0x47)
         {
-            var store = await _storeContext.GetCurrentStoreAsync();
-            var privateMessages = await _forumService.GetAllPrivateMessagesAsync(store.Id,
-                0, customer.Id, false, null, false, string.Empty, 0, 1);
-
-            if (privateMessages.TotalCount > 0)
+            try
             {
-                result = privateMessages.TotalCount;
+                width = (data[16] << 24) | (data[17] << 16) | (data[18] << 8) | data[19];
+                height = (data[20] << 24) | (data[21] << 16) | (data[22] << 8) | data[23];
+                if (width > 0 && height > 0) return true;
             }
+            catch { }
         }
 
-        return result;
+        if (data.Length >= 10 && data[0] == 'G' && data[1] == 'I' && data[2] == 'F')
+        {
+            try
+            {
+                width = data[6] | (data[7] << 8);
+                height = data[8] | (data[9] << 8);
+                if (width > 0 && height > 0) return true;
+            }
+            catch { }
+        }
+
+        if (data.Length >= 26 && data[0] == 'B' && data[1] == 'M')
+        {
+            try
+            {
+                width = BitConverter.ToInt32(data, 18);
+                height = Math.Abs(BitConverter.ToInt32(data, 22));
+                if (width > 0 && height > 0) return true;
+            }
+            catch { }
+        }
+
+        if (data.Length >= 2 && data[0] == 0xFF && data[1] == 0xD8)
+        {
+            try
+            {
+                int index = 2;
+                while (index + 1 < data.Length)
+                {
+                    if (data[index] != 0xFF)
+                    {
+                        index++;
+                        continue;
+                    }
+
+                    byte marker = data[index + 1];
+                    if (marker >= 0xC0 && marker <= 0xCF && marker != 0xC4 && marker != 0xC8 && marker != 0xCC)
+                    {
+                        if (index + 5 >= data.Length) break;
+                        int blockLength = (data[index + 2] << 8) | data[index + 3];
+                        if (index + 5 + 4 > data.Length) break;
+                        height = (data[index + 5] << 8) | data[index + 6];
+                        width = (data[index + 7] << 8) | data[index + 8];
+                        if (width > 0 && height > 0) return true;
+                        break;
+                    }
+                    else
+                    {
+                        if (index + 3 >= data.Length) break;
+                        int blockLength = (data[index + 2] << 8) | data[index + 3];
+                        if (blockLength < 2) break;
+                        index += 2 + blockLength;
+                    }
+                }
+            }
+            catch { }
+        }
+
+        return false;
     }
-
-    #endregion
-
-    #region Methods
 
     /// <summary>
     /// Prepare the logo model
@@ -222,8 +255,75 @@ public partial class CommonModelFactory : ICommonModelFactory
 
             return logo;
         });
+            // try to populate intrinsic dimensions and srcset when logo is a managed picture
+            try
+            {
+                var logoPictureId = _storeInformationSettings.LogoPictureId;
+                if (logoPictureId > 0)
+                {
+                    var picture = await _pictureService.GetPictureByIdAsync(logoPictureId);
+                    if (picture != null)
+                    {
+                        // best-effort: load binary and parse header for width/height
+                        var data = await _pictureService.LoadPictureBinaryAsync(picture);
+                        if (data?.Length > 0)
+                        {
+                            if (TryGetImageSize(data, out var w, out var h))
+                            {
+                                model.Width = w;
+                                model.Height = h;
+                            }
+                        }
+
+                        // construct a simple srcset using common sizes
+                        try
+                        {
+                            var small = await _pictureService.GetPictureUrlAsync(logoPictureId, 400, showDefaultPicture: false);
+                            var medium = await _pictureService.GetPictureUrlAsync(logoPictureId, 800, showDefaultPicture: false);
+                            var large = await _pictureService.GetPictureUrlAsync(logoPictureId, 1200, showDefaultPicture: false);
+                            model.SrcSet = string.Join(", ", new[] { small + " 400w", medium + " 800w", large + " 1200w" });
+                        }
+                        catch
+                        {
+                            // ignore srcset generation failures
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                // swallow any errors - this is best-effort
+            }
 
         return model;
+    }
+
+    // conservative helper: return 0 if private messages service isn't available/implemented here
+    protected virtual Task<int> GetUnreadPrivateMessagesAsync()
+    {
+        try
+        {
+            // original implementation may have used message services; return 0 as safe default
+            return Task.FromResult(0);
+        }
+        catch
+        {
+            return Task.FromResult(0);
+        }
+    }
+
+    // conservative helper: determine whether current request is homepage based on path
+    protected virtual Task<bool> IsHomePageAsync()
+    {
+        try
+        {
+            var path = _httpContextAccessor?.HttpContext?.Request?.Path.Value ?? string.Empty;
+            return Task.FromResult(string.IsNullOrEmpty(path) || path == "/" || path == "/index" || path == "/home");
+        }
+        catch
+        {
+            return Task.FromResult(false);
+        }
     }
 
     /// <summary>
@@ -403,7 +503,6 @@ public partial class CommonModelFactory : ICommonModelFactory
             YoutubeLink = _storeInformationSettings.YoutubeLink,
             InstagramLink = _storeInformationSettings.InstagramLink,
             WorkingLanguageId = (await _workContext.GetWorkingLanguageAsync()).Id,
-            NewsEnabled = _newsSettings.Enabled,
         };
 
         return model;

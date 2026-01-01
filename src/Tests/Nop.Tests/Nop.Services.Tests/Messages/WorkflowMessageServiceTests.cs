@@ -4,7 +4,6 @@ using Nop.Core.Domain.Catalog;
 using Nop.Core.Domain.Customers;
 using Nop.Core.Domain.Forums;
 using Nop.Core.Domain.Messages;
-using Nop.Core.Domain.News;
 using Nop.Core.Domain.Orders;
 using Nop.Core.Domain.Shipping;
 using Nop.Core.Domain.Vendors;
@@ -14,7 +13,6 @@ using Nop.Services.Catalog;
 using Nop.Services.Customers;
 using Nop.Services.Forums;
 using Nop.Services.Messages;
-using Nop.Services.News;
 using Nop.Services.Orders;
 using Nop.Services.Shipping;
 using Nop.Services.Vendors;
@@ -48,7 +46,6 @@ public class WorkflowMessageServiceTests : ServiceTest
     private ProductReview _productReview;
     private GiftCard _giftCard;
     private BlogComment _blogComment;
-    private NewsComment _newsComment;
     private BackInStockSubscription _backInStockSubscription;
     private readonly IForumService _forumService;
 
@@ -68,9 +65,9 @@ public class WorkflowMessageServiceTests : ServiceTest
         var vendorService = GetService<IVendorService>();
         var shipmentService = GetService<IShipmentService>();
         var productService = GetService<IProductService>();
+        var productReviewService = GetService<IProductReviewService>();
         var giftCardService = GetService<IGiftCardService>();
         var blogService = GetService<IBlogService>();
-        var newsService = GetService<INewsService>();
 
         _order = await orderService.GetOrderByIdAsync(1);
         _orderItem = (await orderService.GetOrderItemsAsync(1)).First();
@@ -95,7 +92,7 @@ public class WorkflowMessageServiceTests : ServiceTest
             Subject = string.Empty,
             Text = string.Empty
         };
-        _productReview = (await productService.GetAllProductReviewsAsync()).FirstOrDefault();
+        _productReview = (await productReviewService.GetAllProductReviewsAsync()).FirstOrDefault();
         _giftCard = await GetService<INopDataProvider>().InsertEntityAsync(new GiftCard
         {
             GiftCardType = GiftCardType.Virtual,
@@ -113,7 +110,6 @@ public class WorkflowMessageServiceTests : ServiceTest
         });
 
         _blogComment = await blogService.GetBlogCommentByIdAsync(1);
-        _newsComment = await newsService.GetNewsCommentByIdAsync(1);
         _backInStockSubscription = new BackInStockSubscription { ProductId = _product.Id, CustomerId = _customer.Id };
 
         _allMessageTemplates = await _messageTemplateService.GetAllMessageTemplatesAsync(0);
@@ -478,13 +474,6 @@ public class WorkflowMessageServiceTests : ServiceTest
     {
         await CheckData(async () =>
             await _workflowMessageService.SendBlogCommentStoreOwnerNotificationMessageAsync(_blogComment, 1));
-    }
-
-    [Test]
-    public async Task CanSendNewsCommentNotificationMessage()
-    {
-        await CheckData(async () =>
-            await _workflowMessageService.SendNewsCommentStoreOwnerNotificationMessageAsync(_newsComment, 1));
     }
 
     [Test]

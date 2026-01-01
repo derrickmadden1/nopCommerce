@@ -117,6 +117,11 @@ public partial class RouteProvider : BaseRouteProvider, IRouteProvider
             pattern: $"{lang}/search/",
             defaults: new { controller = "Catalog", action = "Search" });
 
+        //product search by filter level values
+        endpointRouteBuilder.MapControllerRoute(name: NopRouteNames.Standard.PRODUCT_SEARCH_BY_FILTER_LEVEL_VALUES,
+            pattern: $"{lang}/search-ymm/",
+            defaults: new { controller = "Catalog", action = "SearchByFilterLevelValues" });
+
         //autocomplete search term (AJAX)
         endpointRouteBuilder.MapControllerRoute(name: NopRouteNames.Ajax.PRODUCT_SEARCH_AUTOCOMPLETE,
             pattern: $"catalog/searchtermautocomplete",
@@ -156,11 +161,6 @@ public partial class RouteProvider : BaseRouteProvider, IRouteProvider
         endpointRouteBuilder.MapControllerRoute(name: NopRouteNames.General.BLOG,
             pattern: $"{lang}/blog",
             defaults: new { controller = "Blog", action = "List" });
-
-        //news
-        endpointRouteBuilder.MapControllerRoute(name: NopRouteNames.General.NEWS,
-            pattern: $"{lang}/news",
-            defaults: new { controller = "News", action = "List" });
 
         //forum
         endpointRouteBuilder.MapControllerRoute(name: NopRouteNames.General.BOARDS,
@@ -363,11 +363,6 @@ public partial class RouteProvider : BaseRouteProvider, IRouteProvider
             pattern: $"blog/rss/{{languageId:min(0)}}",
             defaults: new { controller = "Blog", action = "ListRss" });
 
-        //news RSS (file result)
-        endpointRouteBuilder.MapControllerRoute(name: NopRouteNames.Standard.NEWS_RSS,
-            pattern: $"news/rss/{{languageId:min(0)}}",
-            defaults: new { controller = "News", action = "ListRss" });
-
         //set review helpfulness (AJAX)
         endpointRouteBuilder.MapControllerRoute(name: NopRouteNames.Ajax.SET_PRODUCT_REVIEW_HELPFULNESS,
             pattern: $"setproductreviewhelpfulness",
@@ -537,6 +532,11 @@ public partial class RouteProvider : BaseRouteProvider, IRouteProvider
             pattern: $"country/getstatesbycountryid/",
             defaults: new { controller = "Country", action = "GetStatesByCountryId" });
 
+        //get filter level value list by parent ID (AJAX)
+        endpointRouteBuilder.MapControllerRoute(name: NopRouteNames.Ajax.GET_FILTER_LEVEL_VALUES,
+            pattern: $"catalog/getfilterlevelvalues/",
+            defaults: new { controller = "Catalog", action = "GetFilterLevelValues" });
+
         //EU Cookie law accept button handler (AJAX)
         endpointRouteBuilder.MapControllerRoute(name: NopRouteNames.Ajax.EU_COOKIE_LAW_ACCEPT,
             pattern: $"eucookielawaccept",
@@ -563,6 +563,10 @@ public partial class RouteProvider : BaseRouteProvider, IRouteProvider
         endpointRouteBuilder.MapControllerRoute(name: NopRouteNames.Ajax.SEARCH_PRODUCTS,
             pattern: "product/search",
             defaults: new { controller = "Catalog", action = "SearchProducts" });
+
+        endpointRouteBuilder.MapControllerRoute(name: NopRouteNames.Ajax.SEARCH_PRODUCTS_BY_FILTER_LEVEL_VALUES,
+            pattern: "product/searchbyflv",
+            defaults: new { controller = "Catalog", action = "SearchProductsByFilterLevelValues" });
 
         endpointRouteBuilder.MapControllerRoute(name: NopRouteNames.Ajax.GET_VENDOR_PRODUCTS,
             pattern: $"vendor/products",

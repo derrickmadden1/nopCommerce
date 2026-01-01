@@ -9,6 +9,7 @@ using Nop.Core.Domain.Configuration;
 using Nop.Core.Domain.Customers;
 using Nop.Core.Domain.Directory;
 using Nop.Core.Domain.Discounts;
+using Nop.Core.Domain.FilterLevels;
 using Nop.Core.Domain.Forums;
 using Nop.Core.Domain.Gdpr;
 using Nop.Core.Domain.Localization;
@@ -16,7 +17,6 @@ using Nop.Core.Domain.Logging;
 using Nop.Core.Domain.Media;
 using Nop.Core.Domain.Menus;
 using Nop.Core.Domain.Messages;
-using Nop.Core.Domain.News;
 using Nop.Core.Domain.Orders;
 using Nop.Core.Domain.Polls;
 using Nop.Core.Domain.ScheduleTasks;
@@ -52,7 +52,6 @@ using Nop.Web.Areas.Admin.Models.Logging;
 using Nop.Web.Areas.Admin.Models.Menus;
 using Nop.Web.Areas.Admin.Models.Messages;
 using Nop.Web.Areas.Admin.Models.MultiFactorAuthentication;
-using Nop.Web.Areas.Admin.Models.News;
 using Nop.Web.Areas.Admin.Models.Orders;
 using Nop.Web.Areas.Admin.Models.Payments;
 using Nop.Web.Areas.Admin.Models.Plugins;
@@ -94,12 +93,12 @@ public partial class AdminMapperConfiguration : Profile, IOrderedMapperProfile
         CreateDirectoryMaps();
         CreateDiscountsMaps();
         CreateForumsMaps();
+        CreateFilterLevelMaps();
         CreateGdprMaps();
         CreateLocalizationMaps();
         CreateLoggingMaps();
         CreateMediaMaps();
         CreateMessagesMaps();
-        CreateNewsMaps();
         CreateOrdersMaps();
         CreatePaymentsMaps();
         CreatePluginsMaps();
@@ -437,7 +436,7 @@ public partial class AdminMapperConfiguration : Profile, IOrderedMapperProfile
             .ForMember(settings => settings.UseLinksInRequiredProductWarnings, options => options.Ignore())
             .ForMember(settings => settings.UseStandardSearchWhenSearchProviderThrowsException, options => options.Ignore())
             .ForMember(settings => settings.ActiveSearchProviderSystemName, options => options.Ignore())
-            .ForMember(settings => settings.VendorProductReviewsPageSize, options => options.Ignore());
+            .ForMember(settings => settings.VendorProductReviewsPageSize, options => options.Ignore());        
 
         CreateMap<ProductCategory, CategoryProductModel>()
             .ForMember(model => model.ProductName, options => options.Ignore());
@@ -519,6 +518,7 @@ public partial class AdminMapperConfiguration : Profile, IOrderedMapperProfile
             .ForMember(model => model.BaseWeightIn, options => options.Ignore())
             .ForMember(model => model.CopyProductModel, options => options.Ignore())
             .ForMember(model => model.CrossSellProductSearchModel, options => options.Ignore())
+            .ForMember(model => model.FilterLevelValueSearchModel, options => options.Ignore())
             .ForMember(model => model.HasAvailableSpecificationAttributes, options => options.Ignore())
             .ForMember(model => model.IsLoggedInAsVendor, options => options.Ignore())
             .ForMember(model => model.LastStockQuantity, options => options.Ignore())
@@ -1075,6 +1075,32 @@ public partial class AdminMapperConfiguration : Profile, IOrderedMapperProfile
     }
 
     /// <summary>
+    /// Create filter level maps
+    /// </summary>
+    protected virtual void CreateFilterLevelMaps()
+    {
+        CreateMap<FilterLevelSettingsModel, FilterLevelSettings>()
+            .ForMember(settings => settings.FilterLevelEnumDisabled, options => options.Ignore());
+
+        CreateMap<FilterLevelSettings, FilterLevelSettingsModel>()
+            .ForMember(settings => settings.FilterLevelSearchModel, options => options.Ignore());
+
+        CreateMap<FilterLevelValueModel, FilterLevelValue>()
+            .ForMember(entity => entity.CreatedOnUtc, options => options.Ignore())
+            .ForMember(entity => entity.UpdatedOnUtc, options => options.Ignore());
+        CreateMap<FilterLevelValue, FilterLevelValueModel>()
+            .ForMember(model => model.FilterLevel1ValueEnabled, options => options.Ignore())
+            .ForMember(model => model.FilterLevel2ValueEnabled, options => options.Ignore())
+            .ForMember(model => model.FilterLevel3ValueEnabled, options => options.Ignore())
+            .ForMember(model => model.FilterLevelValueProductSearchModel, options => options.Ignore());
+
+        CreateMap<FilterLevelValueProductModel, FilterLevelValueProductMapping>();
+        CreateMap<FilterLevelValueProductMapping, FilterLevelValueProductModel>()
+            .ForMember(model => model.ProductName, options => options.Ignore());
+    }
+
+
+    /// <summary>
     /// Create GDPR maps 
     /// </summary>
     protected virtual void CreateGdprMaps()
@@ -1253,47 +1279,6 @@ public partial class AdminMapperConfiguration : Profile, IOrderedMapperProfile
             .ForMember(entity => entity.Priority, options => options.Ignore())
             .ForMember(entity => entity.PriorityId, options => options.Ignore())
             .ForMember(entity => entity.SentOnUtc, options => options.Ignore());
-    }
-
-    /// <summary>
-    /// Create news maps 
-    /// </summary>
-    protected virtual void CreateNewsMaps()
-    {
-        CreateMap<NewsComment, NewsCommentModel>()
-            .ForMember(model => model.CustomerInfo, options => options.Ignore())
-            .ForMember(model => model.CreatedOn, options => options.Ignore())
-            .ForMember(model => model.CommentText, options => options.Ignore())
-            .ForMember(model => model.NewsItemTitle, options => options.Ignore())
-            .ForMember(model => model.StoreName, options => options.Ignore());
-        CreateMap<NewsCommentModel, NewsComment>()
-            .ForMember(entity => entity.CommentTitle, options => options.Ignore())
-            .ForMember(entity => entity.CommentText, options => options.Ignore())
-            .ForMember(entity => entity.CreatedOnUtc, options => options.Ignore())
-            .ForMember(entity => entity.NewsItemId, options => options.Ignore())
-            .ForMember(entity => entity.CustomerId, options => options.Ignore())
-            .ForMember(entity => entity.StoreId, options => options.Ignore());
-
-        CreateMap<NewsItem, NewsItemModel>()
-            .ForMember(model => model.ApprovedComments, options => options.Ignore())
-            .ForMember(model => model.AvailableLanguages, options => options.Ignore())
-            .ForMember(model => model.CreatedOn, options => options.Ignore())
-            .ForMember(model => model.LanguageName, options => options.Ignore())
-            .ForMember(model => model.NotApprovedComments, options => options.Ignore())
-            .ForMember(model => model.SeName, options => options.Ignore());
-        CreateMap<NewsItemModel, NewsItem>()
-            .ForMember(entity => entity.CreatedOnUtc, options => options.Ignore());
-
-        CreateMap<NewsSettings, NewsSettingsModel>()
-            .ForMember(model => model.AllowNotRegisteredUsersToLeaveComments_OverrideForStore, options => options.Ignore())
-            .ForMember(model => model.Enabled_OverrideForStore, options => options.Ignore())
-            .ForMember(model => model.MainPageNewsCount_OverrideForStore, options => options.Ignore())
-            .ForMember(model => model.NewsArchivePageSize_OverrideForStore, options => options.Ignore())
-            .ForMember(model => model.NewsCommentsMustBeApproved_OverrideForStore, options => options.Ignore())
-            .ForMember(model => model.NotifyAboutNewNewsComments_OverrideForStore, options => options.Ignore())
-            .ForMember(model => model.ShowHeaderRssUrl_OverrideForStore, options => options.Ignore())
-            .ForMember(model => model.ShowNewsOnMainPage_OverrideForStore, options => options.Ignore());
-        CreateMap<NewsSettingsModel, NewsSettings>();
     }
 
     /// <summary>
@@ -1532,7 +1517,6 @@ public partial class AdminMapperConfiguration : Profile, IOrderedMapperProfile
             .ForMember(model => model.ShowOnEmailProductToFriendPage_OverrideForStore, options => options.Ignore())
             .ForMember(model => model.ShowOnEmailWishlistToFriendPage_OverrideForStore, options => options.Ignore())
             .ForMember(model => model.ShowOnLoginPage_OverrideForStore, options => options.Ignore())
-            .ForMember(model => model.ShowOnNewsCommentPage_OverrideForStore, options => options.Ignore())
             .ForMember(model => model.ShowOnNewsLetterPage_OverrideForStore, options => options.Ignore())
             .ForMember(model => model.ShowOnProductReviewPage_OverrideForStore, options => options.Ignore())
             .ForMember(model => model.ShowOnRegistrationPage_OverrideForStore, options => options.Ignore())

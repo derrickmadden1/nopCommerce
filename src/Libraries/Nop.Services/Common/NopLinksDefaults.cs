@@ -87,6 +87,11 @@ public static partial class NopLinksDefaults
         public static string Categories => "https://docs.nopcommerce.com/running-your-store/catalog/categories.html";
 
         /// <summary>
+        /// Gets a URL of the Filter level values docs page
+        /// </summary>
+        public static string FilterLevels => "https://docs.nopcommerce.com/running-your-store/catalog/ymm.html";
+
+        /// <summary>
         /// Gets a URL of the manufacturers docs page
         /// </summary>
         public static string Manufacturers => "https://docs.nopcommerce.com/running-your-store/catalog/manufacturers.html";
@@ -210,11 +215,6 @@ public static partial class NopLinksDefaults
         /// Gets a URL of the message templates docs page
         /// </summary>
         public static string MessageTemplates => "https://docs.nopcommerce.com/running-your-store/content-management/message-templates.html";
-
-        /// <summary>
-        /// Gets a URL of the news docs page
-        /// </summary>
-        public static string News => "https://docs.nopcommerce.com/running-your-store/content-management/news.html";
 
         /// <summary>
         /// Gets a URL of the blog docs page

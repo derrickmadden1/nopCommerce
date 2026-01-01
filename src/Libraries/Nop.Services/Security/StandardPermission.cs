@@ -64,6 +64,9 @@ public partial class StandardPermission
         public const string PRODUCT_REVIEWS_CREATE_EDIT_DELETE = $"{nameof(Catalog)}.ProductReviewsCreateEditDelete";
         public const string PRODUCT_TAGS_VIEW = $"{nameof(Catalog)}.ProductTagsView";
         public const string PRODUCT_TAGS_CREATE_EDIT_DELETE = $"{nameof(Catalog)}.ProductTagsCreateEditDelete";
+        public const string FILTER_LEVEL_VALUE_VIEW = $"{nameof(Catalog)}.FilterLevelValueView";
+        public const string FILTER_LEVEL_VALUE_CREATE_EDIT_DELETE = $"{nameof(Catalog)}.FilterLevelValueCreateEditDelete";
+        public const string FILTER_LEVEL_VALUE_IMPORT_EXPORT = $"{nameof(Catalog)}.FilterLevelValueImportExport";
         public const string PRODUCT_ATTRIBUTES_VIEW = $"{nameof(Catalog)}.ProductAttributesView";
         public const string PRODUCT_ATTRIBUTES_CREATE_EDIT_DELETE = $"{nameof(Catalog)}.ProductAttributesCreateEditDelete";
         public const string SPECIFICATION_ATTRIBUTES_VIEW = $"{nameof(Catalog)}.SpecificationAttributesView";
@@ -95,10 +98,6 @@ public partial class StandardPermission
         public const string TOPICS_CREATE_EDIT_DELETE = $"{nameof(ContentManagement)}.TopicsCreateEditDelete";
         public const string MESSAGE_TEMPLATES_VIEW = $"{nameof(ContentManagement)}.MessageTemplatesView";
         public const string MESSAGE_TEMPLATES_CREATE_EDIT_DELETE = $"{nameof(ContentManagement)}.MessageTemplatesCreateEditDelete";
-        public const string NEWS_VIEW = $"{nameof(ContentManagement)}.NewsView";
-        public const string NEWS_CREATE_EDIT_DELETE = $"{nameof(ContentManagement)}.NewsCreateEditDelete";
-        public const string NEWS_COMMENTS_VIEW = $"{nameof(ContentManagement)}.NewsCommentsView";
-        public const string NEWS_COMMENTS_CREATE_EDIT_DELETE = $"{nameof(ContentManagement)}.NewsCommentsCreateEditDelete";
         public const string BLOG_VIEW = $"{nameof(ContentManagement)}.BlogView";
         public const string BLOG_CREATE_EDIT_DELETE = $"{nameof(ContentManagement)}.BlogCreateEditDelete";
         public const string BLOG_COMMENTS_VIEW = $"{nameof(ContentManagement)}.BlogCommentsView";

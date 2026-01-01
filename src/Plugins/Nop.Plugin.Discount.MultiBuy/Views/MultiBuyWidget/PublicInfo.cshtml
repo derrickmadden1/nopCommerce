@@ -1,0 +1,58 @@
+@model Nop.Plugin.DiscountRules.MultiBuy.Models.MultiBuyWidgetModel
+@{ 
+    Layout = "";
+}
+
+@if (!string.IsNullOrEmpty(Model.Message))
+{
+    if (Model.IsCatalogPage)
+    {
+        <div class="multibuy-badge" style="color: #155724; background-color: #d4edda; border: 1px solid #c3e6cb; border-radius: 4px; padding: 2px 5px; font-size: 0.8em; margin-bottom: 5px; text-align: center; display: inline-block;">
+            @Model.Message
+        </div>
+    }
+    else
+    {
+        var alertClass = Model.IsProductPage ? "alert-success" : "alert-info";
+        <div class="alert @alertClass" role="alert" style="margin-top: 10px; margin-bottom: 10px; text-align: center; font-weight: bold; background-color: @(Model.IsProductPage ? "#d4edda" : "#cce5ff"); color: @(Model.IsProductPage ? "#155724" : "#004085"); border-color: @(Model.IsProductPage ? "#c3e6cb" : "#b8daff"); padding: .75rem 1.25rem;">
+            @Model.Message
+        </div>
+    }
+}
+
+@if (!string.IsNullOrEmpty(Model.TotalSavings))
+{
+    <div class="alert alert-success" role="alert" style="margin-top: 10px; margin-bottom: 5px; text-align: center; font-weight: bold; background-color: #d4edda; color: #155724; border-color: #c3e6cb; padding: .75rem 1.25rem;">
+        MultiBuy Savings: @Model.TotalSavings
+    </div>
+}
+
+@if (Model.ItemMessages != null && Model.ItemMessages.Count > 0)
+{
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            var itemMessages = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.ItemMessages));
+            for (var itemId in itemMessages) {
+                if (itemMessages.hasOwnProperty(itemId)) {
+                    // Try to find row by item id input
+                    var quantityInput = document.querySelector('input[name="itemquantity' + itemId + '"]');
+                    if (quantityInput) {
+                        var row = quantityInput.closest('tr');
+                        if (row) {
+                             var productCol = row.querySelector('.product');
+                             if (productCol) {
+                                 var msgDiv = document.createElement('div');
+                                 msgDiv.className = 'multibuy-item-msg';
+                                 msgDiv.style.color = '#28a745';
+                                 msgDiv.style.fontWeight = 'bold';
+                                 msgDiv.style.marginTop = '5px';
+                                 msgDiv.innerText = itemMessages[itemId];
+                                 productCol.appendChild(msgDiv);
+                             }
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+}

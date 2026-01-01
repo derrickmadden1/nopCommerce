@@ -19,12 +19,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="logo.jpg" />
+    <None Remove="logo.png" />
     <None Remove="plugin.json" />
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="logo.jpg">
+    <Content Include="logo.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="plugin.json">
@@ -33,7 +33,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Libraries\Nop.Services\Nop.Services.csproj" />
+    <ProjectReference Include="..\..\Presentation\Nop.Web.Framework\Nop.Web.Framework.csproj" />
     <ClearPluginAssemblies Include="$(SolutionDir)\Build\ClearPluginAssemblies.proj" />
   </ItemGroup>
 

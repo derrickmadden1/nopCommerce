@@ -9,11 +9,11 @@ using Nop.Core.Domain.Blogs;
 using Nop.Core.Domain.Catalog;
 using Nop.Core.Domain.Common;
 using Nop.Core.Domain.Customers;
+using Nop.Core.Domain.FilterLevels;
 using Nop.Core.Domain.Forums;
 using Nop.Core.Domain.Gdpr;
 using Nop.Core.Domain.Localization;
 using Nop.Core.Domain.Media;
-using Nop.Core.Domain.News;
 using Nop.Core.Domain.Orders;
 using Nop.Core.Domain.Security;
 using Nop.Core.Domain.Seo;
@@ -134,6 +134,24 @@ public partial class SettingController : BaseAdminController
     #endregion
 
     #region Utilities
+
+    protected virtual async Task UpdateFilterLevelLocalesAsync(FilterLevelEnum filterLevel, FilterLevelModel model)
+    {
+        foreach (var localized in model.Locales)
+        {
+            await _localizationService.AddOrUpdateLocaleResourceAsync(new Dictionary<string, string>
+            {
+                [$"Enums.Nop.Core.Domain.FilterLevels.FilterLevelEnum.{filterLevel}"] = localized?.Name ?? ""
+            }, localized.LanguageId);
+        }
+        if (!model.Locales.Any())
+        {
+            await _localizationService.AddOrUpdateLocaleResourceAsync(new Dictionary<string, string>
+            {
+                [$"Enums.Nop.Core.Domain.FilterLevels.FilterLevelEnum.{filterLevel}"] = model.Name
+            });
+        }
+    }
 
     protected virtual async Task UpdateGdprConsentLocalesAsync(GdprConsent gdprConsent, GdprConsentModel model)
     {
@@ -386,57 +404,6 @@ public partial class SettingController : BaseAdminController
 
         //prepare model
         model = await _settingModelFactory.PrepareForumSettingsModelAsync(model);
-
-        //if we got this far, something failed, redisplay form
-        return View(model);
-    }
-
-    [CheckPermission(StandardPermission.Configuration.MANAGE_SETTINGS)]
-    public virtual async Task<IActionResult> News()
-    {
-        //prepare model
-        var model = await _settingModelFactory.PrepareNewsSettingsModelAsync();
-
-        return View(model);
-    }
-
-    [HttpPost]
-    [CheckPermission(StandardPermission.Configuration.MANAGE_SETTINGS)]
-    public virtual async Task<IActionResult> News(NewsSettingsModel model)
-    {
-        if (ModelState.IsValid)
-        {
-            //load settings for a chosen store scope
-            var storeScope = await _storeContext.GetActiveStoreScopeConfigurationAsync();
-            var newsSettings = await _settingService.LoadSettingAsync<NewsSettings>(storeScope);
-            newsSettings = model.ToSettings(newsSettings);
-
-            //we do not clear cache after each setting update.
-            //this behavior can increase performance because cached settings will not be cleared 
-            //and loaded from database after each update
-            await _settingService.SaveSettingOverridablePerStoreAsync(newsSettings, x => x.Enabled, model.Enabled_OverrideForStore, storeScope, false);
-            await _settingService.SaveSettingOverridablePerStoreAsync(newsSettings, x => x.AllowNotRegisteredUsersToLeaveComments, model.AllowNotRegisteredUsersToLeaveComments_OverrideForStore, storeScope, false);
-            await _settingService.SaveSettingOverridablePerStoreAsync(newsSettings, x => x.NotifyAboutNewNewsComments, model.NotifyAboutNewNewsComments_OverrideForStore, storeScope, false);
-            await _settingService.SaveSettingOverridablePerStoreAsync(newsSettings, x => x.ShowNewsOnMainPage, model.ShowNewsOnMainPage_OverrideForStore, storeScope, false);
-            await _settingService.SaveSettingOverridablePerStoreAsync(newsSettings, x => x.MainPageNewsCount, model.MainPageNewsCount_OverrideForStore, storeScope, false);
-            await _settingService.SaveSettingOverridablePerStoreAsync(newsSettings, x => x.NewsArchivePageSize, model.NewsArchivePageSize_OverrideForStore, storeScope, false);
-            await _settingService.SaveSettingOverridablePerStoreAsync(newsSettings, x => x.ShowHeaderRssUrl, model.ShowHeaderRssUrl_OverrideForStore, storeScope, false);
-            await _settingService.SaveSettingOverridablePerStoreAsync(newsSettings, x => x.NewsCommentsMustBeApproved, model.NewsCommentsMustBeApproved_OverrideForStore, storeScope, false);
-            await _settingService.SaveSettingAsync(newsSettings, x => x.ShowNewsCommentsPerStore, clearCache: false);
-
-            //now clear settings cache
-            await _settingService.ClearCacheAsync();
-
-            //activity log
-            await _customerActivityService.InsertActivityAsync("EditSettings", await _localizationService.GetResourceAsync("ActivityLog.EditSettings"));
-
-            _notificationService.SuccessNotification(await _localizationService.GetResourceAsync("Admin.Configuration.Updated"));
-
-            return RedirectToAction("News");
-        }
-
-        //prepare model
-        model = await _settingModelFactory.PrepareNewsSettingsModelAsync(model);
 
         //if we got this far, something failed, redisplay form
         return View(model);
@@ -762,6 +729,7 @@ public partial class SettingController : BaseAdminController
             artificialIntelligenceSettings.MetaKeywordsQuery = model.ArtificialIntelligenceSettingsModel.MetaKeywordsQuery;
             artificialIntelligenceSettings.AllowMetaDescriptionGeneration = model.ArtificialIntelligenceSettingsModel.AllowMetaDescriptionGeneration;
             artificialIntelligenceSettings.MetaDescriptionQuery = model.ArtificialIntelligenceSettingsModel.MetaDescriptionQuery;
+            artificialIntelligenceSettings.LogRequests = model.ArtificialIntelligenceSettingsModel.LogRequests;
 
             await _settingService.SaveSettingAsync(artificialIntelligenceSettings);
 
@@ -782,6 +750,139 @@ public partial class SettingController : BaseAdminController
         //if we got this far, something failed, redisplay form
         return View(model);
     }
+
+    #region FilterLevel
+
+    [CheckPermission(StandardPermission.Configuration.MANAGE_SETTINGS)]
+    public virtual async Task<IActionResult> FilterLevel()
+    {
+        //prepare model
+        var model = await _settingModelFactory.PrepareFilterLevelSettingsModelAsync();
+
+        return View(model);
+    }
+
+    [HttpPost]
+    [CheckPermission(StandardPermission.Configuration.MANAGE_SETTINGS)]
+    public virtual async Task<IActionResult> FilterLevel(FilterLevelSettingsModel model)
+    {
+        if (ModelState.IsValid)
+        {
+            var filterLevelSettings = await _settingService.LoadSettingAsync<FilterLevelSettings>();
+
+            filterLevelSettings = model.ToSettings(filterLevelSettings);
+
+            await _settingService.SaveSettingAsync(filterLevelSettings, x => x.FilterLevelEnabled, 0, false);
+            await _settingService.SaveSettingAsync(filterLevelSettings, x => x.DisplayOnHomePage, 0, false);
+            await _settingService.SaveSettingAsync(filterLevelSettings, x => x.DisplayOnProductDetailsPage, 0, false);
+
+            //now clear settings cache
+            await _settingService.ClearCacheAsync();
+
+            //activity log
+            await _customerActivityService.InsertActivityAsync("EditSettings", await _localizationService.GetResourceAsync("ActivityLog.EditSettings"));
+
+            _notificationService.SuccessNotification(await _localizationService.GetResourceAsync("Admin.Configuration.Updated"));
+
+            return RedirectToAction("FilterLevel");
+        }
+
+        //prepare model
+        model = await _settingModelFactory.PrepareFilterLevelSettingsModelAsync(model);
+
+        //if we got this far, something failed, redisplay form
+        return View(model);
+    }
+
+    [HttpPost]
+    [CheckPermission(StandardPermission.Configuration.MANAGE_SETTINGS)]
+    public virtual async Task<IActionResult> FilterLevelList(FilterLevelSearchModel searchModel)
+    {
+        //prepare model
+        var model = await _settingModelFactory.PrepareFilterLevelListModelAsync(searchModel);
+
+        return Json(model);
+    }
+
+    [CheckPermission(StandardPermission.Configuration.MANAGE_SETTINGS)]
+    public virtual async Task<IActionResult> EditFilterLevel(int id)
+    {
+        //prepare model
+        var model = await _settingModelFactory.PrepareFilterLevelModelAsync(null, (FilterLevelEnum)id);
+
+        return View(model);
+    }
+
+    [HttpPost, ParameterBasedOnFormName("save-continue", "continueEditing")]
+    [CheckPermission(StandardPermission.Configuration.MANAGE_SETTINGS)]
+    public virtual async Task<IActionResult> EditFilterLevel(FilterLevelModel model, bool continueEditing)
+    {
+        if (ModelState.IsValid)
+        {
+            var filterLevelSettings = await _settingService.LoadSettingAsync<FilterLevelSettings>();
+            var filterLevelEnumDisabled = filterLevelSettings.FilterLevelEnumDisabled;
+            var filterLevel = (FilterLevelEnum)model.Id;
+
+            if (model.Enabled && filterLevelEnumDisabled.Contains(model.Id))
+            {
+                var parentLevels = Enum.GetValues<FilterLevelEnum>()
+                    .Where(fl => (int)fl < (int)filterLevel && fl != filterLevel);
+
+                if (parentLevels.Any())
+                {
+                    var hasDisabledParent = parentLevels.Any(childLevel => filterLevelEnumDisabled.Contains((int)childLevel));
+
+                    if (hasDisabledParent)
+                    {
+                        _notificationService.ErrorNotification(await _localizationService.GetResourceAsync("Admin.Configuration.Settings.FilterLevel.CannotEnableChild"));
+                        return RedirectToAction("EditFilterLevel", new { id = model.Id });
+                    }
+                }
+
+                filterLevelEnumDisabled.Remove(model.Id);
+            }
+
+            if (!model.Enabled && !filterLevelEnumDisabled.Contains(model.Id))
+            {
+                // Check if this is a parent level and any child levels are enabled
+                var childLevels = Enum.GetValues<FilterLevelEnum>()
+                    .Where(fl => (int)fl > (int)filterLevel && fl != filterLevel);
+
+                if (childLevels.Any())
+                {
+                    var hasEnabledChildren = childLevels.Any(childLevel => !filterLevelEnumDisabled.Contains((int)childLevel));
+
+                    if (hasEnabledChildren)
+                    {
+                        _notificationService.ErrorNotification(await _localizationService.GetResourceAsync("Admin.Configuration.Settings.FilterLevel.CannotDisableParent"));
+                        return RedirectToAction("EditFilterLevel", new { id = model.Id });
+                    }
+                }
+
+                filterLevelEnumDisabled.Add(model.Id);
+            }
+
+            await _settingService.SaveSettingAsync(filterLevelSettings, x => x.FilterLevelEnumDisabled, 0, false);
+
+            //now clear settings cache
+            await _settingService.ClearCacheAsync();
+
+            //locales                
+            await UpdateFilterLevelLocalesAsync((FilterLevelEnum)model.Id, model);
+
+            _notificationService.SuccessNotification(await _localizationService.GetResourceAsync("Admin.Configuration.Settings.FilterLevel.Updated"));
+
+            return continueEditing ? RedirectToAction("EditFilterLevel", model.Id) : RedirectToAction("FilterLevel");
+        }
+
+        //prepare model
+        model = await _settingModelFactory.PrepareFilterLevelModelAsync(model, (FilterLevelEnum)model.Id, true);
+
+        //if we got this far, something failed, redisplay form
+        return View(model);
+    }
+
+    #endregion
 
     [HttpPost]
     [CheckPermission(StandardPermission.Configuration.MANAGE_SETTINGS)]
@@ -1446,7 +1547,6 @@ public partial class SettingController : BaseAdminController
             sitemapSettings.SitemapIncludeProducts = model.SitemapSettings.SitemapIncludeProducts;
             sitemapSettings.SitemapIncludeProductTags = model.SitemapSettings.SitemapIncludeProductTags;
             sitemapSettings.SitemapIncludeBlogPosts = model.SitemapSettings.SitemapIncludeBlogPosts;
-            sitemapSettings.SitemapIncludeNews = model.SitemapSettings.SitemapIncludeNews;
             sitemapSettings.SitemapIncludeTopics = model.SitemapSettings.SitemapIncludeTopics;
 
             //minification
@@ -1479,7 +1579,6 @@ public partial class SettingController : BaseAdminController
             await _settingService.SaveSettingOverridablePerStoreAsync(sitemapSettings, x => x.SitemapIncludeProducts, model.SitemapSettings.SitemapIncludeProducts_OverrideForStore, storeScope, false);
             await _settingService.SaveSettingOverridablePerStoreAsync(sitemapSettings, x => x.SitemapIncludeProductTags, model.SitemapSettings.SitemapIncludeProductTags_OverrideForStore, storeScope, false);
             await _settingService.SaveSettingOverridablePerStoreAsync(sitemapSettings, x => x.SitemapIncludeBlogPosts, model.SitemapSettings.SitemapIncludeBlogPosts_OverrideForStore, storeScope, false);
-            await _settingService.SaveSettingOverridablePerStoreAsync(sitemapSettings, x => x.SitemapIncludeNews, model.SitemapSettings.SitemapIncludeNews_OverrideForStore, storeScope, false);
             await _settingService.SaveSettingOverridablePerStoreAsync(sitemapSettings, x => x.SitemapIncludeTopics, model.SitemapSettings.SitemapIncludeTopics_OverrideForStore, storeScope, false);
             await _settingService.SaveSettingOverridablePerStoreAsync(commonSettings, x => x.EnableHtmlMinification, model.MinificationSettings.EnableHtmlMinification_OverrideForStore, storeScope, false);
             await _settingService.SaveSettingOverridablePerStoreAsync(commonSettings, x => x.UseResponseCompression, model.MinificationSettings.UseResponseCompression_OverrideForStore, storeScope, false);
@@ -1560,7 +1659,6 @@ public partial class SettingController : BaseAdminController
             captchaSettings.ShowOnEmailWishlistToFriendPage = model.CaptchaSettings.ShowOnEmailWishlistToFriendPage;
             captchaSettings.ShowOnEmailProductToFriendPage = model.CaptchaSettings.ShowOnEmailProductToFriendPage;
             captchaSettings.ShowOnBlogCommentPage = model.CaptchaSettings.ShowOnBlogCommentPage;
-            captchaSettings.ShowOnNewsCommentPage = model.CaptchaSettings.ShowOnNewsCommentPage;
             captchaSettings.ShowOnNewsletterPage = model.CaptchaSettings.ShowOnNewsLetterPage;
             captchaSettings.ShowOnProductReviewPage = model.CaptchaSettings.ShowOnProductReviewPage;
             captchaSettings.ShowOnForgotPasswordPage = model.CaptchaSettings.ShowOnForgotPasswordPage;
@@ -1583,7 +1681,6 @@ public partial class SettingController : BaseAdminController
             await _settingService.SaveSettingOverridablePerStoreAsync(captchaSettings, x => x.ShowOnEmailWishlistToFriendPage, model.CaptchaSettings.ShowOnEmailWishlistToFriendPage_OverrideForStore, storeScope, false);
             await _settingService.SaveSettingOverridablePerStoreAsync(captchaSettings, x => x.ShowOnEmailProductToFriendPage, model.CaptchaSettings.ShowOnEmailProductToFriendPage_OverrideForStore, storeScope, false);
             await _settingService.SaveSettingOverridablePerStoreAsync(captchaSettings, x => x.ShowOnBlogCommentPage, model.CaptchaSettings.ShowOnBlogCommentPage_OverrideForStore, storeScope, false);
-            await _settingService.SaveSettingOverridablePerStoreAsync(captchaSettings, x => x.ShowOnNewsCommentPage, model.CaptchaSettings.ShowOnNewsCommentPage_OverrideForStore, storeScope, false);
             await _settingService.SaveSettingOverridablePerStoreAsync(captchaSettings, x => x.ShowOnNewsletterPage, model.CaptchaSettings.ShowOnNewsLetterPage_OverrideForStore, storeScope, false);
             await _settingService.SaveSettingOverridablePerStoreAsync(captchaSettings, x => x.ShowOnProductReviewPage, model.CaptchaSettings.ShowOnProductReviewPage_OverrideForStore, storeScope, false);
             await _settingService.SaveSettingOverridablePerStoreAsync(captchaSettings, x => x.ShowOnApplyVendorPage, model.CaptchaSettings.ShowOnApplyVendorPage_OverrideForStore, storeScope, false);

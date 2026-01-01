@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.AspNetCore.Routing;
 using Nop.Core;
+using Nop.Core.Domain.FilterLevels;
 using Nop.Core.Events;
 using Nop.Services.Localization;
 using Nop.Services.Plugins;
@@ -21,6 +22,7 @@ public partial class AdminMenu : IAdminMenu
     protected AdminMenuItem _baseRootMenuItem;
     protected AdminMenuItem _rootItem;
 
+    protected readonly FilterLevelSettings _filterLevelSettings;
     protected readonly IActionContextAccessor _actionContextAccessor;
     protected readonly IEventPublisher _eventPublisher;
     protected readonly ILocalizationService _localizationService;
@@ -38,7 +40,8 @@ public partial class AdminMenu : IAdminMenu
     /// <summary>
     /// Ctor
     /// </summary>
-    public AdminMenu(IActionContextAccessor actionContextAccessor,
+    public AdminMenu(FilterLevelSettings filterLevelSettings,
+        IActionContextAccessor actionContextAccessor,
         IEventPublisher eventPublisher,
         ILocalizationService localizationService,
         IPermissionService permissionService,
@@ -48,6 +51,7 @@ public partial class AdminMenu : IAdminMenu
         IUrlHelperFactory urlHelperFactory,
         IWorkContext workContext)
     {
+        _filterLevelSettings = filterLevelSettings;
         _actionContextAccessor = actionContextAccessor;
         _eventPublisher = eventPublisher;
         _localizationService = localizationService;
@@ -131,6 +135,15 @@ public partial class AdminMenu : IAdminMenu
                             Title = await _localizationService.GetResourceAsync("Admin.Catalog.ProductTags"),
                             PermissionNames = new List<string> { StandardPermission.Catalog.PRODUCT_TAGS_VIEW },
                             Url = GetMenuItemUrl("Product", "ProductTags"),
+                            IconClass = "far fa-dot-circle"
+                        },
+                        new()
+                        {
+                            SystemName = "Filter level values",
+                            Title = await _localizationService.GetResourceAsync("Admin.Catalog.FilterLevelValues"),
+                            PermissionNames = new List<string> { StandardPermission.Catalog.FILTER_LEVEL_VALUE_VIEW },
+                            Url = GetMenuItemUrl("FilterLevelValue", "List"),
+                            Visible = _filterLevelSettings.FilterLevelEnabled,
                             IconClass = "far fa-dot-circle"
                         },
                         new()
@@ -380,27 +393,6 @@ public partial class AdminMenu : IAdminMenu
                         },
                         new()
                         {
-                            SystemName = "News items",
-                            Title = await _localizationService.GetResourceAsync("Admin.ContentManagement.News.NewsItems"),
-                            PermissionNames =
-                                new List<string> { StandardPermission.ContentManagement.NEWS_VIEW },
-                            Url = GetMenuItemUrl("News", "NewsItems"),
-                            IconClass = "far fa-dot-circle"
-                        },
-                        new()
-                        {
-                            SystemName = "News comments",
-                            Title = await _localizationService.GetResourceAsync("Admin.ContentManagement.News.Comments"),
-                            PermissionNames =
-                                new List<string>
-                                {
-                                    StandardPermission.ContentManagement.NEWS_COMMENTS_VIEW
-                                },
-                            Url = GetMenuItemUrl("News", "NewsComments"),
-                            IconClass = "far fa-dot-circle"
-                        },
-                        new()
-                        {
                             SystemName = "Blog posts",
                             Title = await _localizationService.GetResourceAsync("Admin.ContentManagement.Blog.BlogPosts"),
                             PermissionNames = new List<string> { StandardPermission.ContentManagement.BLOG_VIEW },
@@ -497,6 +489,13 @@ public partial class AdminMenu : IAdminMenu
                                 },
                                 new()
                                 {
+                                    SystemName = "Filter (YMM) settings",
+                                    Title = await _localizationService.GetResourceAsync("Admin.Configuration.Settings.FilterLevel"),
+                                    Url = GetMenuItemUrl("Setting", "FilterLevel"),
+                                    IconClass = "far fa-circle"
+                                },
+                                new()
+                                {
                                     SystemName = "Shopping cart settings",
                                     Title = await _localizationService.GetResourceAsync("Admin.Configuration.Settings.ShoppingCart"),
                                     Url = GetMenuItemUrl("Setting", "ShoppingCart"),
@@ -528,13 +527,6 @@ public partial class AdminMenu : IAdminMenu
                                     SystemName = "Blog settings",
                                     Title = await _localizationService.GetResourceAsync("Admin.Configuration.Settings.Blog"),
                                     Url = GetMenuItemUrl("Setting", "Blog"),
-                                    IconClass = "far fa-circle"
-                                },
-                                new()
-                                {
-                                    SystemName = "News settings",
-                                    Title = await _localizationService.GetResourceAsync("Admin.Configuration.Settings.News"),
-                                    Url = GetMenuItemUrl("Setting", "News"),
                                     IconClass = "far fa-circle"
                                 },
                                 new()

@@ -14,6 +14,7 @@ using Nop.Services.Catalog;
 using Nop.Services.Common;
 using Nop.Services.Customers;
 using Nop.Services.Directory;
+using Nop.Services.FilterLevels;
 using Nop.Services.Localization;
 using Nop.Services.Media;
 using Nop.Services.Seo;
@@ -38,6 +39,7 @@ public partial class CatalogModelFactory : ICatalogModelFactory
     protected readonly ICurrencyService _currencyService;
     protected readonly ICustomerService _customerService;
     protected readonly IEventPublisher _eventPublisher;
+    protected readonly IFilterLevelValueService _filterLevelValueService;
     protected readonly IGenericAttributeService _genericAttributeService;
     protected readonly IHttpContextAccessor _httpContextAccessor;
     protected readonly IJsonLdModelFactory _jsonLdModelFactory;
@@ -47,6 +49,7 @@ public partial class CatalogModelFactory : ICatalogModelFactory
     protected readonly INopUrlHelper _nopUrlHelper;
     protected readonly IPictureService _pictureService;
     protected readonly IProductModelFactory _productModelFactory;
+    protected readonly IProductReviewService _productReviewService;
     protected readonly IProductService _productService;
     protected readonly IProductTagService _productTagService;
     protected readonly ISearchTermService _searchTermService;
@@ -74,6 +77,7 @@ public partial class CatalogModelFactory : ICatalogModelFactory
         ICurrencyService currencyService,
         ICustomerService customerService,
         IEventPublisher eventPublisher,
+        IFilterLevelValueService filterLevelValueService,
         IGenericAttributeService genericAttributeService,
         IHttpContextAccessor httpContextAccessor,
         IJsonLdModelFactory jsonLdModelFactory,
@@ -83,6 +87,7 @@ public partial class CatalogModelFactory : ICatalogModelFactory
         INopUrlHelper nopUrlHelper,
         IPictureService pictureService,
         IProductModelFactory productModelFactory,
+        IProductReviewService productReviewService,
         IProductService productService,
         IProductTagService productTagService,
         ISearchTermService searchTermService,
@@ -105,6 +110,7 @@ public partial class CatalogModelFactory : ICatalogModelFactory
         _currencyService = currencyService;
         _customerService = customerService;
         _eventPublisher = eventPublisher;
+        _filterLevelValueService = filterLevelValueService;
         _genericAttributeService = genericAttributeService;
         _httpContextAccessor = httpContextAccessor;
         _jsonLdModelFactory = jsonLdModelFactory;
@@ -114,6 +120,7 @@ public partial class CatalogModelFactory : ICatalogModelFactory
         _nopUrlHelper = nopUrlHelper;
         _pictureService = pictureService;
         _productModelFactory = productModelFactory;
+        _productReviewService = productReviewService;
         _productService = productService;
         _productTagService = productTagService;
         _searchTermService = searchTermService;
@@ -444,6 +451,82 @@ public partial class CatalogModelFactory : ICatalogModelFactory
         });
     }
 
+    /// <summary>
+    /// Prepare category (simple) models
+    /// </summary>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task result contains the list of category (simple) models
+    /// </returns>
+    protected virtual async Task<List<CategorySimpleModel>> PrepareCategorySimpleModelsAsync()
+    {
+        //load and cache them
+        var language = await _workContext.GetWorkingLanguageAsync();
+        var customer = await _workContext.GetCurrentCustomerAsync();
+        var customerRoleIds = await _customerService.GetCustomerRoleIdsAsync(customer);
+        var store = await _storeContext.GetCurrentStoreAsync();
+        var cacheKey = _staticCacheManager.PrepareKeyForDefaultCache(NopModelCacheDefaults.CategoryAllModelKey,
+            language, customerRoleIds, store);
+
+        return await _staticCacheManager.GetAsync(cacheKey, async () => await PrepareCategorySimpleModelsAsync(0));
+    }
+
+    /// <summary>
+    /// Prepare category (simple) models
+    /// </summary>
+    /// <param name="rootCategoryId">Root category identifier</param>
+    /// <param name="loadSubCategories">A value indicating whether subcategories should be loaded</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task result contains the list of category (simple) models
+    /// </returns>
+    protected virtual async Task<List<CategorySimpleModel>> PrepareCategorySimpleModelsAsync(int rootCategoryId, bool loadSubCategories = true)
+    {
+        var result = new List<CategorySimpleModel>();
+
+        //little hack for performance optimization
+        //we know that this method is used to load top and left menu for categories.
+        //it'll load all categories anyway.
+        //so there's no need to invoke "GetAllCategoriesByParentCategoryId" multiple times (extra SQL commands) to load childs
+        //so we load all categories at once (we know they are cached)
+        var store = await _storeContext.GetCurrentStoreAsync();
+        var allCategories = await _categoryService.GetAllCategoriesAsync(storeId: store.Id);
+        var categories = allCategories.Where(c => c.ParentCategoryId == rootCategoryId).OrderBy(c => c.DisplayOrder).ToList();
+        foreach (var category in categories)
+        {
+            var categoryModel = new CategorySimpleModel
+            {
+                Id = category.Id,
+                Name = await _localizationService.GetLocalizedAsync(category, x => x.Name),
+                SeName = await _urlRecordService.GetSeNameAsync(category)
+            };
+
+            //number of products in each category
+            if (_catalogSettings.ShowCategoryProductNumber)
+            {
+                var categoryIds = new List<int> { category.Id };
+                //include subcategories
+                if (_catalogSettings.ShowCategoryProductNumberIncludingSubcategories)
+                    categoryIds.AddRange(
+                        await _categoryService.GetChildCategoryIdsAsync(category.Id, store.Id));
+
+                categoryModel.NumberOfProducts =
+                    await _productService.GetNumberOfProductsInCategoryAsync(categoryIds, store.Id);
+            }
+
+            if (loadSubCategories)
+            {
+                var subCategories = await PrepareCategorySimpleModelsAsync(category.Id);
+                categoryModel.SubCategories.AddRange(subCategories);
+            }
+
+            result.Add(categoryModel);
+        }
+
+        return result;
+    }
+
+
     #endregion
 
     #region Categories
@@ -729,81 +812,6 @@ public partial class CatalogModelFactory : ICatalogModelFactory
         await PrepareCatalogProductsAsync(model, products, isFiltering);
 
         return model;
-    }
-
-    /// <summary>
-    /// Prepare category (simple) models
-    /// </summary>
-    /// <returns>
-    /// A task that represents the asynchronous operation
-    /// The task result contains the list of category (simple) models
-    /// </returns>
-    public virtual async Task<List<CategorySimpleModel>> PrepareCategorySimpleModelsAsync()
-    {
-        //load and cache them
-        var language = await _workContext.GetWorkingLanguageAsync();
-        var customer = await _workContext.GetCurrentCustomerAsync();
-        var customerRoleIds = await _customerService.GetCustomerRoleIdsAsync(customer);
-        var store = await _storeContext.GetCurrentStoreAsync();
-        var cacheKey = _staticCacheManager.PrepareKeyForDefaultCache(NopModelCacheDefaults.CategoryAllModelKey,
-            language, customerRoleIds, store);
-
-        return await _staticCacheManager.GetAsync(cacheKey, async () => await PrepareCategorySimpleModelsAsync(0));
-    }
-
-    /// <summary>
-    /// Prepare category (simple) models
-    /// </summary>
-    /// <param name="rootCategoryId">Root category identifier</param>
-    /// <param name="loadSubCategories">A value indicating whether subcategories should be loaded</param>
-    /// <returns>
-    /// A task that represents the asynchronous operation
-    /// The task result contains the list of category (simple) models
-    /// </returns>
-    public virtual async Task<List<CategorySimpleModel>> PrepareCategorySimpleModelsAsync(int rootCategoryId, bool loadSubCategories = true)
-    {
-        var result = new List<CategorySimpleModel>();
-
-        //little hack for performance optimization
-        //we know that this method is used to load top and left menu for categories.
-        //it'll load all categories anyway.
-        //so there's no need to invoke "GetAllCategoriesByParentCategoryId" multiple times (extra SQL commands) to load childs
-        //so we load all categories at once (we know they are cached)
-        var store = await _storeContext.GetCurrentStoreAsync();
-        var allCategories = await _categoryService.GetAllCategoriesAsync(storeId: store.Id);
-        var categories = allCategories.Where(c => c.ParentCategoryId == rootCategoryId).OrderBy(c => c.DisplayOrder).ToList();
-        foreach (var category in categories)
-        {
-            var categoryModel = new CategorySimpleModel
-            {
-                Id = category.Id,
-                Name = await _localizationService.GetLocalizedAsync(category, x => x.Name),
-                SeName = await _urlRecordService.GetSeNameAsync(category)
-            };
-
-            //number of products in each category
-            if (_catalogSettings.ShowCategoryProductNumber)
-            {
-                var categoryIds = new List<int> { category.Id };
-                //include subcategories
-                if (_catalogSettings.ShowCategoryProductNumberIncludingSubcategories)
-                    categoryIds.AddRange(
-                        await _categoryService.GetChildCategoryIdsAsync(category.Id, store.Id));
-
-                categoryModel.NumberOfProducts =
-                    await _productService.GetNumberOfProductsInCategoryAsync(categoryIds, store.Id);
-            }
-
-            if (loadSubCategories)
-            {
-                var subCategories = await PrepareCategorySimpleModelsAsync(category.Id);
-                categoryModel.SubCategories.AddRange(subCategories);
-            }
-
-            result.Add(categoryModel);
-        }
-
-        return result;
     }
 
     #endregion
@@ -1267,7 +1275,7 @@ public partial class CatalogModelFactory : ICatalogModelFactory
         var cacheKey = _staticCacheManager.PrepareKeyForDefaultCache(NopModelCacheDefaults.VendorReviewsModelKey, vendor, currentStore);
         var vendorReviewModels = await _staticCacheManager.GetAsync(cacheKey, async () =>
         {
-            var vendorReviews = await _productService.GetAllProductReviewsAsync(
+            var vendorReviews = await _productReviewService.GetAllProductReviewsAsync(
                 vendorId: vendor.Id,
                 approved: true,
                 storeId: currentStore.Id);
@@ -1801,6 +1809,71 @@ public partial class CatalogModelFactory : ICatalogModelFactory
 
         var isFiltering = !string.IsNullOrEmpty(searchTerms);
         await PrepareCatalogProductsAsync(model, products, isFiltering);
+
+        return model;
+    }
+
+    /// <summary>
+    /// Prepares the search products by filter level values model
+    /// </summary>
+    /// <param name="searchModel">Search filter level values model</param>
+    /// <param name="command">Model to get the catalog products</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task result contains the search products model
+    /// </returns>
+    public virtual async Task<CatalogProductsModel> PrepareSearchProductsByFilterLevelValuesModelAsync(SearchFilterLevelValueModel searchModel, CatalogProductsCommand command)
+    {
+        ArgumentNullException.ThrowIfNull(command);
+
+        var model = new CatalogProductsModel
+        {
+            UseAjaxLoading = _catalogSettings.UseAjaxCatalogProductsLoading
+        };
+
+        //sorting
+        await PrepareSortingOptionsAsync(model, command);
+        //view mode
+        await PrepareViewModesAsync(model, command);
+        //page size
+        await PreparePageSizeOptionsAsync(model, command, _catalogSettings.SearchPageAllowCustomersToSelectPageSize,
+            _catalogSettings.SearchPagePageSizeOptions, _catalogSettings.SearchPageProductsPerPage);
+
+        var flv1 = searchModel.fl1id == "0" || string.IsNullOrEmpty(searchModel.fl1id)
+            ? string.Empty
+            : searchModel.fl1id;
+
+        var flv2 = searchModel.fl2id == "0" || string.IsNullOrEmpty(searchModel.fl2id)
+            ? string.Empty
+            : searchModel.fl2id;
+
+        var flv3 = searchModel.fl3id == "0" || string.IsNullOrEmpty(searchModel.fl3id)
+            ? string.Empty
+            : searchModel.fl3id;
+
+        IPagedList<Product> products = new PagedList<Product>(new List<Product>(), 0, 1);
+
+        var (filterLevel1Disabled, _, _) = _filterLevelValueService.IsFilterLevelDisabled();
+
+        if (!string.IsNullOrEmpty(flv1) && !filterLevel1Disabled)
+        {
+            var filterLevelValue = (await _filterLevelValueService.GetAllFilterLevelValuesAsync(flv1, flv2, flv3)).FirstOrDefault();
+            if (filterLevelValue == null)
+            {
+                return model;
+            }
+
+            var store = await _storeContext.GetCurrentStoreAsync();
+
+            //products
+            products = await _filterLevelValueService.GetProductsByFilterLevelValueIdAsync(filterLevelValue.Id,
+            pageIndex: command.PageNumber - 1,
+            pageSize: command.PageSize,
+            storeId: store.Id,
+            orderBy: (ProductSortingEnum)command.OrderBy);
+
+            await PrepareCatalogProductsAsync(model, products, true);
+        }
 
         return model;
     }

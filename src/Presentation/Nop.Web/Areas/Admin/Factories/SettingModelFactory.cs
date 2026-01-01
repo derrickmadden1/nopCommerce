@@ -8,11 +8,11 @@ using Nop.Core.Domain.Catalog;
 using Nop.Core.Domain.Common;
 using Nop.Core.Domain.Customers;
 using Nop.Core.Domain.Directory;
+using Nop.Core.Domain.FilterLevels;
 using Nop.Core.Domain.Forums;
 using Nop.Core.Domain.Gdpr;
 using Nop.Core.Domain.Localization;
 using Nop.Core.Domain.Media;
-using Nop.Core.Domain.News;
 using Nop.Core.Domain.Orders;
 using Nop.Core.Domain.Security;
 using Nop.Core.Domain.Seo;
@@ -51,6 +51,7 @@ public partial class SettingModelFactory : ISettingModelFactory
 
     protected readonly AppSettings _appSettings;
     protected readonly CurrencySettings _currencySettings;
+    protected readonly FilterLevelSettings _filterLevelSettings;
     protected readonly IAddressModelFactory _addressModelFactory;
     protected readonly IAddressAttributeModelFactory _addressAttributeModelFactory;
     protected readonly IAddressService _addressService;
@@ -81,6 +82,7 @@ public partial class SettingModelFactory : ISettingModelFactory
 
     public SettingModelFactory(AppSettings appSettings,
         CurrencySettings currencySettings,
+        FilterLevelSettings filterLevelSettings,
         IAddressModelFactory addressModelFactory,
         IAddressAttributeModelFactory addressAttributeModelFactory,
         IAddressService addressService,
@@ -107,6 +109,7 @@ public partial class SettingModelFactory : ISettingModelFactory
     {
         _appSettings = appSettings;
         _currencySettings = currencySettings;
+        _filterLevelSettings = filterLevelSettings;
         _addressModelFactory = addressModelFactory;
         _addressAttributeModelFactory = addressAttributeModelFactory;
         _addressService = addressService;
@@ -184,6 +187,24 @@ public partial class SettingModelFactory : ISettingModelFactory
     }
 
     /// <summary>
+    /// Prepare filter level search model
+    /// </summary>
+    /// <param name="searchModel">Filter level search model</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task result contains the filter level search model
+    /// </returns>
+    protected virtual Task<FilterLevelSearchModel> PrepareFilterLevelSearchModelAsync(FilterLevelSearchModel searchModel)
+    {
+        ArgumentNullException.ThrowIfNull(searchModel);
+
+        //prepare page parameters
+        searchModel.SetGridPageSize();
+
+        return Task.FromResult(searchModel);
+    }
+
+    /// <summary>
     /// Prepare artificial intelligence settings model
     /// </summary>
     /// <param name="model">Artificial intelligence search model</param>
@@ -210,6 +231,7 @@ public partial class SettingModelFactory : ISettingModelFactory
         model.MetaKeywordsQuery = artificialIntelligenceSettings.MetaKeywordsQuery;
         model.AllowMetaDescriptionGeneration = artificialIntelligenceSettings.AllowMetaDescriptionGeneration;
         model.MetaDescriptionQuery = artificialIntelligenceSettings.MetaDescriptionQuery;
+        model.LogRequests = artificialIntelligenceSettings.LogRequests;
 
         //prepare available translation services
         var availableProviderType = await ArtificialIntelligenceProviderType.Gemini.ToSelectListAsync(false);
@@ -421,7 +443,6 @@ public partial class SettingModelFactory : ISettingModelFactory
             SitemapIncludeProducts = sitemapSettings.SitemapIncludeProducts,
             SitemapIncludeProductTags = sitemapSettings.SitemapIncludeProductTags,
             SitemapIncludeBlogPosts = sitemapSettings.SitemapIncludeBlogPosts,
-            SitemapIncludeNews = sitemapSettings.SitemapIncludeNews,
             SitemapIncludeTopics = sitemapSettings.SitemapIncludeTopics
         };
 
@@ -436,7 +457,6 @@ public partial class SettingModelFactory : ISettingModelFactory
         model.SitemapIncludeProducts_OverrideForStore = await _settingService.SettingExistsAsync(sitemapSettings, x => x.SitemapIncludeProducts, storeId);
         model.SitemapIncludeProductTags_OverrideForStore = await _settingService.SettingExistsAsync(sitemapSettings, x => x.SitemapIncludeProductTags, storeId);
         model.SitemapIncludeBlogPosts_OverrideForStore = await _settingService.SettingExistsAsync(sitemapSettings, x => x.SitemapIncludeBlogPosts, storeId);
-        model.SitemapIncludeNews_OverrideForStore = await _settingService.SettingExistsAsync(sitemapSettings, x => x.SitemapIncludeNews, storeId);
         model.SitemapIncludeTopics_OverrideForStore = await _settingService.SettingExistsAsync(sitemapSettings, x => x.SitemapIncludeTopics, storeId);
 
         return model;
@@ -576,7 +596,6 @@ public partial class SettingModelFactory : ISettingModelFactory
         model.ShowOnEmailWishlistToFriendPage_OverrideForStore = await _settingService.SettingExistsAsync(captchaSettings, x => x.ShowOnEmailWishlistToFriendPage, storeId);
         model.ShowOnEmailProductToFriendPage_OverrideForStore = await _settingService.SettingExistsAsync(captchaSettings, x => x.ShowOnEmailProductToFriendPage, storeId);
         model.ShowOnBlogCommentPage_OverrideForStore = await _settingService.SettingExistsAsync(captchaSettings, x => x.ShowOnBlogCommentPage, storeId);
-        model.ShowOnNewsCommentPage_OverrideForStore = await _settingService.SettingExistsAsync(captchaSettings, x => x.ShowOnNewsCommentPage, storeId);
         model.ShowOnNewsLetterPage_OverrideForStore = await _settingService.SettingExistsAsync(captchaSettings, x => x.ShowOnNewsletterPage, storeId);
         model.ShowOnProductReviewPage_OverrideForStore = await _settingService.SettingExistsAsync(captchaSettings, x => x.ShowOnProductReviewPage, storeId);
         model.ShowOnApplyVendorPage_OverrideForStore = await _settingService.SettingExistsAsync(captchaSettings, x => x.ShowOnApplyVendorPage, storeId);
@@ -984,42 +1003,6 @@ public partial class SettingModelFactory : ISettingModelFactory
     }
 
     /// <summary>
-    /// Prepare news settings model
-    /// </summary>
-    /// <param name="model">News settings model</param>
-    /// <returns>
-    /// A task that represents the asynchronous operation
-    /// The task result contains the news settings model
-    /// </returns>
-    public virtual async Task<NewsSettingsModel> PrepareNewsSettingsModelAsync(NewsSettingsModel model = null)
-    {
-        //load settings for a chosen store scope
-        var storeId = await _storeContext.GetActiveStoreScopeConfigurationAsync();
-        var newsSettings = await _settingService.LoadSettingAsync<NewsSettings>(storeId);
-
-        //fill in model values from the entity
-        model ??= newsSettings.ToSettingsModel<NewsSettingsModel>();
-
-        //fill in additional values (not existing in the entity)
-        model.ActiveStoreScopeConfiguration = storeId;
-
-        if (storeId <= 0)
-            return model;
-
-        //fill in overridden values
-        model.Enabled_OverrideForStore = await _settingService.SettingExistsAsync(newsSettings, x => x.Enabled, storeId);
-        model.AllowNotRegisteredUsersToLeaveComments_OverrideForStore = await _settingService.SettingExistsAsync(newsSettings, x => x.AllowNotRegisteredUsersToLeaveComments, storeId);
-        model.NotifyAboutNewNewsComments_OverrideForStore = await _settingService.SettingExistsAsync(newsSettings, x => x.NotifyAboutNewNewsComments, storeId);
-        model.ShowNewsOnMainPage_OverrideForStore = await _settingService.SettingExistsAsync(newsSettings, x => x.ShowNewsOnMainPage, storeId);
-        model.MainPageNewsCount_OverrideForStore = await _settingService.SettingExistsAsync(newsSettings, x => x.MainPageNewsCount, storeId);
-        model.NewsArchivePageSize_OverrideForStore = await _settingService.SettingExistsAsync(newsSettings, x => x.NewsArchivePageSize, storeId);
-        model.ShowHeaderRssUrl_OverrideForStore = await _settingService.SettingExistsAsync(newsSettings, x => x.ShowHeaderRssUrl, storeId);
-        model.NewsCommentsMustBeApproved_OverrideForStore = await _settingService.SettingExistsAsync(newsSettings, x => x.NewsCommentsMustBeApproved, storeId);
-
-        return model;
-    }
-
-    /// <summary>
     /// Prepare shipping settings model
     /// </summary>
     /// <param name="model">Shipping settings model</param>
@@ -1284,6 +1267,94 @@ public partial class SettingModelFactory : ISettingModelFactory
         await _reviewTypeModelFactory.PrepareReviewTypeSearchModelAsync(model.ReviewTypeSearchModel);
 
         await PrepareArtificialIntelligenceSettingsModelAsync(model.ArtificialIntelligenceSettingsModel);
+
+        return model;
+    }
+
+    /// <summary>
+    /// Prepare filter level settings model
+    /// </summary>
+    /// <param name="model">Filter level settings model</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task result contains the filter level settings model
+    /// </returns>
+    public virtual async Task<FilterLevelSettingsModel> PrepareFilterLevelSettingsModelAsync(FilterLevelSettingsModel model = null)
+    {
+        //load settings
+
+        //fill in model values from the entity
+        model ??= _filterLevelSettings.ToSettingsModel<FilterLevelSettingsModel>();
+
+        //prepare nested search model
+        await PrepareFilterLevelSearchModelAsync(model.FilterLevelSearchModel);
+        return model;
+    }
+
+    /// <summary>
+    /// Prepare paged filter level list model
+    /// </summary>
+    /// <param name="searchModel">Filter level search model</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task result contains the filter level list model
+    /// </returns>
+    public virtual async Task<FilterLevelListModel> PrepareFilterLevelListModelAsync(FilterLevelSearchModel searchModel)
+    {
+        ArgumentNullException.ThrowIfNull(searchModel);
+
+        //get filter levels
+        var filterLevels = Enum.GetValues(typeof(FilterLevelEnum)).OfType<FilterLevelEnum>().ToList().ToPagedList(searchModel);
+
+        //prepare list model
+        var model = await new FilterLevelListModel().PrepareToGridAsync(searchModel, filterLevels, () =>
+        {
+            return filterLevels.SelectAwait(async filterLevel =>
+            {
+                //fill in model values from the entity
+                var filterLevelModel = new FilterLevelModel { Id = (int)filterLevel };
+
+                //fill in additional values (not existing in the entity)
+                filterLevelModel.Name = await _localizationService.GetLocalizedEnumAsync(filterLevel);
+                filterLevelModel.Enabled = !_filterLevelSettings.FilterLevelEnumDisabled.Contains((int)filterLevel);
+
+                return filterLevelModel;
+            }).OrderBy(filterLevel => filterLevel.Id);
+        });
+
+        return model;
+    }
+
+    /// <summary>
+    /// Prepare filter level model
+    /// </summary>
+    /// <param name="model">Filter level model</param>
+    /// <param name="filterLevel">Filter level</param>
+    /// <param name="excludeProperties">Whether to exclude populating of some properties of model</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task result contains the filter level model
+    /// </returns>
+    public virtual async Task<FilterLevelModel> PrepareFilterLevelModelAsync(FilterLevelModel model, FilterLevelEnum filterLevel, bool excludeProperties = false)
+    {
+        Func<FilterLevelLocalizedModel, int, Task> localizedModelConfiguration = null;
+
+        //fill in model values from settings
+        model ??= new FilterLevelModel { Id = (int)filterLevel };
+        model.Name = await _localizationService.GetLocalizedEnumAsync(filterLevel);
+        model.Enabled = !_filterLevelSettings.FilterLevelEnumDisabled.Contains((int)filterLevel);
+
+        //define localized model configuration action
+        localizedModelConfiguration = async (locale, languageId) =>
+        {
+            var resourceName = $"Enums.Nop.Core.Domain.FilterLevels.FilterLevelEnum.{filterLevel}";
+            var resource = await _localizationService.GetLocaleStringResourceByNameAsync(resourceName, languageId, false);
+            locale.Name = resource?.ResourceValue ?? string.Empty;
+        };
+
+        //prepare localized models
+        if (!excludeProperties)
+            model.Locales = await _localizedModelFactory.PrepareLocalizedModelsAsync(localizedModelConfiguration);
 
         return model;
     }

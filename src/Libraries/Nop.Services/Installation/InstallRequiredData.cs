@@ -14,6 +14,7 @@ using Nop.Core.Domain.Common;
 using Nop.Core.Domain.Configuration;
 using Nop.Core.Domain.Customers;
 using Nop.Core.Domain.Directory;
+using Nop.Core.Domain.FilterLevels;
 using Nop.Core.Domain.Forums;
 using Nop.Core.Domain.Gdpr;
 using Nop.Core.Domain.Localization;
@@ -21,7 +22,6 @@ using Nop.Core.Domain.Logging;
 using Nop.Core.Domain.Media;
 using Nop.Core.Domain.Menus;
 using Nop.Core.Domain.Messages;
-using Nop.Core.Domain.News;
 using Nop.Core.Domain.Orders;
 using Nop.Core.Domain.Payments;
 using Nop.Core.Domain.ScheduleTasks;
@@ -818,13 +818,6 @@ public partial class InstallationService
                     EmailAccountId = eaGeneral.Id
                 },
                 new() {
-                    Name = MessageTemplateSystemNames.NEWS_COMMENT_STORE_OWNER_NOTIFICATION,
-                    Subject = "%Store.Name%. New news comment.",
-                    Body = $"<p>{Environment.NewLine}<a href=\"%Store.URL%\">%Store.Name%</a>{Environment.NewLine}<br />{Environment.NewLine}<br />{Environment.NewLine}A new news comment has been created for news \"%NewsComment.NewsTitle%\".{Environment.NewLine}</p>{Environment.NewLine}",
-                    IsActive = true,
-                    EmailAccountId = eaGeneral.Id
-                },
-                new() {
                     Name = MessageTemplateSystemNames.NEWSLETTER_SUBSCRIPTION_ACTIVATION_MESSAGE,
                     Subject = "%Store.Name%. Subscription activation message.",
                     Body = $"<p>{Environment.NewLine}<a href=\"%NewsLetterSubscription.ActivationUrl%\">Click here to confirm your subscription to our list.</a>{Environment.NewLine}</p>{Environment.NewLine}<p>{Environment.NewLine}If you received this email by mistake, simply delete it.{Environment.NewLine}</p>{Environment.NewLine}",
@@ -1281,7 +1274,6 @@ public partial class InstallationService
             SitemapIncludeProducts = false,
             SitemapIncludeProductTags = false,
             SitemapIncludeBlogPosts = true,
-            SitemapIncludeNews = false,
             SitemapIncludeTopics = true
         });
 
@@ -1291,7 +1283,6 @@ public partial class InstallationService
             SitemapXmlIncludeBlogPosts = true,
             SitemapXmlIncludeCategories = true,
             SitemapXmlIncludeManufacturers = true,
-            SitemapXmlIncludeNews = true,
             SitemapXmlIncludeProducts = true,
             SitemapXmlIncludeProductTags = true,
             SitemapXmlIncludeCustomUrls = true,
@@ -1303,6 +1294,7 @@ public partial class InstallationService
         await SaveSettingAsync(dictionary, new CommonSettings
         {
             UseSystemEmailForContactUsForm = true,
+            SubjectFieldOnContactUsForm = false,
             DisplayJavaScriptDisabledWarning = false,
             Log404Errors = true,
             BreadcrumbDelimiter = "/",
@@ -1342,6 +1334,7 @@ public partial class InstallationService
             PopupGridPageSize = 7,
             GridPageSizes = "7, 15, 20, 50, 100",
             RichEditorAdditionalSettings = null,
+            RichEditorAllowJavaScript = false,
             UseRichEditorForCustomerEmails = false,
             UseRichEditorInMessageTemplates = false,
             HideAdvertisementsOnAdminArea = false,
@@ -1360,6 +1353,7 @@ public partial class InstallationService
             Dimensions = true,
             ProductAttributes = true,
             SpecificationAttributes = true,
+            FilterLevelValuesProducts = true,
             PAngV = isGermany
         });
 
@@ -1500,7 +1494,8 @@ public partial class InstallationService
             AllowMetaKeywordsGeneration = true,
             MetaKeywordsQuery = ArtificialIntelligenceDefaults.MetaKeywordsQuery,
             AllowMetaDescriptionGeneration = true,
-            MetaDescriptionQuery = ArtificialIntelligenceDefaults.MetaDescriptionQuery
+            MetaDescriptionQuery = ArtificialIntelligenceDefaults.MetaDescriptionQuery,
+            LogRequests = false
         });
 
         await SaveSettingAsync(dictionary, new LocalizationSettings
@@ -1891,18 +1886,6 @@ public partial class InstallationService
             BlogCommentsMustBeApproved = false,
             ShowBlogCommentsPerStore = false
         });
-        await SaveSettingAsync(dictionary, new NewsSettings
-        {
-            Enabled = true,
-            AllowNotRegisteredUsersToLeaveComments = true,
-            NotifyAboutNewNewsComments = false,
-            ShowNewsOnMainPage = true,
-            MainPageNewsCount = 3,
-            NewsArchivePageSize = 10,
-            ShowHeaderRssUrl = false,
-            NewsCommentsMustBeApproved = false,
-            ShowNewsCommentsPerStore = false
-        });
 
         await SaveSettingAsync(dictionary, new ForumSettings
         {
@@ -1980,7 +1963,6 @@ public partial class InstallationService
             ShowOnForgotPasswordPage = false,
             ShowOnForum = false,
             ShowOnLoginPage = false,
-            ShowOnNewsCommentPage = false,
             ShowOnNewsletterPage = false,
             ShowOnProductReviewPage = false,
             ShowOnRegistrationPage = false,
@@ -2116,6 +2098,12 @@ public partial class InstallationService
                 "/uploadfilereturnrequest",
                 "/wishlist"
             ]
+        });
+
+        await SaveSettingAsync(dictionary, new FilterLevelSettings
+        {
+            DisplayOnHomePage = true,
+            DisplayOnProductDetailsPage = true
         });
 
         await SaveSettingAsync(dictionary, new MenuSettings
@@ -2529,6 +2517,11 @@ public partial class InstallationService
                     Name = "Add a new gift card"
                 },
                 new() {
+                    SystemKeyword = "AddNewFilterLevelValue",
+                    Enabled = true,
+                    Name = "Add a new filter level value"
+                },
+                new() {
                     SystemKeyword = "AddNewLanguage",
                     Enabled = true,
                     Name = "Add a new language"
@@ -2547,11 +2540,6 @@ public partial class InstallationService
                     SystemKeyword = "AddNewMeasureWeight",
                     Enabled = true,
                     Name = "Add a new measure weight"
-                },
-                new() {
-                    SystemKeyword = "AddNewNews",
-                    Enabled = true,
-                    Name = "Add a new news"
                 },
                 new() {
                     SystemKeyword = "AddNewProduct",
@@ -2723,6 +2711,11 @@ public partial class InstallationService
                     Enabled = true,
                     Name = "Delete an email account"
                 },
+                new () {
+                    SystemKeyword = "DeleteFilterLevelValue",
+                    Enabled = true,
+                    Name = "Delete a filter level value"
+                },
                 new() {
                     SystemKeyword = "DeleteGiftCard",
                     Enabled = true,
@@ -2752,16 +2745,6 @@ public partial class InstallationService
                     SystemKeyword = "DeleteMessageTemplate",
                     Enabled = true,
                     Name = "Delete a message template"
-                },
-                new() {
-                    SystemKeyword = "DeleteNews",
-                    Enabled = true,
-                    Name = "Delete a news"
-                },
-                 new() {
-                    SystemKeyword = "DeleteNewsComment",
-                    Enabled = true,
-                    Name = "Delete a news comment"
                 },
                 new() {
                     SystemKeyword = "DeleteOrder",
@@ -2954,6 +2937,11 @@ public partial class InstallationService
                     Name = "Edit an email account"
                 },
                 new() {
+                    SystemKeyword = "EditFilterLevelValue",
+                    Enabled = true,
+                    Name = "Edit a filter level value"
+                },
+                new() {
                     SystemKeyword = "EditGiftCard",
                     Enabled = true,
                     Name = "Edit a gift card"
@@ -2982,11 +2970,6 @@ public partial class InstallationService
                     SystemKeyword = "EditMessageTemplate",
                     Enabled = true,
                     Name = "Edit a message template"
-                },
-                new() {
-                    SystemKeyword = "EditNews",
-                    Enabled = true,
-                    Name = "Edit a news"
                 },
                 new() {
                     SystemKeyword = "EditOrder",
@@ -3119,6 +3102,11 @@ public partial class InstallationService
                     Name = "Categories were imported"
                 },
                 new() {
+                    SystemKeyword = "ImportFilterLevelValues",
+                    Enabled = true,
+                    Name = "Import filter level values"
+                },
+                new() {
                     SystemKeyword = "ImportManufacturers",
                     Enabled = true,
                     Name = "Manufacturers were imported"
@@ -3152,6 +3140,11 @@ public partial class InstallationService
                     SystemKeyword = "ExportCategories",
                     Enabled = true,
                     Name = "Categories were exported"
+                },
+                new () {
+                    SystemKeyword = "ExportFilterLevelValues",
+                    Enabled = true,
+                    Name = "Export filter level values"
                 },
                 new() {
                     SystemKeyword = "ExportManufacturers",
@@ -3258,11 +3251,6 @@ public partial class InstallationService
                     SystemKeyword = "PublicStore.AddProductReview",
                     Enabled = false,
                     Name = "Public store. Add product review"
-                },
-                new() {
-                    SystemKeyword = "PublicStore.AddNewsComment",
-                    Enabled = false,
-                    Name = "Public store. Add news comment"
                 },
                 new() {
                     SystemKeyword = "PublicStore.AddBlogComment",
@@ -3655,14 +3643,6 @@ public partial class InstallationService
                 MenuItemType = MenuItemType.StandardPage,
                 RouteName = NopRouteNames.General.SEARCH,
                 Title = "Search",
-                Published = true
-            },
-            new MenuItem
-            {
-                MenuId = footerCustomerService.Id,
-                MenuItemType = MenuItemType.StandardPage,
-                RouteName = NopRouteNames.General.NEWS,
-                Title = "News",
                 Published = true
             },
             new MenuItem

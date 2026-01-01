@@ -2,6 +2,7 @@
 using LinqToDB;
 using Nop.Core.Domain.Logging;
 using Nop.Core.Domain.Messages;
+using Nop.Data.Extensions;
 
 namespace Nop.Data.Migrations.UpgradeTo490;
 
@@ -67,10 +68,30 @@ public class DataMigration : Migration
                 .Update();
         }
 
+        var newsLetterSubscriptionTableName = nameof(NewsLetterSubscription);
+        var typeIdIndexName = "IX_NewsLetterSubscription_TypeId";
+        var typeIdCollumnName = nameof(NewsLetterSubscription.TypeId);
+
+        //delete the index if it already exists to prevent a problem
+        //with altering NewsLetterSubscription table
+        if (Schema.Table(newsLetterSubscriptionTableName).Index(typeIdIndexName).Exists())
+            Delete.Index(typeIdIndexName)
+                .OnTable(newsLetterSubscriptionTableName)
+                .OnColumn(typeIdCollumnName);
+
         //alter columns
-        Alter.Table(nameof(NewsLetterSubscription))
-            .AlterColumn(nameof(NewsLetterSubscription.TypeId)).AsInt32().NotNullable();
-        
+        this.AddOrAlterColumnFor<NewsLetterSubscription>(t => t.TypeId)
+            .AsInt32()
+            .NotNullable();
+
+        //added index for FK field
+        Create.Index(typeIdIndexName)
+            .OnTable(newsLetterSubscriptionTableName)
+            .OnColumn(typeIdCollumnName)
+            .Descending()
+            .WithOptions()
+            .NonClustered();
+
         if (!activityLogTypeTable.Any(alt => string.Compare(alt.SystemKeyword, "AddSubscriptionType", StringComparison.InvariantCultureIgnoreCase) == 0))
         {
             _dataProvider.InsertEntity(
@@ -149,6 +170,67 @@ public class DataMigration : Migration
                 IsActive = true,
                 EmailAccountId = eaGeneral.Id
             });
+        }
+
+        //#7411
+        if (!activityLogTypeTable.Any(alt => string.Compare(alt.SystemKeyword, "AddNewFilterLevelValue", StringComparison.InvariantCultureIgnoreCase) == 0))
+        {
+            _dataProvider.InsertEntity(
+                new ActivityLogType
+                {
+                    SystemKeyword = "AddNewFilterLevelValue",
+                    Enabled = true,
+                    Name = "Add a new filter level value"
+                }
+            );
+        }
+
+        if (!activityLogTypeTable.Any(alt => string.Compare(alt.SystemKeyword, "EditFilterLevelValue", StringComparison.InvariantCultureIgnoreCase) == 0))
+        {
+            _dataProvider.InsertEntity(
+                new ActivityLogType
+                {
+                    SystemKeyword = "EditFilterLevelValue",
+                    Enabled = true,
+                    Name = "Edit a filter level value"
+                }
+            );
+        }
+
+        if (!activityLogTypeTable.Any(alt => string.Compare(alt.SystemKeyword, "DeleteFilterLevelValue", StringComparison.InvariantCultureIgnoreCase) == 0))
+        {
+            _dataProvider.InsertEntity(
+                new ActivityLogType
+                {
+                    SystemKeyword = "DeleteFilterLevelValue",
+                    Enabled = true,
+                    Name = "Delete a filter level value"
+                }
+            );
+        }
+
+        if (!activityLogTypeTable.Any(alt => string.Compare(alt.SystemKeyword, "ExportFilterLevelValues", StringComparison.InvariantCultureIgnoreCase) == 0))
+        {
+            _dataProvider.InsertEntity(
+                new ActivityLogType
+                {
+                    SystemKeyword = "ExportFilterLevelValues",
+                    Enabled = true,
+                    Name = "Export filter level values"
+                }
+            );
+        }
+
+        if (!activityLogTypeTable.Any(alt => string.Compare(alt.SystemKeyword, "ImportFilterLevelValues", StringComparison.InvariantCultureIgnoreCase) == 0))
+        {
+            _dataProvider.InsertEntity(
+                new ActivityLogType
+                {
+                    SystemKeyword = "ImportFilterLevelValues",
+                    Enabled = true,
+                    Name = "Import filter level values"
+                }
+            );
         }
 
         //#7390

@@ -1,14 +1,12 @@
 ﻿using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Globalization;
-using System.Resources;
 using FluentAssertions;
 using FluentMigrator;
 using FluentMigrator.Runner;
 using FluentMigrator.Runner.Conventions;
 using FluentMigrator.Runner.Generators;
 using FluentMigrator.Runner.Initialization;
-using FluentMigrator.Runner.Processors;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -53,6 +51,7 @@ using Nop.Services.Directory;
 using Nop.Services.Discounts;
 using Nop.Services.Events;
 using Nop.Services.ExportImport;
+using Nop.Services.FilterLevels;
 using Nop.Services.Forums;
 using Nop.Services.Gdpr;
 using Nop.Services.Helpers;
@@ -63,7 +62,6 @@ using Nop.Services.Logging;
 using Nop.Services.Media;
 using Nop.Services.Menus;
 using Nop.Services.Messages;
-using Nop.Services.News;
 using Nop.Services.Orders;
 using Nop.Services.Payments;
 using Nop.Services.Plugins;
@@ -98,7 +96,6 @@ namespace Nop.Tests;
 public partial class BaseNopTest
 {
     private static readonly ServiceProvider _serviceProvider;
-    private static readonly ResourceManager _resourceManager;
 
     protected BaseNopTest()
     {
@@ -130,6 +127,10 @@ public partial class BaseNopTest
 
         var permissionService = EngineContext.Current.Resolve<IPermissionService>();
         permissionService.InsertPermissionsAsync().Wait();
+
+        //init theme provider
+        var themeProvider = EngineContext.Current.Resolve<IThemeProvider>();
+        themeProvider.InitializeAsync().Wait();
     }
 
     protected static void PropertiesShouldEqual<T1, T2>(T1 obj1, T2 obj2, params string[] filter)
@@ -158,7 +159,6 @@ public partial class BaseNopTest
 
     static BaseNopTest()
     {
-        _resourceManager = Connections.ResourceManager;
         SetDataProviderType(DataProviderType.Unknown);
 
         TypeDescriptor.AddAttributes(typeof(List<int>),
@@ -284,6 +284,7 @@ public partial class BaseNopTest
         //services
         services.AddTransient<IBackInStockSubscriptionService, BackInStockSubscriptionService>();
         services.AddTransient<ICategoryService, CategoryService>();
+        services.AddTransient<IFilterLevelValueService, FilterLevelValueService>();
         services.AddTransient<ICompareProductsService, CompareProductsService>();
         services.AddTransient<IRecentlyViewedProductsService, RecentlyViewedProductsService>();
         services.AddTransient<IManufacturerService, ManufacturerService>();
@@ -292,6 +293,7 @@ public partial class BaseNopTest
         services.AddTransient<IProductAttributeParser, ProductAttributeParser>();
         services.AddTransient<IProductAttributeService, ProductAttributeService>();
         services.AddTransient<IProductService, ProductService>();
+        services.AddTransient<IProductReviewService, ProductReviewService>();
         services.AddTransient<ICopyProductService, CopyProductService>();
         services.AddTransient<ISpecificationAttributeService, SpecificationAttributeService>();
         services.AddTransient<IProductTemplateService, ProductTemplateService>();
@@ -380,19 +382,19 @@ public partial class BaseNopTest
         services.AddTransient<IPollService, PollService>();
         services.AddTransient<IBlogService, BlogService>();
         services.AddTransient<ITopicService, TopicService>();
-        services.AddTransient<INewsService, NewsService>();
         services.AddTransient<IDateTimeHelper, DateTimeHelper>();
         services.AddTransient<IScheduleTaskService, ScheduleTaskService>();
         services.AddTransient<IExportManager, ExportManager>();
         services.AddTransient<IImportManager, ImportManager>();
         services.AddTransient<IPdfService, PdfService>();
         services.AddTransient<IUploadService, UploadService>();
-        services.AddTransient<IThemeProvider, ThemeProvider>();
+        services.AddSingleton<IThemeProvider, ThemeProvider>();
         services.AddTransient<IExternalAuthenticationService, ExternalAuthenticationService>();
         services.AddScoped<IBBCodeHelper, BBCodeHelper>();
         services.AddScoped<IHtmlFormatter, HtmlFormatter>();
 
         services.AddScoped<INopAssetHelper, NopAssetHelper>();
+        services.AddScoped<ISyncCodeHelper, SyncCodeHelper>();
 
         //slug route transformer
         services.AddSingleton<IReviewTypeService, ReviewTypeService>();
@@ -505,8 +507,6 @@ public partial class BaseNopTest
         services.AddTransient<IManufacturerModelFactory, ManufacturerModelFactory>();
         services.AddTransient<IMeasureModelFactory, MeasureModelFactory>();
         services.AddTransient<IMessageTemplateModelFactory, MessageTemplateModelFactory>();
-        services.AddTransient<INewsLetterSubscriptionModelFactory, NewsLetterSubscriptionModelFactory>();
-        services.AddTransient<INewsModelFactory, NewsModelFactory>();
         services.AddTransient<IOrderModelFactory, OrderModelFactory>();
         services.AddTransient<IPaymentModelFactory, PaymentModelFactory>();
         services.AddTransient<IPluginModelFactory, PluginModelFactory>();
@@ -547,7 +547,6 @@ public partial class BaseNopTest
             .AddTransient<Web.Factories.IExternalAuthenticationModelFactory,
                 Web.Factories.ExternalAuthenticationModelFactory>();
         services.AddTransient<Web.Factories.IJsonLdModelFactory, Web.Factories.JsonLdModelFactory>();
-        services.AddTransient<Web.Factories.INewsModelFactory, Web.Factories.NewsModelFactory>();
         services.AddTransient<Web.Factories.INewsLetterModelFactory, Web.Factories.NewsLetterModelFactory>();
         services.AddTransient<Web.Factories.IOrderModelFactory, Web.Factories.OrderModelFactory>();
         services.AddTransient<Web.Factories.IPollModelFactory, Web.Factories.PollModelFactory>();
@@ -585,29 +584,22 @@ public partial class BaseNopTest
         dataConfig.DataProvider = type;
         dataConfig.ConnectionString = string.Empty;
 
-        try
+        switch (type)
         {
-            switch (type)
-            {
-                case DataProviderType.SqlServer:
-                    dataConfig.ConnectionString = _resourceManager.GetString("sql server connection string");
-                    break;
-                case DataProviderType.MySql:
-                    dataConfig.ConnectionString = _resourceManager.GetString("MySql server connection string");
-                    break;
-                case DataProviderType.PostgreSQL:
-                    dataConfig.ConnectionString = _resourceManager.GetString("PostgreSql server connection string");
-                    break;
-                case DataProviderType.Unknown:
-                    dataConfig.ConnectionString = "Data Source=nopCommerceTest.sqlite;Mode=Memory;Cache=Shared";
-                    break;
-            }
+            case DataProviderType.SqlServer:
+                dataConfig.ConnectionString = NopTestConfiguration.SqlServerConnectionString;
+                break;
+            case DataProviderType.MySql:
+                dataConfig.ConnectionString = NopTestConfiguration.MySqlServerConnectionString;
+                break;
+            case DataProviderType.PostgreSQL:
+                dataConfig.ConnectionString = NopTestConfiguration.PostgreSqlServerConnectionString;
+                break;
+            case DataProviderType.Unknown:
+                dataConfig.ConnectionString = NopTestConfiguration.SqliteConnectionString;
+                break;
         }
-        catch (MissingManifestResourceException)
-        {
-            //ignore
-        }
-
+       
         Singleton<DataConfig>.Instance = dataConfig;
         var flag = !string.IsNullOrEmpty(dataConfig.ConnectionString);
 
