@@ -66,6 +66,25 @@
     @*This is used so that themes can inject content into the header*@
     @await Html.PartialAsync("Head")
 
+    @* Render any registered image preloads (set by views/components) *@
+    @{ 
+        try
+        {
+            var preloadList = Context.Items["PreloadImageUrls"] as List<string>;
+            if (preloadList != null)
+            {
+                foreach (var url in preloadList.Distinct())
+                {
+                    <text><link rel="preload" as="image" href="@url" importance="high" /></text>
+                }
+            }
+        }
+        catch
+        {
+            // ignore any issues rendering preload links
+        }
+    }
+
     @NopHtml.GenerateCssFiles()
 
     @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.HeadHtmlTag })
