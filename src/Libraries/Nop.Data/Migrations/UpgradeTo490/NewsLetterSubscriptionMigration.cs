@@ -13,8 +13,7 @@ public class NewsLetterSubscriptionMigration : ForwardOnlyMigration
     /// </summary>
     public override void Up()
     {
-        if (!Schema.Table(nameof(NewsLetterSubscriptionType)).Exists())
-            Create.TableFor<NewsLetterSubscriptionType>();
+        this.CreateTableIfNotExists<NewsLetterSubscriptionType>();
 
         // Ensure at least one type exists
         Execute.Sql("INSERT INTO [NewsLetterSubscriptionType] ([Name],TickedByDefault,DisplayOrder,LimitedToStores) VALUES ('Default Type',1,1,0)");
@@ -38,11 +37,6 @@ public class NewsLetterSubscriptionMigration : ForwardOnlyMigration
                 .ForeignKey<NewsLetterSubscriptionType>(onDelete: Rule.Cascade);
         }
 
-        if (!Schema.Table(nameof(Campaign)).Column(nameof(Campaign.NewsLetterSubscriptionTypeId)).Exists())
-        {
-            //add new column
-            Alter.Table(nameof(Campaign))
-                .AddColumn(nameof(Campaign.NewsLetterSubscriptionTypeId)).AsInt32().NotNullable().SetExistingRowsTo(0);
-        }
+        this.AddOrAlterColumnFor<Campaign>(t => t.NewsLetterSubscriptionTypeId).AsInt32().NotNullable().SetExistingRowsTo(0);
     }
 }
