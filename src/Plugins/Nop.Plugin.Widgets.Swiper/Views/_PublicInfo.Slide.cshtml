@@ -3,7 +3,17 @@
 @{
     void slideImage()
     {
-        <img class="slider-img" src="@Model.PictureUrl" alt="@Model.AltText" title="@Model.TitleText" @(Model.LazyLoading ? "loading=lazy" : string.Empty) />
+        <img class="slider-img"
+             src="@Model.PictureUrl"
+             alt="@Model.AltText"
+             title="@Model.TitleText"
+             @if (!string.IsNullOrEmpty(Model.SrcSet)) { <text>srcset="@Model.SrcSet"</text> }
+             @if (Model.Width.HasValue) { <text>width="@Model.Width.Value"</text> }
+             @if (Model.Height.HasValue) { <text>height="@Model.Height.Value"</text> }
+             @if (Model.Width.HasValue || Model.Height.HasValue) { <text>decoding="async"</text> }
+             @(Model.LazyLoading ? "loading=lazy" : string.Empty)
+             fetchpriority="@(Model.LazyLoading ? "low" : "high")">
+        </img>
     }
 }
 
