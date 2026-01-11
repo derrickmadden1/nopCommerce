@@ -122,7 +122,7 @@ steps:
   inputs:
     buildType: 'specific'
     project: '08790719-5b40-4bec-88b7-843fafada540'
-    pipeline: '8'
+    pipeline: '7'
     specificBuildWithTriggering: true
     buildVersionToDownload: 'latest'
     allowPartiallySucceededBuilds: true
