@@ -53,14 +53,6 @@ steps:
     pwsh: true
 
 - task: PowerShell@2
-  displayName: 'Running DB upgrade script'
-  condition: eq(dependencies.CheckDb.outputs['CheckDb.dbAlreadyExists'], 'false')
-  inputs:
-    targetType: 'inline'
-    script: Invoke-Sqlcmd -InputFile "$(SQLUpgradeFile)" -ServerInstance $(ServerFqdn) -Username $(AdminUser) -Password $(AdminPassword) -Database $(dbName)
-    pwsh: true
-
-- task: PowerShell@2
   displayName: 'Setting store info on database'
   condition: eq(dependencies.CheckDb.outputs['CheckDb.dbAlreadyExists'], 'false')
   inputs:
