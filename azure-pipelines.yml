@@ -23,6 +23,7 @@ variables:
 
 steps:
 - task: AzureCLI@2
+  name: CheckDb
   displayName: 'Creating Sql Database on Azure'
   inputs:
     azureSubscription: 'Pipeline to Azure Portal Access'
@@ -30,55 +31,60 @@ steps:
     scriptLocation: 'inlineScript'
     inlineScript: |
       $ip = (Invoke-WebRequest -uri "http://ifconfig.me/ip").Content
-      $dbList = az sql db list --resource-group RoseCottageCroft --server q4u5ofuj04 --query "[?name=='$dbName']" | ConvertFrom-Json   
+      $dbList = az sql db list --resource-group RoseCottageCroft --server q4u5ofuj04 --query "[?name=='$env:dbName']" | ConvertFrom-Json   
       if ($dbList.Length -gt 0) {
-        echo "Database $(dbName) found"
+        echo "Database $env:dbName found"
       }
       else {
-        echo "Database $(dbName) not found"
-        echo "Creating $(dbName) on server q4u5ofuj04"
-        az sql db copy -g RoseCottageCroft -s q4u5ofuj04 -n RoseCottageStore --dest-name $(dbName)
+        echo "Database $env:dbName not found"
+        echo "Creating $env:dbName on server q4u5ofuj04"
+        az sql db copy -g RoseCottageCroft -s q4u5ofuj04 -n RoseCottageStore --dest-name $env:dbName
         echo "Setting firewall rule for sql server ip to $ip"
         az sql server firewall-rule create -g RoseCottageCroft -s q4u5ofuj04 -n pipeline --start-ip-address $ip --end-ip-address $ip
-        Write-Host "##vso[task.setvariable variable=dbAlreadyExists]false"
+        Write-Host "##vso[task.setvariable variable=dbAlreadyExists;isOutput=true]false"
       }
+
 - task: PowerShell@2
   displayName: 'Install sqlserver module'
-  condition: eq(variables.dbAlreadyExists, 'false')
+  condition: eq(dependencies.CheckDb.outputs['CheckDb.dbAlreadyExists'], 'false')
   inputs:
     targetType: 'inline'
     script: Install-Module SQLServer -Scope CurrentUser -Force
     pwsh: true
+
 - task: PowerShell@2
   displayName: 'Running DB upgrade script'
-  condition: eq(variables.dbAlreadyExists, 'false')
+  condition: eq(dependencies.CheckDb.outputs['CheckDb.dbAlreadyExists'], 'false')
   inputs:
     targetType: 'inline'
     script: Invoke-Sqlcmd -InputFile "$(SQLUpgradeFile)" -ServerInstance $(ServerFqdn) -Username $(AdminUser) -Password $(AdminPassword) -Database $(dbName)
     pwsh: true
+
 - task: PowerShell@2
   displayName: 'Setting store info on database'
-  condition: eq(variables.dbAlreadyExists, 'false')
+  condition: eq(dependencies.CheckDb.outputs['CheckDb.dbAlreadyExists'], 'false')
   inputs:
     targetType: 'inline'
     script: Invoke-Sqlcmd -InputFile "$(SQLStoreSettingsFile)" -ServerInstance $(ServerFqdn) -Username $(AdminUser) -Password $(AdminPassword) -Database $(dbName)
     pwsh: true
+
 - task: PowerShell@2
   displayName: 'Setting recaptcha info on database'
-  condition: eq(variables.dbAlreadyExists, 'false')
+  condition: eq(dependencies.CheckDb.outputs['CheckDb.dbAlreadyExists'], 'false')
   inputs:
     targetType: 'inline'
     script: Invoke-Sqlcmd -InputFile "$(SQLRecaptchaSettingsFile)" -ServerInstance $(ServerFqdn) -Username $(AdminUser) -Password $(AdminPassword) -Database $(dbName)
     pwsh: true
+
 - task: AzureCLI@2
-  displayName: 'Remove Database firewall rule on Azure for pipeline'  
-  condition: eq(variables.dbAlreadyExists, 'false')
+  displayName: 'Remove Database firewall rule on Azure for pipeline'
+  condition: eq(dependencies.CheckDb.outputs['CheckDb.dbAlreadyExists'], 'false')
   inputs:
     azureSubscription: 'Pipeline to Azure Portal Access'
     scriptType: 'pscore'
     scriptLocation: 'inlineScript'
-    inlineScript: |      
-      echo "Removing firewall rule for sql server ip to $ip"
+    inlineScript: |
+      echo "Removing firewall rule for sql server ip to $env:ip"
       az sql server firewall-rule delete -n pipeline -g RoseCottageCroft -s q4u5ofuj04
 - task: AzureCLI@2
   displayName: 'Creating resources on Azure'
