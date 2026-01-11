@@ -46,7 +46,7 @@ steps:
 
 - task: PowerShell@2
   displayName: 'Install sqlserver module'
-  condition: eq(dependencies.CheckDb.outputs['CheckDb.dbAlreadyExists'], 'false')
+  condition: eq(variables.dbAlreadyExists, 'false')
   inputs:
     targetType: 'inline'
     script: Install-Module SQLServer -Scope CurrentUser -Force
@@ -54,7 +54,7 @@ steps:
 
 - task: PowerShell@2
   displayName: 'Setting store info on database'
-  condition: eq(dependencies.CheckDb.outputs['CheckDb.dbAlreadyExists'], 'false')
+  condition: eq(variables.dbAlreadyExists, 'false')
   inputs:
     targetType: 'inline'
     script: Invoke-Sqlcmd -InputFile "$(SQLStoreSettingsFile)" -ServerInstance $(ServerFqdn) -Username $(AdminUser) -Password $(AdminPassword) -Database $(dbName)
@@ -62,7 +62,7 @@ steps:
 
 - task: PowerShell@2
   displayName: 'Setting recaptcha info on database'
-  condition: eq(dependencies.CheckDb.outputs['CheckDb.dbAlreadyExists'], 'false')
+  condition: eq(variables.dbAlreadyExists, 'false')
   inputs:
     targetType: 'inline'
     script: Invoke-Sqlcmd -InputFile "$(SQLRecaptchaSettingsFile)" -ServerInstance $(ServerFqdn) -Username $(AdminUser) -Password $(AdminPassword) -Database $(dbName)
@@ -70,7 +70,7 @@ steps:
 
 - task: AzureCLI@2
   displayName: 'Remove Database firewall rule on Azure for pipeline'
-  condition: eq(dependencies.CheckDb.outputs['CheckDb.dbAlreadyExists'], 'false')
+  condition: eq(variables.dbAlreadyExists, 'false')
   inputs:
     azureSubscription: 'Pipeline to Azure Portal Access'
     scriptType: 'pscore'
