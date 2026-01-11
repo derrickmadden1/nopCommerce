@@ -121,8 +121,8 @@ steps:
   displayName: 'Download Build Artifacts'
   inputs:
     buildType: 'specific'
-    project: 'ffab289e-ba3a-4b64-a688-3c5708a8c53a'
-    pipeline: '3'
+    project: '08790719-5b40-4bec-88b7-843fafada540'
+    pipeline: '8'
     specificBuildWithTriggering: true
     buildVersionToDownload: 'latest'
     allowPartiallySucceededBuilds: true
