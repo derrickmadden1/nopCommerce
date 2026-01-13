@@ -63,7 +63,7 @@ public partial class ReportController : BaseAdminController
         IStoreContext storeContext,
         IWorkContext workContext)
     {
-        _countryService = countryService; 
+        _countryService = countryService;
         _customerReportService = customerReportService;
         _customerService = customerService;
         _dateTimeHelper = dateTimeHelper;
@@ -404,10 +404,10 @@ public partial class ReportController : BaseAdminController
             manufacturerId: searchModel.ManufacturerId,
             storeId: searchModel.StoreId,
             pageIndex: searchModel.Page - 1, pageSize: searchModel.PageSize);
-        
+
         var models = await bestsellers.SelectAwait(async item =>
             {
-                item.TotalAmountStr= await _priceFormatter.FormatPriceAsync(item.TotalAmount, true, false);
+                item.TotalAmountStr = await _priceFormatter.FormatPriceAsync(item.TotalAmount, true, false);
                 return item;
             }
         ).ToListAsync();
@@ -453,10 +453,10 @@ public partial class ReportController : BaseAdminController
             manufacturerId: searchModel.ManufacturerId,
             storeId: searchModel.StoreId,
             pageIndex: searchModel.Page - 1, pageSize: searchModel.PageSize);
-        
+
         var models = await bestsellers.SelectAwait(async item =>
             {
-                item.TotalAmountStr= await _priceFormatter.FormatPriceAsync(item.TotalAmount, true, false);
+                item.TotalAmountStr = await _priceFormatter.FormatPriceAsync(item.TotalAmount, true, false);
                 return item;
             }
         ).ToListAsync();
@@ -655,7 +655,7 @@ public partial class ReportController : BaseAdminController
             storeId: searchModel.SearchStoreId,
             startTimeUtc: startDateValue,
             endTimeUtc: endDateValue);
-            
+
         var models = await items.SelectAwait(async item =>
             {
                 item.SumOrdersStr = await _priceFormatter.FormatPriceAsync(item.SumOrders, true, false);
@@ -830,7 +830,7 @@ public partial class ReportController : BaseAdminController
     public virtual async Task<IActionResult> ExportBestCustomersByOrderTotalXmlAll(CustomerReportsSearchModel search)
     {
         var searchModel = search.BestCustomersByOrderTotal;
-        
+
         var startDateValue = !searchModel.StartDate.HasValue ? null
             : (DateTime?)_dateTimeHelper.ConvertToUtcTime(searchModel.StartDate.Value, await _dateTimeHelper.GetCurrentTimeZoneAsync());
         var endDateValue = !searchModel.EndDate.HasValue ? null
@@ -881,7 +881,7 @@ public partial class ReportController : BaseAdminController
     public virtual async Task<IActionResult> ExportBestCustomersByOrderTotalExcelAll(CustomerReportsSearchModel search)
     {
         var searchModel = search.BestCustomersByOrderTotal;
-        
+
         var startDateValue = !searchModel.StartDate.HasValue ? null
             : (DateTime?)_dateTimeHelper.ConvertToUtcTime(searchModel.StartDate.Value, await _dateTimeHelper.GetCurrentTimeZoneAsync());
         var endDateValue = !searchModel.EndDate.HasValue ? null
@@ -897,7 +897,7 @@ public partial class ReportController : BaseAdminController
             ss: shippingStatus,
             orderBy: OrderByEnum.OrderByTotalAmount,
             pageIndex: searchModel.Page - 1, pageSize: searchModel.PageSize);
-            
+
         var models = await reportItems.SelectAwait(async item =>
                 {
                     var customer = await _customerService.GetCustomerByIdAsync(item.CustomerId);
@@ -907,7 +907,7 @@ public partial class ReportController : BaseAdminController
                             ? customer.Email
                             : await _localizationService.GetResourceAsync("Admin.Customers.Guest");
                     }
-                    
+
                     item.OrderTotalStr = await _priceFormatter.FormatPriceAsync(item.OrderTotal, true, false);
                     return item;
                 }
@@ -933,7 +933,7 @@ public partial class ReportController : BaseAdminController
     public virtual async Task<IActionResult> ExportBestCustomersByNumberOfOrdersXmlAll(CustomerReportsSearchModel search)
     {
         var searchModel = search.BestCustomersByNumberOfOrders;
-        
+
         var startDateValue = !searchModel.StartDate.HasValue ? null
             : (DateTime?)_dateTimeHelper.ConvertToUtcTime(searchModel.StartDate.Value, await _dateTimeHelper.GetCurrentTimeZoneAsync());
         var endDateValue = !searchModel.EndDate.HasValue ? null
@@ -941,7 +941,7 @@ public partial class ReportController : BaseAdminController
         var orderStatus = searchModel.OrderStatusId > 0 ? (OrderStatus?)searchModel.OrderStatusId : null;
         var paymentStatus = searchModel.PaymentStatusId > 0 ? (PaymentStatus?)searchModel.PaymentStatusId : null;
         var shippingStatus = searchModel.ShippingStatusId > 0 ? (ShippingStatus?)searchModel.ShippingStatusId : null;
-        
+
         var reportItems = await _customerReportService.GetBestCustomersReportAsync(createdFromUtc: startDateValue,
             createdToUtc: endDateValue,
             os: orderStatus,
@@ -949,7 +949,7 @@ public partial class ReportController : BaseAdminController
             ss: shippingStatus,
             orderBy: OrderByEnum.OrderByQuantity,
             pageIndex: searchModel.Page - 1, pageSize: searchModel.PageSize);
-            
+
         var models = await reportItems.SelectAwait(async item =>
                 {
                     var customer = await _customerService.GetCustomerByIdAsync(item.CustomerId);
@@ -959,7 +959,7 @@ public partial class ReportController : BaseAdminController
                             ? customer.Email
                             : await _localizationService.GetResourceAsync("Admin.Customers.Guest");
                     }
-                    
+
                     item.OrderTotalStr = await _priceFormatter.FormatPriceAsync(item.OrderTotal, true, false);
                     return item;
                 }
@@ -985,7 +985,7 @@ public partial class ReportController : BaseAdminController
     public virtual async Task<IActionResult> ExportBestCustomersByNumberOfOrdersExcelAll(CustomerReportsSearchModel search)
     {
         var searchModel = search.BestCustomersByNumberOfOrders;
-        
+
         var startDateValue = !searchModel.StartDate.HasValue ? null
             : (DateTime?)_dateTimeHelper.ConvertToUtcTime(searchModel.StartDate.Value, await _dateTimeHelper.GetCurrentTimeZoneAsync());
         var endDateValue = !searchModel.EndDate.HasValue ? null
@@ -993,7 +993,7 @@ public partial class ReportController : BaseAdminController
         var orderStatus = searchModel.OrderStatusId > 0 ? (OrderStatus?)searchModel.OrderStatusId : null;
         var paymentStatus = searchModel.PaymentStatusId > 0 ? (PaymentStatus?)searchModel.PaymentStatusId : null;
         var shippingStatus = searchModel.ShippingStatusId > 0 ? (ShippingStatus?)searchModel.ShippingStatusId : null;
-        
+
         var reportItems = await _customerReportService.GetBestCustomersReportAsync(createdFromUtc: startDateValue,
             createdToUtc: endDateValue,
             os: orderStatus,
@@ -1001,7 +1001,7 @@ public partial class ReportController : BaseAdminController
             ss: shippingStatus,
             orderBy: OrderByEnum.OrderByQuantity,
             pageIndex: searchModel.Page - 1, pageSize: searchModel.PageSize);
-            
+
         var models = await reportItems.SelectAwait(async item =>
                 {
                     //fill in additional values (not existing in the entity)
@@ -1012,7 +1012,7 @@ public partial class ReportController : BaseAdminController
                             ? customer.Email
                             : await _localizationService.GetResourceAsync("Admin.Customers.Guest");
                     }
-                    
+
                     item.OrderTotalStr = await _priceFormatter.FormatPriceAsync(item.OrderTotal, true, false);
                     return item;
                 }
