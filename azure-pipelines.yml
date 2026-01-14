@@ -12,7 +12,7 @@ pool:
 variables:   
   branchName: $[replace(variables['Build.SourceBranchName'], '.', '-')]
   dbName: 'RCC-$(branchName)-sqldb'
-  dbAlreadyExists: ''true'
+  dbAlreadyExists: 'true'
   ip: '0.0.0.0'
   serverFqdn: 'q4u5ofuj04.database.windows.net'
   AdminUser: $(sqlUser)
