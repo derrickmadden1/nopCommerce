@@ -17,7 +17,14 @@ variables:
 steps:
 
 - task: PowerShell@2
-  displayName: 'After variable set'
+  displayName: 'Before variable set no condition'
+  inputs:
+    targetType: 'inline'
+    script: echo "dbAlreadyExists - $(dbAlreadyExists)"
+    pwsh: true
+
+- task: PowerShell@2
+  displayName: 'Before variable set'
   condition: eq(lower(variables.dbAlreadyExists), 'false')
   inputs:
     targetType: 'inline'
@@ -41,6 +48,13 @@ steps:
         echo "Creating $(dbName) on server q4u5ofuj04"
         Write-Host "##vso[task.setvariable variable=dbAlreadyExists;isOutput=true]$false"
       }
+
+- task: PowerShell@2
+  displayName: 'After variable set - no condition'
+  inputs:
+    targetType: 'inline'
+    script: echo "dbAlreadyExists - $(dbAlreadyExists)"
+    pwsh: true
 
 - task: PowerShell@2
   displayName: 'After variable set'
