@@ -12,7 +12,7 @@ pool:
 variables:   
   branchName: $[replace(variables['Build.SourceBranchName'], '.', '-')]
   dbName: 'RCC-$(branchName)-sqldb'
-  dbAlreadyExists: true
+  dbAlreadyExists: ''true'
   ip: '0.0.0.0'
   serverFqdn: 'q4u5ofuj04.database.windows.net'
   AdminUser: $(sqlUser)
@@ -41,7 +41,7 @@ steps:
         az sql db copy -g RoseCottageCroft -s q4u5ofuj04 -n RoseCottageStore --dest-name $(dbName)
         echo "Setting firewall rule for sql server ip to $ip"
         az sql server firewall-rule create -g RoseCottageCroft -s q4u5ofuj04 -n pipeline --start-ip-address $ip --end-ip-address $ip
-        Write-Host "##vso[task.setvariable variable=dbAlreadyExists;isOutput=true]$false"
+        Write-Host "##vso[task.setvariable variable=dbAlreadyExists]false"
       }
 
 - task: PowerShell@2
