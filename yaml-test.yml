@@ -1,0 +1,51 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger:
+- main
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:   
+  branchName: $[replace(variables['Build.SourceBranchName'], '.', '-')]
+  dbName: 'RCC-$(branchName)-sqldb'
+  dbAlreadyExists: true
+
+steps:
+
+- task: PowerShell@2
+  displayName: 'After variable set'
+  condition: eq(lower(variables.dbAlreadyExists), 'false')
+  inputs:
+    targetType: 'inline'
+    script: echo "dbAlreadyExists - $(dbAlreadyExists)"
+    pwsh: true
+
+- task: AzureCLI@2
+  name: CheckDb
+  displayName: 'Creating Sql Database on Azure'
+  inputs:
+    azureSubscription: 'Pipeline to Azure Portal Access'
+    scriptType: 'pscore'
+    scriptLocation: 'inlineScript'
+    inlineScript: |
+      $dbList = az sql db list --resource-group RoseCottageCroft --server q4u5ofuj04 --query "[?name=='$(dbName)']" | ConvertFrom-Json   
+      if ($dbList.Length -gt 0) {
+        echo "Database $(dbName) found"
+      }
+      else {
+        echo "Database $(dbName) not found"
+        echo "Creating $(dbName) on server q4u5ofuj04"
+        Write-Host "##vso[task.setvariable variable=dbAlreadyExists;isOutput=true]$false"
+      }
+
+- task: PowerShell@2
+  displayName: 'After variable set'
+  condition: eq(lower(variables.dbAlreadyExists), 'false')
+  inputs:
+    targetType: 'inline'
+    script: echo "dbAlreadyExists - $(dbAlreadyExists)"
+    pwsh: true
