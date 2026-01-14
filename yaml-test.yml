@@ -1,65 +1,77 @@
-# Starter pipeline
-# Start with a minimal pipeline that you can customize to build and deploy your code.
-# Add steps that build, run tests, deploy, and more:
-# https://aka.ms/yaml
-
 trigger:
 - main
 
 pool:
   vmImage: ubuntu-latest
 
-variables:   
+variables:
   branchName: $[replace(variables['Build.SourceBranchName'], '.', '-')]
   dbName: 'RCC-$(branchName)-sqldb'
-  dbAlreadyExists: true
+  # Always store booleans as lowercase strings
+  dbAlreadyExists: 'true'
 
 steps:
 
+# --- BEFORE CHECK ---
+
 - task: PowerShell@2
-  displayName: 'Before variable set no condition'
+  displayName: 'Before variable set (no condition)'
   inputs:
     targetType: 'inline'
-    script: echo "dbAlreadyExists - $(dbAlreadyExists)"
+    script: |
+      echo "dbAlreadyExists - $(dbAlreadyExists)"
     pwsh: true
 
 - task: PowerShell@2
-  displayName: 'Before variable set'
+  displayName: 'Before variable set (conditioned)'
   condition: eq(lower(variables.dbAlreadyExists), 'false')
   inputs:
     targetType: 'inline'
-    script: echo "dbAlreadyExists - $(dbAlreadyExists)"
+    script: |
+      echo "dbAlreadyExists - $(dbAlreadyExists)"
     pwsh: true
+
+# --- CHECK DB ---
 
 - task: AzureCLI@2
   name: CheckDb
-  displayName: 'Creating Sql Database on Azure'
+  displayName: 'Check/Create SQL Database'
   inputs:
     azureSubscription: 'Pipeline to Azure Portal Access'
     scriptType: 'pscore'
     scriptLocation: 'inlineScript'
     inlineScript: |
-      $dbList = az sql db list --resource-group RoseCottageCroft --server q4u5ofuj04 --query "[?name=='$(dbName)']" | ConvertFrom-Json   
+      $dbList = az sql db list `
+        --resource-group RoseCottageCroft `
+        --server q4u5ofuj04 `
+        --query "[?name=='$(dbName)']" | ConvertFrom-Json
+
       if ($dbList.Length -gt 0) {
         echo "Database $(dbName) found"
       }
       else {
         echo "Database $(dbName) not found"
         echo "Creating $(dbName) on server q4u5ofuj04"
-        Write-Host "##vso[task.setvariable variable=dbAlreadyExists;isOutput=true]$false"
+
+        # Always set lowercase string
+        Write-Host "##vso[task.setvariable variable=dbAlreadyExists]false"
       }
 
+# --- AFTER CHECK ---
+
 - task: PowerShell@2
-  displayName: 'After variable set - no condition'
+  displayName: 'After variable set (no condition)'
   inputs:
     targetType: 'inline'
-    script: echo "dbAlreadyExists - $(dbAlreadyExists)"
+    script: |
+      echo "dbAlreadyExists - $(dbAlreadyExists)"
     pwsh: true
 
 - task: PowerShell@2
-  displayName: 'After variable set'
+  displayName: 'After variable set (conditioned)'
   condition: eq(lower(variables.dbAlreadyExists), 'false')
   inputs:
     targetType: 'inline'
-    script: echo "dbAlreadyExists - $(dbAlreadyExists)"
+    script: |
+      echo "dbAlreadyExists - $(dbAlreadyExists)"
     pwsh: true
