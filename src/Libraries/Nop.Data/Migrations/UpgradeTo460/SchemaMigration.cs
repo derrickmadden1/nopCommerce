@@ -6,6 +6,7 @@ using Nop.Core.Domain.Discounts;
 using Nop.Core.Domain.Localization;
 using Nop.Core.Domain.Tax;
 using Nop.Data.Extensions;
+using Nop.Data.Mapping;
 
 namespace Nop.Data.Migrations.UpgradeTo460;
 
@@ -95,13 +96,46 @@ public class SchemaMigration : ForwardOnlyMigration
 
         this.AddOrAlterColumnFor<Customer>(t => t.CurrencyId)
             .AsInt32()
-            .ForeignKey<Currency>(onDelete: Rule.SetNull)
             .Nullable();
+
+        var customerTableName = NameCompatibilityManager.GetTableName(typeof(Customer));
+        var currencyIdColumnName = NameCompatibilityManager.GetColumnName(typeof(Customer), nameof(Customer.CurrencyId));
+        var currencyTableName = NameCompatibilityManager.GetTableName(typeof(Currency));
+
+        if (!Schema.Table(customerTableName).Index("IX_Customer_CurrencyId").Exists())
+        {
+            Create.Index("IX_Customer_CurrencyId").OnTable(customerTableName).OnColumn(currencyIdColumnName).Ascending();
+        }
+
+        //add foreign key
+        if (!Schema.Table(customerTableName).Constraint($"FK_{customerTableName}_{currencyIdColumnName}_{currencyTableName}_Id").Exists())
+        {
+            Create.ForeignKey($"FK_{customerTableName}_{currencyIdColumnName}_{currencyTableName}_Id")
+                .FromTable(customerTableName).ForeignColumn(currencyIdColumnName)
+                .ToTable(currencyTableName).PrimaryColumn(nameof(Currency.Id))
+                .OnDelete(Rule.SetNull);
+        }
 
         this.AddOrAlterColumnFor<Customer>(t => t.LanguageId)
             .AsInt32()
-            .ForeignKey<Language>(onDelete: Rule.SetNull)
             .Nullable();
+
+        var languageIdColumnName = NameCompatibilityManager.GetColumnName(typeof(Customer), nameof(Customer.LanguageId));
+        var languageTableName = NameCompatibilityManager.GetTableName(typeof(Language));
+
+        if (!Schema.Table(customerTableName).Index("IX_Customer_LanguageId").Exists())
+        {
+            Create.Index("IX_Customer_LanguageId").OnTable(customerTableName).OnColumn(languageIdColumnName).Ascending();
+        }
+
+        //add foreign key
+        if (!Schema.Table(customerTableName).Constraint($"FK_{customerTableName}_{languageIdColumnName}_{languageTableName}_Id").Exists())
+        {
+            Create.ForeignKey($"FK_{customerTableName}_{languageIdColumnName}_{languageTableName}_Id")
+                .FromTable(customerTableName).ForeignColumn(languageIdColumnName)
+                .ToTable(languageTableName).PrimaryColumn(nameof(Language.Id))
+                .OnDelete(Rule.SetNull);
+        }
 
         this.AddOrAlterColumnFor<Customer>(t => t.TaxDisplayTypeId)
             .AsInt32()
