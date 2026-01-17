@@ -1,4 +1,5 @@
-﻿using FluentMigrator;
+﻿using System.Data;
+using FluentMigrator;
 using Nop.Core.Domain.Catalog;
 using Nop.Core.Domain.Customers;
 using Nop.Core.Domain.Forums;
@@ -6,6 +7,7 @@ using Nop.Core.Domain.Logging;
 using Nop.Core.Domain.Messages;
 using Nop.Core.Domain.Orders;
 using Nop.Data.Extensions;
+using Nop.Data.Mapping;
 
 namespace Nop.Data.Migrations.UpgradeTo470;
 
@@ -59,9 +61,29 @@ public class SchemaMigration : ForwardOnlyMigration
             .AsString(100)
             .Nullable();
 
-        this.AddOrAlterColumnFor<Log>(t => t.IpAddress)
-            .AsString(100)
-            .Nullable();
+        var logTableName = NameCompatibilityManager.GetTableName(typeof(Log));
+        var ipColumnName = NameCompatibilityManager.GetColumnName(typeof(Log), nameof(Log.IpAddress));
+
+        if (Schema.Table(logTableName).Column(ipColumnName).Exists())
+        {
+            Execute.WithConnection((connection, transaction) =>
+            {
+                if (connection.GetType().Name.Equals("SqlConnection", StringComparison.OrdinalIgnoreCase))
+                {
+                    using var command = connection.CreateCommand();
+                    command.Transaction = transaction;
+                    command.CommandText = $"ALTER TABLE [{logTableName}] ALTER COLUMN [{ipColumnName}] NVARCHAR(100) NULL";
+                    command.CommandTimeout = 4800;
+                    command.ExecuteNonQuery();
+                }
+            });
+        }
+        else
+        {
+            this.AddOrAlterColumnFor<Log>(t => t.IpAddress)
+                .AsString(100)
+                .Nullable();
+        }
 
         this.AddOrAlterColumnFor<Order>(t => t.CustomerIp)
             .AsString(100)
