@@ -1,4 +1,5 @@
-﻿using FluentMigrator;
+﻿using System.Data;
+using FluentMigrator;
 using Nop.Core.Domain.Blogs;
 using Nop.Core.Domain.Catalog;
 using Nop.Core.Domain.Customers;
@@ -93,9 +94,21 @@ public class AddIndexesMigration : ForwardOnlyMigration
                 .WithOptions().NonClustered();
 
         if (!Schema.Table(nameof(Log)).Index("IX_Log_CustomerId").Exists())
-            IfDatabase(databaseType).Create.Index("IX_Log_CustomerId").OnTable(nameof(Log))
-                .OnColumn(nameof(Log.CustomerId)).Ascending()
-                .WithOptions().NonClustered();
+        {
+            //create index with timeout
+             Execute.WithConnection((connection, transaction) =>
+             {
+                 //we handle only SQL Server here
+                 if (connection.GetType().Name.Equals("SqlConnection", StringComparison.OrdinalIgnoreCase))
+                 {
+                     using var command = connection.CreateCommand();
+                     command.Transaction = transaction;
+                     command.CommandText = "CREATE NONCLUSTERED INDEX [IX_Log_CustomerId] ON [Log] ([CustomerId] ASC)";
+                     command.CommandTimeout = 4800;
+                     command.ExecuteNonQuery();
+                 }
+             });
+        }
 
         if (!Schema.Table(nameof(BlogComment)).Index("IX_BlogComment_CustomerId").Exists())
             IfDatabase(databaseType).Create.Index("IX_BlogComment_CustomerId").OnTable(nameof(BlogComment))
