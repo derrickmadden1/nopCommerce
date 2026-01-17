@@ -88,7 +88,9 @@ public partial class SyncCodeHelper : ISyncCodeHelper
         if (!entities.Any())
             return;
 
+        using var transaction = new TransactionScope(TransactionScopeOption.Required, TimeSpan.FromMinutes(10), TransactionScopeAsyncFlowOption.Enabled);
         _dataProvider.UpdateEntities(entities);
+        transaction.Complete();
     }
 
     /// <summary>
@@ -101,7 +103,7 @@ public partial class SyncCodeHelper : ISyncCodeHelper
     {
         ArgumentNullException.ThrowIfNull(entities);
 
-        using var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+        using var transaction = new TransactionScope(TransactionScopeOption.Required, TimeSpan.FromMinutes(10), TransactionScopeAsyncFlowOption.Enabled);
         _dataProvider.BulkInsertEntities(entities);
         transaction.Complete();
     }
@@ -117,7 +119,7 @@ public partial class SyncCodeHelper : ISyncCodeHelper
     {
         ArgumentNullException.ThrowIfNull(predicate);
 
-        using var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled);
+        using var transaction = new TransactionScope(TransactionScopeOption.Required, TimeSpan.FromMinutes(10), TransactionScopeAsyncFlowOption.Enabled);
         var countDeletedRecords = _dataProvider.BulkDeleteEntities(predicate);
         transaction.Complete();
 
