@@ -293,7 +293,7 @@ public class SquarePaymentMethod : BasePlugin, IPaymentMethod
         //whether to save card details for the future purchasing
         var saveCardKey = await _localizationService.GetResourceAsync("Plugins.Payments.Square.Fields.SaveCard.Key");
         var isGuest = await _customerService.IsGuestAsync(customer);
-        if (paymentRequest.CustomValues.TryGetValue(saveCardKey, out var saveCardValue) && saveCardValue is bool saveCard && saveCard && !isGuest)
+        if (paymentRequest.CustomValues.TryGetValue(saveCardKey, out var saveCardValue) && bool.TryParse(saveCardValue.Value, out var saveCard) && saveCard && !isGuest)
         {
             //remove the value from payment custom values, since it is no longer needed
             paymentRequest.CustomValues.Remove(saveCardKey);
@@ -358,7 +358,7 @@ public class SquarePaymentMethod : BasePlugin, IPaymentMethod
 
                 //save card identifier to payment custom values for further purchasing
                 if (isRecurringPayment)
-                    paymentRequest.CustomValues.Add(storedCardKey, card.Id);
+                    paymentRequest.CustomValues.Add(new CustomValue(storedCardKey, card.Id));
 
                 //set 'card on file'
                 return paymentRequestBuilder
@@ -621,19 +621,19 @@ public class SquarePaymentMethod : BasePlugin, IPaymentMethod
 
         //pass custom values to payment processor
         if (form.TryGetValue(nameof(PaymentInfoModel.Token), out var token) && !StringValues.IsNullOrEmpty(token))
-            paymentRequest.CustomValues.Add(await _localizationService.GetResourceAsync("Plugins.Payments.Square.Fields.Token.Key"), token.ToString());
+            paymentRequest.CustomValues.Add(new CustomValue(await _localizationService.GetResourceAsync("Plugins.Payments.Square.Fields.Token.Key"), token.ToString()));
 
         if (form.TryGetValue(nameof(PaymentInfoModel.CardNonce), out var cardNonce) && !StringValues.IsNullOrEmpty(cardNonce))
-            paymentRequest.CustomValues.Add(await _localizationService.GetResourceAsync("Plugins.Payments.Square.Fields.CardNonce.Key"), cardNonce.ToString());
+            paymentRequest.CustomValues.Add(new CustomValue(await _localizationService.GetResourceAsync("Plugins.Payments.Square.Fields.CardNonce.Key"), cardNonce.ToString()));
 
         if (form.TryGetValue(nameof(PaymentInfoModel.StoredCardId), out var storedCardId) && !StringValues.IsNullOrEmpty(storedCardId) && !storedCardId.Equals(Guid.Empty.ToString()))
-            paymentRequest.CustomValues.Add(await _localizationService.GetResourceAsync("Plugins.Payments.Square.Fields.StoredCard.Key"), storedCardId.ToString());
+            paymentRequest.CustomValues.Add(new CustomValue(await _localizationService.GetResourceAsync("Plugins.Payments.Square.Fields.StoredCard.Key"), storedCardId.ToString()));
 
         if (form.TryGetValue(nameof(PaymentInfoModel.SaveCard), out var saveCardValue) && !StringValues.IsNullOrEmpty(saveCardValue) && bool.TryParse(saveCardValue[0], out var saveCard) && saveCard)
-            paymentRequest.CustomValues.Add(await _localizationService.GetResourceAsync("Plugins.Payments.Square.Fields.SaveCard.Key"), saveCard);
+            paymentRequest.CustomValues.Add(new CustomValue(await _localizationService.GetResourceAsync("Plugins.Payments.Square.Fields.SaveCard.Key"), saveCard.ToString()));
 
         if (form.TryGetValue(nameof(PaymentInfoModel.PostalCode), out var postalCode) && !StringValues.IsNullOrEmpty(postalCode))
-            paymentRequest.CustomValues.Add(await _localizationService.GetResourceAsync("Plugins.Payments.Square.Fields.PostalCode.Key"), postalCode.ToString());
+            paymentRequest.CustomValues.Add(new CustomValue(await _localizationService.GetResourceAsync("Plugins.Payments.Square.Fields.PostalCode.Key"), postalCode.ToString()));
 
         return paymentRequest;
     }
