@@ -206,3 +206,5 @@ src/Presentation/Nop.Web/wwwroot/sitemaps/*
 src/packages/*
 src/Tests/Nop.Tests/Connections.resx
 /src/App_Data/appsettings.json
+/src/build_output.txt
+/src/test_output.txt
