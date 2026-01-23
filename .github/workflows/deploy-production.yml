@@ -1,0 +1,101 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  DOTNET_VERSION: '9.0.x'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Restore dependencies
+      run: dotnet restore src/NopCommerce.sln
+
+    - name: Run Tests
+      run: |
+        dotnet test src/Tests/Nop.Tests/Nop.Tests.csproj --configuration Release --no-restore --logger trx --results-directory "TestResults"
+
+    - name: Upload Test Results
+      uses: actions/upload-artifact@v4
+      if: success() || failure()
+      with:
+        name: test-results
+        path: TestResults
+
+    - name: Build with Release configuration
+      run: dotnet build src/NopCommerce.sln --configuration Release --no-restore
+
+    - name: Publish Nop.Web
+      run: |
+        dotnet publish src/Presentation/Nop.Web/Nop.Web.csproj --configuration Release --output ./app_publish --no-build
+
+    - name: Clean App_Data from publish
+      run: |
+        rm -f ./app_publish/App_Data/*.json
+        rm -f ./app_publish/App_Data/dataSettings.json
+        rm -f ./app_publish/App_Data/DataProtectionKeys/*.xml
+
+    - name: Upload artifact for deployment job
+      uses: actions/upload-artifact@v4
+      with:
+        name: nopcommerce-app
+        path: ./app_publish
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    environment:
+      name: 'Production'
+      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Download artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: nopcommerce-app
+
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Create Resource Group
+      run: |
+        az group create \
+          --name rosecottagecroft \
+          --location centralus
+
+    - name: Deploy Infrastructure
+      run: |
+        az deployment group create \
+          --resource-group rosecottagecroft \
+          --template-file infrastructure/main.bicep \
+          --parameters appName=${{ secrets.AZURE_WEBAPP_NAME }} \
+          --parameters skuName=D1 \
+          --parameters sqlAdminUsername=${{ secrets.SQL_ADMIN_USERNAME }} \
+          --parameters sqlAdminPassword=${{ secrets.SQL_ADMIN_PASSWORD }} \
+          --parameters sqlServerName=nopcommerce-prod-sql \
+          --parameters sqlDatabaseName=${{ secrets.PROD_SQL_DATABASE }}
+
+    - name: Deploy to Azure Web App
+      id: deploy-to-webapp
+      uses: azure/webapps-deploy@v2
+      with:
+        app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
+        slot-name: 'Production'
+        package: .

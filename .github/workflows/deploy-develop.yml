@@ -1,0 +1,172 @@
+name: Deploy to Development
+
+on:
+  push:
+    branches:
+      - develop
+  workflow_dispatch:
+
+env:
+  DOTNET_VERSION: '9.0.x'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Restore dependencies
+      run: dotnet restore src/NopCommerce.sln
+
+    - name: Run Tests
+      run: |
+        dotnet test src/Tests/Nop.Tests/Nop.Tests.csproj --configuration Release --no-restore --logger trx --results-directory "TestResults"
+
+    - name: Upload Test Results
+      uses: actions/upload-artifact@v4
+      if: success() || failure()
+      with:
+        name: test-results
+        path: TestResults
+
+    - name: Build with Release configuration
+      run: dotnet build src/NopCommerce.sln --configuration Release --no-restore
+
+    - name: Publish Nop.Web
+      run: |
+        dotnet publish src/Presentation/Nop.Web/Nop.Web.csproj --configuration Release --output ./app_publish --no-build
+
+    - name: Upload artifact for deployment job
+      uses: actions/upload-artifact@v4
+      with:
+        name: nopcommerce-app
+        path: ./app_publish
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    environment:
+      name: 'Development'
+      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Download artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: nopcommerce-app
+
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS_DEV }}
+
+    - name: Create Resource Group
+      run: |
+        az group create \
+          --name rcc-dev-rg \
+          --location ukwest
+
+    - name: Deploy Infrastructure
+      run: |
+        az deployment group create \
+          --resource-group rcc-dev-rg \
+          --template-file infrastructure/main.bicep \
+          --parameters appName=${{ secrets.AZURE_WEBAPP_NAME_DEV }} \
+          --parameters skuName=B1 \
+          --parameters sqlAdminUsername=${{ secrets.SQL_ADMIN_USERNAME }} \
+          --parameters sqlAdminPassword=${{ secrets.SQL_ADMIN_PASSWORD }} \
+          --parameters sqlServerName=rcc-dev-sql \
+          --parameters sqlDatabaseName=rcc-dev-db
+
+    - name: Get Runner IP
+      id: get-ip
+      run: |
+        RUNNER_IP=$(curl -s https://api.ipify.org)
+        echo "ip=$RUNNER_IP" >> $GITHUB_OUTPUT
+        echo "Runner IP: $RUNNER_IP"
+
+    - name: Add Firewall Rule for Runner
+      run: |
+        az sql server firewall-rule create \
+          --resource-group rcc-dev-rg \
+          --server rcc-dev-sql \
+          --name "GitHubRunner" \
+          --start-ip-address ${{ steps.get-ip.outputs.ip }} \
+          --end-ip-address ${{ steps.get-ip.outputs.ip }}
+
+    - name: Copy Production Database
+      run: |
+        az sql db copy \
+          --resource-group ${{ secrets.PROD_RESOURCE_GROUP }} \
+          --server ${{ secrets.PROD_SQL_SERVER }} \
+          --name ${{ secrets.PROD_SQL_DATABASE }} \
+          --dest-name rcc-dev-db \
+          --dest-resource-group rcc-dev-rg \
+          --dest-server rcc-dev-sql
+
+    - name: Wait for Database Copy
+      run: |
+        echo "Waiting for database copy to complete..."
+        while true; do
+          STATUS=$(az sql db show \
+            --resource-group rcc-dev-rg \
+            --server rcc-dev-sql \
+            --name rcc-dev-db \
+            --query "status" -o tsv)
+          echo "Database status: $STATUS"
+          if [ "$STATUS" = "Online" ]; then
+            echo "Database copy completed successfully"
+            break
+          fi
+          sleep 30
+        done
+
+    - name: Run Post-Copy Configuration
+      run: |
+        sqlcmd -S rcc-dev-sql.database.windows.net \
+          -d rcc-dev-db \
+          -U ${{ secrets.SQL_ADMIN_USERNAME }} \
+          -P ${{ secrets.SQL_ADMIN_PASSWORD }} \
+          -i infrastructure/post-copy-dev.sql
+
+    - name: Remove Firewall Rule
+      if: always()
+      run: |
+        az sql server firewall-rule delete \
+          --resource-group rcc-dev-rg \
+          --server rcc-dev-sql \
+          --name "GitHubRunner" || true
+
+    - name: Create dataSettings.json
+      run: |
+        mkdir -p App_Data
+        cat > App_Data/dataSettings.json << 'EOF'
+        {
+          "DataProvider": "sqlserver",
+          "DataConnectionString": "Data Source=tcp:rcc-dev-sql.database.windows.net,1433;Initial Catalog=rcc-dev-db;Persist Security Info=False;User ID=${{ secrets.SQL_ADMIN_USERNAME }};Password=${{ secrets.SQL_ADMIN_PASSWORD }};MultipleActiveResultSets=False;Connect Timeout=30;Encrypt=True;TrustServerCertificate=False",
+          "RawDataSettings": {}
+        }
+        EOF
+
+    - name: Deploy to Azure Web App
+      id: deploy-to-webapp
+      uses: azure/webapps-deploy@v2
+      with:
+        app-name: ${{ secrets.AZURE_WEBAPP_NAME_DEV }}
+        slot-name: 'Production'
+        package: .
+
+    - name: Downgrade to F1 (Cost Savings)
+      run: |
+        az appservice plan update \
+          --name plan-${{ secrets.AZURE_WEBAPP_NAME_DEV }} \
+          --resource-group rcc-dev-rg \
+          --sku F1
