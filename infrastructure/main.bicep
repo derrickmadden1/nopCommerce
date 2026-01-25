@@ -1,11 +1,11 @@
 param appName string
 param location string = resourceGroup().location
 param skuName string = 'F1' // Default to Free tier
-param sqlAdminUsername string
+param sqlAdminUsername string = ''
 @secure()
-param sqlAdminPassword string
-param sqlServerName string
-param sqlDatabaseName string
+param sqlAdminPassword string = ''
+param sqlServerName string = ''
+param sqlDatabaseName string = ''
 
 resource appServicePlan 'Microsoft.Web/serverfarms@2022-03-01' = {
   name: 'plan-${appName}'
@@ -30,7 +30,7 @@ resource webApp 'Microsoft.Web/sites@2022-03-01' = {
   }
 }
 
-resource sqlServer 'Microsoft.Sql/servers@2022-05-01-preview' = {
+resource sqlServer 'Microsoft.Sql/servers@2022-05-01-preview' = if (!empty(sqlServerName)) {
   name: sqlServerName
   location: location
   properties: {
@@ -40,7 +40,7 @@ resource sqlServer 'Microsoft.Sql/servers@2022-05-01-preview' = {
   }
 }
 
-resource sqlDatabase 'Microsoft.Sql/servers/databases@2022-05-01-preview' = {
+resource sqlDatabase 'Microsoft.Sql/servers/databases@2022-05-01-preview' = if (!empty(sqlServerName)) {
   parent: sqlServer
   name: sqlDatabaseName
   location: location
@@ -50,7 +50,7 @@ resource sqlDatabase 'Microsoft.Sql/servers/databases@2022-05-01-preview' = {
   }
 }
 
-resource sqlFirewallRuleAzure 'Microsoft.Sql/servers/firewallRules@2022-05-01-preview' = {
+resource sqlFirewallRuleAzure 'Microsoft.Sql/servers/firewallRules@2022-05-01-preview' = if (!empty(sqlServerName)) {
   parent: sqlServer
   name: 'AllowAzureServices'
   properties: {

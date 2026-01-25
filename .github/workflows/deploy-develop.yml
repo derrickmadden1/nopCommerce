@@ -80,11 +80,7 @@ jobs:
           --resource-group rcc-dev-rg \
           --template-file infrastructure/main.bicep \
           --parameters appName=${{ secrets.AZURE_WEBAPP_NAME_DEV }} \
-          --parameters skuName=B1 \
-          --parameters sqlAdminUsername=${{ secrets.SQL_ADMIN_USERNAME }} \
-          --parameters sqlAdminPassword=${{ secrets.SQL_ADMIN_PASSWORD }} \
-          --parameters sqlServerName=rcc-dev-sql \
-          --parameters sqlDatabaseName=rcc-dev-db
+          --parameters skuName=B1
 
     - name: Get Runner IP
       id: get-ip
@@ -96,8 +92,8 @@ jobs:
     - name: Add Firewall Rule for Runner
       run: |
         az sql server firewall-rule create \
-          --resource-group rcc-dev-rg \
-          --server rcc-dev-sql \
+          --resource-group ${{ secrets.PROD_RESOURCE_GROUP }} \
+          --server ${{ secrets.PROD_SQL_SERVER }} \
           --name "GitHubRunner" \
           --start-ip-address ${{ steps.get-ip.outputs.ip }} \
           --end-ip-address ${{ steps.get-ip.outputs.ip }}
@@ -109,16 +105,16 @@ jobs:
           --server ${{ secrets.PROD_SQL_SERVER }} \
           --name ${{ secrets.PROD_SQL_DATABASE }} \
           --dest-name rcc-dev-db \
-          --dest-resource-group rcc-dev-rg \
-          --dest-server rcc-dev-sql
+          --dest-resource-group ${{ secrets.PROD_RESOURCE_GROUP }} \
+          --dest-server ${{ secrets.PROD_SQL_SERVER }}
 
     - name: Wait for Database Copy
       run: |
         echo "Waiting for database copy to complete..."
         while true; do
           STATUS=$(az sql db show \
-            --resource-group rcc-dev-rg \
-            --server rcc-dev-sql \
+            --resource-group ${{ secrets.PROD_RESOURCE_GROUP }} \
+            --server ${{ secrets.PROD_SQL_SERVER }} \
             --name rcc-dev-db \
             --query "status" -o tsv)
           echo "Database status: $STATUS"
@@ -149,7 +145,7 @@ jobs:
 
     - name: Run Post-Copy Configuration
       run: |
-        /opt/mssql-tools18/bin/sqlcmd -S rcc-dev-sql.database.windows.net \
+        /opt/mssql-tools18/bin/sqlcmd -S ${{ secrets.PROD_SQL_SERVER }}.database.windows.net \
           -d rcc-dev-db \
           -U ${{ secrets.SQL_ADMIN_USERNAME }} \
           -P ${{ secrets.SQL_ADMIN_PASSWORD }} \
@@ -160,8 +156,8 @@ jobs:
       if: always()
       run: |
         az sql server firewall-rule delete \
-          --resource-group rcc-dev-rg \
-          --server rcc-dev-sql \
+          --resource-group ${{ secrets.PROD_RESOURCE_GROUP }} \
+          --server ${{ secrets.PROD_SQL_SERVER }} \
           --name "GitHubRunner" || true
 
     - name: Create dataSettings.json
@@ -170,7 +166,7 @@ jobs:
         cat > App_Data/dataSettings.json << 'EOF'
         {
           "DataProvider": "sqlserver",
-          "DataConnectionString": "Data Source=tcp:rcc-dev-sql.database.windows.net,1433;Initial Catalog=rcc-dev-db;Persist Security Info=False;User ID=${{ secrets.SQL_ADMIN_USERNAME }};Password=${{ secrets.SQL_ADMIN_PASSWORD }};MultipleActiveResultSets=False;Connect Timeout=30;Encrypt=True;TrustServerCertificate=False",
+          "DataConnectionString": "Data Source=tcp:${{ secrets.PROD_SQL_SERVER }}.database.windows.net,1433;Initial Catalog=rcc-dev-db;Persist Security Info=False;User ID=${{ secrets.SQL_ADMIN_USERNAME }};Password=${{ secrets.SQL_ADMIN_PASSWORD }};MultipleActiveResultSets=False;Connect Timeout=30;Encrypt=True;TrustServerCertificate=False",
           "RawDataSettings": {}
         }
         EOF
