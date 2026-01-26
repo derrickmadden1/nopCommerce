@@ -74,23 +74,23 @@ jobs:
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-    - name: Create Resource Group
-      run: |
-        az group create \
-          --name rosecottagecroft \
-          --location centralus
+    # - name: Create Resource Group
+    #   run: |
+    #     az group create \
+    #       --name rosecottagecroft \
+    #       --location centralus
 
-    - name: Deploy Infrastructure
-      run: |
-        az deployment group create \
-          --resource-group rosecottagecroft \
-          --template-file infrastructure/main.bicep \
-          --parameters appName=${{ secrets.AZURE_WEBAPP_NAME }} \
-          --parameters skuName=D1 \
-          --parameters sqlAdminUsername=${{ secrets.SQL_ADMIN_USERNAME }} \
-          --parameters sqlAdminPassword=${{ secrets.SQL_ADMIN_PASSWORD }} \
-          --parameters sqlServerName=${{ secrets.PROD_SQL_SERVER }} \
-          --parameters sqlDatabaseName=${{ secrets.PROD_SQL_DATABASE }}
+    # - name: Deploy Infrastructure
+    #   run: |
+    #     az deployment group create \
+    #       --resource-group rosecottagecroft \
+    #       --template-file infrastructure/main.bicep \
+    #       --parameters appName=${{ secrets.AZURE_WEBAPP_NAME }} \
+    #       --parameters skuName=D1 \
+    #       --parameters sqlAdminUsername=${{ secrets.SQL_ADMIN_USERNAME }} \
+    #       --parameters sqlAdminPassword=${{ secrets.SQL_ADMIN_PASSWORD }} \
+    #       --parameters sqlServerName=${{ secrets.PROD_SQL_SERVER }} \
+    #       --parameters sqlDatabaseName=${{ secrets.PROD_SQL_DATABASE }}
 
     - name: Deploy to Azure Web App
       id: deploy-to-webapp
