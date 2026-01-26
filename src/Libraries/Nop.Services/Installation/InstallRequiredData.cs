@@ -2029,7 +2029,8 @@ public partial class InstallationService
                 "/install/restartapplication",
                 "/boards/postvote",
                 "/product/estimateshipping/*",
-                "/shoppingcart/checkoutattributechange/*"
+                "/shoppingcart/checkoutattributechange/*",
+                "/poll/vote"
             ],
             LocalizableDisallowPaths =
             [
@@ -2094,7 +2095,8 @@ public partial class InstallationService
                 "/uploadfilecheckoutattribute",
                 "/uploadfileproductattribute",
                 "/uploadfilereturnrequest",
-                "/wishlist"
+                "/wishlist",
+                "/poll/vote"
             ]
         });
 
