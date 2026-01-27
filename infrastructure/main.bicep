@@ -25,6 +25,12 @@ resource webApp 'Microsoft.Web/sites@2022-03-01' = {
     serverFarmId: appServicePlan.id
     siteConfig: {
       linuxFxVersion: 'DOTNETCORE|9.0'
+      appSettings: [
+        {
+          name: 'WEBSITE_HTTPLOGGING_RETENTION_DAYS'
+          value: '3'
+        }
+      ]
     }
     httpsOnly: true
   }

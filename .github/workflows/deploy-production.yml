@@ -92,6 +92,9 @@ jobs:
     #       --parameters sqlServerName=${{ secrets.PROD_SQL_SERVER }} \
     #       --parameters sqlDatabaseName=${{ secrets.PROD_SQL_DATABASE }}
 
+    - name: Stop Web App
+      run: az webapp stop --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft
+
     - name: Deploy to Azure Web App
       id: deploy-to-webapp
       uses: azure/webapps-deploy@v2
@@ -99,3 +102,7 @@ jobs:
         app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
         slot-name: 'Production'
         package: .
+
+    - name: Start Web App
+      if: always()
+      run: az webapp start --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft
