@@ -27,10 +27,10 @@ namespace Nop.Plugin.Payments.Square.Tests;
 [TestFixture]
 public class SquarePaymentMethodTests : BaseNopTest
 {
-    private Mock<ILocalizationService> _localizationService;
-    private Mock<IStoreContext> _storeContext;
-    private Mock<ISettingService> _settingService;
-    private SquarePaymentMethod _paymentMethod;
+    private Mock<ILocalizationService> _localizationService = null!;
+    private Mock<IStoreContext> _storeContext = null!;
+    private Mock<ISettingService> _settingService = null!;
+    private SquarePaymentMethod _paymentMethod = null!;
 
     [SetUp]
     public void Setup()

@@ -1,0 +1,188 @@
+name: Deploy to Development
+
+on:
+  push:
+    branches:
+      - develop
+  workflow_dispatch:
+
+env:
+  DOTNET_VERSION: '9.0.x'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Restore dependencies
+      run: dotnet restore src/NopCommerce.sln
+
+    - name: Run Tests
+      run: |
+        dotnet test src/Tests/Nop.Tests/Nop.Tests.csproj --configuration Release --no-restore --logger trx --results-directory "TestResults"
+
+    - name: Upload Test Results
+      uses: actions/upload-artifact@v4
+      if: success() || failure()
+      with:
+        name: test-results
+        path: TestResults
+
+    - name: Build with Release configuration
+      run: dotnet build src/NopCommerce.sln --configuration Release --no-restore
+
+    - name: Publish Nop.Web
+      run: |
+        dotnet publish src/Presentation/Nop.Web/Nop.Web.csproj --configuration Release --output ./app_publish --no-build
+
+    - name: Upload artifact for deployment job
+      uses: actions/upload-artifact@v4
+      with:
+        name: nopcommerce-app
+        path: ./app_publish
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    environment:
+      name: 'Development'
+      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
+
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Download artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: nopcommerce-app
+
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS_DEV }}
+
+    - name: Create Resource Group
+      run: |
+        az group create \
+          --name rcc-dev-rg \
+          --location ukwest
+
+    - name: Deploy Infrastructure
+      run: |
+        az deployment group create \
+          --resource-group rcc-dev-rg \
+          --template-file infrastructure/main.bicep \
+          --parameters appName=${{ secrets.AZURE_WEBAPP_NAME_DEV }} \
+          --parameters skuName=B1
+
+    - name: Get Runner IP
+      id: get-ip
+      run: |
+        RUNNER_IP=$(curl -s https://api.ipify.org)
+        echo "ip=$RUNNER_IP" >> $GITHUB_OUTPUT
+        echo "Runner IP: $RUNNER_IP"
+
+    - name: Add Firewall Rule for Runner
+      run: |
+        az sql server firewall-rule create \
+          --resource-group ${{ secrets.PROD_RESOURCE_GROUP }} \
+          --server ${{ secrets.PROD_SQL_SERVER }} \
+          --name "GitHubRunner" \
+          --start-ip-address ${{ steps.get-ip.outputs.ip }} \
+          --end-ip-address ${{ steps.get-ip.outputs.ip }}
+
+    - name: Copy Production Database
+      run: |
+        az sql db copy \
+          --resource-group ${{ secrets.PROD_RESOURCE_GROUP }} \
+          --server ${{ secrets.PROD_SQL_SERVER }} \
+          --name ${{ secrets.PROD_SQL_DATABASE }} \
+          --dest-name rcc-dev-db \
+          --dest-resource-group ${{ secrets.PROD_RESOURCE_GROUP }} \
+          --dest-server ${{ secrets.PROD_SQL_SERVER }}
+
+    - name: Wait for Database Copy
+      run: |
+        echo "Waiting for database copy to complete..."
+        while true; do
+          STATUS=$(az sql db show \
+            --resource-group ${{ secrets.PROD_RESOURCE_GROUP }} \
+            --server ${{ secrets.PROD_SQL_SERVER }} \
+            --name rcc-dev-db \
+            --query "status" -o tsv)
+          echo "Database status: $STATUS"
+          if [ "$STATUS" = "Online" ]; then
+            echo "Database copy completed successfully"
+            break
+          fi
+          sleep 30
+        done
+
+    - name: Install SQL Server Command-Line Tools
+      run: |
+        # Download and install Microsoft signing key
+        curl -sS https://packages.microsoft.com/keys/microsoft.asc | sudo gpg --dearmor --batch --yes -o /usr/share/keyrings/microsoft-prod.gpg
+        
+        # Get Ubuntu version
+        UBUNTU_VERSION=$(lsb_release -rs)
+        
+        # Add Microsoft repository
+        echo "deb [arch=amd64,arm64,armhf signed-by=/usr/share/keyrings/microsoft-prod.gpg] https://packages.microsoft.com/ubuntu/${UBUNTU_VERSION}/prod ${UBUNTU_CODENAME:-$(lsb_release -cs)} main" | sudo tee /etc/apt/sources.list.d/mssql-release.list
+        
+        # Install mssql-tools
+        sudo apt-get update
+        sudo ACCEPT_EULA=Y apt-get install -y mssql-tools18 unixodbc-dev
+        
+        # Add to PATH
+        export PATH="$PATH:/opt/mssql-tools18/bin"
+
+    - name: Run Post-Copy Configuration
+      run: |
+        /opt/mssql-tools18/bin/sqlcmd -S ${{ secrets.PROD_SQL_SERVER }}.database.windows.net \
+          -d rcc-dev-db \
+          -U ${{ secrets.SQL_ADMIN_USERNAME }} \
+          -P ${{ secrets.SQL_ADMIN_PASSWORD }} \
+          -C \
+          -i infrastructure/post-copy-dev.sql
+
+    - name: Remove Firewall Rule
+      if: always()
+      run: |
+        az sql server firewall-rule delete \
+          --resource-group ${{ secrets.PROD_RESOURCE_GROUP }} \
+          --server ${{ secrets.PROD_SQL_SERVER }} \
+          --name "GitHubRunner" || true
+
+    - name: Create dataSettings.json
+      run: |
+        mkdir -p App_Data
+        cat > App_Data/dataSettings.json << 'EOF'
+        {
+          "DataProvider": "sqlserver",
+          "DataConnectionString": "Data Source=tcp:${{ secrets.PROD_SQL_SERVER }}.database.windows.net,1433;Initial Catalog=rcc-dev-db;Persist Security Info=False;User ID=${{ secrets.SQL_ADMIN_USERNAME }};Password=${{ secrets.SQL_ADMIN_PASSWORD }};MultipleActiveResultSets=False;Connect Timeout=30;Encrypt=True;TrustServerCertificate=False",
+          "RawDataSettings": {}
+        }
+        EOF
+
+    - name: Deploy to Azure Web App
+      id: deploy-to-webapp
+      uses: azure/webapps-deploy@v2
+      with:
+        app-name: ${{ secrets.AZURE_WEBAPP_NAME_DEV }}
+        slot-name: 'Production'
+        package: .
+
+    - name: Downgrade to F1 (Cost Savings)
+      if: always()
+      run: |
+        az appservice plan update \
+          --name plan-${{ secrets.AZURE_WEBAPP_NAME_DEV }} \
+          --resource-group rcc-dev-rg \
+          --sku F1 || true

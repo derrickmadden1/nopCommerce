@@ -2016,7 +2016,6 @@ public partial class InstallationService
                 "/subscribenewsletter",
                 "/t-popup/*",
                 "/setproductreviewhelpfulness",
-                "/poll/vote",
                 "/country/getstatesbycountryid/",
                 "/eucookielawaccept",
                 "/topic/authenticate",
@@ -2030,7 +2029,8 @@ public partial class InstallationService
                 "/install/restartapplication",
                 "/boards/postvote",
                 "/product/estimateshipping/*",
-                "/shoppingcart/checkoutattributechange/*"
+                "/shoppingcart/checkoutattributechange/*",
+                "/poll/vote"
             ],
             LocalizableDisallowPaths =
             [
@@ -2079,7 +2079,6 @@ public partial class InstallationService
                 "/order/history",
                 "/orderdetails",
                 "/passwordrecovery/confirm",
-                "/poll/vote",
                 "/privatemessages",
                 "/recentlyviewedproducts",
                 "/returnrequest",
@@ -2096,7 +2095,8 @@ public partial class InstallationService
                 "/uploadfilecheckoutattribute",
                 "/uploadfileproductattribute",
                 "/uploadfilereturnrequest",
-                "/wishlist"
+                "/wishlist",
+                "/poll/vote"
             ]
         });
 
