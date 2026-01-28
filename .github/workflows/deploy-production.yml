@@ -95,6 +95,11 @@ jobs:
     - name: Stop Web App
       run: az webapp stop --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft
 
+    - name: Purge Temp Files and Logs
+      run: |
+        az webapp run-command --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft \
+          --command "powershell -Command \"Remove-Item -Path D:\home\LogFiles\* -Recurse -Force -ErrorAction SilentlyContinue; Remove-Item -Path C:\local\Temp\* -Recurse -Force -ErrorAction SilentlyContinue\""
+
     - name: Deploy to Azure Web App
       id: deploy-to-webapp
       uses: azure/webapps-deploy@v2

@@ -14,7 +14,7 @@ resource appServicePlan 'Microsoft.Web/serverfarms@2022-03-01' = {
     name: skuName
   }
   properties: {
-    reserved: true // Linux
+    reserved: false // Windows
   }
 }
 
@@ -24,7 +24,6 @@ resource webApp 'Microsoft.Web/sites@2022-03-01' = {
   properties: {
     serverFarmId: appServicePlan.id
     siteConfig: {
-      linuxFxVersion: 'DOTNETCORE|9.0'
       appSettings: [
         {
           name: 'WEBSITE_HTTPLOGGING_RETENTION_DAYS'
