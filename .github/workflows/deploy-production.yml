@@ -97,8 +97,17 @@ jobs:
 
     - name: Purge Temp Files and Logs
       run: |
-        az webapp run-command --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft \
-          --command "powershell -Command \"Remove-Item -Path D:\home\LogFiles\* -Recurse -Force -ErrorAction SilentlyContinue; Remove-Item -Path C:\local\Temp\* -Recurse -Force -ErrorAction SilentlyContinue\""
+        # Get publishing credentials
+        creds=$(az webapp deployment list-publishing-credentials --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --query "[publishingUserName, publishingPassword]" -o tsv)
+        USER=$(echo "$creds" | sed -n '1p')
+        PASS=$(echo "$creds" | sed -n '2p')
+        
+        echo "Purging LogFiles..."
+        curl -X DELETE -u "$USER:$PASS" "https://${{ secrets.AZURE_WEBAPP_NAME }}.scm.azurewebsites.net/api/vfs/LogFiles/?recursive=true" || true
+        
+        echo "Purging Temp folders..."
+        # Note: D:\local\Temp is harder to hit via VFS, but clearing Logs usually frees enough space on the share
+        curl -X DELETE -u "$USER:$PASS" "https://${{ secrets.AZURE_WEBAPP_NAME }}.scm.azurewebsites.net/api/vfs/site/wwwroot/App_Data/logs/?recursive=true" || true
 
     - name: Deploy to Azure Web App
       id: deploy-to-webapp
