@@ -99,46 +99,46 @@ jobs:
           --resource-group Default-Web-NorthEurope \
           --sku B1
 
-    - name: Stop Web App
-      run: az webapp stop --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft
+    # - name: Stop Web App
+    #   run: az webapp stop --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft
 
-    - name: Purge Server Files and Logs
-      run: |
-        # Get publishing credentials
-        creds=$(az webapp deployment list-publishing-credentials --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --query "[publishingUserName, publishingPassword]" -o tsv)
-        USER=$(echo "$creds" | sed -n '1p')
-        PASS=$(echo "$creds" | sed -n '2p')
+    # - name: Purge Server Files and Logs
+    #   run: |
+    #     # Get publishing credentials
+    #     creds=$(az webapp deployment list-publishing-credentials --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --query "[publishingUserName, publishingPassword]" -o tsv)
+    #     USER=$(echo "$creds" | sed -n '1p')
+    #     PASS=$(echo "$creds" | sed -n '2p')
         
-        echo "Purging LogFiles and Temp folders..."
-        curl -X DELETE -u "$USER:$PASS" "https://${{ secrets.AZURE_WEBAPP_NAME }}.scm.azurewebsites.net/api/vfs/LogFiles/?recursive=true" || true
-        curl -X DELETE -u "$USER:$PASS" "https://${{ secrets.AZURE_WEBAPP_NAME }}.scm.azurewebsites.net/api/vfs/site/wwwroot/App_Data/logs/?recursive=true" || true
+    #     echo "Purging LogFiles and Temp folders..."
+    #     curl -X DELETE -u "$USER:$PASS" "https://${{ secrets.AZURE_WEBAPP_NAME }}.scm.azurewebsites.net/api/vfs/LogFiles/?recursive=true" || true
+    #     curl -X DELETE -u "$USER:$PASS" "https://${{ secrets.AZURE_WEBAPP_NAME }}.scm.azurewebsites.net/api/vfs/site/wwwroot/App_Data/logs/?recursive=true" || true
 
-        echo "Aggressive Purge: Deleting bin, Views, and wwwroot binaries to free space..."
-        # This frees ~500MB for the new extraction
-        curl -X DELETE -u "$USER:$PASS" "https://${{ secrets.AZURE_WEBAPP_NAME }}.scm.azurewebsites.net/api/vfs/site/wwwroot/bin/?recursive=true" || true
-        curl -X DELETE -u "$USER:$PASS" "https://${{ secrets.AZURE_WEBAPP_NAME }}.scm.azurewebsites.net/api/vfs/site/wwwroot/Views/?recursive=true" || true
-        curl -X DELETE -u "$USER:$PASS" "https://${{ secrets.AZURE_WEBAPP_NAME }}.scm.azurewebsites.net/api/vfs/site/wwwroot/wwwroot/?recursive=true" || true
+    #     echo "Aggressive Purge: Deleting bin, Views, and wwwroot binaries to free space..."
+    #     # This frees ~500MB for the new extraction
+    #     curl -X DELETE -u "$USER:$PASS" "https://${{ secrets.AZURE_WEBAPP_NAME }}.scm.azurewebsites.net/api/vfs/site/wwwroot/bin/?recursive=true" || true
+    #     curl -X DELETE -u "$USER:$PASS" "https://${{ secrets.AZURE_WEBAPP_NAME }}.scm.azurewebsites.net/api/vfs/site/wwwroot/Views/?recursive=true" || true
+    #     curl -X DELETE -u "$USER:$PASS" "https://${{ secrets.AZURE_WEBAPP_NAME }}.scm.azurewebsites.net/api/vfs/site/wwwroot/wwwroot/?recursive=true" || true
 
-    - name: Fetch and Protect Live Configuration
-      run: |
-        # Get publishing credentials (re-use logic)
-        creds=$(az webapp deployment list-publishing-credentials --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --query "[publishingUserName, publishingPassword]" -o tsv)
-        USER=$(echo "$creds" | sed -n '1p')
-        PASS=$(echo "$creds" | sed -n '2p')
+    # - name: Fetch and Protect Live Configuration
+    #   run: |
+    #     # Get publishing credentials (re-use logic)
+    #     creds=$(az webapp deployment list-publishing-credentials --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --query "[publishingUserName, publishingPassword]" -o tsv)
+    #     USER=$(echo "$creds" | sed -n '1p')
+    #     PASS=$(echo "$creds" | sed -n '2p')
         
-        mkdir -p App_Data
-        echo "Downloading live plugins.json..."
-        curl -u "$USER:$PASS" -o App_Data/plugins.json "https://${{ secrets.AZURE_WEBAPP_NAME }}.scm.azurewebsites.net/api/vfs/site/wwwroot/App_Data/plugins.json" || true
+    #     mkdir -p App_Data
+    #     echo "Downloading live plugins.json..."
+    #     curl -u "$USER:$PASS" -o App_Data/plugins.json "https://${{ secrets.AZURE_WEBAPP_NAME }}.scm.azurewebsites.net/api/vfs/site/wwwroot/App_Data/plugins.json" || true
         
-        echo "Recreating dataSettings.json from Secrets..."
-        # Using a secret ensures the connection string is always correct and up to date
-        cat > App_Data/dataSettings.json << 'EOF'
-        {
-          "DataProvider": "sqlserver",
-          "DataConnectionString": "Data Source=tcp:${{ secrets.PROD_SQL_SERVER }}.database.windows.net,1433;Initial Catalog=${{ secrets.PROD_SQL_DATABASE }};Persist Security Info=False;User ID=${{ secrets.SQL_ADMIN_USERNAME }};Password=${{ secrets.SQL_ADMIN_PASSWORD }};MultipleActiveResultSets=False;Connect Timeout=30;Encrypt=True;TrustServerCertificate=False",
-          "RawDataSettings": {}
-        }
-        EOF
+    #     echo "Recreating dataSettings.json from Secrets..."
+    #     # Using a secret ensures the connection string is always correct and up to date
+    #     cat > App_Data/dataSettings.json << 'EOF'
+    #     {
+    #       "DataProvider": "sqlserver",
+    #       "DataConnectionString": "Data Source=tcp:${{ secrets.PROD_SQL_SERVER }}.database.windows.net,1433;Initial Catalog=${{ secrets.PROD_SQL_DATABASE }};Persist Security Info=False;User ID=${{ secrets.SQL_ADMIN_USERNAME }};Password=${{ secrets.SQL_ADMIN_PASSWORD }};MultipleActiveResultSets=False;Connect Timeout=30;Encrypt=True;TrustServerCertificate=False",
+    #       "RawDataSettings": {}
+    #     }
+    #     EOF
 
     - name: Deploy to Azure Web App
       id: deploy-to-webapp
@@ -148,9 +148,9 @@ jobs:
         slot-name: 'Production'
         package: .
 
-    - name: Start Web App
-      if: always()
-      run: az webapp start --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft
+    # - name: Start Web App
+    #   if: always()
+    #   run: az webapp start --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft
 
     - name: Downscale App Service Plan back to D1
       if: always()
