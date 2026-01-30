@@ -92,6 +92,13 @@ jobs:
     #       --parameters sqlServerName=${{ secrets.PROD_SQL_SERVER }} \
     #       --parameters sqlDatabaseName=${{ secrets.PROD_SQL_DATABASE }}
 
+    - name: Upscale App Service Plan to B1
+      run: |
+        az appservice plan update \
+          --name plan-${{ secrets.AZURE_WEBAPP_NAME }} \
+          --resource-group rosecottagecroft \
+          --sku B1
+
     - name: Stop Web App
       run: az webapp stop --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft
 
@@ -144,3 +151,11 @@ jobs:
     - name: Start Web App
       if: always()
       run: az webapp start --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft
+
+    - name: Downscale App Service Plan back to D1
+      if: always()
+      run: |
+        az appservice plan update \
+          --name plan-${{ secrets.AZURE_WEBAPP_NAME }} \
+          --resource-group rosecottagecroft \
+          --sku D1
