@@ -95,8 +95,8 @@ jobs:
     - name: Upscale App Service Plan to B1
       run: |
         az appservice plan update \
-          --name plan-${{ secrets.AZURE_WEBAPP_NAME }} \
-          --resource-group rosecottagecroft \
+          --name Default1 \
+          --resource-group Default-Web-NorthEurope \
           --sku B1
 
     - name: Stop Web App
@@ -156,6 +156,6 @@ jobs:
       if: always()
       run: |
         az appservice plan update \
-          --name plan-${{ secrets.AZURE_WEBAPP_NAME }} \
-          --resource-group rosecottagecroft \
+          --name Default1 \
+          --resource-group Default-Web-NorthEurope \
           --sku D1
