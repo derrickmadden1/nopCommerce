@@ -9,6 +9,7 @@
             var productIds = $("#@Html.IdFor(model => model.ProductIds)").val();
             var bundlesize = $("#@Html.IdFor(model => model.BundleSize)").val();
             var bundleprice = $("#@Html.IdFor(model => model.BundlePrice)").val();
+            var applyacrossmixedproducts = $("#@Html.IdFor(model => model.ApplyAcrossMixedProducts)").val();
             var discountId = @Model.DiscountId;
             var requirementId = @Model.RequirementId;
 
@@ -17,7 +18,8 @@
                 RequirementId: requirementId,
                 ProductIds: productIds,
                 BundleSize: bundlesize,
-                BundlePrice: bundleprice
+                BundlePrice: bundleprice,
+                ApplyAcrossMixedProducts: applyacrossmixedproducts
             };
             addAntiForgeryToken(postData);
 

@@ -99,8 +99,8 @@ jobs:
           --resource-group Default-Web-NorthEurope \
           --sku B1
 
-    # - name: Stop Web App
-    #   run: az webapp stop --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft
+    - name: Stop Web App
+      run: az webapp stop --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft
 
     # - name: Purge Server Files and Logs
     #   run: |
@@ -148,9 +148,9 @@ jobs:
         slot-name: 'Production'
         package: .
 
-    # - name: Start Web App
-    #   if: always()
-    #   run: az webapp start --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft
+    - name: Start Web App
+      if: always()
+      run: az webapp start --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft
 
     - name: Downscale App Service Plan back to D1
       if: always()

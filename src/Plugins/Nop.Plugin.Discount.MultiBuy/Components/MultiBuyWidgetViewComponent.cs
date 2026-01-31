@@ -55,7 +55,7 @@ namespace Nop.Plugin.DiscountRules.MultiBuy.Components
             // 1. Product Page Banner
             if (widgetZone.Equals(PublicWidgetZones.ProductDetailsOverviewTop) && additionalData is ProductDetailsModel productModel)
             {
-                var allDiscounts = await _discountService.GetAllDiscountsAsync(DiscountType.AssignedToOrderSubTotal);
+                var allDiscounts = await _discountService.GetAllDiscountsAsync();
                 foreach (var discount in allDiscounts)
                 {
                     var settings = await GetMultiBuySettingsAsync(discount.Id);
@@ -70,7 +70,7 @@ namespace Nop.Plugin.DiscountRules.MultiBuy.Components
             // 2. Category/Catalog Page Product Box Badge
             else if (widgetZone.Equals(PublicWidgetZones.ProductBoxAddinfoMiddle) && additionalData is ProductOverviewModel overviewModel)
             {
-                var allDiscounts = await _discountService.GetAllDiscountsAsync(DiscountType.AssignedToOrderSubTotal);
+                var allDiscounts = await _discountService.GetAllDiscountsAsync();
                 foreach (var discount in allDiscounts)
                 {
                     var settings = await GetMultiBuySettingsAsync(discount.Id);
@@ -95,7 +95,7 @@ namespace Nop.Plugin.DiscountRules.MultiBuy.Components
                 if (!cart.Any())
                     return Content("");
 
-                var allDiscounts = await _discountService.GetAllDiscountsAsync(DiscountType.AssignedToOrderSubTotal);
+                var allDiscounts = await _discountService.GetAllDiscountsAsync();
 
                 // Feature: Total Savings (OrderSummaryContentDeals)
                 if (widgetZone.Equals(PublicWidgetZones.OrderSummaryContentDeals))

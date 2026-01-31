@@ -107,7 +107,7 @@ namespace Nop.Plugin.DiscountRules.MultiBuy.Services
             if (customer == null || orderSubTotalExclTax <= 0)
                 return (discountAmount, appliedDiscounts);
 
-            var allDiscounts = await _discountService.GetAllDiscountsAsync(DiscountType.AssignedToOrderSubTotal);
+            var allDiscounts = await _discountService.GetAllDiscountsAsync();
             var allowedDiscounts = new List<Nop.Core.Domain.Discounts.Discount>();
 
             if (allDiscounts?.Any() == true)
