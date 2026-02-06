@@ -1,0 +1,25 @@
+﻿@model ProductOverviewModel
+
+@if (!Model.ProductPrice.DisableBuyButton || !Model.ProductPrice.DisableWishlistButton)
+{
+    <div class="buttons">
+        @if (!Model.ProductPrice.DisableBuyButton)
+        {
+            <button type="button"
+                    class="button-2 product-box-add-to-cart-button"
+                    data-productid="@Model.Id"
+                    data-quantity="1">
+                @T("ShoppingCart.AddToCart")
+            </button>
+        }
+
+        @if (!Model.ProductPrice.DisableWishlistButton)
+        {
+            <button type="button"
+                    class="button-2 add-to-wishlist-button"
+                    data-productid="@Model.Id">
+                @T("Wishlist.AddToWishlist")
+            </button>
+        }
+    </div>
+}

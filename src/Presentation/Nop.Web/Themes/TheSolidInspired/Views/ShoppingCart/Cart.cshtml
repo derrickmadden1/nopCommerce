@@ -1,0 +1,13 @@
+﻿@using Nop.Web.Components
+@using Nop.Web.Models.ShoppingCart
+@model ShoppingCartModel
+
+<div class="cart-page-modern">
+    <div class="cart-header">
+        <h1>Your Cart</h1>
+    </div>
+
+    <div class="cart-body">
+        @await Component.InvokeAsync(typeof(OrderSummaryViewComponent), new { overriddenModel = Model })
+    </div>
+</div>

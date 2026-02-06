@@ -1,0 +1,29 @@
+﻿@using Nop.Core.Domain.Catalog
+@using Nop.Services.Helpers
+@using Nop.Web.Extensions
+@using Nop.Web.Framework.Themes
+@using Nop.Web.Framework.UI
+@inject INopHtmlHelper NopHtml
+
+@inject CatalogSettings catalogSettings
+@inject IThemeContext themeContext
+@inject IUserAgentHelper userAgentHelper
+<!-- HEAD TEST -->
+@{
+    Layout ="";
+    var themeName = await themeContext.GetWorkingThemeNameAsync();
+    var supportRtl = await Html.ShouldUseRtlThemeAsync();
+
+    //add main CSS file
+    NopHtml.AppendCssFileParts($"~/Themes/{themeName}/Content/css/styles{(supportRtl ? ".rtl" : "")}.css");
+    NopHtml.AppendCssFileParts($"~/Themes/{themeName}/Content/css/custom.css");
+    
+    //add swiper css file
+    if (catalogSettings.DisplayAllPicturesOnCatalogPages)
+    {
+        NopHtml.AppendCssFileParts("~/lib_npm/swiper/swiper-bundle.min.css");
+    }
+
+    //add jQuery UI css file
+    NopHtml.AppendCssFileParts("~/lib_npm/jquery-ui-dist/jquery-ui.min.css");
+}

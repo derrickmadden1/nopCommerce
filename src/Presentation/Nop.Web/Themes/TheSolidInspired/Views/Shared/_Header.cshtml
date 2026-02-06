@@ -1,0 +1,66 @@
+﻿@inherits Nop.Web.Framework.Mvc.Razor.NopRazorPage<TModel>
+@using Nop.Web.Components
+@using Nop.Web.Framework.Infrastructure
+@using Nop.Web.Framework.UI
+
+<header class="header-modern">
+
+    <!-- Top utility bar -->
+    <div class="header-top">
+        <div class="header-top-left">
+            @await Component.InvokeAsync("TaxTypeSelector")
+            @await Component.InvokeAsync("CurrencySelector")
+            @await Component.InvokeAsync("LanguageSelector")
+        </div>
+
+        <div class="header-top-right">
+            @await Component.InvokeAsync("HeaderLinks")
+        </div>
+    </div>
+
+    <!-- Main navigation bar -->
+    <div class="header-main">
+        <div class="header-logo">
+            @await Component.InvokeAsync(typeof(LogoViewComponent))
+        </div>
+
+        <nav class="main-nav mega-nav">
+            @inject Nop.Services.Plugins.IPluginService pluginService
+
+            @{
+                var descriptor = pluginService
+                .GetPluginDescriptorBySystemNameAsync<Nop.Services.Plugins.IPlugin>("Misc.MegaMenu")
+                .Result;
+
+                var megaMenuInstalled = descriptor != null;
+            }
+
+            @if (megaMenuInstalled)
+            {
+                @await Component.InvokeAsync("MegaMenu")
+            }
+        </nav>
+
+        <div class="header-actions">
+            <div class="search-box">
+                @await Component.InvokeAsync(typeof(SearchBoxViewComponent))
+            </div>
+
+            <a href="javascript:void(0)" id="cart-toggle" class="cart-link">
+                @T("ShoppingCart")
+            </a>
+        </div>
+    </div>
+
+    <!-- Slide‑in mini cart -->
+    <div id="mini-cart-panel" class="mini-cart-panel">
+        @await Component.InvokeAsync(typeof(OrderSummaryViewComponent))
+    </div>
+
+</header>
+
+<script>
+    document.getElementById("cart-toggle").addEventListener("click", function () {
+        document.getElementById("mini-cart-panel").classList.toggle("open");
+    });
+</script>
