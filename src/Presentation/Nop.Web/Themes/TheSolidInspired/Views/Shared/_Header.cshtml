@@ -5,25 +5,13 @@
 
 <header class="header-modern">
 
-    <!-- Top utility bar -->
+    <!-- Top banner -->
     <div class="header-top">
-        <div class="header-top-left">
-            @await Component.InvokeAsync("TaxTypeSelector")
-            @await Component.InvokeAsync("CurrencySelector")
-            @await Component.InvokeAsync("LanguageSelector")
-        </div>
-
-        <div class="header-top-right">
-            @await Component.InvokeAsync("HeaderLinks")
-        </div>
+        <span>*** Free UK Shipping On All Orders Over £35 ***</span>
     </div>
 
     <!-- Main navigation bar -->
     <div class="header-main">
-        <div class="header-logo">
-            @await Component.InvokeAsync(typeof(LogoViewComponent))
-        </div>
-
         <nav class="main-nav mega-nav">
             @inject Nop.Services.Plugins.IPluginService pluginService
 
@@ -41,7 +29,16 @@
             }
         </nav>
 
+        <div class="header-logo">
+            @await Component.InvokeAsync(typeof(LogoViewComponent))
+        </div>
+
         <div class="header-actions">
+            <div id="header-selectors" style="display:flex; gap: 15px; align-items: center;">
+                @await Component.InvokeAsync("CurrencySelector")
+                @await Component.InvokeAsync("LanguageSelector")
+            </div>
+
             <div class="search-box">
                 @await Component.InvokeAsync(typeof(SearchBoxViewComponent))
             </div>
@@ -54,6 +51,10 @@
 
     <!-- Slide‑in mini cart -->
     <div id="mini-cart-panel" class="mini-cart-panel">
+        <div class="mini-cart-header" style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+            <h3 style="margin:0;">Your Bag</h3>
+            <a href="javascript:void(0)" id="cart-close" style="color: var(--dark-charcoal); text-decoration: none; font-size: 1.5rem;">&times;</a>
+        </div>
         @await Component.InvokeAsync(typeof(OrderSummaryViewComponent))
     </div>
 
@@ -61,6 +62,9 @@
 
 <script>
     document.getElementById("cart-toggle").addEventListener("click", function () {
-        document.getElementById("mini-cart-panel").classList.toggle("open");
+        document.getElementById("mini-cart-panel").classList.add("open");
+    });
+    document.getElementById("cart-close").addEventListener("click", function () {
+        document.getElementById("mini-cart-panel").classList.remove("open");
     });
 </script>
