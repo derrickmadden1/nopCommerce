@@ -13,7 +13,7 @@
                 <span class="social-placeholder">Follow Us</span>
             </div>
             <div class="utility-center">
-                <span>*** Free UK Shipping On All Orders Over £35 ***</span>
+                <span>*** Free UK Shipping On All Orders Over £40 ***</span>
             </div>
             <div class="utility-actions">
                 @await Component.InvokeAsync("CurrencySelector")
@@ -62,7 +62,7 @@
     <!-- Slide‑in mini cart -->
     <div id="mini-cart-panel" class="mini-cart-panel">
         <div class="mini-cart-header" style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
-            <h3 style="margin:0;">Your Bag</h3>
+            <h3 style="margin:0;">Your Cart</h3>
             <a href="javascript:void(0)" id="cart-close" style="color: var(--dark-charcoal); text-decoration: none; font-size: 1.5rem;">&times;</a>
         </div>
         @await Component.InvokeAsync(typeof(OrderSummaryViewComponent))
