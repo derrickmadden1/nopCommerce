@@ -5,14 +5,43 @@
 
 <header class="header-modern">
 
-    <!-- Top banner -->
-    <div class="header-top">
-        <span>*** Free UK Shipping On All Orders Over £35 ***</span>
+    <!-- Utility Bar (Dark) -->
+    <div class="header-utility">
+        <div class="utility-container">
+            <div class="utility-social">
+                <!-- Social links would go here -->
+                <span class="social-placeholder">Follow Us</span>
+            </div>
+            <div class="utility-center">
+                <span>*** Free UK Shipping On All Orders Over £35 ***</span>
+            </div>
+            <div class="utility-actions">
+                @await Component.InvokeAsync("CurrencySelector")
+                @await Component.InvokeAsync("LanguageSelector")
+                @await Component.InvokeAsync("HeaderLinks")
+            </div>
+        </div>
     </div>
 
-    <!-- Main navigation bar -->
-    <div class="header-main">
-        <nav class="main-nav mega-nav">
+    <!-- Main Header Area -->
+    <div class="header-main-area">
+        <!-- Logo Row -->
+        <div class="header-logo-row">
+            <div class="header-logo">
+                @await Component.InvokeAsync(typeof(LogoViewComponent))
+            </div>
+            <div class="header-search-cart">
+                <div class="search-box">
+                    @await Component.InvokeAsync(typeof(SearchBoxViewComponent))
+                </div>
+                <a href="javascript:void(0)" id="cart-toggle" class="cart-link">
+                    @T("ShoppingCart")
+                </a>
+            </div>
+        </div>
+
+        <!-- Navigation Row -->
+        <nav class="main-nav-row">
             @inject Nop.Services.Plugins.IPluginService pluginService
 
             @{
@@ -28,29 +57,6 @@
                 @await Component.InvokeAsync("MegaMenu")
             }
         </nav>
-
-        <div class="header-logo">
-            @await Component.InvokeAsync(typeof(LogoViewComponent))
-        </div>
-
-        <div class="header-actions">
-            <div id="header-selectors" style="display:flex; gap: 15px; align-items: center;">
-                @await Component.InvokeAsync("CurrencySelector")
-                @await Component.InvokeAsync("LanguageSelector")
-            </div>
-
-            <div class="header-links">
-                @await Component.InvokeAsync("HeaderLinks")
-            </div>
-
-            <div class="search-box">
-                @await Component.InvokeAsync(typeof(SearchBoxViewComponent))
-            </div>
-
-            <a href="javascript:void(0)" id="cart-toggle" class="cart-link">
-                @T("ShoppingCart")
-            </a>
-        </div>
     </div>
 
     <!-- Slide‑in mini cart -->
@@ -70,5 +76,15 @@
     });
     document.getElementById("cart-close").addEventListener("click", function () {
         document.getElementById("mini-cart-panel").classList.remove("open");
+    });
+
+    // Sticky header transition
+    window.addEventListener("scroll", function() {
+        const header = document.querySelector(".header-modern");
+        if (window.scrollY > 100) {
+            header.classList.add("sticky-shrink");
+        } else {
+            header.classList.remove("sticky-shrink");
+        }
     });
 </script>
