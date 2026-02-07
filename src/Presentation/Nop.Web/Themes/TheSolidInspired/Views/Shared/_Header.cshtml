@@ -39,6 +39,10 @@
                 @await Component.InvokeAsync("LanguageSelector")
             </div>
 
+            <div class="header-links">
+                @await Component.InvokeAsync("HeaderLinks")
+            </div>
+
             <div class="search-box">
                 @await Component.InvokeAsync(typeof(SearchBoxViewComponent))
             </div>
