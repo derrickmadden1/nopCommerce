@@ -164,7 +164,7 @@ h6 {
 }
 
 .header-logo img {
-  max-height: 75px;
+  max-height: 100px;
   width: auto;
   transition: all 0.4s ease;
 }
@@ -223,6 +223,288 @@ h6 {
   letter-spacing: 1px;
 }
 
+/* --- HIERARCHICAL MEGA MENU DROPDOWNS --- */
+
+/* MegaMenu Root - Actual plugin structure */
+.mega-menu-root {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  gap: 40px;
+  justify-content: center;
+}
+
+/* Top-level category items */
+.mega-menu-item {
+  position: relative;
+}
+
+.mega-menu-item>a {
+  font-family: var(--heading-font);
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 10px 0;
+  display: inline-block;
+  transition: color 0.3s ease;
+}
+
+.mega-menu-item>a:hover {
+  color: var(--accent-pink);
+}
+
+/* Dropdown panel - HIDDEN by default */
+.mega-menu-panel {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-10px);
+  min-width: 600px;
+  max-width: 900px;
+  background: #fff;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  padding: 30px;
+  margin-top: 15px;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+  z-index: 1000;
+}
+
+/* Show panel on hover */
+.mega-menu-item:hover>.mega-menu-panel {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Columns layout */
+.mega-menu-columns {
+  display: flex;
+  gap: 40px;
+  flex-wrap: wrap;
+}
+
+.mega-menu-column {
+  flex: 1;
+  min-width: 180px;
+}
+
+/* Subcategory headings (second level) */
+.mega-menu-heading {
+  font-family: var(--heading-font);
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  display: block;
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+  border-bottom: 2px solid var(--accent-pink);
+  color: var(--dark-charcoal);
+  transition: color 0.3s ease;
+}
+
+.mega-menu-heading:hover {
+  color: var(--accent-pink);
+}
+
+/* Third-level items */
+.mega-menu-column ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.mega-menu-column li {
+  margin: 0;
+  padding: 0;
+}
+
+.mega-menu-column ul a {
+  display: block;
+  padding: 8px 15px;
+  font-family: var(--body-font);
+  font-size: 0.85rem;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0.3px;
+  color: var(--dark-charcoal);
+  transition: all 0.3s ease;
+  border-left: 3px solid transparent;
+}
+
+.mega-menu-column ul a:hover {
+  background: var(--light-gray);
+  border-left-color: var(--accent-pink);
+  color: var(--accent-pink);
+  padding-left: 20px;
+}
+
+/* Indicator for items with subcategories */
+.mega-menu-item:has(.mega-menu-panel)>a::after {
+  content: '▼';
+  font-size: 0.6rem;
+  margin-left: 8px;
+  opacity: 0.6;
+  display: inline-block;
+  transition: transform 0.3s ease;
+}
+
+.mega-menu-item:hover:has(.mega-menu-panel)>a::after {
+  transform: rotate(180deg);
+}
+
+/* Fallback generic selectors for other menu types */
+
+/* MegaMenu container */
+.mega-menu,
+.top-menu {
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+
+.mega-menu>ul,
+.top-menu>ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  gap: 40px;
+}
+
+/* Top-level category items */
+.mega-menu>ul>li,
+.top-menu>ul>li {
+  position: relative;
+}
+
+.mega-menu>ul>li>a,
+.top-menu>ul>li>a {
+  font-family: var(--heading-font);
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 10px 0;
+  display: inline-block;
+  transition: color 0.3s ease;
+}
+
+.mega-menu>ul>li>a:hover,
+.top-menu>ul>li>a:hover {
+  color: var(--accent-pink);
+}
+
+/* Dropdown/Sublist containers */
+.mega-menu .sublist,
+.mega-menu .dropdown,
+.top-menu .sublist,
+.top-menu ul ul {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  min-width: 250px;
+  background: #fff;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  padding: 20px 0;
+  margin-top: 10px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px);
+  transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+  z-index: 1000;
+  list-style: none;
+}
+
+/* Show dropdown on hover */
+.mega-menu>ul>li:hover>.sublist,
+.mega-menu>ul>li:hover>.dropdown,
+.mega-menu>ul>li:hover>ul,
+.top-menu>ul>li:hover>ul {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+/* Subcategory items */
+.mega-menu .sublist li,
+.mega-menu .dropdown li,
+.top-menu ul ul li {
+  margin: 0;
+  padding: 0;
+}
+
+.mega-menu .sublist a,
+.mega-menu .dropdown a,
+.top-menu ul ul a {
+  display: block;
+  padding: 12px 30px;
+  font-family: var(--body-font);
+  font-size: 0.85rem;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0.5px;
+  color: var(--dark-charcoal);
+  transition: all 0.3s ease;
+  border-left: 3px solid transparent;
+}
+
+.mega-menu .sublist a:hover,
+.mega-menu .dropdown a:hover,
+.top-menu ul ul a:hover {
+  background: var(--light-gray);
+  border-left-color: var(--accent-pink);
+  color: var(--accent-pink);
+  padding-left: 35px;
+}
+
+/* Nested subcategories (third level) */
+.mega-menu .sublist .sublist,
+.mega-menu .dropdown .dropdown,
+.top-menu ul ul ul {
+  left: 100%;
+  top: 0;
+  margin-top: 0;
+  margin-left: 5px;
+}
+
+.mega-menu .sublist li:hover>.sublist,
+.mega-menu .dropdown li:hover>.dropdown,
+.top-menu ul ul li:hover>ul {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+/* Indicator for items with subcategories */
+.mega-menu .sublist>li>a::after,
+.mega-menu .dropdown>li>a::after,
+.top-menu ul ul>li>a::after {
+  content: '';
+  display: none;
+}
+
+.mega-menu li:has(.sublist)>a::after,
+.mega-menu li:has(.dropdown)>a::after,
+.top-menu li:has(ul)>a::after {
+  content: '▼';
+  font-size: 0.6rem;
+  margin-left: 8px;
+  opacity: 0.6;
+  display: inline-block;
+  transition: transform 0.3s ease;
+}
+
+.mega-menu li:hover:has(.sublist)>a::after,
+.mega-menu li:hover:has(.dropdown)>a::after,
+.top-menu li:hover:has(ul)>a::after {
+  transform: rotate(180deg);
+}
+
 /* STICKY HEADER */
 .header-modern.sticky-shrink {
   position: fixed;
@@ -248,7 +530,7 @@ h6 {
 }
 
 .header-modern.sticky-shrink .header-logo img {
-  max-height: 45px;
+  max-height: 60px;
 }
 
 .header-modern.sticky-shrink .main-nav-row {
@@ -316,6 +598,31 @@ h6 {
 
 .strip-image.img3 {
   background-image: url('../images/life3.jpg');
+}
+
+/* --- BRAND STORY --- */
+.brand-story {
+  padding: 80px 40px;
+  background: #fff;
+  text-align: center;
+}
+
+.story-inner {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.story-inner h2 {
+  font-size: 2.2rem;
+  margin-bottom: 30px;
+}
+
+.story-inner p {
+  font-size: 1.2rem;
+  font-weight: 300;
+  line-height: 1.8;
+  color: #444;
+  margin-bottom: 30px;
 }
 
 /* --- PRODUCT GRID (MINIMALIST) --- */
@@ -430,18 +737,21 @@ h6 {
 /* --- MINI CART --- */
 .mini-cart-panel {
   position: fixed;
-  right: -450px;
+  right: 0;
+  transform: translateX(105%);
+  visibility: hidden;
   top: 0;
   width: 420px;
   height: 100vh;
   background: #fff;
   box-shadow: -15px 0 40px rgba(0, 0, 0, 0.2);
   padding: 50px 40px;
-  transition: right 0.6s cubic-bezier(0.165, 0.84, 0.44, 1);
+  transition: transform 0.6s cubic-bezier(0.165, 0.84, 0.44, 1), visibility 0.6s;
   z-index: 10000;
   overflow-y: auto;
 }
 
 .mini-cart-panel.open {
-  right: 0;
+  transform: translateX(0);
+  visibility: visible;
 }
