@@ -177,10 +177,18 @@ h6 {
   gap: 25px;
 }
 
-.search-box input {
+.search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.search-box input,
+.search-box-text {
   border: none;
   border-bottom: 1px solid #ddd;
-  padding: 5px 0;
+  padding: 5px 10px 5px 0;
   font-family: var(--body-font);
   font-size: 0.8rem;
   width: 140px;
@@ -188,9 +196,30 @@ h6 {
   background: transparent;
 }
 
-.search-box input:focus {
+.search-box input:focus,
+.search-box-text:focus {
   outline: none;
   border-bottom-color: var(--accent-pink);
+}
+
+.search-box-button,
+.search-box button {
+  background: var(--dark-charcoal);
+  color: #fff;
+  border: none;
+  padding: 6px 12px;
+  font-family: var(--body-font);
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.search-box-button:hover,
+.search-box button:hover {
+  background: var(--accent-pink);
 }
 
 .cart-link {
@@ -713,12 +742,22 @@ h6 {
   margin-top: 120px;
 }
 
-.footer-block a {
-  color: #ccc;
+.footer-block a,
+.footer a {
+  color: #e8e8e8 !important;
+  transition: color 0.3s ease;
 }
 
-.footer-block a:hover {
+.footer-block a:hover,
+.footer a:hover {
+  color: var(--accent-pink) !important;
+}
+
+.footer-block h3,
+.footer h3 {
   color: #fff;
+  font-size: 1rem;
+  margin-bottom: 15px;
 }
 
 .footer-powered-by {
