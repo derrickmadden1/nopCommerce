@@ -30,6 +30,14 @@
             <div class="header-logo">
                 @await Component.InvokeAsync(typeof(LogoViewComponent))
             </div>
+            
+            <!-- Hamburger Menu Button (Mobile Only) -->
+            <button id="mobile-menu-toggle" class="mobile-menu-toggle" aria-label="Toggle navigation">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            
             <div class="header-search-cart">
                 <div class="search-box">
                     @await Component.InvokeAsync(typeof(SearchBoxViewComponent))
@@ -59,7 +67,7 @@
         </nav>
     </div>
 
-    <!-- Slide‑in mini cart -->
+    <!-- Slide-in mini cart -->
     <div id="mini-cart-panel" class="mini-cart-panel">
         <div class="mini-cart-header" style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
             <h3 style="margin:0;">Your Cart</h3>
@@ -67,15 +75,84 @@
         </div>
         @await Component.InvokeAsync(typeof(OrderSummaryViewComponent))
     </div>
+    
+    <!-- Mobile Navigation Panel -->
+    <div id="mobile-nav-panel" class="mobile-nav-panel">
+        <div class="mobile-nav-header">
+            <h3>Menu</h3>
+            <a href="javascript:void(0)" id="mobile-nav-close">&times;</a>
+        </div>
+        <nav class="mobile-nav-content">
+            @if (megaMenuInstalled)
+            {
+                @await Component.InvokeAsync("MegaMenu")
+            }
+        </nav>
+    </div>
+    
+    <!-- Mobile Menu Overlay -->
+    <div id="mobile-nav-overlay" class="mobile-nav-overlay"></div>
 
 </header>
 
 <script>
+    // Mini cart toggle
     document.getElementById("cart-toggle").addEventListener("click", function () {
         document.getElementById("mini-cart-panel").classList.add("open");
     });
     document.getElementById("cart-close").addEventListener("click", function () {
         document.getElementById("mini-cart-panel").classList.remove("open");
+    });
+    
+    // Mobile menu toggle
+    document.getElementById("mobile-menu-toggle").addEventListener("click", function () {
+        document.getElementById("mobile-nav-panel").classList.add("open");
+        document.getElementById("mobile-nav-overlay").classList.add("visible");
+        document.body.style.overflow = "hidden";
+    });
+    
+    document.getElementById("mobile-nav-close").addEventListener("click", function () {
+        document.getElementById("mobile-nav-panel").classList.remove("open");
+        document.getElementById("mobile-nav-overlay").classList.remove("visible");
+        document.body.style.overflow = "";
+    });
+    
+    document.getElementById("mobile-nav-overlay").addEventListener("click", function () {
+        document.getElementById("mobile-nav-panel").classList.remove("open");
+        document.getElementById("mobile-nav-overlay").classList.remove("visible");
+        document.body.style.overflow = "";
+    });
+
+    // Mobile Menu Accordion Logic
+    document.addEventListener("DOMContentLoaded", function () {
+        const mobileNavItems = document.querySelectorAll('.mobile-nav-content .mega-menu-item');
+        
+        mobileNavItems.forEach(item => {
+            // Check if item has sub-menu (panel)
+            const panel = item.querySelector('.mega-menu-panel');
+            if (panel) {
+                // Create expanded link behavior or toggle button
+                // Inject a toggle button
+                const toggleBtn = document.createElement('span');
+                toggleBtn.className = 'mobile-menu-toggle-btn';
+                toggleBtn.innerHTML = '▼';
+                item.insertBefore(toggleBtn, item.firstChild.nextSibling); // Insert after link
+
+                // Handle toggle click
+                toggleBtn.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const isOpen = item.classList.contains('expanded');
+                    
+                    // Optional: Close others? For now, let's allow multiple open
+                    // item.parentElement.querySelectorAll('.mega-menu-item.expanded').forEach(expandedItem => {
+                    //    if (expandedItem !== item) expandedItem.classList.remove('expanded');
+                    // });
+
+                    item.classList.toggle('expanded');
+                });
+            }
+        });
     });
 
     // Sticky header transition
