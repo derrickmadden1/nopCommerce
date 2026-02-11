@@ -69,11 +69,13 @@
 
     <!-- Slide-in mini cart -->
     <div id="mini-cart-panel" class="mini-cart-panel">
-        <div class="mini-cart-header" style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+        <div class="mini-cart-header" style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
             <h3 style="margin:0;">Your Cart</h3>
             <a href="javascript:void(0)" id="cart-close" style="color: var(--dark-charcoal); text-decoration: none; font-size: 1.5rem;">&times;</a>
         </div>
-        @await Component.InvokeAsync(typeof(OrderSummaryViewComponent))
+        <div id="flyout-cart">
+            @await Component.InvokeAsync("FlyoutShoppingCart")
+        </div>
     </div>
     
     <!-- Mobile Navigation Panel -->
@@ -96,6 +98,24 @@
 </header>
 
 <script>
+    // Initialize AjaxCart for flyout updates
+    // Params: usepopupnotifications, topcartselector, topwishlistselector, flyoutcartselector
+    // We assume default Nop selectors for top cart/wishlist
+    AjaxCart.init(false, '.cart-qty', '.wishlist-qty', '#flyout-cart');
+
+    // Override success_process to open the side panel
+    var originalSuccess = AjaxCart.success_process;
+    AjaxCart.success_process = function(response) {
+        // Call original function first to update HTML
+        var result = originalSuccess.apply(this, arguments);
+        
+        // If cart was updated, open the panel
+        if (response.updateflyoutcartsectionhtml || (response.success && response.message)) {
+             document.getElementById("mini-cart-panel").classList.add("open");
+        }
+        return result;
+    };
+
     // Mini cart toggle
     document.getElementById("cart-toggle").addEventListener("click", function () {
         document.getElementById("mini-cart-panel").classList.add("open");

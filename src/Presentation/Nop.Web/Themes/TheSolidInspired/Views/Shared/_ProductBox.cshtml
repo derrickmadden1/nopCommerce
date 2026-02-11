@@ -23,7 +23,7 @@
 
         <div class="product-actions">
             @await Component.InvokeAsync("Widget", new { widgetZone = "productbox_addinfo_before", additionalData = Model })
-            @await Html.PartialAsync("_AddToCart", Model)
+            @await Html.PartialAsync("_ProductBoxAddToCart", Model)
             @await Component.InvokeAsync("Widget", new { widgetZone = "productbox_addinfo_after", additionalData = Model })
         </div>
     </div>
