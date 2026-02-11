@@ -6,6 +6,7 @@ using Nop.Core.Domain.Common;
 using Nop.Core.Domain.Customers;
 using Nop.Core.Domain.Reminders;
 using Nop.Core.Domain.Orders;
+using Nop.Core.Domain.Messages;
 using Nop.Core.Domain.Shipping;
 using Nop.Data;
 using Nop.Data.Migrations;
@@ -21,7 +22,7 @@ public class SettingMigration : MigrationBase
     {
         if (!DataSettingsManager.IsDatabaseInstalled())
             return;
-        
+
         //#7898
         this.SetSettingIfNotExists<ArtificialIntelligenceSettings, bool>(settings => settings.LogRequests, false);
 
@@ -87,6 +88,14 @@ public class SettingMigration : MigrationBase
         this.SetSettingIfNotExists<OrderSettings, List<string>>(settings => settings.AutoCancelIgnoredPaymentMethods, []);
         this.SetSettingIfNotExists<OrderSettings, bool>(settings => settings.AutoCancelRestoreShoppingCart, false);
         this.SetSettingIfNotExists<OrderSettings, DateTime?>(settings => settings.AutoCancelIgnoreBeforeUtc, DateTime.UtcNow);
+
+        //#2430
+        this.SetSettingIfNotExists<OtpSettings, bool>(settings => settings.LoginByPhoneEnabled, false);
+        this.SetSettingIfNotExists<OtpSettings, int>(settings => settings.OtpTimeLife, 30);
+        this.SetSettingIfNotExists<OtpSettings, int>(settings => settings.OtpCountAttemptsToSendCode, 3);
+        this.SetSettingIfNotExists<OtpSettings, int>(settings => settings.OtpTimeToRepeat, 15);
+        this.SetSettingIfNotExists<OtpSettings, int>(settings => settings.OtpLength, 6);
+        this.SetSettingIfNotExists<MessagesSettings, string>(settings => settings.ActiveSmsProviderSystemName, "");
     }
 
     public override void Down()

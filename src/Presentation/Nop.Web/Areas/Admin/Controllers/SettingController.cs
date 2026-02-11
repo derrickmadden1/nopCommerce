@@ -57,6 +57,7 @@ public partial class SettingController : BaseAdminController
     #region Fields
 
     protected readonly AppSettings _appSettings;
+    protected readonly CustomerSettings _customerSettings;
     protected readonly IAddressService _addressService;
     protected readonly ICustomerActivityService _customerActivityService;
     protected readonly ICustomerService _customerService;
@@ -86,6 +87,7 @@ public partial class SettingController : BaseAdminController
     #region Ctor
 
     public SettingController(AppSettings appSettings,
+        CustomerSettings customerSettings,
         IAddressService addressService,
         ICustomerActivityService customerActivityService,
         ICustomerService customerService,
@@ -110,6 +112,7 @@ public partial class SettingController : BaseAdminController
         IUploadService uploadService)
     {
         _appSettings = appSettings;
+        _customerSettings = customerSettings;
         _addressService = addressService;
         _customerActivityService = customerActivityService;
         _customerService = customerService;
@@ -1227,6 +1230,8 @@ public partial class SettingController : BaseAdminController
             var dateTimeSettings = await _settingService.LoadSettingAsync<DateTimeSettings>(storeScope);
             var externalAuthenticationSettings = await _settingService.LoadSettingAsync<ExternalAuthenticationSettings>(storeScope);
             var multiFactorAuthenticationSettings = await _settingService.LoadSettingAsync<MultiFactorAuthenticationSettings>(storeScope);
+            var otpSettings = await _settingService.LoadSettingAsync<OtpSettings>(storeScope);
+
 
             var privateMessageSettings = await _settingService.LoadSettingAsync<PrivateMessageSettings>(storeScope);
             privateMessageSettings = model.PrivateMessageSettings.ToSettings(privateMessageSettings);
@@ -1299,6 +1304,9 @@ public partial class SettingController : BaseAdminController
 
             multiFactorAuthenticationSettings = model.MultiFactorAuthenticationSettings.ToSettings(multiFactorAuthenticationSettings);
             await _settingService.SaveSettingAsync(multiFactorAuthenticationSettings);
+
+            otpSettings = model.OtpSettings.ToSettings(otpSettings);
+            await _settingService.SaveSettingAsync(otpSettings);
 
             //activity log
             await _customerActivityService.InsertActivityAsync("EditSettings", await _localizationService.GetResourceAsync("ActivityLog.EditSettings"));
@@ -2014,6 +2022,22 @@ public partial class SettingController : BaseAdminController
             {
                 Result = await _localizationService
                     .GetResourceAsync("Admin.Configuration.Settings.CustomerUser.ForceMultifactorAuthentication.Warning")
+            });
+        }
+
+        return Json(new { Result = string.Empty });
+    }
+
+    //Action that displays a notification (warning) to the store owner about the incorrect configuration of LoginByPhone feature
+    public virtual async Task<IActionResult> LoginByPhoneEnabledWarning(bool loginByPhoneEnabled)
+    {
+        if (loginByPhoneEnabled &&
+            !(_customerSettings.PhoneEnabled && _customerSettings.PhoneRequired && _customerSettings.PhoneNumberValidationEnabled))
+        {
+            var locale = await _localizationService.GetResourceAsync("Admin.Configuration.Settings.CustomerUser.LoginByPhoneEnabled.Warning");
+            return Json(new
+            {
+                Result = string.Format(locale, Url.Action("CustomerUser", "Setting", null, null, null, "customersettings-customerformfields"))
             });
         }
 

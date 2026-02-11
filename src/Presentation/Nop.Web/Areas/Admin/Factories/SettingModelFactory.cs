@@ -370,6 +370,24 @@ public partial class SettingModelFactory : ISettingModelFactory
     }
 
     /// <summary>
+    /// Prepare OTP settings model
+    /// </summary>
+    /// <param name="storeId">The store identifier</param>
+    /// <returns>A task that represents the asynchronous operation. The task result contains an <see cref="OtpSettingsModel"/>
+    /// populated with the OTP settings for the specified store.</returns>
+    protected virtual async Task<OtpSettingsModel> PrepareOtpSettingsModelAsync(int storeId)
+    {
+        //load settings for a chosen store scope
+        var otpSettings = await _settingService.LoadSettingAsync<OtpSettings>(storeId);
+
+        //fill in model values from the entity
+        var model = otpSettings.ToSettingsModel<OtpSettingsModel>();
+
+        return model;
+
+    }
+
+    /// <summary>
     /// Prepare date time settings model
     /// </summary>
     /// <param name="storeId">Store identifier</param>
@@ -1646,6 +1664,9 @@ public partial class SettingModelFactory : ISettingModelFactory
 
         //prepare multi-factor authentication settings model
         model.MultiFactorAuthenticationSettings = await PrepareMultiFactorAuthenticationSettingsModelAsync(storeId);
+
+        //prepare OTP settings model
+        model.OtpSettings = await PrepareOtpSettingsModelAsync(model.ActiveStoreScopeConfiguration);
 
         //prepare address settings model
         model.AddressSettings = await PrepareAddressSettingsModelAsync(storeId);

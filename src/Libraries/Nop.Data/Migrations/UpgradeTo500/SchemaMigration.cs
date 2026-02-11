@@ -93,5 +93,11 @@ public class SchemaMigration : ForwardOnlyMigration
         //#1832
         this.CreateTableIfNotExists<ContactFormAttribute>();
         this.CreateTableIfNotExists<ContactFormAttributeValue>();
+
+        //#2430
+        this.AddOrAlterColumnFor<Customer>(c => c.PhoneSmsVerified)
+            .AsBoolean()
+            .NotNullable()
+            .SetExistingRowsTo(false);
     }
 }

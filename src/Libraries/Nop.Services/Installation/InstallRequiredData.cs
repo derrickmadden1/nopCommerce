@@ -1680,6 +1680,15 @@ public partial class InstallationService
             ForceMultifactorAuthentication = false
         });
 
+        await SaveSettingAsync(dictionary, new OtpSettings
+        {
+            LoginByPhoneEnabled = false,
+            OtpTimeLife = 30,
+            OtpCountAttemptsToSendCode = 3,
+            OtpTimeToRepeat = 15,
+            OtpLength = 6
+        });
+
         await SaveSettingAsync(dictionary, new AddressSettings
         {
             CompanyEnabled = true,
@@ -2020,7 +2029,11 @@ public partial class InstallationService
             ShowOnCheckGiftCardBalance = true
         });
 
-        await SaveSettingAsync(dictionary, new MessagesSettings { UsePopupNotifications = false });
+        await SaveSettingAsync(dictionary, new MessagesSettings
+        {
+            UsePopupNotifications = false,
+            ActiveSmsProviderSystemName = "Sms.Twilio"
+        });
 
         await SaveSettingAsync(dictionary, new ProxySettings
         {
