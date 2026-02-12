@@ -42,14 +42,12 @@
                 <div class="search-box">
                     @await Component.InvokeAsync(typeof(SearchBoxViewComponent))
                 </div>
-                <a href="javascript:void(0)" id="cart-toggle" class="cart-link">
-                    @T("ShoppingCart")
-                </a>
+                <!-- Cart link removed from here -->
             </div>
         </div>
 
         <!-- Navigation Row -->
-        <nav class="main-nav-row">
+        <nav class="main-nav-row" style="display: flex; justify-content: center; align-items: center;">
             @inject Nop.Services.Plugins.IPluginService pluginService
 
             @{
@@ -98,10 +96,7 @@
 </header>
 
 <script>
-    // Initialize AjaxCart for flyout updates
-    // Params: usepopupnotifications, topcartselector, topwishlistselector, flyoutcartselector
-    // We assume default Nop selectors for top cart/wishlist
-    AjaxCart.init(false, '.cart-qty', '.wishlist-qty', '#flyout-cart');
+    // Note: AjaxCart.init is called by HeaderLinks component, so we don't need to call it here.
 
     // Override success_process to open the side panel
     var originalSuccess = AjaxCart.success_process;
@@ -116,12 +111,44 @@
         return result;
     };
 
-    // Mini cart toggle
-    document.getElementById("cart-toggle").addEventListener("click", function () {
-        document.getElementById("mini-cart-panel").classList.add("open");
-    });
-    document.getElementById("cart-close").addEventListener("click", function () {
-        document.getElementById("mini-cart-panel").classList.remove("open");
+    // Hover Cart Logic - Wired to HeaderLinks #topcartlink
+    // Use event delegation or wait for DOM, as HeaderLinks might be rendered after? 
+    // Usually HeaderLinks is synchronous in header. topcartlink should exist.
+    
+    document.addEventListener("DOMContentLoaded", function() {
+        const cartTrigger = document.getElementById("topcartlink"); // ID from HeaderLinks
+        const cartPanel = document.getElementById("mini-cart-panel");
+        let cartTimeout;
+
+        function openCart() {
+            clearTimeout(cartTimeout);
+            if (cartPanel) cartPanel.classList.add("open");
+        }
+
+        function closeCart() {
+            cartTimeout = setTimeout(() => {
+                if (cartPanel) cartPanel.classList.remove("open");
+            }, 300);
+        }
+
+        // Bind events if trigger exists
+        if (cartTrigger && cartPanel) {
+            cartTrigger.addEventListener("mouseenter", openCart);
+            cartTrigger.addEventListener("mouseleave", closeCart);
+            cartPanel.addEventListener("mouseenter", openCart);
+            cartPanel.addEventListener("mouseleave", closeCart);
+            
+            // Allow click to navigate (default behavior of link) or prevent?
+            // User likely wants click to go to cart page.
+            // Mouseenter opens panel.
+        }
+        
+        const closeBtn = document.getElementById("cart-close");
+        if (closeBtn) {
+            closeBtn.addEventListener("click", function () {
+                cartPanel.classList.remove("open");
+            });
+        }
     });
     
     // Mobile menu toggle
