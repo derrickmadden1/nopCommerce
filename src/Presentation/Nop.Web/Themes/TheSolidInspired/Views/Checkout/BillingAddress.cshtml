@@ -1,0 +1,189 @@
+@using Nop.Core
+@using Nop.Services.Customers
+@model CheckoutBillingAddressModel
+@inject IWebHelper webHelper
+@inject IWorkContext workContext
+@inject ICustomerService _customerService
+@{
+    Layout = "_ColumnsOne";
+
+    var storeLocation = webHelper.GetStoreLocation();
+
+    //title
+    NopHtml.AddTitleParts(T("PageTitle.Checkout").Text);
+    //page class
+    NopHtml.AppendPageCssClassParts("html-checkout-page");
+    NopHtml.AppendPageCssClassParts("html-billing-address-page");
+}
+
+<script src="~/js/public.billingaddress.js" asp-location="Footer"></script>
+
+<div class="page checkout-page billing-address-page checkout-billing-modern">
+    @await Component.InvokeAsync(typeof(CheckoutProgressViewComponent), new { step = CheckoutProgressStep.Address })
+    
+    <div class="checkout-header-modern">
+        <h1>@T("Checkout.BillingAddress")</h1>
+        <p class="subtitle">@T("Checkout.BillingAddress.Subtitle")</p>
+    </div>
+
+    <div class="page-body checkout-data">
+        <form id="billing-form" asp-route="@NopRouteNames.Standard.CHECKOUT_BILLING_ADDRESS" method="post">
+            <div class="billing-addresses">
+                <div id="toggle-billing-address">
+                    @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.CheckoutBillingAddressTop, additionalData = Model })
+                    
+                    @if (Model.ExistingAddresses.Count > 0)
+                    {
+                        <div class="section select-billing-address">
+                            <div class="section-title">
+                                <h2>@T("Checkout.SelectBillingAddress")</h2>
+                            </div>
+                            
+                            @if (Model.InvalidExistingAddresses.Count > 0)
+                            {
+                                <div class="message-error">
+                                    @string.Format(T("Checkout.Addresses.Invalid").Text, Model.InvalidExistingAddresses.Count)
+                                </div>
+                            }
+                            
+                            <div class="address-grid-modern">
+                                @foreach (var item in Model.ExistingAddresses)
+                                {
+                                    <div class="address-card-modern" id="address-card-@(item.Id)">
+                                        <div class="card-header">
+                                            <span class="name">@item.FirstName @item.LastName</span>
+                                            <div class="actions">
+                                                <button type="button" class="action-btn edit" onclick="CheckoutBilling.editAddress('@(storeLocation)checkout/GetAddressById/', @(item.Id), '@T("Checkout.EditAddress")'); return false;" title="@T("Common.Edit")">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                                <button type="button" class="action-btn delete" onclick="CheckoutBilling.deleteEditAddress('@(storeLocation)checkout/DeleteEditBillingAddress/', @(item.Id)); return false;" title="@T("Common.Delete")">
+                                                    <i class="fas fa-trash-alt"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="card-body">
+                                            <ul class="address-details">
+                                                <li class="email"><i class="far fa-envelope"></i> @item.Email</li>
+                                                @if (item.PhoneEnabled)
+                                                {
+                                                    <li class="phone"><i class="fas fa-phone"></i> @item.PhoneNumber</li>
+                                                }
+                                                <li class="address">
+                                                    <i class="fas fa-map-marker-alt"></i>
+                                                    <div>
+                                                        @if (item.CompanyEnabled && !string.IsNullOrEmpty(item.Company))
+                                                        {
+                                                            <div class="company">@item.Company</div>
+                                                        }
+                                                        <div>@item.Address1</div>
+                                                        @if (item.StreetAddress2Enabled && !string.IsNullOrEmpty(item.Address2))
+                                                        {
+                                                            <div>@item.Address2</div>
+                                                        }
+                                                        <div>@item.City, @item.StateProvinceName @item.ZipPostalCode</div>
+                                                        <div>@item.CountryName</div>
+                                                    </div>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                        <div class="card-footer">
+                                            <button type="button" class="button-1 select-address-btn" onclick="selectBillingAddress@(item.Id)()">
+                                                @T("Checkout.BillToThisAddress")
+                                            </button>
+                                            
+                                            <script asp-location="Footer">
+                                                function selectBillingAddress@(item.Id)() {
+                                                    if ($('#@Html.IdFor(model => model.ShipToSameAddress)').is(':checked')) {
+                                                        setLocation('@Html.Raw(Url.RouteUrl(NopRouteNames.Standard.CHECKOUT_SELECT_BILLING_ADDRESS, new { addressId = item.Id, shipToSameAddress = "true" }))');
+                                                    } else {
+                                                        setLocation('@Url.RouteUrl(NopRouteNames.Standard.CHECKOUT_SELECT_BILLING_ADDRESS, new { addressId = item.Id })');
+                                                    }
+                                                }
+                                            </script>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                    
+                    @if (Model.ShipToSameAddressAllowed)
+                    {
+                        <div class="section ship-to-same-address-modern">
+                            <label class="checkbox-container">
+                                <input asp-for="ShipToSameAddress" />
+                                <span class="checkmark"></span>
+                                <span class="label-text">@T("Checkout.ShipToSameAddress")</span>
+                            </label>
+                        </div>
+                    }
+
+                </div>
+
+                @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.CheckoutBillingAddressMiddle, additionalData = Model })
+                
+                <div class="section new-billing-address-modern" id="billingaddress-new-form">
+                    <div class="section-title">
+                        <h2>@(Model.ExistingAddresses.Count > 0 ? T("Checkout.OrEnterNewAddress") : T("Checkout.EnterBillingAddress"))</h2>
+                    </div>
+                    
+                    @if (Model.EuVatEnabled)
+                    {
+                        <div class="vat-section">
+                            <label asp-for="VatNumber" asp-postfix=":"></label>
+                            @if (Model.EuVatEnabledForGuests)
+                            {
+                                <input asp-for="VatNumber" class="vat-input" />
+                                <span asp-validation-for="VatNumber"></span>
+                            }
+                            else
+                            {
+                                <div class="vat-warning">
+                                    @T("Checkout.VatNumber.Disabled", Url.RouteUrl(NopRouteNames.General.CUSTOMER_INFO))
+                                </div>
+                            }
+                        </div>
+                    }
+                    
+                    <div class="enter-address-modern">
+                        <div asp-validation-summary="ModelOnly" class="message-error"></div>
+                        @{
+                            var dataDictAddress = new ViewDataDictionary(ViewData);
+                            dataDictAddress.TemplateInfo.HtmlFieldPrefix = "BillingNewAddress";
+                            @await Html.PartialAsync("_CreateOrUpdateAddress", Model.BillingNewAddress, dataDictAddress)
+                        }
+                    </div>
+                </div>
+                
+                @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.CheckoutBillingAddressBottom, additionalData = Model })
+            </div>
+            
+            <div class="checkout-footer-modern">
+                <div class="buttons">
+                    <button id="billingaddress-save-button" type="button" class="button-1 save-btn" style="display: none" onclick="CheckoutBilling.saveEditAddress('@(storeLocation)checkout/SaveEditBillingAddress/'); return false;">@T("Common.Save")</button>
+
+                    <button id="billingaddress-cancel-button" type="button" class="button-2 cancel-btn" style="display: none" onclick="setLocation('@Url.RouteUrl(NopRouteNames.Standard.CHECKOUT_BILLING_ADDRESS)')">@T("Common.Cancel")</button>
+
+                    <button id="billingaddress-next-button" type="submit" name="nextstep" class="button-1 next-step-btn">
+                        @T("Checkout.NextButton") <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+        </form>
+        
+        <script asp-location="Footer">
+            CheckoutBilling.init('#billing-form');            
+            $('#edit-billing-address-button').show();
+            $('#delete-billing-address-button').show();
+        </script>
+        
+        <div class="section order-summary-modern">
+            <div class="section-title">
+                <h2>@T("Checkout.OrderSummary")</h2>
+            </div>
+            <div class="summary-wrapper">
+                @await Component.InvokeAsync(typeof(OrderSummaryViewComponent))
+            </div>
+        </div>
+    </div>
+</div>

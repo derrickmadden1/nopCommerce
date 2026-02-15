@@ -1,0 +1,61 @@
+@model CheckoutProgressModel
+<div class="order-progress-modern">
+    <div class="progress-steps">
+        @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.CheckoutProgressBefore, additionalData = Model })
+        
+        <div class="step @(Model.CheckoutProgressStep == CheckoutProgressStep.Cart ? "active" : "completed")">
+            <div class="step-icon">
+                <i class="fas fa-shopping-cart"></i>
+            </div>
+            <div class="step-label">
+                <a @(Model.CheckoutProgressStep != CheckoutProgressStep.Complete ? @Html.Raw($" href=\"{Url.RouteUrl(NopRouteNames.General.CART)}\"") : null)>@T("Checkout.Progress.Cart")</a>
+            </div>
+        </div>
+
+        <div class="step-connector @(Model.CheckoutProgressStep != CheckoutProgressStep.Cart ? "completed" : "")"></div>
+
+        <div class="step @(Model.CheckoutProgressStep == CheckoutProgressStep.Address ? "active" : (Model.CheckoutProgressStep != CheckoutProgressStep.Cart ? "completed" : "pending"))">
+            <div class="step-icon">
+                <i class="fas fa-map-marker-alt"></i>
+            </div>
+            <div class="step-label">
+                <a @(Model.CheckoutProgressStep != CheckoutProgressStep.Cart && Model.CheckoutProgressStep != CheckoutProgressStep.Complete ? @Html.Raw($" href=\"{Url.RouteUrl(NopRouteNames.Standard.CHECKOUT_BILLING_ADDRESS)}\"") : null)>@T("Checkout.Progress.Address")</a>
+            </div>
+        </div>
+
+        <div class="step-connector @(Model.CheckoutProgressStep == CheckoutProgressStep.Payment || Model.CheckoutProgressStep == CheckoutProgressStep.Confirm || Model.CheckoutProgressStep == CheckoutProgressStep.Complete ? "completed" : "")"></div>
+
+        <div class="step @(Model.CheckoutProgressStep == CheckoutProgressStep.Shipping ? "active" : (Model.CheckoutProgressStep == CheckoutProgressStep.Payment || Model.CheckoutProgressStep == CheckoutProgressStep.Confirm || Model.CheckoutProgressStep == CheckoutProgressStep.Complete ? "completed" : "pending"))">
+            <div class="step-icon">
+                <i class="fas fa-truck"></i>
+            </div>
+            <div class="step-label">
+                <a @(Model.CheckoutProgressStep != CheckoutProgressStep.Cart && Model.CheckoutProgressStep != CheckoutProgressStep.Address && Model.CheckoutProgressStep != CheckoutProgressStep.Complete ? @Html.Raw($" href=\"{Url.RouteUrl(NopRouteNames.Standard.CHECKOUT_SHIPPING_METHOD)}\"") : null)>@T("Checkout.Progress.Shipping")</a>
+            </div>
+        </div>
+
+        <div class="step-connector @(Model.CheckoutProgressStep == CheckoutProgressStep.Confirm || Model.CheckoutProgressStep == CheckoutProgressStep.Complete ? "completed" : "")"></div>
+
+        <div class="step @(Model.CheckoutProgressStep == CheckoutProgressStep.Payment ? "active" : (Model.CheckoutProgressStep == CheckoutProgressStep.Confirm || Model.CheckoutProgressStep == CheckoutProgressStep.Complete ? "completed" : "pending"))">
+            <div class="step-icon">
+                <i class="fas fa-credit-card"></i>
+            </div>
+            <div class="step-label">
+                <a @(Model.CheckoutProgressStep != CheckoutProgressStep.Cart && Model.CheckoutProgressStep != CheckoutProgressStep.Address && Model.CheckoutProgressStep != CheckoutProgressStep.Shipping && Model.CheckoutProgressStep != CheckoutProgressStep.Complete ? @Html.Raw($" href=\"{Url.RouteUrl(NopRouteNames.Standard.CHECKOUT_PAYMENT_METHOD)}\"") : null)>@T("Checkout.Progress.Payment")</a>
+            </div>
+        </div>
+
+        <div class="step-connector @(Model.CheckoutProgressStep == CheckoutProgressStep.Complete ? "completed" : "")"></div>
+
+        <div class="step @(Model.CheckoutProgressStep == CheckoutProgressStep.Confirm ? "active" : (Model.CheckoutProgressStep == CheckoutProgressStep.Complete ? "completed" : "pending"))">
+            <div class="step-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="step-label">
+                <a @(Model.CheckoutProgressStep != CheckoutProgressStep.Cart && Model.CheckoutProgressStep != CheckoutProgressStep.Address && Model.CheckoutProgressStep != CheckoutProgressStep.Shipping && Model.CheckoutProgressStep != CheckoutProgressStep.Payment && Model.CheckoutProgressStep != CheckoutProgressStep.Complete ? @Html.Raw($" href=\"{Url.RouteUrl(NopRouteNames.Standard.CHECKOUT_CONFIRM)}\"") : null)>@T("Checkout.Progress.Confirm")</a>
+            </div>
+        </div>
+
+        @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.CheckoutProgressAfter, additionalData = Model })
+    </div>
+</div>
