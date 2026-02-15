@@ -201,8 +201,19 @@ public class PayPalCommerceServiceManager
                 await _logger.ErrorAsync(logMessage, exceptionToLog, customer);
             }
 
-            return (default, exception.Message);
+            return (default, exception.InnerException?.Message ?? exception.Message);
         }
+    }
+
+    private static Payee PreparePayee(PayPalCommerceSettings settings)
+    {
+        var merchantId = settings.MerchantId?.Trim();
+        if (string.IsNullOrEmpty(merchantId))
+            return null;
+
+        return merchantId.Contains('@')
+            ? new Payee { EmailAddress = merchantId }
+            : new Payee { MerchantId = merchantId };
     }
 
     #region Components
@@ -298,7 +309,8 @@ public class PayPalCommerceServiceManager
             throw new NopException("Shopping cart is empty");
 
         //get billing address
-        var billingAddress = await _addressService.GetAddressByIdAsync(customer.BillingAddressId ?? 0);
+        var billingAddress = await _customerService.GetCustomerBillingAddressAsync(customer)
+            ?? (await _customerService.GetAddressesByCustomerIdAsync(customer.Id)).FirstOrDefault();
         if (placement == ButtonPlacement.PaymentMethod && billingAddress is null)
             throw new NopException("Customer billing address not set");
 
@@ -334,7 +346,8 @@ public class PayPalCommerceServiceManager
                 (await _countryService.GetCountryByTwoLetterIsoCodeAsync(details.PickupPoint.CountryCode))?.Id))?.Id,
             ZipPostalCode = details.PickupPoint.ZipPostalCode,
             CreatedOnUtc = DateTime.UtcNow
-        } : await _addressService.GetAddressByIdAsync(customer.ShippingAddressId ?? 0);
+        } : await _customerService.GetCustomerShippingAddressAsync(customer)
+            ?? (await _customerService.GetAddressesByCustomerIdAsync(customer.Id)).FirstOrDefault();
         if (placement == ButtonPlacement.PaymentMethod && shippingIsRequired && details.ShippingAddress is null)
             throw new NopException("Customer shipping address not set");
 
@@ -419,28 +432,26 @@ public class PayPalCommerceServiceManager
         var address = details.BillingAddress;
         var isPaymentMethodPage = details.Placement == ButtonPlacement.PaymentMethod;
 
-        var email = CommonHelper.EnsureMaximumLength(isPaymentMethodPage ? address.Email : customer.Email, 254);
+        var email = CommonHelper.EnsureMaximumLength(address?.Email ?? customer.Email, 254);
         var name = new Name
         {
-            GivenName = CommonHelper.EnsureMaximumLength(isPaymentMethodPage ? address.FirstName : customer.FirstName, 140),
-            Surname = CommonHelper.EnsureMaximumLength(isPaymentMethodPage ? address.LastName : customer.LastName, 140)
+            GivenName = CommonHelper.EnsureMaximumLength(address?.FirstName ?? customer.FirstName, 140),
+            Surname = CommonHelper.EnsureMaximumLength(address?.LastName ?? customer.LastName, 140)
         };
         //phone number format is unpredictable
-        //var phone = isPaymentMethodPage
-        //    ? (!string.IsNullOrEmpty(address.PhoneNumber) ? new Phone { PhoneNumber = new() { NationalNumber = CommonHelper.EnsureMaximumLength(CommonHelper.EnsureNumericOnly(address.PhoneNumber), 14) } } : null)
-        //    : !string.IsNullOrEmpty(customer.Phone) ? new Phone { PhoneNumber = new() { NationalNumber = CommonHelper.EnsureMaximumLength(CommonHelper.EnsureNumericOnly(customer.Phone), 14) } } : null;
+        //var phone = !string.IsNullOrEmpty(address?.PhoneNumber) ? new Phone { PhoneNumber = new() { NationalNumber = CommonHelper.EnsureMaximumLength(CommonHelper.EnsureNumericOnly(address.PhoneNumber), 14) } } : 
+        //    !string.IsNullOrEmpty(customer.Phone) ? new Phone { PhoneNumber = new() { NationalNumber = CommonHelper.EnsureMaximumLength(CommonHelper.EnsureNumericOnly(customer.Phone), 14) } } : null;
         var birthDate = customer.DateOfBirth?.ToString("yyyy-MM-dd");
-        var country = await _countryService.GetCountryByIdAsync(isPaymentMethodPage ? address.CountryId ?? 0 : customer.CountryId);
-        var state = await _stateProvinceService
-            .GetStateProvinceByIdAsync(isPaymentMethodPage ? address.StateProvinceId ?? 0 : customer.StateProvinceId);
+        var country = await _countryService.GetCountryByIdAsync(address?.CountryId ?? customer.CountryId);
+        var state = await _stateProvinceService.GetStateProvinceByIdAsync(address?.StateProvinceId ?? customer.StateProvinceId);
         var billingAddress = new Address
         {
-            AddressLine1 = CommonHelper.EnsureMaximumLength(isPaymentMethodPage ? address.Address1 : customer.StreetAddress, 300),
-            AddressLine2 = CommonHelper.EnsureMaximumLength(isPaymentMethodPage ? address.Address2 : customer.StreetAddress2, 300),
-            AdminArea2 = CommonHelper.EnsureMaximumLength(isPaymentMethodPage ? address.City : customer.City, 120),
+            AddressLine1 = CommonHelper.EnsureMaximumLength(address?.Address1 ?? customer.StreetAddress, 300),
+            AddressLine2 = CommonHelper.EnsureMaximumLength(address?.Address2 ?? customer.StreetAddress2, 300),
+            AdminArea2 = CommonHelper.EnsureMaximumLength(address?.City ?? customer.City, 120),
             AdminArea1 = CommonHelper.EnsureMaximumLength(state?.Abbreviation, 300),
             CountryCode = CommonHelper.EnsureMaximumLength(country?.TwoLetterIsoCode, 2),
-            PostalCode = CommonHelper.EnsureMaximumLength(isPaymentMethodPage ? address.ZipPostalCode : customer.ZipPostalCode, 60)
+            PostalCode = CommonHelper.EnsureMaximumLength(address?.ZipPostalCode ?? customer.ZipPostalCode, 60)
         };
 
         //country is required
@@ -647,6 +658,9 @@ public class PayPalCommerceServiceManager
             PostalCode = CommonHelper.EnsureMaximumLength(shippingAddress.ZipPostalCode, 60)
         } : null;
 
+        if (address is null)
+            return null;
+
         var shipping = new Shipping
         {
             Name = new() { FullName = CommonHelper.EnsureMaximumLength(fullName, 300), },
@@ -663,7 +677,7 @@ public class PayPalCommerceServiceManager
         }
 
         var (shippingOptions, pickupPoints) = await PrepareShippingOptionsAsync(details);
-        if (!shippingOptions?.Any() ?? true)
+        if ((!shippingOptions?.Any() ?? true) && details.ShippingAddress is not null)
             throw new NopException("No available shipping options");
 
         var selectedShippingOption = shippingOptions.FirstOrDefault();
@@ -882,9 +896,17 @@ public class PayPalCommerceServiceManager
             {
                 LineItems = items,
                 ShippingAmount = orderAmount.Breakdown.Shipping,
-                ShippingAddress = shipping?.Address,
+                ShippingAddress = shipping?.Address is not null ? new Address
+                {
+                    AddressLine1 = shipping.Address.AddressLine1,
+                    AddressLine2 = shipping.Address.AddressLine2,
+                    AdminArea1 = shipping.Address.AdminArea1,
+                    AdminArea2 = shipping.Address.AdminArea2,
+                    CountryCode = shipping.Address.CountryCode,
+                    PostalCode = shipping.Address.PostalCode?.Replace(" ", "")
+                } : null,
                 ShipsFromPostalCode = CommonHelper.EnsureMaximumLength((await _addressService
-                    .GetAddressByIdAsync(_shippingSettings.ShippingOriginAddressId))?.ZipPostalCode, 60)
+                    .GetAddressByIdAsync(_shippingSettings.ShippingOriginAddressId))?.ZipPostalCode, 60)?.Replace(" ", "")
             },
         };
 
@@ -894,7 +916,7 @@ public class PayPalCommerceServiceManager
             InvoiceId = CommonHelper.EnsureMaximumLength(orderGuid, 127),
             Description = CommonHelper.EnsureMaximumLength($"Purchase at '{details.Store.Name}'", 127),
             SoftDescriptor = CommonHelper.EnsureMaximumLength(details.Store.Name, 22),
-            Payee = new() { MerchantId = settings.MerchantId },
+            Payee = PreparePayee(settings),
             Items = items,
             Amount = orderAmount,
             Shipping = shipping,
@@ -1632,8 +1654,8 @@ public class PayPalCommerceServiceManager
             if (!IsConfigured(settings))
                 throw new NopException("Plugin not configured");
 
-            if (string.IsNullOrEmpty(settings.MerchantId))
-                throw new NopException("Merchant PayPal ID not set");
+            /*if (string.IsNullOrEmpty(settings.MerchantId))
+                throw new NopException("Merchant PayPal ID not set");*/
 
             var details = await PrepareCartDetailsAsync(placement);
 
@@ -2708,8 +2730,8 @@ public class PayPalCommerceServiceManager
             if (!IsConfigured(settings))
                 throw new NopException("Plugin not configured");
 
-            if (string.IsNullOrEmpty(settings.MerchantId))
-                throw new NopException("Merchant PayPal ID not set");
+            /*if (string.IsNullOrEmpty(settings.MerchantId))
+                throw new NopException("Merchant PayPal ID not set");*/
 
             if (!settings.UseVault)
                 throw new NopException("Vault disabled");
@@ -2844,7 +2866,7 @@ public class PayPalCommerceServiceManager
                 InvoiceId = CommonHelper.EnsureMaximumLength(orderGuid, 127),
                 Description = CommonHelper.EnsureMaximumLength($"Purchase at '{store.Name}'", 127),
                 SoftDescriptor = CommonHelper.EnsureMaximumLength(store.Name, 22),
-                Payee = new() { MerchantId = settings.MerchantId },
+                Payee = PreparePayee(settings),
                 Amount = new() { Value = money.Value, CurrencyCode = money.CurrencyCode }
             };
 
