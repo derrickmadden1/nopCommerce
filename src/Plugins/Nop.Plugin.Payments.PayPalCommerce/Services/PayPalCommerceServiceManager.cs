@@ -1780,6 +1780,7 @@ public class PayPalCommerceServiceManager
                 order = await _httpClient.RequestAsync<CreateOrderRequest, CreateOrderResponse>(new CreateOrderRequest
                 {
                     Intent = settings.PaymentType.ToString().ToUpper(),
+                    Payer = payer,
                     PaymentSource = paymentSourceDetails,
                     PurchaseUnits = [purchaseUnit]
                 }, settings);
