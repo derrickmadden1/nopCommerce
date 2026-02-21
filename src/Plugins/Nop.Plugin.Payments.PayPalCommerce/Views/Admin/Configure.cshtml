@@ -381,6 +381,26 @@
                             <span asp-validation-for="UseShipmentTracking"></span>
                         </div>
                     </div>
+                    <div class="form-group row advanced-setting">
+                        <div class="col-md-3">
+                            <nop-override-store-checkbox asp-for="ImmediatePaymentRequired_OverrideForStore" asp-input="ImmediatePaymentRequired" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                            <nop-label asp-for="ImmediatePaymentRequired" />
+                        </div>
+                        <div class="col-md-9">
+                            <nop-editor asp-for="ImmediatePaymentRequired" />
+                            <span asp-validation-for="ImmediatePaymentRequired"></span>
+                        </div>
+                    </div>
+                    <div class="form-group row advanced-setting">
+                        <div class="col-md-3">
+                            <nop-override-store-checkbox asp-for="LandingPageId_OverrideForStore" asp-input="LandingPageId" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                            <nop-label asp-for="LandingPageId" />
+                        </div>
+                        <div class="col-md-9">
+                            <nop-select asp-for="LandingPageId" asp-items="Model.LandingPages" />
+                            <span asp-validation-for="LandingPageId"></span>
+                        </div>
+                    </div>
                     <div id="prominently-card" class="card card-default advanced-setting">
                         <div class="card-header">
                             @T("Plugins.Payments.PayPalCommerce.Prominently")

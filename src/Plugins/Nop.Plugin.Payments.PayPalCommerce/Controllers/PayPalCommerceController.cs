@@ -294,6 +294,8 @@ public class PayPalCommerceController : BasePluginController
             UseVault = settings.UseVault,
             SkipOrderConfirmPage = settings.SkipOrderConfirmPage,
             UseShipmentTracking = settings.UseShipmentTracking,
+            ImmediatePaymentRequired = settings.ImmediatePaymentRequired,
+            LandingPageId = (int)settings.LandingPage,
             DisplayButtonsOnShoppingCart = settings.DisplayButtonsOnShoppingCart,
             DisplayButtonsOnProductDetails = settings.DisplayButtonsOnProductDetails,
             DisplayLogoInHeaderLinks = settings.DisplayLogoInHeaderLinks,
@@ -322,7 +324,11 @@ public class PayPalCommerceController : BasePluginController
                 .SettingExistsAsync(settings, setting => setting.UseAlternativePayments, storeId);
             model.UseVault_OverrideForStore = await _settingService.SettingExistsAsync(settings, setting => setting.UseVault, storeId);
             model.SkipOrderConfirmPage_OverrideForStore = await _settingService
-                .SettingExistsAsync(settings, setting => setting.SkipOrderConfirmPage, storeId);
+            .SettingExistsAsync(settings, setting => setting.SkipOrderConfirmPage, storeId);
+            model.ImmediatePaymentRequired_OverrideForStore = await _settingService
+                .SettingExistsAsync(settings, setting => setting.ImmediatePaymentRequired, storeId);
+            model.LandingPageId_OverrideForStore = await _settingService
+                .SettingExistsAsync(settings, setting => setting.LandingPage, storeId);
             model.DisplayButtonsOnShoppingCart_OverrideForStore = await _settingService
                 .SettingExistsAsync(settings, setting => setting.DisplayButtonsOnShoppingCart, storeId);
             model.DisplayButtonsOnProductDetails_OverrideForStore = await _settingService
@@ -337,6 +343,10 @@ public class PayPalCommerceController : BasePluginController
         }
 
         model.PaymentTypes = (await PaymentType.Capture.ToSelectListAsync(false, [(int)PaymentType.Subscription, (int)PaymentType.Tokenize]))
+            .Select(item => new SelectListItem(item.Text, item.Value))
+            .ToList();
+
+        model.LandingPages = (await Nop.Plugin.Payments.PayPalCommerce.Services.Api.Models.Enums.LandingPageType.NO_PREFERENCE.ToSelectListAsync(false))
             .Select(item => new SelectListItem(item.Text, item.Value))
             .ToList();
 
@@ -415,6 +425,8 @@ public class PayPalCommerceController : BasePluginController
         settings.UseVault = model.UseVault;
         settings.SkipOrderConfirmPage = model.SkipOrderConfirmPage;
         settings.UseShipmentTracking = model.UseShipmentTracking;
+        settings.ImmediatePaymentRequired = model.ImmediatePaymentRequired;
+        settings.LandingPage = (Nop.Plugin.Payments.PayPalCommerce.Services.Api.Models.Enums.LandingPageType)model.LandingPageId;
         settings.DisplayButtonsOnShoppingCart = model.DisplayButtonsOnShoppingCart;
         settings.DisplayButtonsOnProductDetails = model.DisplayButtonsOnProductDetails;
         settings.DisplayLogoInHeaderLinks = model.DisplayLogoInHeaderLinks;
@@ -438,6 +450,8 @@ public class PayPalCommerceController : BasePluginController
         await SaveSettingAsync(settings, setting => setting.UseVault, storeId, model.UseVault_OverrideForStore);
         await SaveSettingAsync(settings, setting => setting.SkipOrderConfirmPage, storeId, model.SkipOrderConfirmPage_OverrideForStore);
         await SaveSettingAsync(settings, setting => setting.UseShipmentTracking, storeId);
+        await SaveSettingAsync(settings, setting => setting.ImmediatePaymentRequired, storeId, model.ImmediatePaymentRequired_OverrideForStore);
+        await SaveSettingAsync(settings, setting => setting.LandingPage, storeId, model.LandingPageId_OverrideForStore);
         await SaveSettingAsync(settings, setting
             => setting.DisplayButtonsOnShoppingCart, storeId, model.DisplayButtonsOnShoppingCart_OverrideForStore);
         await SaveSettingAsync(settings, setting

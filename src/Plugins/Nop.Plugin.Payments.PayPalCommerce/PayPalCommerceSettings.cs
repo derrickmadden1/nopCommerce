@@ -193,6 +193,11 @@ public class PayPalCommerceSettings : ISettings
     public bool ImmediatePaymentRequired { get; set; }
 
     /// <summary>
+    /// Gets or sets the type of landing page to show on the PayPal site for customer checkout
+    /// </summary>
+    public Services.Api.Models.Enums.LandingPageType LandingPage { get; set; }
+
+    /// <summary>
     /// Gets or sets the order validity interval (in seconds) when the existing order will be used. 
     /// Set to 0 to create a new order for each payment attempt
     /// </summary>

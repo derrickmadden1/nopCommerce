@@ -378,7 +378,7 @@ public class PayPalCommerceServiceManager
         {
             //Locale = null, //PayPal auto detects this
             BrandName = CommonHelper.EnsureMaximumLength(details.Store.Name, 127),
-            LandingPage = LandingPageType.NO_PREFERENCE.ToString().ToUpper(),
+            LandingPage = settings.LandingPage.ToString().ToUpper(),
             UserAction = details.Placement == ButtonPlacement.PaymentMethod && settings.SkipOrderConfirmPage
                 ? UserActionType.PAY_NOW.ToString().ToUpper()
                 : UserActionType.CONTINUE.ToString().ToUpper(),
@@ -903,10 +903,11 @@ public class PayPalCommerceServiceManager
                     AdminArea1 = shipping.Address.AdminArea1,
                     AdminArea2 = shipping.Address.AdminArea2,
                     CountryCode = shipping.Address.CountryCode,
-                    PostalCode = shipping.Address.PostalCode?.Replace(" ", "")
+                    PostalCode = shipping.Address.PostalCode is not null ? System.Text.RegularExpressions.Regex.Replace(shipping.Address.PostalCode, @"\s+", "") : null
                 } : null,
-                ShipsFromPostalCode = CommonHelper.EnsureMaximumLength((await _addressService
-                    .GetAddressByIdAsync(_shippingSettings.ShippingOriginAddressId))?.ZipPostalCode, 60)?.Replace(" ", "")
+                ShipsFromPostalCode = (await _addressService.GetAddressByIdAsync(_shippingSettings.ShippingOriginAddressId))?.ZipPostalCode is string zipPostalCode
+                    ? System.Text.RegularExpressions.Regex.Replace(CommonHelper.EnsureMaximumLength(zipPostalCode, 60), @"\s+", "")
+                    : null
             },
         };
 
@@ -1912,9 +1913,18 @@ public class PayPalCommerceServiceManager
                 {
                     LineItems = items,
                     ShippingAmount = orderAmount.Breakdown.Shipping,
-                    ShippingAddress = shipping?.Address,
-                    ShipsFromPostalCode = CommonHelper.EnsureMaximumLength((await _addressService
-                        .GetAddressByIdAsync(_shippingSettings.ShippingOriginAddressId))?.ZipPostalCode, 60)
+                    ShippingAddress = shipping?.Address is not null ? new Address
+                    {
+                        AddressLine1 = shipping.Address.AddressLine1,
+                        AddressLine2 = shipping.Address.AddressLine2,
+                        AdminArea1 = shipping.Address.AdminArea1,
+                        AdminArea2 = shipping.Address.AdminArea2,
+                        CountryCode = shipping.Address.CountryCode,
+                        PostalCode = shipping.Address.PostalCode is not null ? System.Text.RegularExpressions.Regex.Replace(shipping.Address.PostalCode, @"\s+", "") : null
+                    } : null,
+                    ShipsFromPostalCode = (await _addressService.GetAddressByIdAsync(_shippingSettings.ShippingOriginAddressId))?.ZipPostalCode is string zipPostalCode
+                        ? System.Text.RegularExpressions.Regex.Replace(CommonHelper.EnsureMaximumLength(zipPostalCode, 60), @"\s+", "")
+                        : null
                 },
             };
 
@@ -2038,9 +2048,18 @@ public class PayPalCommerceServiceManager
                 {
                     LineItems = items,
                     ShippingAmount = orderAmount.Breakdown.Shipping,
-                    ShippingAddress = unit.Shipping?.Address,
-                    ShipsFromPostalCode = CommonHelper.EnsureMaximumLength((await _addressService
-                        .GetAddressByIdAsync(_shippingSettings.ShippingOriginAddressId))?.ZipPostalCode, 60)
+                    ShippingAddress = unit.Shipping?.Address is not null ? new Address
+                    {
+                        AddressLine1 = unit.Shipping.Address.AddressLine1,
+                        AddressLine2 = unit.Shipping.Address.AddressLine2,
+                        AdminArea1 = unit.Shipping.Address.AdminArea1,
+                        AdminArea2 = unit.Shipping.Address.AdminArea2,
+                        CountryCode = unit.Shipping.Address.CountryCode,
+                        PostalCode = unit.Shipping.Address.PostalCode is not null ? System.Text.RegularExpressions.Regex.Replace(unit.Shipping.Address.PostalCode, @"\s+", "") : null
+                    } : null,
+                    ShipsFromPostalCode = (await _addressService.GetAddressByIdAsync(_shippingSettings.ShippingOriginAddressId))?.ZipPostalCode is string zipPostalCode
+                        ? System.Text.RegularExpressions.Regex.Replace(CommonHelper.EnsureMaximumLength(zipPostalCode, 60), @"\s+", "")
+                        : null
                 },
             };
 
