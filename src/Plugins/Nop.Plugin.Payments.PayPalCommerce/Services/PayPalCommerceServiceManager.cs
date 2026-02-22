@@ -1760,7 +1760,6 @@ public class PayPalCommerceServiceManager
                     paymentSourceDetails.Venmo = new()
                     {
                         ExperienceContext = context,
-                        EmailAddress = payer.EmailAddress,
                         Attributes = vault is not null ? new() { Vault = vault, Customer = payer } : null
                     };
                 }
@@ -1769,10 +1768,6 @@ public class PayPalCommerceServiceManager
                     paymentSourceDetails.PayPal = new()
                     {
                         ExperienceContext = context,
-                        EmailAddress = payer.EmailAddress,
-                        Name = payer.Name,
-                        BirthDate = payer.BirthDate,
-                        Address = payer.Address,
                         Attributes = vault is not null ? new() { Vault = vault, Customer = payer } : null
                     };
                 }
