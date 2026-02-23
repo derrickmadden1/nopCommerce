@@ -5160,11 +5160,23 @@ label, label + * {
 .payment-method .payment-logo {
   display: inline-block;
   vertical-align: middle;
+  width: 120px;
+  height: 120px;
 }
 
 .payment-method .payment-logo label {
-  display: block;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
   font-size: 0 !important;
+}
+
+.payment-method .payment-logo img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
 }
 
 .payment-method .payment-details {
@@ -7566,7 +7578,12 @@ label, label + * {
   }
 
   .payment-method .payment-logo {
-    display: block;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 120px;
+    height: 120px;
+    margin: 0 auto;
     background-color: #f6f6f6;
     padding: 10px;
   }
