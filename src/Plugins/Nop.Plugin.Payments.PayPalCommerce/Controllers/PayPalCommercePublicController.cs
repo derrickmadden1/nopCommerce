@@ -5,6 +5,7 @@ using Nop.Plugin.Payments.PayPalCommerce.Domain;
 using Nop.Plugin.Payments.PayPalCommerce.Factories;
 using Nop.Plugin.Payments.PayPalCommerce.Models.Public;
 using Nop.Services.Localization;
+using Nop.Services.Logging;
 using Nop.Services.Messages;
 using Nop.Web.Controllers;
 using Nop.Web.Framework.Mvc.Filters;
@@ -17,6 +18,7 @@ public class PayPalCommercePublicController : BasePublicController
     #region Fields
 
     private readonly ILocalizationService _localizationService;
+    private readonly ILogger _logger;
     private readonly INotificationService _notificationService;
     private readonly IWebHelper _webHelper;
     private readonly PayPalCommerceModelFactory _modelFactory;
@@ -26,11 +28,13 @@ public class PayPalCommercePublicController : BasePublicController
     #region Ctor
 
     public PayPalCommercePublicController(ILocalizationService localizationService,
+        ILogger logger,
         INotificationService notificationService,
         IWebHelper webHelper,
         PayPalCommerceModelFactory modelFactory)
     {
         _localizationService = localizationService;
+        _logger = logger;
         _notificationService = notificationService;
         _webHelper = webHelper;
         _modelFactory = modelFactory;
@@ -63,6 +67,12 @@ public class PayPalCommercePublicController : BasePublicController
     public async Task<IActionResult> CreateOrder(int placement, string paymentSource, int cardId, bool saveCard)
     {
         var model = await _modelFactory.PrepareOrderModelAsync((ButtonPlacement)placement, null, paymentSource, cardId, saveCard);
+
+        if (!string.IsNullOrEmpty(model.Error))
+            await _logger.ErrorAsync($"{PayPalCommerceDefaults.SystemName} error in CreateOrder: {model.Error}");
+        else if (string.IsNullOrEmpty(model.OrderId))
+            await _logger.ErrorAsync($"{PayPalCommerceDefaults.SystemName} error in CreateOrder: OrderId is empty, but no error message was provided.");
+
         if (model.LoginIsRequired)
             return Json(new { redirect = Url.RouteUrl(NopRouteNames.General.LOGIN, new { returnUrl = Url.RouteUrl(NopRouteNames.General.CART) }) });
 
