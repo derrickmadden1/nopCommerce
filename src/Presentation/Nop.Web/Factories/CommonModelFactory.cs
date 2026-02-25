@@ -7,7 +7,6 @@ using Nop.Core.Domain.Catalog;
 using Nop.Core.Domain.Common;
 using Nop.Core.Domain.Customers;
 using Nop.Core.Domain.Directory;
-using Nop.Core.Domain.Forums;
 using Nop.Core.Domain.Localization;
 using Nop.Core.Domain.Media;
 using Nop.Core.Domain.Messages;
@@ -18,7 +17,7 @@ using Nop.Core.Infrastructure;
 using Nop.Services.Common;
 using Nop.Services.Customers;
 using Nop.Services.Directory;
-using Nop.Services.Forums;
+using Nop.Services.Helpers;
 using Nop.Services.Localization;
 using Nop.Services.Media;
 using Nop.Services.Orders;
@@ -43,10 +42,8 @@ public partial class CommonModelFactory : ICommonModelFactory
     protected readonly CommonSettings _commonSettings;
     protected readonly CurrencySettings _currencySettings;
     protected readonly CustomerSettings _customerSettings;
-    protected readonly ForumSettings _forumSettings;
     protected readonly ICurrencyService _currencyService;
     protected readonly ICustomerService _customerService;
-    protected readonly IForumService _forumService;
     protected readonly IGenericAttributeService _genericAttributeService;
     protected readonly IHttpContextAccessor _httpContextAccessor;
     protected readonly ILanguageService _languageService;
@@ -65,6 +62,7 @@ public partial class CommonModelFactory : ICommonModelFactory
     protected readonly LocalizationSettings _localizationSettings;
     protected readonly MediaSettings _mediaSettings;
     protected readonly MessagesSettings _messagesSettings;
+    protected readonly PrivateMessageSettings _privateMessageSettings;
     protected readonly RobotsTxtSettings _robotsTxtSettings;
     protected readonly SitemapXmlSettings _sitemapXmlSettings;
     protected readonly StoreInformationSettings _storeInformationSettings;
@@ -77,10 +75,8 @@ public partial class CommonModelFactory : ICommonModelFactory
         CommonSettings commonSettings,
         CurrencySettings currencySettings,
         CustomerSettings customerSettings,
-        ForumSettings forumSettings,
         ICurrencyService currencyService,
         ICustomerService customerService,
-        IForumService forumService,
         IGenericAttributeService genericAttributeService,
         IHttpContextAccessor httpContextAccessor,
         ILanguageService languageService,
@@ -99,6 +95,7 @@ public partial class CommonModelFactory : ICommonModelFactory
         LocalizationSettings localizationSettings,
         MediaSettings mediaSettings,
         MessagesSettings messagesSettings,
+        PrivateMessageSettings privateMessageSettings,
         RobotsTxtSettings robotsTxtSettings,
         SitemapXmlSettings sitemapXmlSettings,
         StoreInformationSettings storeInformationSettings)
@@ -108,10 +105,8 @@ public partial class CommonModelFactory : ICommonModelFactory
         _commonSettings = commonSettings;
         _currencySettings = currencySettings;
         _customerSettings = customerSettings;
-        _forumSettings = forumSettings;
         _currencyService = currencyService;
         _customerService = customerService;
-        _forumService = forumService;
         _genericAttributeService = genericAttributeService;
         _httpContextAccessor = httpContextAccessor;
         _languageService = languageService;
@@ -130,6 +125,7 @@ public partial class CommonModelFactory : ICommonModelFactory
         _localizationSettings = localizationSettings;
         _mediaSettings = mediaSettings;
         _messagesSettings = messagesSettings;
+        _privateMessageSettings = privateMessageSettings;
         _localizationSettings = localizationSettings;
         _robotsTxtSettings = robotsTxtSettings;
         _sitemapXmlSettings = sitemapXmlSettings;
@@ -193,23 +189,27 @@ public partial class CommonModelFactory : ICommonModelFactory
                         index++;
                         continue;
                     }
-
                     byte marker = data[index + 1];
                     if (marker >= 0xC0 && marker <= 0xCF && marker != 0xC4 && marker != 0xC8 && marker != 0xCC)
                     {
-                        if (index + 5 >= data.Length) break;
+                        if (index + 5 >= data.Length)
+                            break;
                         int blockLength = (data[index + 2] << 8) | data[index + 3];
-                        if (index + 5 + 4 > data.Length) break;
+                        if (index + 5 + 4 > data.Length)
+                            break;
                         height = (data[index + 5] << 8) | data[index + 6];
                         width = (data[index + 7] << 8) | data[index + 8];
-                        if (width > 0 && height > 0) return true;
+                        if (width > 0 && height > 0)
+                            return true;
                         break;
                     }
                     else
                     {
-                        if (index + 3 >= data.Length) break;
+                        if (index + 3 >= data.Length)
+                            break;
                         int blockLength = (data[index + 2] << 8) | data[index + 3];
-                        if (blockLength < 2) break;
+                        if (blockLength < 2)
+                            break;
                         index += 2 + blockLength;
                     }
                 }
@@ -219,6 +219,30 @@ public partial class CommonModelFactory : ICommonModelFactory
 
         return false;
     }
+    /// <summary>
+    /// Get the number of unread private messages
+    /// </summary>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task result contains the number of private messages
+    /// </returns>
+    protected virtual async Task<int> GetUnreadPrivateMessagesAsync()
+    {
+        var result = 0;
+        var customer = await _workContext.GetCurrentCustomerAsync();
+        if (_privateMessageSettings.AllowPrivateMessages && !await _customerService.IsGuestAsync(customer))
+        {
+            var store = await _storeContext.GetCurrentStoreAsync();
+            var privateMessages = await _customerService.GetAllPrivateMessagesAsync(store.Id,
+                0, customer.Id, false, null, false, string.Empty, 0, 1);
+
+            if (privateMessages.TotalCount > 0)
+                result = privateMessages.TotalCount;
+        }
+
+        return result;
+    }
+
 
     /// <summary>
     /// Prepare the logo model
@@ -296,20 +320,6 @@ public partial class CommonModelFactory : ICommonModelFactory
             }
 
         return model;
-    }
-
-    // conservative helper: return 0 if private messages service isn't available/implemented here
-    protected virtual Task<int> GetUnreadPrivateMessagesAsync()
-    {
-        try
-        {
-            // original implementation may have used message services; return 0 as safe default
-            return Task.FromResult(0);
-        }
-        catch
-        {
-            return Task.FromResult(0);
-        }
     }
 
     // conservative helper: determine whether current request is homepage based on path
@@ -432,7 +442,7 @@ public partial class CommonModelFactory : ICommonModelFactory
             unreadMessage = string.Format(await _localizationService.GetResourceAsync("PrivateMessages.TotalUnread"), unreadMessageCount);
 
             //notifications here
-            if (_forumSettings.ShowAlertForPM &&
+            if (_privateMessageSettings.ShowAlertForPM &&
                 !await _genericAttributeService.GetAttributeAsync<bool>(customer, NopCustomerDefaults.NotifiedAboutNewPrivateMessagesAttribute, store.Id))
             {
                 await _genericAttributeService.SaveAttributeAsync(customer, NopCustomerDefaults.NotifiedAboutNewPrivateMessagesAttribute, true, store.Id);
@@ -448,17 +458,18 @@ public partial class CommonModelFactory : ICommonModelFactory
             ShoppingCartEnabled = await _permissionService.AuthorizeAsync(StandardPermission.PublicStore.ENABLE_SHOPPING_CART),
             UsePopupNotifications = _messagesSettings.UsePopupNotifications,
             WishlistEnabled = await _permissionService.AuthorizeAsync(StandardPermission.PublicStore.ENABLE_WISHLIST),
-            AllowPrivateMessages = await _customerService.IsRegisteredAsync(customer) && _forumSettings.AllowPrivateMessages,
+            AllowPrivateMessages = await _customerService.IsRegisteredAsync(customer) && _privateMessageSettings.AllowPrivateMessages,
             UnreadPrivateMessages = unreadMessage,
             AlertMessage = alertMessage,
         };
+        
         //performance optimization (use "HasShoppingCartItems" property)
         if (customer.HasShoppingCartItems)
         {
             model.ShoppingCartItems = (await _shoppingCartService.GetShoppingCartAsync(customer, ShoppingCartType.ShoppingCart, store.Id))
                 .Sum(item => item.Quantity);
 
-            model.WishlistItems = (await _shoppingCartService.GetShoppingCartAsync(customer, ShoppingCartType.Wishlist, store.Id))
+            model.WishlistItems = (await _shoppingCartService.GetShoppingCartAsync(customer, ShoppingCartType.Wishlist, store.Id, customWishlistId: 0))
                 .Sum(item => item.Quantity);
         }
 
@@ -672,14 +683,18 @@ public partial class CommonModelFactory : ICommonModelFactory
                 var store = await _storeContext.GetCurrentStoreAsync();
                 //URLs are localizable. Append SEO code
                 foreach (var language in await _languageService.GetAllLanguagesAsync(storeId: store.Id))
+                {
                     if (_robotsTxtSettings.DisallowLanguages.Contains(language.Id))
                     {
                         sb.AppendLine($"Disallow: /{language.UniqueSeoCode}$");
                         sb.AppendLine($"Disallow: /{language.UniqueSeoCode}/");
                     }
                     else
+                    {
                         foreach (var path in _robotsTxtSettings.LocalizableDisallowPaths)
                             sb.AppendLine($"Disallow: /{language.UniqueSeoCode}{path}");
+                    }
+                }
             }
 
             foreach (var additionsRule in _robotsTxtSettings.AdditionsRules)

@@ -7,6 +7,7 @@ using Nop.Core.Domain.Customers;
 using Nop.Core.Domain.Seo;
 using Nop.Core.Infrastructure;
 using Nop.Data;
+using Nop.Services.Helpers;
 using Nop.Services.Seo;
 
 namespace Nop.Services.Installation;
@@ -225,7 +226,6 @@ public partial class InstallationService : IInstallationService
         await InstallCategoriesAsync(sampleData.Categories);
         await InstallManufacturersAsync(sampleData.Manufacturers);
         await InstallProductsAsync(sampleData.Products);
-        await InstallForumsAsync(sampleData.ForumGroups);
         await InstallDiscountsAsync(sampleData.Discounts);
         await InstallBlogPostsAsync(sampleData.BlogPosts);
         await InstallWarehousesAsync(sampleData.Warehouses);

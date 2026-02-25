@@ -6,6 +6,7 @@ using Nop.Plugin.Widgets.Swiper.Domain;
 using Nop.Plugin.Widgets.Swiper.Infrastructure.Cache;
 using Nop.Plugin.Widgets.Swiper.Models;
 using Nop.Services.Configuration;
+using Nop.Services.Helpers;
 using Nop.Services.Media;
 using System.IO;
 using Nop.Web.Framework.Components;
@@ -237,7 +238,7 @@ public class WidgetSwiperViewComponent : NopViewComponent
         if (!model.Slides.Any())
             return Content("");
 
-        return View("~/Plugins/Widgets.Swiper/Views/PublicInfo.cshtml", model);
+        return await ViewAsync("~/Plugins/Widgets.Swiper/Views/PublicInfo.cshtml", model);
     }
 
     #endregion
