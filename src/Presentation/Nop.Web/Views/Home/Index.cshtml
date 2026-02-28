@@ -24,7 +24,29 @@
 
     //page class
     NopHtml.AppendPageCssClassParts("html-home-page");
+
+    //music player assets
+    NopHtml.AppendCssFileParts("~/css/music-player.css");
+    NopHtml.AppendScriptParts(ResourceLocation.Footer, "~/js/music-player.js");
 }
+
+<div class="music-player-container">
+    <button id="play-pause-btn" class="play-pause-btn">
+        <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+    </button>
+    <div class="music-info">Home Soundscape</div>
+    <div class="visualizer">
+        <div class="visualizer-bar"></div>
+        <div class="visualizer-bar"></div>
+        <div class="visualizer-bar"></div>
+        <div class="visualizer-bar"></div>
+    </div>
+    <audio id="homepage-audio" loop>
+        <source src="~/audio/homepage-music.mp3" type="audio/mpeg">
+        Your browser does not support the audio element.
+    </audio>
+</div>
+
 <div class="page home-page">
     <div class="page-body">
         @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.HomepageTop })
