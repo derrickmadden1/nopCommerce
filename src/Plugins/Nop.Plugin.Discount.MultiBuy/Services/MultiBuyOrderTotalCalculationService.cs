@@ -126,9 +126,8 @@ namespace Nop.Plugin.DiscountRules.MultiBuy.Services
             if (!allowedDiscounts.Any())
                 return (discountAmount, appliedDiscounts);
 
-            // Prefer a MultiBuy discount if one is present
-            Nop.Core.Domain.Discounts.Discount multiBuyDiscount = null;
-            DiscountRequirement multiBuyRequirement = null;
+            // Collect all applicable MultiBuy discounts
+            var multiBuyDiscounts = new List<(Nop.Core.Domain.Discounts.Discount discount, DiscountRequirement requirement)>();
 
             foreach (var discount in allowedDiscounts)
             {
@@ -138,43 +137,51 @@ namespace Nop.Plugin.DiscountRules.MultiBuy.Services
 
                 if (mbReq != null)
                 {
-                    multiBuyDiscount = discount;
-                    multiBuyRequirement = mbReq;
-                    break;
+                    multiBuyDiscounts.Add((discount, mbReq));
                 }
             }
 
-            if (multiBuyDiscount != null && multiBuyRequirement != null)
+            if (multiBuyDiscounts.Any())
             {
-                var settingsKey = string.Format(DiscountRequirementDefaults.SETTINGS_KEY, multiBuyRequirement.Id);
-                var mbSettingsJson = await _settingService.GetSettingByKeyAsync<string>(settingsKey);
+                var store = await _storeContext.GetCurrentStoreAsync();
+                var cartForStore = cart ?? await _shoppingCartService.GetShoppingCartAsync(customer,
+                    ShoppingCartType.ShoppingCart, storeId: store.Id);
 
-                MultiBuyRequirementSettings mbSettings = null;
-                if (!string.IsNullOrEmpty(mbSettingsJson))
+                var totalMbDiscountAmount = decimal.Zero;
+                var appliedMbDiscounts = new List<Nop.Core.Domain.Discounts.Discount>();
+
+                foreach (var (discount, requirement) in multiBuyDiscounts)
                 {
-                    try
+                    var settingsKey = string.Format(DiscountRequirementDefaults.SETTINGS_KEY, requirement.Id);
+                    var mbSettingsJson = await _settingService.GetSettingByKeyAsync<string>(settingsKey);
+
+                    MultiBuyRequirementSettings mbSettings = null;
+                    if (!string.IsNullOrEmpty(mbSettingsJson))
                     {
-                        mbSettings = Newtonsoft.Json.JsonConvert.DeserializeObject<MultiBuyRequirementSettings>(mbSettingsJson);
+                        try
+                        {
+                            mbSettings = Newtonsoft.Json.JsonConvert.DeserializeObject<MultiBuyRequirementSettings>(mbSettingsJson);
+                        }
+                        catch
+                        {
+                            // legacy/corrupted data
+                        }
                     }
-                    catch
+
+                    if (mbSettings != null)
                     {
-                        // legacy/corrupted data
+                        var mbDiscountAmount = await _multiBuyDiscountService.CalculateDiscountAsync(cartForStore, mbSettings);
+                        if (mbDiscountAmount > decimal.Zero)
+                        {
+                            totalMbDiscountAmount += mbDiscountAmount;
+                            appliedMbDiscounts.Add(discount);
+                        }
                     }
                 }
 
-                if (mbSettings != null)
+                if (totalMbDiscountAmount > decimal.Zero)
                 {
-                    var store = await _storeContext.GetCurrentStoreAsync();
-                    var cartForStore = cart ?? await _shoppingCartService.GetShoppingCartAsync(customer,
-                        ShoppingCartType.ShoppingCart, storeId: store.Id);
-
-                    var mbDiscountAmount =
-                        await _multiBuyDiscountService.CalculateDiscountAsync(cartForStore, mbSettings);
-
-                    if (mbDiscountAmount > decimal.Zero)
-                    {
-                        return (mbDiscountAmount, new List<Nop.Core.Domain.Discounts.Discount> { multiBuyDiscount });
-                    }
+                    return (totalMbDiscountAmount, appliedMbDiscounts);
                 }
             }
 
