@@ -2,7 +2,6 @@
 using FluentMigrator;
 using Nop.Core.Domain.Catalog;
 using Nop.Core.Domain.Customers;
-using Nop.Core.Domain.Forums;
 using Nop.Core.Domain.Logging;
 using Nop.Core.Domain.Messages;
 using Nop.Core.Domain.Orders;
@@ -50,10 +49,6 @@ public class SchemaMigration : ForwardOnlyMigration
 
         // 6771
         this.AddOrAlterColumnFor<Customer>(t => t.LastIpAddress)
-            .AsString(100)
-            .Nullable();
-
-        this.AddOrAlterColumnFor<ForumPost>(t => t.IPAddress)
             .AsString(100)
             .Nullable();
 
