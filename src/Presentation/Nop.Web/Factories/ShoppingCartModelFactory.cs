@@ -1214,7 +1214,18 @@ public partial class ShoppingCartModelFactory : IShoppingCartModelFactory
                     var shippingOption = await _genericAttributeService.GetAttributeAsync<ShippingOption>(customer,
                         NopCustomerDefaults.SelectedShippingOptionAttribute, store.Id);
                     if (shippingOption != null)
+                    {
                         model.SelectedShippingMethod = shippingOption.Name;
+                        model.IsPickupInStore = shippingOption.IsPickupInStore;
+                    }
+
+                    if (!model.IsPickupInStore)
+                    {
+                        var pickupPoint = await _genericAttributeService.GetAttributeAsync<PickupPoint>(customer,
+                            NopCustomerDefaults.SelectedPickupPointAttribute, store.Id);
+                        if (pickupPoint != null)
+                            model.IsPickupInStore = true;
+                    }
                 }
             }
             else
