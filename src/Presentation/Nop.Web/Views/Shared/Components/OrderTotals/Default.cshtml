@@ -1,5 +1,5 @@
 ﻿@model OrderTotalsModel
-<div class="total-info">
+<div class="total-info" data-is-pickup-in-store="@Model.IsPickupInStore.ToString().ToLower()">
     <table class="cart-total">
         <tbody>
             <tr class="order-subtotal">
