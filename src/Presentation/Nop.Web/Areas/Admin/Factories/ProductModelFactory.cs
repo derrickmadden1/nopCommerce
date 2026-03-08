@@ -79,6 +79,7 @@ public partial class ProductModelFactory : IProductModelFactory
     protected readonly IVideoService _videoService;
     protected readonly IWarehouseService _warehouseService;
     protected readonly IWorkContext _workContext;
+    protected readonly IGenericAttributeService _genericAttributeService;
     protected readonly MeasureSettings _measureSettings;
     protected readonly NopHttpClient _nopHttpClient;
     protected readonly TaxSettings _taxSettings;
@@ -125,6 +126,7 @@ public partial class ProductModelFactory : IProductModelFactory
         IVideoService videoService,
         IWarehouseService warehouseService,
         IWorkContext workContext,
+        IGenericAttributeService genericAttributeService,
         MeasureSettings measureSettings,
         NopHttpClient nopHttpClient,
         TaxSettings taxSettings,
@@ -167,6 +169,7 @@ public partial class ProductModelFactory : IProductModelFactory
         _videoService = videoService;
         _warehouseService = warehouseService;
         _workContext = workContext;
+        _genericAttributeService = genericAttributeService;
         _measureSettings = measureSettings;
         _nopHttpClient = nopHttpClient;
         _taxSettings = taxSettings;
@@ -692,6 +695,26 @@ public partial class ProductModelFactory : IProductModelFactory
     public virtual async Task<ProductSearchModel> PrepareProductSearchModelAsync(ProductSearchModel searchModel)
     {
         ArgumentNullException.ThrowIfNull(searchModel);
+
+        //load saved search criteria
+        var customer = await _workContext.GetCurrentCustomerAsync();
+        var savedCriteriaStr = await _genericAttributeService.GetAttributeAsync<string>(customer, "Admin.ProductSearchCriteria");
+        if (!string.IsNullOrEmpty(savedCriteriaStr))
+        {
+            var savedCriteria = JsonConvert.DeserializeObject<ProductSearchModel>(savedCriteriaStr);
+            if (savedCriteria != null)
+            {
+                searchModel.SearchProductName = savedCriteria.SearchProductName;
+                searchModel.SearchCategoryId = savedCriteria.SearchCategoryId;
+                searchModel.SearchIncludeSubCategories = savedCriteria.SearchIncludeSubCategories;
+                searchModel.SearchManufacturerId = savedCriteria.SearchManufacturerId;
+                searchModel.SearchStoreId = savedCriteria.SearchStoreId;
+                searchModel.SearchVendorId = savedCriteria.SearchVendorId;
+                searchModel.SearchWarehouseId = savedCriteria.SearchWarehouseId;
+                searchModel.SearchProductTypeId = savedCriteria.SearchProductTypeId;
+                searchModel.SearchPublishedId = savedCriteria.SearchPublishedId;
+            }
+        }
 
         //a vendor should have access only to his products
         searchModel.IsLoggedInAsVendor = await _workContext.GetCurrentVendorAsync() != null;
