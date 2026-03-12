@@ -1,0 +1,11 @@
+{
+  "Group": "Search",
+  "FriendlyName": "Azure AI Search",
+  "SystemName": "Search.AzureAI",
+  "Version": "1.0.1",
+  "SupportedVersions": [ "5.00" ],
+  "Author": "Rose Cottage Croft",
+  "DisplayOrder": 1,
+  "FileName": "Nop.Plugin.Search.AzureAI.dll",
+  "Description": "Replaces nopCommerce native search with Azure AI Search, supporting hybrid keyword and semantic search."
+}
