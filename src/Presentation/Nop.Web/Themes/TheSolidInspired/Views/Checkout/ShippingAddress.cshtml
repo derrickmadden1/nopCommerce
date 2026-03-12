@@ -3,7 +3,6 @@
 @model CheckoutShippingAddressModel
 @{
     Layout = "_ColumnsOne";
-
     var storeLocation = webHelper.GetStoreLocation();
 
     //title
@@ -16,12 +15,11 @@
 <script src="~/js/public.billingaddress.js" asp-location="Footer"></script>
 <script src="~/js/public.shippingaddress.js" asp-location="Footer"></script>
 
-<div class="page checkout-page shipping-address-page checkout-shipping-modern">
-    @await Component.InvokeAsync(typeof(CheckoutProgressViewComponent), new { step = CheckoutProgressStep.Address })
+<div class="page checkout-page shipping-address-page section-container">
+    @await Component.InvokeAsync("CheckoutProgress", new { step = CheckoutProgressStep.Address })
     
-    <div class="checkout-header-modern">
+    <div class="section-header">
         <h1>@T("Checkout.ShippingAddress")</h1>
-        <p class="subtitle">@T("Checkout.ShippingAddress.Subtitle")</p>
     </div>
 
     <div class="page-body checkout-data">
@@ -32,20 +30,19 @@
                 <div class="pickup-in-store-section-modern">
                     @await Html.PartialAsync("_PickupPoints", Model.PickupPointsModel)
                 </div>
-                
                 <script asp-location="Footer">
                     $(function() {
                         $(document).unbind('checkout_toggle_pickup_in_store');
                         $(document).on('checkout_toggle_pickup_in_store', function (e) {
                             if (e.checked)
                             {
-                                $('#shipping-addresses-form').hide();
-                                $('#shippingaddress-new-form').hide();
+                                $('#shipping-addresses-modern').hide();
+                                $('#shippingaddress-new-form-modern').hide();
                             }
                             else
                             {
-                                $('#shipping-addresses-form').show();
-                                $('#shippingaddress-new-form').show();
+                                $('#shipping-addresses-modern').show();
+                                $('#shippingaddress-new-form-modern').show();
                             }
                         });
                     });
@@ -54,81 +51,42 @@
 
             @if (Model.PickupPointsModel == null || !Model.PickupPointsModel.PickupInStoreOnly)
             {
-                <div class="shipping-addresses" id="shipping-addresses-form">
-                    @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.CheckoutShippingAddressTop, additionalData = Model })
-                    
+                <div class="shipping-addresses-modern" id="shipping-addresses-modern">
                     @if (Model.ExistingAddresses.Count > 0)
                     {
-                        <div class="section select-shipping-address">
-                            <div class="section-title">
-                                <h2>@T("Checkout.SelectShippingAddress")</h2>
-                            </div>
-                            
-                            @if (Model.InvalidExistingAddresses.Count > 0)
+                        <div class="section-title">
+                            <h2>@T("Checkout.SelectShippingAddress")</h2>
+                        </div>
+                        
+                        <div class="address-grid-modern">
+                            @foreach (var item in Model.ExistingAddresses)
                             {
-                                <div class="message-error">
-                                    @string.Format(T("Checkout.Addresses.Invalid").Text, Model.InvalidExistingAddresses.Count)
-                                </div>
-                            }
-                            
-                            <div class="address-grid-modern">
-                                @foreach (var item in Model.ExistingAddresses)
-                                {
-                                    <div class="address-card-modern" id="address-card-@(item.Id)">
-                                        <div class="card-header">
-                                            <span class="name">@item.FirstName @item.LastName</span>
-                                            <div class="actions">
-                                                @if (item.Id != Model.SelectedBillingAddress)
-                                                {
-                                                    <button type="button" class="action-btn edit" onclick="CheckoutShipping.editAddress('@(storeLocation)checkout/GetAddressById/', @(item.Id), '@T("Checkout.EditAddress")'); return false;" title="@T("Common.Edit")">
-                                                        <i class="fas fa-edit"></i>
-                                                    </button>
-                                                    <button type="button" class="action-btn delete" onclick="CheckoutShipping.deleteEditAddress('@(storeLocation)checkout/DeleteEditShippingAddress/', @(item.Id)); return false;" title="@T("Common.Delete")">
-                                                        <i class="fas fa-trash-alt"></i>
-                                                    </button>
-                                                }
-                                            </div>
-                                        </div>
-                                        <div class="card-body">
-                                            <ul class="address-details">
-                                                <li class="email"><i class="far fa-envelope"></i> @item.Email</li>
-                                                @if (item.PhoneEnabled)
-                                                {
-                                                    <li class="phone"><i class="fas fa-phone"></i> @item.PhoneNumber</li>
-                                                }
-                                                <li class="address">
-                                                    <i class="fas fa-map-marker-alt"></i>
-                                                    <div>
-                                                        @if (item.CompanyEnabled && !string.IsNullOrEmpty(item.Company))
-                                                        {
-                                                            <div class="company">@item.Company</div>
-                                                        }
-                                                        <div>@item.Address1</div>
-                                                        @if (item.StreetAddress2Enabled && !string.IsNullOrEmpty(item.Address2))
-                                                        {
-                                                            <div>@item.Address2</div>
-                                                        }
-                                                        <div>@item.City, @item.StateProvinceName @item.ZipPostalCode</div>
-                                                        <div>@item.CountryName</div>
-                                                    </div>
-                                                </li>
-                                            </ul>
-                                        </div>
-                                        <div class="card-footer">
-                                            <button type="button" class="button-1 select-address-btn" onclick="setLocation('@Url.RouteUrl(NopRouteNames.Standard.CHECKOUT_SELECT_SHIPPING_ADDRESS, new { addressid = item.Id })')">
-                                                @T("Checkout.ShipToThisAddress")
-                                            </button>
+                                <div class="address-card-modern">
+                                    <div class="address-details">
+                                        <div class="name">@item.FirstName @item.LastName</div>
+                                        <ul class="address-box">
+                                            @if (item.CompanyEnabled && !string.IsNullOrEmpty(item.Company))
+                                            { <li class="company">@item.Company</li> }
+                                            <li class="street">@item.Address1</li>
+                                            @if (!string.IsNullOrEmpty(item.Address2)) { <li>@item.Address2</li> }
+                                            <li class="city-zip">@item.City, @item.ZipPostalCode</li>
+                                            <li class="country">@item.CountryName</li>
+                                        </ul>
+                                    </div>
+                                    <div class="address-actions">
+                                        <button type="button" onclick="setLocation('@Url.RouteUrl(NopRouteNames.Standard.CHECKOUT_SELECT_SHIPPING_ADDRESS, new { addressid = item.Id })')" class="btn-primary select-address-btn">@T("Checkout.ShipToThisAddress")</button>
+                                        <div class="secondary-actions">
+                                            <button type="button" class="action-btn edit" onclick="CheckoutShipping.editAddress('@(storeLocation)checkout/GetAddressById/', @(item.Id), '@T("Checkout.EditAddress")'); return false;"><i class="fas fa-edit"></i> @T("Common.Edit")</button>
+                                            <button type="button" class="action-btn delete" onclick="CheckoutShipping.deleteEditAddress('@(storeLocation)checkout/DeleteEditShippingAddress/', @(item.Id)); return false;"><i class="fas fa-trash"></i> @T("Common.Delete")</button>
                                         </div>
                                     </div>
-                                }
-                            </div>
+                                </div>
+                            }
                         </div>
                     }
                 </div>
 
-                @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.CheckoutShippingAddressMiddle, additionalData = Model })
-                
-                <div class="section new-shipping-address-modern" id="shippingaddress-new-form">
+                <div class="section-container new-shipping-address-modern" id="shippingaddress-new-form-modern">
                     <div class="section-title">
                         <h2>@(Model.ExistingAddresses.Count > 0 ? T("Checkout.OrEnterNewAddress") : T("Checkout.EnterShippingAddress"))</h2>
                     </div>
@@ -142,36 +100,17 @@
                         }
                     </div>
                 </div>
-                
-                @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.CheckoutShippingAddressBottom, additionalData = Model })
             }
-            
+
             <div class="checkout-footer-modern">
-                <div class="buttons">
-                    <button id="shippingaddress-save-button" type="button" class="button-1 save-btn" style="display: none" onclick="CheckoutShipping.saveEditAddress('@(storeLocation)checkout/SaveEditShippingAddress/'); return false;">@T("Common.Save")</button>
-
-                    <button id="shippingaddress-cancel-button" type="button" class="button-2 cancel-btn" style="display: none" onclick="setLocation('@Url.RouteUrl(NopRouteNames.Standard.CHECKOUT_SHIPPING_ADDRESS)')">@T("Common.Cancel")</button>
-
-                    <button id="shippingaddress-next-button" type="submit" name="nextstep" class="button-1 next-step-btn">
-                        @T("Checkout.NextButton") <i class="fas fa-chevron-right"></i>
-                    </button>
-                </div>
+                <button id="shippingaddress-save-button" type="button" class="btn-primary-outline" style="display: none" onclick="CheckoutShipping.saveEditAddress('@(storeLocation)checkout/SaveEditShippingAddress/'); return false;">@T("Common.Save")</button>
+                <button id="shippingaddress-cancel-button" type="button" class="btn-link" style="display: none" onclick="setLocation('@Url.RouteUrl(NopRouteNames.Standard.CHECKOUT_SHIPPING_ADDRESS)')">@T("Common.Cancel")</button>
+                
+                <button id="shippingaddress-next-button" type="submit" name="nextstep" class="btn-primary next-step-btn">
+                    @T("Checkout.NextButton") <i class="fas fa-arrow-right"></i>
+                </button>
             </div>
+
         </form>
-        
-        <script asp-location="Footer">
-            CheckoutShipping.init('#shipping-form');
-            $('#edit-shipping-address-button').show();
-            $('#delete-shipping-address-button').show();
-        </script>
-        
-        <div class="section order-summary-modern">
-            <div class="section-title">
-                <h2>@T("Checkout.OrderSummary")</h2>
-            </div>
-            <div class="summary-wrapper">
-                @await Component.InvokeAsync(typeof(OrderSummaryViewComponent))
-            </div>
-        </div>
     </div>
 </div>

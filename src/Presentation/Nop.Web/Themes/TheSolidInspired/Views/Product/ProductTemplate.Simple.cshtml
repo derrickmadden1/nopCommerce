@@ -1,0 +1,124 @@
+@model ProductDetailsModel
+
+@using Nop.Core
+@using Nop.Core.Domain.Catalog
+@using Nop.Core.Domain.Seo
+@using Nop.Services.Html
+
+@inject IHtmlFormatter htmlFormatter
+@inject IWebHelper webHelper
+@inject SeoSettings seoSettings
+
+@{
+    Layout = "_ColumnsOne";
+
+    //title
+    NopHtml.AddTitleParts(!string.IsNullOrEmpty(Model.MetaTitle) ? Model.MetaTitle : Model.Name);
+    //meta
+    NopHtml.AddMetaDescriptionParts(Model.MetaDescription);
+    NopHtml.AddMetaKeywordParts(Model.MetaKeywords);
+    //page class
+    NopHtml.AppendPageCssClassParts("html-product-details-page");
+
+    //canonical URL
+    if (seoSettings.CanonicalUrlsEnabled)
+    {
+        var productUrl = (await NopUrl.RouteGenericUrlAsync<Product>(new { SeName = Model.SeName }, webHelper.GetCurrentRequestProtocol())).ToLowerInvariant();
+        NopHtml.AddCanonicalUrlParts(productUrl, seoSettings.QueryStringInCanonicalUrlsEnabled);
+    }
+
+    NopHtml.AddJsonLdParts(Model.JsonLd);
+}
+
+@section Breadcrumb
+{
+    @await Html.PartialAsync("_ProductBreadcrumb", Model.Breadcrumb)
+}
+
+<div class="page product-details-page section-container">
+    <div class="page-body">
+        <form asp-route="Product" asp-route-sename="@Model.SeName" method="post" id="product-details-form">
+            <article data-productid="@Model.Id">
+                <div class="product-essential-modern">
+                    <div class="product-gallery">
+                        @await Html.PartialAsync("_ProductDetailsPictures", Model)
+                    </div>
+                    
+                    <div class="product-info-overview">
+                        <div class="product-name">
+                            <h1>@Model.Name</h1>
+                        </div>
+                        
+                        @await Html.PartialAsync("_ProductReviewOverview", Model.ProductReviewOverview)
+                        
+                        <div class="product-price-section">
+                            @{
+                                var dataDictPrice = new ViewDataDictionary(ViewData);
+                                dataDictPrice.TemplateInfo.HtmlFieldPrefix = $"price_{Model.Id}";
+                                @await Html.PartialAsync("_ProductPrice", Model.ProductPrice, dataDictPrice)
+                            }
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(Model.ShortDescription))
+                        {
+                            <div class="short-description">
+                                @Html.Raw(Model.ShortDescription)
+                            </div>
+                        }
+
+                        <div class="product-actions-section">
+                            <!--attributes-->
+                            @{
+                                var dataDictAttributes = new ViewDataDictionary(ViewData);
+                                dataDictAttributes.TemplateInfo.HtmlFieldPrefix = $"attributes_{Model.Id}";
+                                @await Html.PartialAsync("_ProductAttributes", Model, dataDictAttributes)
+                            }
+                            
+                            <!--add to cart-->
+                            @{
+                                var dataDictAddToCart = new ViewDataDictionary(ViewData);
+                                dataDictAddToCart.TemplateInfo.HtmlFieldPrefix = $"addtocart_{Model.Id}";
+                                @await Html.PartialAsync("_AddToCart", Model.AddToCart, dataDictAddToCart)
+                            }
+                        </div>
+
+                        <div class="product-meta">
+                            @await Html.PartialAsync("_SKU_Man_GTIN_Ven", Model)
+                            @await Html.PartialAsync("_Availability", Model)
+                            @await Html.PartialAsync("_DeliveryInfo", Model)
+                        </div>
+
+                        <div class="product-sharing">
+                            @await Html.PartialAsync("_ShareButton", Model)
+                        </div>
+                    </div>
+                </div>
+
+                <div class="product-description-tabs">
+                    <div class="tab-header">
+                        <button class="tab-btn active" data-tab="description">Description</button>
+                        @if (Model.ProductSpecificationModel.Groups.Any())
+                        {
+                            <button class="tab-btn" data-tab="specs">Specifications</button>
+                        }
+                    </div>
+                    <div class="tab-content">
+                        <div id="description" class="tab-pane active">
+                            @Html.Raw(Model.FullDescription)
+                        </div>
+                        @if (Model.ProductSpecificationModel.Groups.Any())
+                        {
+                            <div id="specs" class="tab-pane">
+                                @await Html.PartialAsync("_ProductSpecifications", Model.ProductSpecificationModel)
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                @await Component.InvokeAsync(typeof(RelatedProductsViewComponent), new { productId = Model.Id })
+                @await Component.InvokeAsync(typeof(ProductsAlsoPurchasedViewComponent), new { productId = Model.Id })
+
+            </article>
+        </form>
+    </div>
+</div>

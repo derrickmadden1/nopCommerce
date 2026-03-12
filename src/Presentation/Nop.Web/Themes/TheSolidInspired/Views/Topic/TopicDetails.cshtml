@@ -1,0 +1,103 @@
+@model TopicModel
+
+@using Nop.Core
+@using Nop.Core.Domain.Seo
+@using Nop.Core.Domain.Topics
+
+@inject IWebHelper webHelper
+@inject SeoSettings seoSettings
+
+@{
+    var isPopup = ViewBag.IsPopup ?? false;
+
+    if (!isPopup)
+    {
+        Layout = "_ColumnsOne";
+    }
+
+    if (!Model.IsPasswordProtected)
+    {
+        //title
+        NopHtml.AddTitleParts(!string.IsNullOrEmpty(Model.MetaTitle) ? Model.MetaTitle : Model.Title);
+        //meta
+        NopHtml.AddMetaDescriptionParts(Model.MetaDescription);
+        NopHtml.AddMetaKeywordParts(Model.MetaKeywords);
+    }
+
+    if (seoSettings.CanonicalUrlsEnabled)
+    {
+        var topicUrl = (await NopUrl.RouteGenericUrlAsync<Topic>(new { SeName = Model.SeName }, webHelper.GetCurrentRequestProtocol())).ToLowerInvariant();
+        NopHtml.AddCanonicalUrlParts(topicUrl, seoSettings.QueryStringInCanonicalUrlsEnabled);
+    }
+
+    //page class
+    NopHtml.AppendPageCssClassParts("html-topic-page");
+}
+
+<div class="page topic-page section-container" id="ph-topic">
+    @if (Model.IsPasswordProtected)
+    {
+        <div class="topic-password-wrapper-modern">
+            <script asp-location="Footer">
+                $(function() {
+                    $('#button-password').on('click', function () {
+                        var postData = {
+                            id: $("#topic-@Model.Id").val(),
+                            password: $('#password').val()
+                        };
+                        addAntiForgeryToken(postData);
+
+                        $.ajax({
+                            cache: false,
+                            type: "POST",
+                            url: "@Url.RouteUrl(NopRouteNames.Ajax.TOPIC_AUTHENTICATE)",
+                            data: postData,
+                            dataType: "json",
+                            success: function (data, textStatus, jqXHR) {
+                                if (data.Authenticated) {
+                                    $('#ph-topic .section-header h1').html(data.Title);
+                                    $('#ph-topic .page-body').html(data.Body);
+                                    $('#ph-password').hide();
+                                    $('#ph-topic-content').show();
+                                    $.validator.unobtrusive.parse('#ph-topic');
+                                }
+                                else {
+                                    $('#password-error').text(data.Error).fadeIn("slow");
+                                    $('#password').select().focus();
+                                }
+                            }
+                        });
+                        return false;
+                    });
+                });
+            </script>
+            <div class="topic-password" id="ph-password">
+                <form asp-route="@NopRouteNames.Ajax.TOPIC_AUTHENTICATE" method="post" autocomplete="off">
+                    <input asp-for="Id" id="topic-@Model.Id" type="hidden" />
+                    <div class="section-header">
+                        <h1>@T("Topic.EnterPassword")</h1>
+                    </div>
+                    <div class="enter-password-form-modern">
+                        <input name="password" id="password" type="password" class="form-control" placeholder="@T("Topic.EnterPassword")" />
+                        <button type="submit" id="button-password" class="btn-primary">@T("Topic.Button")</button>
+                    </div>
+                    <div class="password-error" id="password-error" style="display: none;"></div>
+                </form>
+            </div>
+        </div>
+    }
+
+    <div id="ph-topic-content" style="@(Model.IsPasswordProtected ? "display:none" : "")">
+        @await Component.InvokeAsync("Widget", new { widgetZone = PublicWidgetZones.CustomerTopicDetailsTop, additionalData = Model })
+        
+        <div class="section-header">
+            <h1>@Model.Title</h1>
+        </div>
+
+        <div class="page-body topic-body-modern">
+            @Html.Raw(Model.Body)
+        </div>
+
+        @await Component.InvokeAsync("Widget", new { widgetZone = PublicWidgetZones.CustomerTopicDetailsBottom, additionalData = Model })
+    </div>
+</div>

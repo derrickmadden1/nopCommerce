@@ -1,4 +1,4 @@
-﻿@inherits Nop.Web.Framework.Mvc.Razor.NopRazorPage<TModel>
+@inherits Nop.Web.Framework.Mvc.Razor.NopRazorPage<TModel>
 
 @{
     Layout = "_ColumnsOne";
@@ -11,7 +11,7 @@
     <div class="hero-inner">
         <h1>Live Inspired</h1>
         <p>Crafted essentials for a life well lived</p>
-        <a href="/new-products" class="btn-primary">Explore the Collection</a>
+        <a href="/new-products" class="btn-primary-outline">Explore the Collection</a>
     </div>
 </section>
 
@@ -25,9 +25,13 @@
 </section>
 
 <!-- FEATURED COLLECTION -->
-<section class="featured-collection">
-    <h2>Featured Collection</h2>
-    @await Component.InvokeAsync("Widget", new { widgetZone = "homepage_featured_collection" })
+<section class="featured-collection section-container">
+    <div class="section-header">
+        <h2>Featured Collection</h2>
+    </div>
+    <div class="product-grid">
+        @await Component.InvokeAsync("Widget", new { widgetZone = "homepage_featured_collection" })
+    </div>
 </section>
 
 <!-- LIFESTYLE IMAGE STRIP -->

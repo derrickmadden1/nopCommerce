@@ -1,19 +1,144 @@
-﻿@inherits Nop.Web.Framework.Mvc.Razor.NopRazorPage<TModel>
+@inherits Nop.Web.Framework.Mvc.Razor.NopRazorPage<TModel>
 @using Nop.Web.Components
 @using Nop.Web.Framework.Infrastructure
 @using Nop.Web.Framework.UI
 
+<style>
+    /* 1. Header Layout Fixes */
+    .header-modern .header-main-area {
+        max-width: var(--max-width, 1300px);
+        margin: 0 auto;
+        padding: 20px 40px;
+        position: relative;
+    }
+
+    .header-logo-row {
+        display: flex !important;
+        flex-direction: row !important;
+        justify-content: center !important;
+        align-items: center !important;
+        width: 100% !important;
+        min-height: 120px !important;
+        position: relative !important;
+    }
+
+    .header-logo {
+        text-align: center !important;
+        flex: 0 0 auto !important;
+    }
+
+    .header-logo img {
+        max-height: 180px !important;
+        width: auto !important;
+    }
+
+    .header-search-cart {
+        position: absolute !important;
+        right: 0 !important;
+        top: 50% !important;
+        transform: translateY(-50%) !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 20px !important;
+        z-index: 10 !important;
+    }
+
+    /* 2. Panels - ABSOLUTELY HIDDEN BY DEFAULT */
+    /* We use highly specific selectors to ensure they are hidden */
+    body #mini-cart-panel, 
+    body #mobile-nav-panel, 
+    body #mini-cart-overlay, 
+    body #mobile-nav-overlay {
+        display: none !important;
+        visibility: visible !important; 
+    }
+
+    body #mini-cart-panel, 
+    body #mobile-nav-panel {
+        position: fixed !important;
+        top: 0 !important;
+        height: 100vh !important;
+        background: #fff !important;
+        z-index: 100000 !important;
+        box-shadow: 0 0 50px rgba(0,0,0,0.3) !important;
+        padding: 40px !important;
+        flex-direction: column !important;
+    }
+
+    body #mini-cart-panel { right: 0 !important; width: 400px !important; }
+    body #mobile-nav-panel { left: 0 !important; width: 320px !important; }
+
+    body #mini-cart-overlay, 
+    body #mobile-nav-overlay {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        background: rgba(0,0,0,0.6) !important;
+        z-index: 99999 !important;
+    }
+
+    /* Open States */
+    body #mini-cart-panel.open, 
+    body #mobile-nav-panel.open {
+        display: flex !important;
+    }
+
+    body #mini-cart-overlay.visible, 
+    body #mobile-nav-overlay.visible {
+        display: block !important;
+    }
+
+    /* Search Box Refinement */
+    .search-box {
+        display: flex !important;
+        align-items: center !important;
+    }
+    .search-box form {
+        display: flex !important;
+    }
+    .search-box-text {
+        width: 200px !important;
+        padding: 8px !important;
+        border: 1px solid #ddd !important;
+    }
+    .search-box-button {
+        padding: 8px 15px !important;
+        background: #1b1b1b !important;
+        color: #fff !important;
+        border: none !important;
+    }
+
+    @@media (max-width: 991px) {
+        .header-search-cart {
+            position: static !important;
+            transform: none !important;
+            justify-content: center !important;
+            width: 100% !important;
+            margin-top: 20px !important;
+        }
+        .header-logo-row {
+            flex-direction: column !important;
+        }
+        #mini-cart-panel { width: 100% !important; }
+    }
+</style>
+
 <header class="header-modern">
+
+    <!-- Top Announcement Bar (Turquoise) -->
+    <div class="announcement-bar">
+        <span>*** Free UK Shipping On All Orders Over £40 ***</span>
+    </div>
 
     <!-- Utility Bar (Dark) -->
     <div class="header-utility">
         <div class="utility-container">
             <div class="utility-social">
-                <!-- Social links would go here -->
-                <span class="social-placeholder">Follow Us</span>
-            </div>
-            <div class="utility-center">
-                <span>*** Free UK Shipping On All Orders Over £40 ***</span>
+                <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                <a href="#" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
             </div>
             <div class="utility-actions">
                 @await Component.InvokeAsync("CurrencySelector")
@@ -42,7 +167,6 @@
                 <div class="search-box">
                     @await Component.InvokeAsync(typeof(SearchBoxViewComponent))
                 </div>
-                <!-- Cart link removed from here -->
             </div>
         </div>
 
@@ -65,150 +189,146 @@
         </nav>
     </div>
 
-    <!-- Slide-in mini cart -->
-    <div id="mini-cart-panel" class="mini-cart-panel">
-        <div class="mini-cart-header" style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <h3 style="margin:0;">Your Cart</h3>
-            <a href="javascript:void(0)" id="cart-close" style="color: var(--dark-charcoal); text-decoration: none; font-size: 1.5rem;">&times;</a>
-        </div>
-        <div id="flyout-cart">
-            @await Component.InvokeAsync("FlyoutShoppingCart")
-        </div>
-    </div>
-    
-    <!-- Mobile Navigation Panel -->
-    <div id="mobile-nav-panel" class="mobile-nav-panel">
-        <div class="mobile-nav-header">
-            <h3>Menu</h3>
-            <a href="javascript:void(0)" id="mobile-nav-close">&times;</a>
-        </div>
-        <nav class="mobile-nav-content">
-            @if (megaMenuInstalled)
-            {
-                @await Component.InvokeAsync("MegaMenu")
-            }
-        </nav>
-    </div>
-    
-    <!-- Mobile Menu Overlay -->
-    <div id="mobile-nav-overlay" class="mobile-nav-overlay"></div>
-
 </header>
 
+<!-- Panels moved OUTSIDE the header for isolation -->
+<div id="mini-cart-overlay" class="mini-cart-overlay" style="display: none !important;"></div>
+<div id="mini-cart-panel" class="mini-cart-panel" style="display: none !important;">
+    <div class="mini-cart-header" style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h3 style="margin:0;">Your Cart</h3>
+        <a href="javascript:void(0)" id="cart-close" onclick="closeCartPanel()" style="color: #1b1b1b; text-decoration: none; font-size: 2rem; font-weight: bold;">&times;</a>
+    </div>
+    <div id="flyout-cart">
+        @await Component.InvokeAsync("FlyoutShoppingCart")
+    </div>
+</div>
+
+<div id="mobile-nav-panel" class="mobile-nav-panel" style="display: none !important;">
+    <div class="mobile-nav-header" style="display:flex; justify-content: space-between; align-items: center;">
+        <h3>Menu</h3>
+        <a href="javascript:void(0)" id="mobile-nav-close" onclick="closeMobileNav()" style="font-size: 2rem;">&times;</a>
+    </div>
+    <nav class="mobile-nav-content" style="padding: 20px;">
+        @if (megaMenuInstalled)
+        {
+            @await Component.InvokeAsync("MegaMenu")
+        }
+    </nav>
+</div>
+<div id="mobile-nav-overlay" class="mobile-nav-overlay" style="display: none !important;"></div>
+
 <script>
-    // Note: AjaxCart.init is called by HeaderLinks component, so we don't need to call it here.
-
-    // Override success_process to open the side panel
-    var originalSuccess = AjaxCart.success_process;
-    AjaxCart.success_process = function(response) {
-        // Call original function first to update HTML
-        var result = originalSuccess.apply(this, arguments);
-        
-        // If cart was updated, open the panel
-        if (response.updateflyoutcartsectionhtml || (response.success && response.message)) {
-             document.getElementById("mini-cart-panel").classList.add("open");
+    // Logic for toggling panels
+    function openCartPanel() {
+        const panel = document.getElementById("mini-cart-panel");
+        const overlay = document.getElementById("mini-cart-overlay");
+        if (panel) {
+            panel.style.setProperty("display", "flex", "important");
+            panel.classList.add("open");
         }
-        return result;
-    };
-
-    // Hover Cart Logic - Wired to HeaderLinks #topcartlink
-    // Use event delegation or wait for DOM, as HeaderLinks might be rendered after? 
-    // Usually HeaderLinks is synchronous in header. topcartlink should exist.
-    
-    document.addEventListener("DOMContentLoaded", function() {
-        const cartTrigger = document.getElementById("topcartlink"); // ID from HeaderLinks
-        const cartPanel = document.getElementById("mini-cart-panel");
-        let cartTimeout;
-
-        function openCart() {
-            clearTimeout(cartTimeout);
-            if (cartPanel) cartPanel.classList.add("open");
+        if (overlay) {
+            overlay.style.setProperty("display", "block", "important");
+            overlay.classList.add("visible");
         }
+    }
 
-        function closeCart() {
-            cartTimeout = setTimeout(() => {
-                if (cartPanel) cartPanel.classList.remove("open");
-            }, 300);
+    function closeCartPanel() {
+        const panel = document.getElementById("mini-cart-panel");
+        const overlay = document.getElementById("mini-cart-overlay");
+        if (panel) {
+            panel.style.setProperty("display", "none", "important");
+            panel.classList.remove("open");
         }
+        if (overlay) {
+            overlay.style.setProperty("display", "none", "important");
+            overlay.classList.remove("visible");
+        }
+    }
 
-        // Bind events if trigger exists
-        if (cartTrigger && cartPanel) {
-            cartTrigger.addEventListener("mouseenter", openCart);
-            cartTrigger.addEventListener("mouseleave", closeCart);
-            cartPanel.addEventListener("mouseenter", openCart);
-            cartPanel.addEventListener("mouseleave", closeCart);
-            
-            // Allow click to navigate (default behavior of link) or prevent?
-            // User likely wants click to go to cart page.
-            // Mouseenter opens panel.
+    function openMobileNav() {
+        const panel = document.getElementById("mobile-nav-panel");
+        const overlay = document.getElementById("mobile-nav-overlay");
+        if (panel) {
+            panel.style.setProperty("display", "flex", "important");
+            panel.classList.add("open");
         }
-        
-        const closeBtn = document.getElementById("cart-close");
-        if (closeBtn) {
-            closeBtn.addEventListener("click", function () {
-                cartPanel.classList.remove("open");
-            });
+        if (overlay) {
+            overlay.style.setProperty("display", "block", "important");
+            overlay.classList.add("visible");
         }
-    });
-    
-    // Mobile menu toggle
-    document.getElementById("mobile-menu-toggle").addEventListener("click", function () {
-        document.getElementById("mobile-nav-panel").classList.add("open");
-        document.getElementById("mobile-nav-overlay").classList.add("visible");
         document.body.style.overflow = "hidden";
-    });
-    
-    document.getElementById("mobile-nav-close").addEventListener("click", function () {
-        document.getElementById("mobile-nav-panel").classList.remove("open");
-        document.getElementById("mobile-nav-overlay").classList.remove("visible");
+    }
+
+    function closeMobileNav() {
+        const panel = document.getElementById("mobile-nav-panel");
+        const overlay = document.getElementById("mobile-nav-overlay");
+        if (panel) {
+            panel.style.setProperty("display", "none", "important");
+            panel.classList.remove("open");
+        }
+        if (overlay) {
+            overlay.style.setProperty("display", "none", "important");
+            overlay.classList.remove("visible");
+        }
         document.body.style.overflow = "";
-    });
-    
-    document.getElementById("mobile-nav-overlay").addEventListener("click", function () {
-        document.getElementById("mobile-nav-panel").classList.remove("open");
-        document.getElementById("mobile-nav-overlay").classList.remove("visible");
-        document.body.style.overflow = "";
-    });
+    }
 
-    // Mobile Menu Accordion Logic
-    document.addEventListener("DOMContentLoaded", function () {
-        const mobileNavItems = document.querySelectorAll('.mobile-nav-content .mega-menu-item');
-        
-        mobileNavItems.forEach(item => {
-            // Check if item has sub-menu (panel)
-            const panel = item.querySelector('.mega-menu-panel');
-            if (panel) {
-                // Create expanded link behavior or toggle button
-                // Inject a toggle button
-                const toggleBtn = document.createElement('span');
-                toggleBtn.className = 'mobile-menu-toggle-btn';
-                toggleBtn.innerHTML = '▼';
-                item.insertBefore(toggleBtn, item.firstChild.nextSibling); // Insert after link
-
-                // Handle toggle click
-                toggleBtn.addEventListener('click', function (e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const isOpen = item.classList.contains('expanded');
-                    
-                    // Optional: Close others? For now, let's allow multiple open
-                    // item.parentElement.querySelectorAll('.mega-menu-item.expanded').forEach(expandedItem => {
-                    //    if (expandedItem !== item) expandedItem.classList.remove('expanded');
-                    // });
-
-                    item.classList.toggle('expanded');
-                });
+    // Ajax Cart Override
+    if (typeof AjaxCart !== 'undefined') {
+        var originalSuccess = AjaxCart.success_process;
+        AjaxCart.success_process = function(response) {
+            var result = originalSuccess.apply(this, arguments);
+            if (response.updateflyoutcartsectionhtml || (response.success && response.message)) {
+                 openCartPanel();
             }
-        });
+            return result;
+        };
+    }
+
+    // Diagnostics & Event Bindings
+    document.addEventListener("DOMContentLoaded", function() {
+        // Diagnostic Log
+        const panel = document.getElementById("mini-cart-panel");
+        if (panel) {
+            console.log("DIAGNOSTIC - Mini Cart Display:", window.getComputedStyle(panel).display);
+            console.log("DIAGNOSTIC - Mini Cart Inline:", panel.getAttribute("style"));
+        }
+
+        const cartTrigger = document.getElementById("topcartlink");
+        if (cartTrigger) {
+            let cartTimeout;
+            cartTrigger.addEventListener("mouseenter", openCartPanel);
+            cartTrigger.addEventListener("mouseleave", () => {
+                cartTimeout = setTimeout(closeCartPanel, 800);
+            });
+            const panel = document.getElementById("mini-cart-panel");
+            if (panel) {
+                panel.addEventListener("mouseenter", () => clearTimeout(cartTimeout));
+                panel.addEventListener("mouseleave", () => closeCartPanel());
+            }
+        }
+
+        const menuTrigger = document.getElementById("mobile-menu-toggle");
+        if (menuTrigger) {
+            menuTrigger.addEventListener("click", openMobileNav);
+        }
+
+        const cartOverlay = document.getElementById("mini-cart-overlay");
+        if (cartOverlay) cartOverlay.addEventListener("click", closeCartPanel);
+
+        const navOverlay = document.getElementById("mobile-nav-overlay");
+        if (navOverlay) navOverlay.addEventListener("click", closeMobileNav);
     });
 
-    // Sticky header transition
+    // Sticky header
     window.addEventListener("scroll", function() {
         const header = document.querySelector(".header-modern");
-        if (window.scrollY > 100) {
-            header.classList.add("sticky-shrink");
-        } else {
-            header.classList.remove("sticky-shrink");
+        if (header) {
+            if (window.scrollY > 100) {
+                header.classList.add("sticky-shrink");
+            } else {
+                header.classList.remove("sticky-shrink");
+            }
         }
     });
 </script>

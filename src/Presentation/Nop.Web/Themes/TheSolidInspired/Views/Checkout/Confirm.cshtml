@@ -1,0 +1,111 @@
+@model CheckoutConfirmModel
+
+@{
+    Layout = "_ColumnsOne";
+
+    //title
+    NopHtml.AddTitleParts(T("PageTitle.Checkout").Text);
+    //page class
+    NopHtml.AppendPageCssClassParts("html-checkout-page");
+    NopHtml.AppendPageCssClassParts("html-order-confirm-page");
+}
+
+<div class="page checkout-page order-confirm-page section-container">
+    @await Component.InvokeAsync("CheckoutProgress", new { step = CheckoutProgressStep.Confirm })
+    
+    <div class="section-header">
+        <h1>@T("Checkout.ConfirmYourOrder")</h1>
+    </div>
+
+    <div class="page-body checkout-data">
+        @await Component.InvokeAsync("Widget", new { widgetZone = PublicWidgetZones.CheckoutConfirmTop, additionalData = Model })
+        
+        <div class="confirm-order-modern">
+            <form asp-route="@NopRouteNames.Standard.CHECKOUT_CONFIRM" method="post" id="confirm-order-form">
+                
+                @if (!string.IsNullOrEmpty(Model.MinOrderTotalWarning))
+                {
+                    <div class="message-error">
+                        @Model.MinOrderTotalWarning
+                    </div>
+                }
+                else
+                {
+                    <div class="order-summary-wrapper-modern">
+                        @await Component.InvokeAsync("OrderSummary", new { prepareAndDisplayOrderReviewData = true })
+                    </div>
+
+                    <div class="confirm-actions-modern">
+                        @if (Model.TermsOfServiceOnOrderConfirmPage)
+                        {
+                            <div class="terms-of-service-modern">
+                                <input id="termsofservice" type="checkbox" name="termsofservice" />
+                                <label for="termsofservice">
+                                    @T("Checkout.TermsOfService.IAccept")
+                                    @if (Model.TermsOfServicePopup)
+                                    {
+                                        <a class="read" id="read-terms" href="javascript:void(0)">@T("Checkout.TermsOfService.Read")</a>
+                                        <script asp-location="Footer">
+                                            $(function() {
+                                                $('#read-terms').on('click', function(e) {
+                                                    e.preventDefault();
+                                                    displayPopupContentFromUrl('@Url.RouteUrl(NopRouteNames.Ajax.TOPIC_POPUP, new { SystemName = "conditionsofuse" })', '@T("Checkout.TermsOfService")');
+                                                });
+                                            });
+                                        </script>
+                                    }
+                                    else
+                                    {
+                                        <a class="read" id="read-terms" href="@await NopUrl.RouteTopicUrlAsync("conditionsofuse")">@T("Checkout.TermsOfService.Read")</a>
+                                    }
+                                </label>
+                            </div>
+                        }
+
+                        <div class="checkout-footer-modern">
+                            <button type="submit" name="nextstep" class="btn-primary confirm-order-btn-modern">
+                                @T("Checkout.ConfirmButton") <i class="fas fa-check"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <script asp-location="Footer">
+                        $(function() {
+                            $('#confirm-order-form').on('submit', function () {
+                                var button = $(this).find('.confirm-order-btn-modern');
+                                if ($('#termsofservice').length > 0 && !$('#termsofservice').is(':checked')) {
+                                    alert('@T("Checkout.TermsOfService.PleaseAccept")');
+                                    return false;
+                                }
+                                setTimeout(function () {
+                                    button.addClass('loading').prop('disabled', true);
+                                }, 0);
+                            });
+                        });
+                    </script>
+
+                    @if (Model.DisplayCaptcha)
+                    {
+                        <div class="captcha-modern">
+                            <nop-captcha />
+                        </div>
+                    }
+                }
+
+                @if (Model.Warnings.Count > 0)
+                {
+                    <div class="message-error">
+                        <ul>
+                            @foreach (var warning in Model.Warnings)
+                            {
+                                <li>@warning</li>
+                            }
+                        </ul>
+                    </div>
+                }
+            </form>
+        </div>
+        
+        @await Component.InvokeAsync("Widget", new { widgetZone = PublicWidgetZones.CheckoutConfirmBottom, additionalData = Model })
+    </div>
+</div>

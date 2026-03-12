@@ -1,4 +1,4 @@
-﻿@model CategoryModel
+@model CategoryModel
 
 @using Nop.Core.Domain.Catalog
 @using Nop.Core.Domain.Common
@@ -78,8 +78,8 @@
     @await Html.PartialAsync("_CatalogFilters", Model.CatalogProductsModel)
 }
 
-<div class="page category-page">
-    <div class="page-title">
+<div class="page category-page section-container">
+    <div class="section-header">
         <h1>@Model.Name</h1>
     </div>
     <div class="page-body">

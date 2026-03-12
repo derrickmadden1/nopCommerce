@@ -1,0 +1,64 @@
+@model FooterModel
+
+@using Nop.Core
+@using Nop.Core.Domain.Tax
+@using Nop.Core.Domain.Topics
+
+@inject IWorkContext workContext
+
+<footer class="footer">
+    <div class="footer-container">
+        <div class="footer-columns">
+            <div class="footer-column">
+                <h3>About Us</h3>
+                <ul>
+                    <li><a href="/about-us">Our Story</a></li>
+                    <li><a href="/shipping-returns">Shipping & Returns</a></li>
+                    <li><a href="/contact-us">Contact Us</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h3>Customer Service</h3>
+                <ul>
+                    <li><a href="/my-account">My Account</a></li>
+                    <li><a href="/order-history">Order History</a></li>
+                    <li><a href="/wishlist">Wishlist</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h3>Connect</h3>
+                <div class="footer-social">
+                    <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                    <a href="#" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+                </div>
+            </div>
+            <div class="footer-column newsletter-col">
+                <h3>Newsletter</h3>
+                <p>Stay inspired. Join our community.</p>
+                @await Component.InvokeAsync("NewsLetterBox")
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <div class="footer-info">
+                <span class="footer-disclaimer">@T("Content.CopyrightNotice", DateTime.Now.Year, Model.StoreName)</span>
+            </div>
+            
+            <div class="footer-payment-methods">
+                <i class="fab fa-cc-visa"></i>
+                <i class="fab fa-cc-mastercard"></i>
+                <i class="fab fa-cc-paypal"></i>
+                <i class="fab fa-cc-apple-pay"></i>
+            </div>
+
+            @if (!Model.HidePoweredByNopCommerce)
+            {
+                <div class="footer-powered-by">
+                    Powered by <a href="@(OfficialSite.Main)" target="_blank">nopCommerce</a>
+                </div>
+            }
+        </div>
+    </div>
+    @await Component.InvokeAsync("Widget", new { widgetZone = PublicWidgetZones.Footer, additionalData = Model })
+</footer>

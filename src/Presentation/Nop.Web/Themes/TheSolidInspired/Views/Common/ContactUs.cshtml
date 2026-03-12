@@ -1,0 +1,78 @@
+@model ContactUsModel
+@{
+    Layout = "_ColumnsOne";
+
+    //title
+    NopHtml.AddTitleParts(T("PageTitle.ContactUs").Text);
+    //page class
+    NopHtml.AppendPageCssClassParts("html-contact-page");
+}
+
+<div class="page contact-page section-container">
+    <div class="section-header">
+        <h1>@T("PageTitle.ContactUs")</h1>
+    </div>
+
+    <div class="page-body">
+        @await Component.InvokeAsync("TopicBlock", new { systemName = "ContactUs" })
+        @await Component.InvokeAsync("Widget", new { widgetZone = PublicWidgetZones.ContactUsTop, additionalData = Model })
+
+        @if (Model.SuccessfullySent)
+        {
+            <div class="contact-success-modern">
+                <i class="fas fa-check-circle"></i>
+                <div class="result">@Model.Result</div>
+            </div>
+        }
+        else
+        {
+            <div class="contact-form-wrapper-modern">
+                <form asp-route="@NopRouteNames.General.CONTACT_US" method="post" class="contact-form-modern">
+                    <div asp-validation-summary="ModelOnly" class="message-error"></div>
+                    
+                    <div class="form-fields-modern">
+                        <div class="form-row-modern">
+                            <div class="form-group-modern">
+                                <label asp-for="FullName"></label>
+                                <input asp-for="FullName" placeholder="@T("ContactUs.FullName.Hint")" class="form-control" />
+                                <span asp-validation-for="FullName"></span>
+                            </div>
+                            <div class="form-group-modern">
+                                <label asp-for="Email"></label>
+                                <input asp-for="Email" placeholder="@T("ContactUs.Email.Hint")" class="form-control" />
+                                <span asp-validation-for="Email"></span>
+                            </div>
+                        </div>
+
+                        @if (Model.SubjectEnabled)
+                        {
+                            <div class="form-group-modern">
+                                <label asp-for="Subject"></label>
+                                <input asp-for="Subject" placeholder="@T("ContactUs.Subject.Hint")" class="form-control" />
+                                <span asp-validation-for="Subject"></span>
+                            </div>
+                        }
+
+                        <div class="form-group-modern">
+                            <label asp-for="Enquiry"></label>
+                            <textarea asp-for="Enquiry" placeholder="@T("ContactUs.Enquiry.Hint")" class="form-control enquiry-modern"></textarea>
+                            <span asp-validation-for="Enquiry"></span>
+                        </div>
+
+                        @if (Model.DisplayCaptcha)
+                        {
+                            <div class="captcha-modern">
+                                <nop-captcha />
+                            </div>
+                        }
+                    </div>
+
+                    <div class="contact-footer-modern">
+                        <button type="submit" name="send-email" class="btn-primary contact-btn-modern">@T("ContactUs.Button")</button>
+                    </div>
+                </form>
+            </div>
+        }
+        @await Component.InvokeAsync("Widget", new { widgetZone = PublicWidgetZones.ContactUsBottom, additionalData = Model })
+    </div>
+</div>

@@ -1,0 +1,74 @@
+﻿{
+  "InstalledPluginNames": [
+    "Obsolete field, using only for compatibility"
+  ],
+  "InstalledPlugins": [
+    {
+      "SystemName": "Payments.PayPalCommerce",
+      "Version": "5.00.6"
+    },
+    {
+      "SystemName": "Misc.Zettle",
+      "Version": "5.00.3"
+    },
+    {
+      "SystemName": "Payments.Manual",
+      "Version": "5.00.2"
+    },
+    {
+      "SystemName": "Pickup.PickupInStore",
+      "Version": "5.00.5"
+    },
+    {
+      "SystemName": "Shipping.FixedByWeightByTotal",
+      "Version": "5.00.7"
+    },
+    {
+      "SystemName": "Widgets.FacebookPixel",
+      "Version": "5.00.2"
+    },
+    {
+      "SystemName": "Widgets.GoogleAnalytics",
+      "Version": "5.00.2"
+    },
+    {
+      "SystemName": "Widgets.Swiper",
+      "Version": "5.00.2"
+    },
+    {
+      "SystemName": "ExternalAuth.Facebook",
+      "Version": "5.00.2"
+    },
+    {
+      "SystemName": "DiscountRequirement.MustBeAssignedToCustomerRole",
+      "Version": "5.00.1"
+    },
+    {
+      "SystemName": "DiscountRequirement.HasOneProduct",
+      "Version": "5.00.1"
+    },
+    {
+      "SystemName": "DiscountRequirement.MultiBuy",
+      "Version": "5.00.1"
+    },
+    {
+      "SystemName": "Misc.AzureBlob",
+      "Version": "5.00.1"
+    },
+    {
+      "SystemName": "Payments.Square",
+      "Version": "5.00.1"
+    },
+    {
+      "SystemName": "Misc.MegaMenu",
+      "Version": "1.00"
+    },
+    {
+      "SystemName": "Search.AzureAI",
+      "Version": "1.0.0"
+    }
+  ],
+  "PluginNamesToUninstall": [],
+  "PluginNamesToDelete": [],
+  "PluginNamesToInstall": []
+}
