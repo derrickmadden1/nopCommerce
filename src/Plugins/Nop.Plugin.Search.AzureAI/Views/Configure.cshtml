@@ -1,0 +1,111 @@
+@model Nop.Plugin.Search.AzureAI.Models.ConfigurationModel
+
+@{
+    Layout = "_AdminLayout";
+    ViewBag.Title = "Azure AI Search Configuration";
+}
+
+<div class="content-header clearfix">
+    <h1 class="float-left">
+        Azure AI Search
+        <small>Configuration</small>
+    </h1>
+</div>
+
+<section class="content">
+    <div class="container-fluid">
+        <div class="form-horizontal">
+            <div class="cards-group">
+
+                <div class="card card-default">
+                    <div class="card-body">
+                        <form asp-controller="AzureAISearch" asp-action="Configure" method="post">
+
+                            <div class="form-group row">
+                                <div class="col-md-3">
+                                    <nop-label asp-for="Enabled" />
+                                </div>
+                                <div class="col-md-9">
+                                    <nop-editor asp-for="Enabled" />
+                                    <span asp-validation-for="Enabled"></span>
+                                    <p class="text-muted">Enable to replace nopCommerce native search with Azure AI Search.</p>
+                                </div>
+                            </div>
+
+                            <div class="form-group row">
+                                <div class="col-md-3">
+                                    <nop-label asp-for="Endpoint" />
+                                </div>
+                                <div class="col-md-9">
+                                    <nop-editor asp-for="Endpoint" />
+                                    <span asp-validation-for="Endpoint"></span>
+                                    <p class="text-muted">e.g. https://yourservice.search.windows.net</p>
+                                </div>
+                            </div>
+
+                            <div class="form-group row">
+                                <div class="col-md-3">
+                                    <nop-label asp-for="QueryApiKey" />
+                                </div>
+                                <div class="col-md-9">
+                                    <nop-editor asp-for="QueryApiKey" html-attributes="@(new { type = "password", autocomplete = "off" })" />
+                                    <span asp-validation-for="QueryApiKey"></span>
+                                    <p class="text-muted">Use the Query key (read-only), not the Admin key.</p>
+                                </div>
+                            </div>
+
+                            <div class="form-group row">
+                                <div class="col-md-3">
+                                    <nop-label asp-for="IndexName" />
+                                </div>
+                                <div class="col-md-9">
+                                    <nop-editor asp-for="IndexName" />
+                                    <span asp-validation-for="IndexName"></span>
+                                </div>
+                            </div>                            
+
+                            <div class="form-group row">
+                                <div class="col-md-3">
+                                    <nop-label asp-for="ServiceBusConnectionString" />
+                                </div>
+                                <div class="col-md-9">
+                                    <nop-editor asp-for="ServiceBusConnectionString" html-attributes="@(new { type = "password", autocomplete = "off" })" />
+                                    <span asp-validation-for="ServiceBusConnectionString"></span>
+                                    <p class="text-muted">e.g. Endpoint=sb://yourservice.servicebus.windows.net/;SharedAccessKeyName=YourSharedAccessKeyName;SharedAccessKey=YourSharedAccessKey</p>
+                                </div>
+                            </div>
+
+                            <div class="form-group row">
+                                <div class="col-md-3">
+                                    <nop-label asp-for="ServiceBusQueueName" />
+                                </div>
+                                <div class="col-md-9">
+                                    <nop-editor asp-for="ServiceBusQueueName" />
+                                    <span asp-validation-for="ServiceBusQueueName"></span>
+                                </div>
+                            </div>   
+
+                            <div class="form-group row">
+                                <div class="col-md-3">
+                                    <nop-label asp-for="PageSize" />
+                                </div>
+                                <div class="col-md-9">
+                                    <nop-editor asp-for="PageSize" />
+                                    <span asp-validation-for="PageSize"></span>
+                                </div>
+                            </div>
+
+                            <div class="form-group row">
+                                <div class="col-md-9 offset-md-3">
+                                    <button type="submit" name="save" class="btn btn-primary">Save</button>
+                                </div>
+                            </div>
+
+                        </form>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</section>
