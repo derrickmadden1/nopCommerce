@@ -1,13 +1,18 @@
-﻿using FluentAssertions;
+﻿using System.Collections.Generic;
+using System.ComponentModel;
+using FluentAssertions;
 using Nop.Core;
 using Nop.Core.Domain.Orders;
 using Nop.Data;
 using Nop.Services.Catalog;
+using Nop.Services.Common;
 using Nop.Services.Customers;
+using Nop.Core.Domain.Customers;
 using Nop.Services.Localization;
 using Nop.Services.Orders;
 using Nop.Web.Factories;
 using Nop.Web.Models.ShoppingCart;
+using Nop.Core.Domain.Shipping;
 using NUnit.Framework;
 
 namespace Nop.Tests.Nop.Web.Tests.Public.Factories;
@@ -32,6 +37,11 @@ public class ShoppingCartModelFactoryTests : WebTest
         _workContext = GetService<IWorkContext>();
         _producService = GetService<IProductService>();
         _localizationService = GetService<ILocalizationService>();
+
+        TypeDescriptor.AddAttributes(typeof(ShippingOption), new TypeConverterAttribute(typeof(ShippingOptionTypeConverter)));
+        TypeDescriptor.AddAttributes(typeof(List<ShippingOption>), new TypeConverterAttribute(typeof(ShippingOptionListTypeConverter)));
+        TypeDescriptor.AddAttributes(typeof(IList<ShippingOption>), new TypeConverterAttribute(typeof(ShippingOptionListTypeConverter)));
+        TypeDescriptor.AddAttributes(typeof(PickupPoint), new TypeConverterAttribute(typeof(PickupPointTypeConverter)));
         _customerService = GetService<ICustomerService>();
 
         var store = await GetService<IStoreContext>().GetCurrentStoreAsync();
@@ -147,6 +157,31 @@ public class ShoppingCartModelFactoryTests : WebTest
         model.Shipping.Should().Be("$0.00");
         model.Tax.Should().Be("$0.00");
         model.WillEarnRewardPoints.Should().Be(120);
+        model.IsPickupInStore.Should().BeFalse();
+    }
+
+    [Test]
+    public async Task CanPrepareOrderTotalsModelWithPickup()
+    {
+        var customer = await _workContext.GetCurrentCustomerAsync();
+        var store = await GetService<IStoreContext>().GetCurrentStoreAsync();
+        var genericAttributeService = GetService<IGenericAttributeService>();
+
+        // Select a pickup option
+        var pickupOption = new ShippingOption
+        {
+            Name = "Pick up in store",
+            IsPickupInStore = true
+        };
+        await genericAttributeService.SaveAttributeAsync(customer, NopCustomerDefaults.SelectedShippingOptionAttribute, pickupOption, store.Id);
+
+        var model = await _shoppingCartModelFactory.PrepareOrderTotalsModelAsync(new List<ShoppingCartItem> { _shoppingCartItem }, true);
+
+        model.IsPickupInStore.Should().BeTrue();
+        model.SelectedShippingMethod.Should().Be("Pick up in store");
+
+        // Cleanup
+        await genericAttributeService.SaveAttributeAsync<ShippingOption>(customer, NopCustomerDefaults.SelectedShippingOptionAttribute, null, store.Id);
     }
 
     [Test]
@@ -179,5 +214,25 @@ public class ShoppingCartModelFactoryTests : WebTest
 
         model.FullSizeImageUrl.Should().Be($"http://{NopTestsDefaults.HostIpAddress}/images/thumbs/0000020_build-your-own-computer.jpeg");
         model.ThumbImageUrl.Should().BeNull();
+    }
+
+    [Test]
+    public async Task CanPrepareOrderTotalsModelWithExplicitPickupPoint()
+    {
+        var store = await GetService<IStoreContext>().GetCurrentStoreAsync();
+        var customer = await _workContext.GetCurrentCustomerAsync();
+        var cart = new List<ShoppingCartItem> { _shoppingCartItem };
+
+        // Set an explicit pickup point attribute
+        await GetService<IGenericAttributeService>().SaveAttributeAsync(customer, 
+            NopCustomerDefaults.SelectedPickupPointAttribute, new PickupPoint { Name = "Test Pickup" }, store.Id);
+
+        var model = await _shoppingCartModelFactory.PrepareOrderTotalsModelAsync(cart, false);
+
+        model.IsPickupInStore.Should().BeTrue();
+
+        // Clean up
+        await GetService<IGenericAttributeService>().SaveAttributeAsync<PickupPoint>(customer, 
+            NopCustomerDefaults.SelectedPickupPointAttribute, null, store.Id);
     }
 }

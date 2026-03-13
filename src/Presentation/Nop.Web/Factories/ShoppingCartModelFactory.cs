@@ -746,6 +746,12 @@ public partial class ShoppingCartModelFactory : IShoppingCartModelFactory
                 NopCustomerDefaults.SelectedShippingOptionAttribute, store.Id);
             if (shippingOption != null)
                 model.ShippingMethod = shippingOption.Name;
+
+            //selected delivery date
+            var desiredDeliveryDate = await _genericAttributeService.GetAttributeAsync<DateTime?>(customer,
+                NopCustomerDefaults.DesiredDeliveryDate, store.Id);
+            if (desiredDeliveryDate.HasValue)
+                model.DesiredDeliveryDate = (await _dateTimeHelper.ConvertToUserTimeAsync(desiredDeliveryDate.Value, DateTimeKind.Utc)).ToString("D");
         }
 
         //payment info
@@ -1214,7 +1220,18 @@ public partial class ShoppingCartModelFactory : IShoppingCartModelFactory
                     var shippingOption = await _genericAttributeService.GetAttributeAsync<ShippingOption>(customer,
                         NopCustomerDefaults.SelectedShippingOptionAttribute, store.Id);
                     if (shippingOption != null)
+                    {
                         model.SelectedShippingMethod = shippingOption.Name;
+                        model.IsPickupInStore = shippingOption.IsPickupInStore;
+                    }
+
+                    if (!model.IsPickupInStore)
+                    {
+                        var pickupPoint = await _genericAttributeService.GetAttributeAsync<PickupPoint>(customer,
+                            NopCustomerDefaults.SelectedPickupPointAttribute, store.Id);
+                        if (pickupPoint != null)
+                            model.IsPickupInStore = true;
+                    }
                 }
             }
             else

@@ -1,6 +1,7 @@
 ﻿using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Primitives;
+using Newtonsoft.Json;
 using Nop.Core;
 using Nop.Core.Domain.ArtificialIntelligence;
 using Nop.Core.Domain.Catalog;
@@ -94,6 +95,7 @@ public partial class ProductController : BaseAdminController
     protected readonly IUrlRecordService _urlRecordService;
     protected readonly IVideoService _videoService;
     protected readonly IWarehouseService _warehouseService;
+    protected readonly IGenericAttributeService _genericAttributeService;
     protected readonly IWebHelper _webHelper;
     protected readonly IWorkContext _workContext;
     protected readonly CurrencySettings _currencySettings;
@@ -122,6 +124,7 @@ public partial class ProductController : BaseAdminController
         IExportManager exportManager,
         IFilterLevelValueModelFactory filterLevelValueModelFactory,
         IFilterLevelValueService filterLevelValueService,
+        IGenericAttributeService genericAttributeService,
         IHttpClientFactory httpClientFactory,
         IImportManager importManager,
         ILanguageService languageService,
@@ -197,6 +200,7 @@ public partial class ProductController : BaseAdminController
         _urlRecordService = urlRecordService;
         _videoService = videoService;
         _warehouseService = warehouseService;
+        _genericAttributeService = genericAttributeService;
         _webHelper = webHelper;
         _workContext = workContext;
         _currencySettings = currencySettings;
@@ -977,6 +981,22 @@ public partial class ProductController : BaseAdminController
     [CheckPermission(StandardPermission.Catalog.PRODUCTS_VIEW)]
     public virtual async Task<IActionResult> ProductList(ProductSearchModel searchModel)
     {
+        //save search criteria
+        var customer = await _workContext.GetCurrentCustomerAsync();
+        var searchCriteria = new
+        {
+            searchModel.SearchProductName,
+            searchModel.SearchCategoryId,
+            searchModel.SearchIncludeSubCategories,
+            searchModel.SearchManufacturerId,
+            searchModel.SearchStoreId,
+            searchModel.SearchVendorId,
+            searchModel.SearchWarehouseId,
+            searchModel.SearchProductTypeId,
+            searchModel.SearchPublishedId
+        };
+        await _genericAttributeService.SaveAttributeAsync(customer, "Admin.ProductSearchCriteria", JsonConvert.SerializeObject(searchCriteria));
+
         //prepare model
         var model = await _productModelFactory.PrepareProductListModelAsync(searchModel);
 
@@ -987,6 +1007,22 @@ public partial class ProductController : BaseAdminController
     [CheckPermission(StandardPermission.Catalog.PRODUCTS_VIEW)]
     public virtual async Task<IActionResult> BulkEditProducts(ProductSearchModel searchModel)
     {
+        //save search criteria
+        var customer = await _workContext.GetCurrentCustomerAsync();
+        var searchCriteria = new
+        {
+            searchModel.SearchProductName,
+            searchModel.SearchCategoryId,
+            searchModel.SearchIncludeSubCategories,
+            searchModel.SearchManufacturerId,
+            searchModel.SearchStoreId,
+            searchModel.SearchVendorId,
+            searchModel.SearchWarehouseId,
+            searchModel.SearchProductTypeId,
+            searchModel.SearchPublishedId
+        };
+        await _genericAttributeService.SaveAttributeAsync(customer, "Admin.ProductSearchCriteria", JsonConvert.SerializeObject(searchCriteria));
+
         //prepare model
         var model = await _productModelFactory.PrepareProductListModelAsync(searchModel);
         var html = await RenderPartialViewToStringAsync("_BulkEdit.Products", model.Data.ToList());
