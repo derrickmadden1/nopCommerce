@@ -2,6 +2,9 @@ using Azure;
 using Azure.Search.Documents;
 using Azure.Search.Documents.Models;
 using Microsoft.Extensions.Logging;
+using Nop.Core.Domain.Catalog;
+using Nop.Plugin.Search.AzureAI.Messages;
+using Nop.Services.Catalog;
 
 namespace Nop.Plugin.Search.AzureAI;
 
@@ -9,14 +12,20 @@ public class AzureAISearchService
 {
     private readonly AzureAISearchSettings _settings;
     private readonly ILogger<AzureAISearchService> _logger;
+    private readonly ICategoryService _categoryService;
+    private readonly IManufacturerService _manufacturerService;
     private SearchClient? _searchClient;
 
     public AzureAISearchService(
         AzureAISearchSettings settings,
-        ILogger<AzureAISearchService> logger)
+        ILogger<AzureAISearchService> logger,
+        ICategoryService categoryService,
+        IManufacturerService manufacturerService)
     {
         _settings = settings;
         _logger = logger;
+        _categoryService = categoryService;
+        _manufacturerService = manufacturerService;
     }
 
     /// <summary>
@@ -116,6 +125,83 @@ public class AzureAISearchService
             filters.Add($"manufacturerNames/any(m: m eq '{EscapeOData(manufacturerName)}')");
 
         return string.Join(" and ", filters);
+    }
+
+    /// <summary>
+    /// Gets all product IDs currently in the Azure AI Search index
+    /// </summary>
+    public async Task<List<int>> GetAllIndexedIdsAsync()
+    {
+        try
+        {
+            var client = GetSearchClient();
+            var options = new SearchOptions
+            {
+                Select = { "id" },
+                Size = 1000 // Optimized for smaller catalogs; use pagination if > 1000
+            };
+
+            var response = await client.SearchAsync<SearchDocument>("*", options);
+            var ids = new List<int>();
+
+            await foreach (var result in response.Value.GetResultsAsync())
+            {
+                if (int.TryParse(result.Document["id"]?.ToString(), out var id))
+                    ids.Add(id);
+            }
+
+            return ids;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to retrieve all indexed IDs from Azure AI Search.");
+            return new List<int>();
+        }
+    }
+
+    /// <summary>
+    /// Prepares a ProductIndexMessage from a nopCommerce Product entity.
+    /// Used by both real-time event consumers and the manual sync tool.
+    /// </summary>
+    public async Task<ProductIndexMessage> PrepareProductIndexMessageAsync(Product product, ProductIndexAction action)
+    {
+        var message = new ProductIndexMessage
+        {
+            ProductId = product.Id,
+            Action = action,
+            OccurredAtUtc = DateTime.UtcNow
+        };
+
+        if (action == ProductIndexAction.Delete)
+            return message;
+
+        // Load category names
+        var productCategories = await _categoryService.GetProductCategoriesByProductIdAsync(product.Id);
+        foreach (var pc in productCategories)
+        {
+            var category = await _categoryService.GetCategoryByIdAsync(pc.CategoryId);
+            if (category != null && !category.Deleted)
+                message.CategoryNames.Add(category.Name);
+        }
+
+        // Load manufacturer names
+        var productManufacturers = await _manufacturerService.GetProductManufacturersByProductIdAsync(product.Id);
+        foreach (var pm in productManufacturers)
+        {
+            var manufacturer = await _manufacturerService.GetManufacturerByIdAsync(pm.ManufacturerId);
+            if (manufacturer != null && !manufacturer.Deleted)
+                message.ManufacturerNames.Add(manufacturer.Name);
+        }
+
+        // Map base product fields
+        message.Name = product.Name;
+        message.ShortDescription = product.ShortDescription;
+        message.FullDescription = product.FullDescription;
+        message.Sku = product.Sku;
+        message.Price = product.Price;
+        message.Published = product.Published;
+
+        return message;
     }
 
     private static string MapOrderBy(string? orderBy) => orderBy switch

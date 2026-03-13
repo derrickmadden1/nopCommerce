@@ -1,5 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
+using Nop.Core.Domain.Catalog;
+using Nop.Plugin.Search.AzureAI.Infrastructure;
+using Nop.Plugin.Search.AzureAI.Messages;
 using Nop.Plugin.Search.AzureAI.Models;
+using Nop.Services.Catalog;
 using Nop.Services.Configuration;
 using Nop.Services.Messages;
 using Nop.Web.Framework;
@@ -17,17 +21,23 @@ public class AzureAISearchController : BasePluginController
     private readonly AzureAISearchService _searchService;
     private readonly ISettingService _settingService;
     private readonly INotificationService _notificationService;
+    private readonly IProductService _productService;
+    private readonly ServiceBusPublisher _publisher;
 
     public AzureAISearchController(
         AzureAISearchSettings settings,
         AzureAISearchService searchService,
         ISettingService settingService,
-        INotificationService notificationService)
+        INotificationService notificationService,
+        IProductService productService,
+        ServiceBusPublisher publisher)
     {
         _settings = settings;
         _searchService = searchService;
         _settingService = settingService;
         _notificationService = notificationService;
+        _productService = productService;
+        _publisher = publisher;
     }
 
     public IActionResult Configure()
@@ -66,6 +76,51 @@ public class AzureAISearchController : BasePluginController
         _searchService.ResetClient();
 
         _notificationService.SuccessNotification("Azure AI Search settings saved.");
+
+        return RedirectToAction("Configure");
+    }
+
+    [HttpPost, ActionName("Configure")]
+    [FormValueRequired("sync")]
+    public async Task<IActionResult> Sync()
+    {
+        try
+        {
+            // 1. Get all IDs from the Azure AI Search Index
+            var indexedIds = await _searchService.GetAllIndexedIdsAsync();
+
+            // 2. Identify stale products (in index but no longer in nopCommerce DB)
+            var dbProducts = await _productService.GetProductsByIdsAsync(indexedIds.ToArray());
+            var dbIds = dbProducts.Select(p => p.Id).ToHashSet();
+
+            var staleCount = 0;
+            foreach (var id in indexedIds.Where(id => !dbIds.Contains(id)))
+            {
+                await _publisher.PublishAsync(new ProductIndexMessage 
+                { 
+                    ProductId = id, 
+                    Action = ProductIndexAction.Delete,
+                    OccurredAtUtc = DateTime.UtcNow
+                });
+                staleCount++;
+            }
+
+            // 3. Fully re-index all current published products to ensure they are sync'd
+            var allProducts = await _productService.SearchProductsAsync(showHidden: false);
+            var indexCount = 0;
+            foreach (var product in allProducts)
+            {
+                var message = await _searchService.PrepareProductIndexMessageAsync(product, ProductIndexAction.Index);
+                await _publisher.PublishAsync(message);
+                indexCount++;
+            }
+
+            _notificationService.SuccessNotification($"Sync initiated. Removed {staleCount} stale products and queued {indexCount} products for re-indexing.");
+        }
+        catch (Exception ex)
+        {
+            _notificationService.ErrorNotification($"Sync failed: {ex.Message}");
+        }
 
         return RedirectToAction("Configure");
     }

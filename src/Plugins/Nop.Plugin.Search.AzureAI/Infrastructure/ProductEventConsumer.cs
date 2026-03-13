@@ -1,4 +1,4 @@
-﻿using Nop.Core.Domain.Catalog;
+using Nop.Core.Domain.Catalog;
 using Nop.Core.Events;
 using Nop.Plugin.Search.AzureAI.Messages;
 using Nop.Services.Catalog;
@@ -17,20 +17,17 @@ public class ProductEventConsumer :
     IConsumer<EntityDeletedEvent<Product>>
 {
     private readonly ServiceBusPublisher _publisher;
+    private readonly AzureAISearchService _searchService;
     private readonly AzureAISearchSettings _settings;
-    private readonly ICategoryService _categoryService;
-    private readonly IManufacturerService _manufacturerService;
 
     public ProductEventConsumer(
         ServiceBusPublisher publisher,
-        AzureAISearchSettings settings,
-        ICategoryService categoryService,
-        IManufacturerService manufacturerService)
+        AzureAISearchService searchService,
+        AzureAISearchSettings settings)
     {
         _publisher = publisher;
+        _searchService = searchService;
         _settings = settings;
-        _categoryService = categoryService;
-        _manufacturerService = manufacturerService;
     }
 
     public async Task HandleEventAsync(EntityInsertedEvent<Product> eventMessage)
@@ -69,38 +66,7 @@ public class ProductEventConsumer :
 
     private async Task PublishIndexMessageAsync(Product product, ProductIndexAction action)
     {
-        // Load category names via nopCommerce services
-        var productCategories = await _categoryService.GetProductCategoriesByProductIdAsync(product.Id);
-        var categoryNames = new List<string>();
-        foreach (var pc in productCategories)
-        {
-            var category = await _categoryService.GetCategoryByIdAsync(pc.CategoryId);
-            if (category != null && !category.Deleted)
-                categoryNames.Add(category.Name);
-        }
-
-        // Load manufacturer names via nopCommerce services
-        var productManufacturers = await _manufacturerService.GetProductManufacturersByProductIdAsync(product.Id);
-        var manufacturerNames = new List<string>();
-        foreach (var pm in productManufacturers)
-        {
-            var manufacturer = await _manufacturerService.GetManufacturerByIdAsync(pm.ManufacturerId);
-            if (manufacturer != null && !manufacturer.Deleted)
-                manufacturerNames.Add(manufacturer.Name);
-        }
-
-        await _publisher.PublishAsync(new ProductIndexMessage
-        {
-            ProductId = product.Id,
-            Action = action,
-            Name = product.Name,
-            ShortDescription = product.ShortDescription,
-            FullDescription = product.FullDescription,
-            Sku = product.Sku,
-            Price = product.Price,
-            Published = product.Published,
-            CategoryNames = categoryNames,
-            ManufacturerNames = manufacturerNames
-        });
+        var message = await _searchService.PrepareProductIndexMessageAsync(product, action);
+        await _publisher.PublishAsync(message);
     }
 }
