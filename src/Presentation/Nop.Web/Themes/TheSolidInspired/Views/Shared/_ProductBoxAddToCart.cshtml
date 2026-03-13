@@ -5,19 +5,20 @@
     <div class="buttons">
         @if (!Model.ProductPrice.DisableBuyButton)
         {
+            var addToCartLink = Url.RouteUrl(NopRouteNames.Ajax.ADD_PRODUCT_TO_CART_CATALOG, new { productId = Model.Id, shoppingCartTypeId = (int)Nop.Core.Domain.Orders.ShoppingCartType.ShoppingCart, quantity = 1 });
             <button type="button"
                     class="button-2 product-box-add-to-cart-button"
-                    data-productid="@Model.Id"
-                    data-quantity="1">
+                    onclick="AjaxCart.addproducttocart_catalog('@addToCartLink');return false;">
                 @T("ShoppingCart.AddToCart")
             </button>
         }
 
         @if (!Model.ProductPrice.DisableWishlistButton)
         {
+            var addtowishlistlink = Url.RouteUrl(NopRouteNames.Ajax.ADD_PRODUCT_TO_CART_CATALOG, new { productId = Model.Id, shoppingCartTypeId = (int)Nop.Core.Domain.Orders.ShoppingCartType.Wishlist, quantity = 1 });
             <button type="button"
                     class="button-2 add-to-wishlist-button"
-                    data-productid="@Model.Id">
+                    onclick="AjaxCart.addproducttocart_catalog('@addtowishlistlink');return false;">
                 @T("Wishlist.AddToWishlist")
             </button>
         }

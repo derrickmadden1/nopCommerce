@@ -107,7 +107,6 @@
                         <span>@T("ShoppingCart.Totals.GiftCardInfo.Code", gc.CouponCode)</span>
                         @if (Model.IsEditable)
                         {
-                            //little hack here with empty "value" element
                             <button type="submit" name="removegiftcard-@gc.Id" class="remove-gift-card-button"></button>
                         }
                         <span class="giftcard-remaining">@string.Format(T("ShoppingCart.Totals.GiftCardInfo.Remaining").Text, gc.Remaining)</span>
@@ -136,7 +135,7 @@
                 <td class="cart-total-right">
                     @if (!string.IsNullOrEmpty(Model.OrderTotal))
                     {
-                        <span class="value-summary"><strong>@Model.OrderTotal</strong></span>
+                        <span class="value-summary">@Model.OrderTotal</span>
                     }
                     else
                     {
@@ -144,17 +143,6 @@
                     }
                 </td>
             </tr>
-            @if (Model.WillEarnRewardPoints > 0)
-            {
-                <tr class="earn-reward-points">
-                    <td class="cart-total-left">
-                        <label>@T("ShoppingCart.Totals.RewardPoints.WillEarn"):</label>
-                    </td>
-                    <td class="cart-total-right">
-                        <span class="value-summary">@string.Format(T("ShoppingCart.Totals.RewardPoints.WillEarn.Point").Text, Model.WillEarnRewardPoints)</span>
-                    </td>
-                </tr>
-            }
         </tbody>
     </table>
 </div>

@@ -59,6 +59,8 @@
                             }
                         </div>
 
+                        @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.ProductDetailsOverviewTop, additionalData = Model })
+
                         @if (!string.IsNullOrEmpty(Model.ShortDescription))
                         {
                             <div class="short-description">
@@ -96,10 +98,10 @@
 
                 <div class="product-description-tabs">
                     <div class="tab-header">
-                        <button class="tab-btn active" data-tab="description">Description</button>
+                        <button type="button" class="tab-btn active" data-tab="description">Description</button>
                         @if (Model.ProductSpecificationModel.Groups.Any())
                         {
-                            <button class="tab-btn" data-tab="specs">Specifications</button>
+                            <button type="button" class="tab-btn" data-tab="specs">Specifications</button>
                         }
                     </div>
                     <div class="tab-content">
@@ -114,6 +116,26 @@
                         }
                     </div>
                 </div>
+
+                <script>
+                    document.addEventListener("DOMContentLoaded", function () {
+                        const tabs = document.querySelectorAll(".tab-btn");
+                        const panes = document.querySelectorAll(".tab-pane");
+
+                        tabs.forEach(tab => {
+                            tab.addEventListener("click", function (e) {
+                                e.preventDefault();
+                                const target = this.getAttribute("data-tab");
+
+                                tabs.forEach(t => t.classList.remove("active"));
+                                panes.forEach(p => p.classList.remove("active"));
+
+                                this.classList.add("active");
+                                document.getElementById(target).classList.add("active");
+                            });
+                        });
+                    });
+                </script>
 
                 @await Component.InvokeAsync(typeof(RelatedProductsViewComponent), new { productId = Model.Id })
                 @await Component.InvokeAsync(typeof(ProductsAlsoPurchasedViewComponent), new { productId = Model.Id })

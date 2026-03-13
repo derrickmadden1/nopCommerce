@@ -1,10 +1,11 @@
-﻿@using Nop.Web.Models.Catalog
+@using Nop.Web.Models.Catalog
 @model ProductOverviewModel
 
 <div class="product-card">
     <a href="@Model.SeName" class="product-image-wrapper">
         @{var pictureModel = Model.PictureModels.FirstOrDefault();}
         <img class="product-image" src="@pictureModel.ImageUrl" alt="@pictureModel.AlternateText" />
+        @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.ProductBoxAddinfoMiddle, additionalData = Model })
     </a>
 
     <div class="product-info">
@@ -12,19 +13,12 @@
             <a href="@Model.SeName">@Model.Name</a>
         </h3>
 
-        @if (!string.IsNullOrEmpty(Model.ShortDescription))
-        {
-            <p class="product-description">@Model.ShortDescription</p>
-        }
-
         <div class="product-price">
             @Html.Raw(Model.ProductPrice.Price)
         </div>
 
         <div class="product-actions">
-            @await Component.InvokeAsync("Widget", new { widgetZone = "productbox_addinfo_before", additionalData = Model })
             @await Html.PartialAsync("_ProductBoxAddToCart", Model)
-            @await Component.InvokeAsync("Widget", new { widgetZone = "productbox_addinfo_after", additionalData = Model })
         </div>
     </div>
 </div>

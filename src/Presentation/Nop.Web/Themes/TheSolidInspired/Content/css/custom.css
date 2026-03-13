@@ -42,7 +42,7 @@ h6 {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 2px;
-  text-align: center;
+  text-align: left; /* Changed from center to left */
   margin-bottom: 2rem;
 }
 
@@ -692,6 +692,7 @@ h6 {
   display: block;
   aspect-ratio: 1/1;
   overflow: hidden;
+  position: relative !important;
 }
 
 .product-image {
@@ -706,23 +707,18 @@ h6 {
 }
 
 .product-info {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: rgba(255, 255, 255, 0.98);
-  padding: 25px 20px;
-  text-align: center;
-  transform: translateY(105%);
-  transition: transform 0.5s cubic-bezier(0.165, 0.84, 0.44, 1);
+  position: relative;
+  background: #fff;
+  padding: 15px 10px;
+  text-align: left;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   z-index: 50;
 }
 
 .product-card:hover .product-info {
-  transform: translateY(0);
+  transform: none;
 }
 
 .product-title a {
@@ -735,9 +731,40 @@ h6 {
 }
 
 .product-description,
-.product-actions,
 .product-rating {
   display: none !important;
+}
+
+.product-actions {
+    display: block !important;
+    margin-top: 15px;
+    text-align: left !important;
+}
+
+.add-to-cart-button,
+.qty-input,
+.qty-label {
+    display: inline-block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* --- PRODUCT DETAILS (MODERN) --- */
+.product-essential-modern {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 60px;
+    margin-bottom: 80px;
+}
+
+.product-info-overview {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.product-info-overview h1 {
+    text-align: left !important;
 }
 
 .product-price {
@@ -3597,14 +3624,22 @@ body {
 
 /* ==========================================================================
    FINAL THEME FIXES - HEADER, PANELS, SEARCH
+   =====================================================================/* ==========================================================================
+   FINAL THEME FIXES - HEADER, PANELS, SEARCH, COOKIES
    ========================================================================== */
 
-/* 1. Header Layout - Logo Centered, Search Right */
+/* 1. Header Layout & Logo Animation */
+.header-modern {
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  background: #fff;
+}
+
 .header-modern .header-main-area {
   max-width: var(--max-width);
   margin: 0 auto;
   padding: 20px 40px;
   position: relative;
+  transition: padding 0.4s ease;
 }
 
 .header-logo-row {
@@ -3613,15 +3648,40 @@ body {
   align-items: center !important;
   width: 100% !important;
   min-height: 120px !important;
+  transition: all 0.4s ease;
 }
 
 .header-logo {
   text-align: center !important;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .header-logo img {
-  max-height: 180px !important;
+  max-height: 140px !important;
   width: auto !important;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Sticky Shrink State */
+.header-modern.sticky-shrink {
+  box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+}
+
+.header-modern.sticky-shrink .header-main-area {
+  padding: 10px 40px;
+}
+
+.header-modern.sticky-shrink .header-logo-row {
+  justify-content: flex-start !important;
+  min-height: 60px !important;
+}
+
+.header-modern.sticky-shrink .header-logo img {
+  max-height: 50px !important;
 }
 
 .header-search-cart {
@@ -3632,6 +3692,7 @@ body {
   display: flex !important;
   align-items: center !important;
   gap: 20px !important;
+  z-index: 10;
 }
 
 .search-box {
@@ -3640,19 +3701,29 @@ body {
 
 .search-box-text {
   width: 180px !important;
-  padding: 8px !important;
-  border: 1px solid #ddd !important;
-  background: #fff !important;
+  padding: 8px 12px !important;
+  border: 1px solid #eee !important;
+  background: #f9f9f9 !important;
+  border-radius: 4px;
   font-family: inherit !important;
+  transition: all 0.3s ease;
+}
+
+.search-box-text:focus {
+  width: 240px !important;
+  border-color: var(--brand-turquoise) !important;
+  background: #fff !important;
+  outline: none;
 }
 
 .search-box-button {
   padding: 8px 15px !important;
   background: var(--dark-grey) !important;
   color: #fff !important;
+  border-radius: 4px;
 }
 
-/* 2. Panels - Hidden by default using display:none for absolute safety */
+/* 2. Panels - Hidden by default */
 .mini-cart-panel, .mobile-nav-panel {
   display: none !important;
   position: fixed !important;
@@ -3688,8 +3759,316 @@ body {
   display: block !important;
 }
 
+/* 3. Cookie Consent Bar Modern Styling */
+.eu-cookie-bar-notification {
+  position: fixed !important;
+  bottom: 20px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  width: 90% !important;
+  max-width: 800px !important;
+  background: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1) !important;
+  padding: 20px 30px !important;
+  border-radius: 12px !important;
+  z-index: 1000000 !important;
+  display: none; /* JS will show it */
+}
+
+.eu-cookie-bar-notification .content {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 20px !important;
+}
+
+.eu-cookie-bar-notification .text {
+    flex: 1;
+    font-size: 0.9rem;
+    color: #444;
+    line-height: 1.4;
+}
+
+.eu-cookie-bar-notification .buttons-more {
+    display: flex !important;
+    align-items: center !important;
+    gap: 15px !important;
+}
+
+.eu-cookie-bar-notification .ok-button {
+    background: var(--brand-turquoise) !important;
+    color: #fff !important;
+    padding: 10px 25px !important;
+    border-radius: 6px !important;
+    font-weight: 600 !important;
+    font-size: 0.85rem !important;
+}
+
+.eu-cookie-bar-notification .learn-more {
+    color: var(--dark-grey) !important;
+    font-size: 0.85rem !important;
+    text-decoration: underline !important;
+}
+
+/* 4. Global Spacing & Layout Polish */
+.master-column-wrapper {
+  padding-left: 40px !important;
+  padding-right: 40px !important;
+  max-width: var(--max-width);
+  margin: 0 auto;
+}
+
+.breadcrumb {
+  margin: 20px 0 40px 0 !important;
+}
+
+.breadcrumb ul {
+  padding: 0;
+  display: flex !important;
+  flex-wrap: wrap;
+  list-style: none;
+  font-size: 0.85rem;
+  color: #888;
+}
+
+.breadcrumb .delimiter {
+  margin: 0 10px;
+  color: #ccc;
+}
+
+.breadcrumb a {
+    color: #666;
+}
+
+.breadcrumb .current-item {
+    color: var(--dark-grey);
+    font-weight: 600;
+}
+
+/* Category Page Product Grid Adjustments */
+.product-grid .item-grid {
+    gap: 30px !important;
+}
+
+.product-item {
+    border: none !important;
+    transition: transform 0.3s ease;
+}
+
+.product-item:hover {
+    transform: translateY(-5px);
+}
+
+.product-item .picture img {
+    border-radius: 8px;
+    max-height: 250px !important; /* Reduced to bring content "above the fold" */
+    object-fit: cover !important;
+}
+
+.product-item .product-title {
+    font-family: var(--heading-font);
+    font-weight: 700;
+    font-size: 1.1rem !important;
+    margin: 15px 0 5px 0 !important;
+}
+
+.product-item .prices {
+    font-weight: 600;
+    color: var(--brand-turquoise);
+}
+
 @media (max-width: 768px) {
-  .header-search-cart {
-    display: none !important; /* Hide on mobile to avoid overlap */
+  .master-column-wrapper {
+    padding-left: 20px !important;
+    padding-right: 20px !important;
   }
+
+  .header-search-cart {
+    display: none !important;
+  }
+
+  .eu-cookie-bar-notification .content {
+      flex-direction: column;
+      text-align: center;
+  }
+
+/* 5. Mini-Cart Refinements */
+.mini-cart-panel .totals {
+    margin-top: auto;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+}
+
+.mini-cart-panel .totals .subtotal {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--dark-grey);
+    margin-bottom: 20px;
+}
+
+.mini-cart-panel .buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.mini-cart-panel .cart-button, 
+.mini-cart-panel .checkout-button {
+    width: 100%;
+    padding: 15px !important;
+    text-align: center;
+    font-weight: 600;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+}
+
+.mini-cart-panel .cart-button {
+    background: #f5f5f5 !important;
+    color: var(--dark-grey) !important;
+}
+
+.mini-cart-panel .checkout-button {
+    background: var(--dark-grey) !important;
+    color: #fff !important;
+}
+
+/* 6. Main Cart Page & Discount Box Refinements */
+.cart-collaterals {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.coupon-box {
+    background: transparent;
+    padding: 0;
+    border-radius: 0;
+    border: none;
+    margin-bottom: 30px;
+}
+
+.coupon-box,
+.coupon-box *,
+.coupon-box .title {
+    text-align: left !important;
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+    justify-content: flex-start !important;
+}
+
+.coupon-box .title {
+    display: block !important;
+    width: 100% !important;
+    margin-bottom: 20px !important;
+}
+
+.coupon-box .coupon-code {
+    display: flex !important;
+    justify-content: flex-start !important;
+    gap: 10px;
+}
+
+.coupon-box .coupon-code {
+    display: flex !important;
+    gap: 10px;
+}
+
+.coupon-box .discount-coupon-code {
+    flex: 1;
+    padding: 10px 15px !important;
+    border: 1px solid #ddd !important;
+    border-radius: 4px;
+}
+
+.coupon-box .apply-discount-coupon-code-button {
+    background: var(--dark-grey) !important;
+    color: #fff !important;
+    padding: 10px 25px !important;
+    border-radius: 4px;
+}
+
+/* 7. Order Totals Alignment */
+.total-info {
+    max-width: 400px;
+    margin-left: auto;
+}
+
+.cart-total {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.cart-total td {
+    padding: 8px 0;
+}
+
+.cart-total-left {
+    text-align: left;
+    color: #666;
+}
+
+.cart-total-right {
+    text-align: right;
+    font-weight: 600;
+    padding-left: 40px !important;
+}
+
+.order-total .cart-total-right {
+    font-size: 1.4rem;
+    color: var(--dark-grey);
+}
+
+/* 8. MultiBuy Labels Sitewide */
+.multibuy-badge {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: var(--brand-turquoise) !important;
+    color: #fff !important;
+    padding: 8px 16px !important;
+    border-radius: 50px !important;
+    font-size: 0.75rem !important;
+    font-weight: 800 !important;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    z-index: 25 !important;
+    box-shadow: 0 4px 15px rgba(0,194,199,0.5) !important;
+    border: 2px solid #fff !important;
+    pointer-events: none;
+    line-height: 1;
+}
+
+.alert-success.multibuy-msg, 
+.multibuy-item-msg {
+    background: #e6f4f1 !important;
+    color: var(--brand-turquoise) !important;
+    border: 1px solid #d1e9e4 !important;
+    border-radius: 6px !important;
+    padding: 12px 20px !important;
+    font-size: 0.9rem !important;
+    margin: 15px 0 !important;
+    text-align: center;
+}
+
+.multibuy-item-msg {
+    padding: 5px 0 !important;
+    text-align: left;
+    background: transparent !important;
+    border: none !important;
+    margin: 5px 0 0 0 !important;
+}
+
+@media (max-width: 768px) {
+    .coupon-box .coupon-code {
+        flex-direction: column;
+    }
+    
+    .total-info {
+        max-width: 100%;
+    }
 }
