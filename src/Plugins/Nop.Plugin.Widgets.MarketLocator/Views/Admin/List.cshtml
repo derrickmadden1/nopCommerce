@@ -1,0 +1,85 @@
+@model Nop.Plugin.Widgets.MarketLocator.Models.MarketLocationListModel
+@{
+    Layout = "_AdminLayout";
+    ViewBag.Title = "Market Locator — Locations";
+}
+
+<div class="content-header clearfix">
+    <h1 class="float-left">Market Locations</h1>
+    <div class="float-right">
+        <a asp-action="Create" class="btn btn-success">
+            <i class="fas fa-plus"></i> Add Location
+        </a>
+        <a asp-action="Configure" class="btn btn-secondary">
+            <i class="fas fa-cog"></i> Settings
+        </a>
+        <a href="/market-locations" target="_blank" class="btn btn-info">
+            <i class="fas fa-external-link-alt"></i> Preview Map
+        </a>
+    </div>
+</div>
+
+<div class="content">
+    <div class="card card-default">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>City</th>
+                            <th>Frequency</th>
+                            <th>Next Date</th>
+                            <th>Published</th>
+                            <th>Order</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var loc in Model.Data)
+                        {
+                            var firstDate = loc.UpcomingDatesRaw.Split('\n').FirstOrDefault() ?? "—";
+                            <tr>
+                                <td><strong>@loc.Name</strong></td>
+                                <td>@loc.City</td>
+                                <td>
+                                    <span class="badge badge-secondary">@loc.Frequency</span>
+                                </td>
+                                <td>@firstDate</td>
+                                <td>
+                                    @if (loc.Published)
+                                    {
+                                        <i class="fas fa-check-circle text-success"></i>
+                                    }
+                                    else
+                                    {
+                                        <i class="fas fa-times-circle text-danger"></i>
+                                    }
+                                </td>
+                                <td>@loc.DisplayOrder</td>
+                                <td>
+                                    <a asp-action="Edit" asp-route-id="@loc.Id"
+                                       class="btn btn-sm btn-primary">Edit</a>
+                                    <form asp-action="Delete" asp-route-id="@loc.Id"
+                                          method="post" style="display:inline"
+                                          onsubmit="return confirm('Delete this location?')">
+                                        <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                        @if (!Model.Data.Any())
+                        {
+                            <tr>
+                                <td colspan="7" class="text-center text-muted py-4">
+                                    No market locations yet.
+                                    <a asp-action="Create">Add the first one →</a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

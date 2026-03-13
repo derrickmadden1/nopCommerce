@@ -1,0 +1,194 @@
+@model Nop.Plugin.Widgets.MarketLocator.Models.MarketPickupSelectorModel
+@using Nop.Plugin.Widgets.MarketLocator.Models
+
+@if (!Model.Markets.Any())
+{
+    <div class="market-pickup-unavailable">
+        <p>No market pickup locations are currently available. Please choose another shipping method.</p>
+    </div>
+    return;
+}
+
+<div class="market-pickup-selector" id="market-pickup-selector" data-selected-id="@Model.SelectedMarketId">
+
+    <div class="pickup-selector-header">
+        <span class="pickup-icon">🥕</span>
+        <div>
+            <strong>Choose your pickup market</strong>
+            <span>Select a location and date — we'll have your order ready.</span>
+        </div>
+    </div>
+
+    @* ── Step 1: Location cards ── *@
+    <div class="pickup-step" id="pickup-step-location">
+        <div class="pickup-step-label">
+            <span class="step-num">1</span> Choose a market location
+        </div>
+        <div class="pickup-market-cards" id="pickup-market-cards">
+            @foreach (var market in Model.Markets)
+            {
+                var isSelected = market.Id == Model.SelectedMarketId;
+                <div class="pickup-market-card @(isSelected ? "is-selected" : "")"
+                     data-market-id="@market.Id"
+                     data-market-name="@market.Name">
+                    <div class="pmc-radio">
+                        <input type="radio" name="pickup_market_id"
+                               value="@market.Id"
+                               id="pmc-@market.Id"
+                               @(isSelected ? "checked" : "") />
+                    </div>
+                    <label class="pmc-body" for="pmc-@market.Id">
+                        <div class="pmc-name">@market.Name</div>
+                        <div class="pmc-meta">
+                            <span>📍 @market.Address</span>
+                            <span>🕗 @market.Hours</span>
+                        </div>
+                    </label>
+                </div>
+            }
+        </div>
+    </div>
+
+    @* ── Step 2: Date picker (revealed after location chosen) ── *@
+    <div class="pickup-step @(Model.SelectedMarketId > 0 ? "" : "is-hidden")"
+         id="pickup-step-date">
+        <div class="pickup-step-label">
+            <span class="step-num">2</span> Choose a pickup date
+        </div>
+        @foreach (var market in Model.Markets)
+        {
+            <div class="pickup-date-group @(market.Id == Model.SelectedMarketId ? "" : "is-hidden")"
+                 id="pickup-dates-@market.Id">
+                <div class="pickup-date-options">
+                    @foreach (var dateOpt in market.DateOptions)
+                    {
+                        var isDateSelected = dateOpt.Value == Model.SelectedDate
+                                             && market.Id == Model.SelectedMarketId;
+                        <button type="button"
+                                class="pickup-date-btn @(isDateSelected ? "is-selected" : "")"
+                                data-date="@dateOpt.Value"
+                                data-market-id="@market.Id">
+                            @dateOpt.Text
+                        </button>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+
+    @* ── Confirmation strip ── *@
+    <div class="pickup-confirmation @(Model.SelectedMarketId > 0 && !string.IsNullOrEmpty(Model.SelectedDate) ? "" : "is-hidden")"
+         id="pickup-confirmation">
+        <span class="pickup-check">✓</span>
+        <span id="pickup-confirmation-text">@Model.SelectedDate at @(Model.Markets.FirstOrDefault(m => m.Id == Model.SelectedMarketId)?.Name)</span>
+    </div>
+
+    @* ── Validation message ── *@
+    <div class="pickup-validation-msg is-hidden" id="pickup-validation-msg">
+        Please select a market location and a pickup date before continuing.
+    </div>
+
+    @* Hidden fields read by checkout validation ── *@
+    <input type="hidden" id="pickup-market-id-val" value="@Model.SelectedMarketId" />
+    <input type="hidden" id="pickup-date-val" value="@Model.SelectedDate" />
+</div>
+
+@section scripts {
+<script>
+(function () {
+    const selector   = document.getElementById('market-pickup-selector');
+    if (!selector) return;
+
+    const stepDate   = document.getElementById('pickup-step-date');
+    const confirm    = document.getElementById('pickup-confirmation');
+    const confirmTxt = document.getElementById('pickup-confirmation-text');
+    const valMsg     = document.getElementById('pickup-validation-msg');
+    const hiddenId   = document.getElementById('pickup-market-id-val');
+    const hiddenDate = document.getElementById('pickup-date-val');
+
+    // ── Location selection ──────────────────────────────────────────────────
+    selector.querySelectorAll('.pickup-market-card').forEach(card => {
+        card.addEventListener('click', () => {
+            const marketId = card.dataset.marketId;
+
+            // Update card styles
+            selector.querySelectorAll('.pickup-market-card').forEach(c =>
+                c.classList.remove('is-selected'));
+            card.classList.add('is-selected');
+            card.querySelector('input[type=radio]').checked = true;
+
+            // Show date step, hide other market's dates
+            selector.querySelectorAll('.pickup-date-group').forEach(g =>
+                g.classList.add('is-hidden'));
+            document.getElementById(`pickup-dates-${marketId}`)?.classList.remove('is-hidden');
+            stepDate.classList.remove('is-hidden');
+
+            // Reset date selection
+            selector.querySelectorAll('.pickup-date-btn').forEach(b =>
+                b.classList.remove('is-selected'));
+            hiddenId.value   = marketId;
+            hiddenDate.value = '';
+            confirm.classList.add('is-hidden');
+        });
+    });
+
+    // ── Date selection ──────────────────────────────────────────────────────
+    selector.querySelectorAll('.pickup-date-btn').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const marketId = btn.dataset.marketId;
+            const date     = btn.dataset.date;
+            const marketName = selector.querySelector(`[data-market-id="${marketId}"] .pmc-name`)?.textContent?.trim();
+
+            selector.querySelectorAll('.pickup-date-btn').forEach(b =>
+                b.classList.remove('is-selected'));
+            btn.classList.add('is-selected');
+
+            hiddenDate.value = date;
+            confirmTxt.textContent = `${date} at ${marketName}`;
+            confirm.classList.remove('is-hidden');
+            valMsg.classList.add('is-hidden');
+
+            // Persist to server session
+            await saveSelection(parseInt(marketId), date);
+        });
+    });
+
+    // ── Save to server ──────────────────────────────────────────────────────
+    async function saveSelection(marketId, date) {
+        try {
+            await fetch('/market-pickup/select', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': document
+                        .querySelector('input[name="__RequestVerificationToken"]')?.value ?? ''
+                },
+                body: JSON.stringify({ marketId, pickupDate: date })
+            });
+        } catch (e) {
+            console.warn('Could not save pickup selection', e);
+        }
+    }
+
+    // ── Intercept checkout "Continue" button to validate ──────────────────
+    // nopCommerce fires shippingMethodSelected before advancing steps.
+    // Hook the shipping method form submit instead.
+    const shippingForm = document.querySelector('#shipping-method-form, form.shipping-method-form');
+    if (shippingForm) {
+        shippingForm.addEventListener('submit', function (e) {
+            const marketPickupRadio = shippingForm.querySelector(
+                'input[type=radio][value*="MarketPickup"]:checked');
+            if (!marketPickupRadio) return; // Another method selected — let it through
+
+            const mId   = hiddenId.value;
+            const mDate = hiddenDate.value;
+            if (!mId || mId === '0' || !mDate) {
+                e.preventDefault();
+                valMsg.classList.remove('is-hidden');
+                selector.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }, true);
+    }
+}());
+</script>
+}

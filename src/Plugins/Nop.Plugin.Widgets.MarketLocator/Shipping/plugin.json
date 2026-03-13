@@ -1,0 +1,11 @@
+{
+  "Group": "Shipping",
+  "FriendlyName": "Market Pickup",
+  "SystemName": "Shipping.MarketPickup",
+  "Version": "1.0.0",
+  "SupportedVersions": [ "4.70" ],
+  "Author": "Your Store",
+  "DisplayOrder": 1,
+  "FileName": "Nop.Plugin.Widgets.MarketLocator.dll",
+  "Description": "Offers free market pickup as a shipping option, letting customers choose a location and date from your upcoming market schedule."
+}
