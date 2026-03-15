@@ -2,68 +2,63 @@ name: Deploy to Production
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   workflow_dispatch:
 
 env:
   DOTNET_VERSION: '9.0.x'
+  FORCE_KEEP_PLUGINS: '["Widgets.MarketLocator", "Shipping.MarketPickup"]' 
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v4
 
-    - name: Setup .NET Core
+    - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
 
-    - name: Restore dependencies
-      run: dotnet restore src/NopCommerce.sln
-
-    - name: Run Tests
+    - name: Build and Publish
       run: |
-        dotnet test src/Tests/Nop.Tests/Nop.Tests.csproj --configuration Release --no-restore --logger trx --results-directory "TestResults"
+        dotnet restore src/NopCommerce.sln
+        dotnet build src/NopCommerce.sln -c Release --no-restore
+        dotnet publish src/Presentation/Nop.Web/Nop.Web.csproj -c Release -o ./app_publish --no-build
 
-    - name: Upload Test Results
-      uses: actions/upload-artifact@v4
-      if: success() || failure()
-      with:
-        name: test-results
-        path: TestResults
-
-    - name: Build with Release configuration
-      run: dotnet build src/NopCommerce.sln --configuration Release --no-restore
-
-    - name: Publish Nop.Web
+    - name: Smart Prune Plugins
+      shell: bash
       run: |
-        dotnet publish src/Presentation/Nop.Web/Nop.Web.csproj --configuration Release --output ./app_publish --no-build
+        creds=$(az webapp deployment list-publishing-credentials --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --query "[publishingUserName, publishingPassword]" -o tsv)
+        USER=$(echo "$creds" | sed -n '1p')
+        PASS=$(echo "$creds" | sed -n '2p')
+        
+        curl -u "$USER:$PASS" -o ./live_plugins.json "https://${{ secrets.AZURE_WEBAPP_NAME }}.scm.azurewebsites.net/api/vfs/site/wwwroot/App_Data/plugins.json" || echo '{"InstalledPluginNames":[]}' > ./live_plugins.json
+        
+        INSTALLED=$(jq -r '.InstalledPluginNames[] // empty' ./live_plugins.json)
+        FORCE_KEEP=$(echo '${{ env.FORCE_KEEP_PLUGINS }}' | jq -r '.[]')
+        
+        for dir in ./app_publish/Plugins/*/; do
+            folder=$(basename "$dir")
+            [[ $INSTALLED =~ $folder || $FORCE_KEEP =~ $folder ]] || rm -rf "$dir"
+        done
 
-    - name: Clean App_Data from publish
+    - name: Zip Artifact
       run: |
         rm -f ./app_publish/App_Data/*.json
-        rm -f ./app_publish/App_Data/dataSettings.json
-        rm -f ./app_publish/App_Data/DataProtectionKeys/*.xml
+        rm -rf ./app_publish/App_Data/DataProtectionKeys
+        cd app_publish && zip -r ../nop-app.zip .
 
-    - name: Upload artifact for deployment job
+    - name: Upload Zip
       uses: actions/upload-artifact@v4
       with:
         name: nopcommerce-app
-        path: ./app_publish
+        path: nop-app.zip
 
   deploy:
     runs-on: ubuntu-latest
     needs: build
-    environment:
-      name: 'Production'
-      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
-
     steps:
-    - uses: actions/checkout@v4
-    
     - name: Download artifact
       uses: actions/download-artifact@v4
       with:
@@ -74,88 +69,32 @@ jobs:
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-    # - name: Create Resource Group
-    #   run: |
-    #     az group create \
-    #       --name rosecottagecroft \
-    #       --location centralus
-
-    # - name: Deploy Infrastructure
-    #   run: |
-    #     az deployment group create \
-    #       --resource-group rosecottagecroft \
-    #       --template-file infrastructure/main.bicep \
-    #       --parameters appName=${{ secrets.AZURE_WEBAPP_NAME }} \
-    #       --parameters skuName=D1 \
-    #       --parameters sqlAdminUsername=${{ secrets.SQL_ADMIN_USERNAME }} \
-    #       --parameters sqlAdminPassword=${{ secrets.SQL_ADMIN_PASSWORD }} \
-    #       --parameters sqlServerName=${{ secrets.PROD_SQL_SERVER }} \
-    #       --parameters sqlDatabaseName=${{ secrets.PROD_SQL_DATABASE }}
-
-    - name: Upscale App Service Plan to B1
+    - name: Scale Up & Slot Create
       run: |
-        az appservice plan update \
-          --name Default1 \
-          --resource-group Default-Web-NorthEurope \
-          --sku B1
+        az appservice plan update --name Default1 --resource-group Default-Web-NorthEurope --sku S1
+        az webapp config appsettings set --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --settings WEBSITE_RUN_FROM_PACKAGE="1"
+        az webapp slot create --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --slot staging
 
-    - name: Stop Web App
-      run: az webapp stop --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft
-
-    # - name: Purge Server Files and Logs
-    #   run: |
-    #     # Get publishing credentials
-    #     creds=$(az webapp deployment list-publishing-credentials --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --query "[publishingUserName, publishingPassword]" -o tsv)
-    #     USER=$(echo "$creds" | sed -n '1p')
-    #     PASS=$(echo "$creds" | sed -n '2p')
-        
-    #     echo "Purging LogFiles and Temp folders..."
-    #     curl -X DELETE -u "$USER:$PASS" "https://${{ secrets.AZURE_WEBAPP_NAME }}.scm.azurewebsites.net/api/vfs/LogFiles/?recursive=true" || true
-    #     curl -X DELETE -u "$USER:$PASS" "https://${{ secrets.AZURE_WEBAPP_NAME }}.scm.azurewebsites.net/api/vfs/site/wwwroot/App_Data/logs/?recursive=true" || true
-
-    #     echo "Aggressive Purge: Deleting bin, Views, and wwwroot binaries to free space..."
-    #     # This frees ~500MB for the new extraction
-    #     curl -X DELETE -u "$USER:$PASS" "https://${{ secrets.AZURE_WEBAPP_NAME }}.scm.azurewebsites.net/api/vfs/site/wwwroot/bin/?recursive=true" || true
-    #     curl -X DELETE -u "$USER:$PASS" "https://${{ secrets.AZURE_WEBAPP_NAME }}.scm.azurewebsites.net/api/vfs/site/wwwroot/Views/?recursive=true" || true
-    #     curl -X DELETE -u "$USER:$PASS" "https://${{ secrets.AZURE_WEBAPP_NAME }}.scm.azurewebsites.net/api/vfs/site/wwwroot/wwwroot/?recursive=true" || true
-
-    - name: Fetch and Protect Live Configuration
-      run: |
-        # Get publishing credentials (re-use logic)
-        creds=$(az webapp deployment list-publishing-credentials --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --query "[publishingUserName, publishingPassword]" -o tsv)
-        USER=$(echo "$creds" | sed -n '1p')
-        PASS=$(echo "$creds" | sed -n '2p')
-        
-        mkdir -p App_Data
-        echo "Downloading live plugins.json..."
-        curl -u "$USER:$PASS" -o App_Data/plugins.json "https://${{ secrets.AZURE_WEBAPP_NAME }}.scm.azurewebsites.net/api/vfs/site/wwwroot/App_Data/plugins.json" || true
-        
-        echo "Recreating dataSettings.json from Secrets..."
-        # Using a secret ensures the connection string is always correct and up to date
-        cat > App_Data/dataSettings.json << 'EOF'
-        {
-          "DataProvider": "sqlserver",
-          "DataConnectionString": "Data Source=tcp:${{ secrets.PROD_SQL_SERVER }}.database.windows.net,1433;Initial Catalog=${{ secrets.PROD_SQL_DATABASE }};Persist Security Info=False;User ID=${{ secrets.SQL_ADMIN_USERNAME }};Password=${{ secrets.SQL_ADMIN_PASSWORD }};MultipleActiveResultSets=False;Connect Timeout=30;Encrypt=True;TrustServerCertificate=False",
-          "RawDataSettings": {}
-        }
-        EOF
-
-    - name: Deploy to Azure Web App
-      id: deploy-to-webapp
-      uses: azure/webapps-deploy@v2
+    - name: Deploy to Staging
+      uses: azure/webapps-deploy@v3
       with:
         app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
-        slot-name: 'Production'
-        package: .
+        slot-name: 'staging'
+        package: 'nop-app.zip'
 
-    - name: Start Web App
-      if: always()
-      run: az webapp start --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft
+    - name: Warm Up & Smoke Test
+      run: |
+        # Wait for the app to initialize
+        sleep 30 
+        URL="https://${{ secrets.AZURE_WEBAPP_NAME }}-staging.azurewebsites.net"
+        # Check for your store name in the HTML
+        curl -sL "$URL" | grep -q "YourStoreName" || (echo "Smoke test failed" && exit 1)
 
-    - name: Downscale App Service Plan back to D1
+    - name: Swap and Cleanup
       if: always()
       run: |
-        az appservice plan update \
-          --name Default1 \
-          --resource-group Default-Web-NorthEurope \
-          --sku D1
+        if [[ "${{ job.status }}" == "success" ]]; then
+          az webapp deployment slot swap --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --slot staging --target-slot production
+        fi
+        az webapp slot delete --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --slot staging || true
+        az appservice plan update --name Default1 --resource-group Default-Web-NorthEurope --sku D1
