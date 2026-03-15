@@ -2,10 +2,11 @@ using Microsoft.AspNetCore.Mvc;
 using Nop.Core;
 using Nop.Plugin.Widgets.MarketLocator.Services;
 using Nop.Services.Configuration;
+using Nop.Services.Helpers;
 
 namespace Nop.Plugin.Widgets.MarketLocator.Controllers;
 
-public class MarketLocatorController : Controller
+public partial class MarketLocatorController : Controller
 {
     private readonly IMarketLocationService _locationService;
     private readonly ISettingService _settingService;

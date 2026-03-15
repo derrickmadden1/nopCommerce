@@ -1,6 +1,7 @@
 using System.Text;
 using Nop.Core;
 using Nop.Plugin.Widgets.MarketLocator.Domain;
+using Nop.Services.Helpers;
 
 namespace Nop.Plugin.Widgets.MarketLocator.Services;
 
@@ -93,7 +94,7 @@ public class IcsBuilder : IIcsBuilder
         // On Linux/.NET 6+ the Id is already an IANA ID ("America/Chicago").
         // On Windows it is a Windows ID ("Central Standard Time") and must be
         // converted — GetIanaTimeZoneId handles both cases.
-        var tzId = GetIanaTimeZoneId(_dateTimeHelper.CurrentTimeZone);
+        var tzId = GetIanaTimeZoneId(_dateTimeHelper.DefaultStoreTimeZone);
 
         var sb = new StringBuilder();
         sb.AppendLine("BEGIN:VCALENDAR");

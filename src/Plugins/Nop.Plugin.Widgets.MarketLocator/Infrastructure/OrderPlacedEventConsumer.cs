@@ -1,3 +1,4 @@
+using Nop.Core.Domain.Orders;
 using Nop.Core.Events;
 using Nop.Plugin.Widgets.MarketLocator.Services;
 using Nop.Services.Common;
@@ -47,6 +48,5 @@ public class OrderPlacedEventConsumer : IConsumer<OrderPlacedEvent>
     }
 
     private static bool IsMarketPickupOrder(Nop.Core.Domain.Orders.Order order) =>
-        order.ShippingRateComputationMethodSystemName ==
-            Shipping.MarketPickupShippingPlugin.SystemName;
+        order.ShippingRateComputationMethodSystemName == "Widgets.MarketLocator";
 }

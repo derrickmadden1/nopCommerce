@@ -6,7 +6,7 @@ namespace Nop.Plugin.Widgets.MarketLocator.Models;
 /// <summary>
 /// Drives the location + date picker injected into the checkout shipping step.
 /// </summary>
-public class MarketPickupSelectorModel : BaseNopModel
+public record MarketPickupSelectorModel : BaseNopModel
 {
     /// <summary>All published markets that have at least one upcoming date.</summary>
     public List<MarketPickupOption> Markets { get; set; } = new();
@@ -45,7 +45,7 @@ public class MarketPickupSelectionModel
 /// <summary>
 /// Shown in the order detail sidebar / confirmation email.
 /// </summary>
-public class MarketPickupSummaryModel : BaseNopModel
+public record MarketPickupSummaryModel : BaseNopModel
 {
     public bool HasPickup { get; set; }
     public string MarketName { get; set; } = string.Empty;

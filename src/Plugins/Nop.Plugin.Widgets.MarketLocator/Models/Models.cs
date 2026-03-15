@@ -11,7 +11,7 @@ public record MarketLocationListModel : BasePagedListModel<MarketLocationModel> 
 
 // ── Admin create / edit ─────────────────────────────────────────────────────
 
-public class MarketLocationModel : BaseNopEntityModel
+public record MarketLocationModel : BaseNopEntityModel
 {
     [NopResourceDisplayName("Plugins.Widgets.MarketLocator.Fields.Name")]
     [Required, MaxLength(200)]
@@ -79,7 +79,7 @@ public class MarketTeaserModel
 
 // ── Settings ────────────────────────────────────────────────────────────────
 
-public class MarketLocatorSettingsModel : BaseNopModel
+public record MarketLocatorSettingsModel : BaseNopModel
 {
     [NopResourceDisplayName("Plugins.Widgets.MarketLocator.Settings.AzureMapsKey")]
     public string AzureMapsKey { get; set; } = string.Empty;

@@ -50,9 +50,12 @@ public static class MarketDateHelper
                 // next year, not this January (which has already passed).
                 if (dt.Date < today && year == today.Year)
                 {
-                    // Re-try with next year before giving up.
-                    if (TryParseDate(d, year + 1, out var nextYearDt) && nextYearDt.Date >= today)
-                        return true;
+                    // Only roll over if the current month is late (Nov/Dec) and the parsed month is early (Jan/Feb/Mar)
+                    if (today.Month >= 11 && dt.Month <= 3)
+                    {
+                        if (TryParseDate(d, year + 1, out var nextYearDt) && nextYearDt.Date >= today)
+                            return true;
+                    }
 
                     return false;
                 }

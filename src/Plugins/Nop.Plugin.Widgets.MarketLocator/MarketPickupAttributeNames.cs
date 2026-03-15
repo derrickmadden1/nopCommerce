@@ -1,4 +1,4 @@
-namespace Nop.Plugin.Widgets.MarketLocator;
+﻿namespace Nop.Plugin.Widgets.MarketLocator;
 
 /// <summary>
 /// Centralised key names for GenericAttribute storage on orders and customers.
@@ -11,7 +11,7 @@ public static class MarketPickupAttributeNames
     /// <summary>int — Id of the chosen MarketLocation.</summary>
     public const string OrderPickupMarketId   = "MarketLocator.PickupMarketId";
 
-    /// <summary>string — Display name snapshot, e.g. "Downtown Farmers Market".</summary>
+    /// <summary>string — Display name snapshot, e.g. "Downtown market".</summary>
     public const string OrderPickupMarketName = "MarketLocator.PickupMarketName";
 
     /// <summary>string — Chosen date string, e.g. "Sat, Mar 21".</summary>

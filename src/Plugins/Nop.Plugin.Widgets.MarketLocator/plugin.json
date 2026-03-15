@@ -3,9 +3,9 @@
   "FriendlyName": "Market Locator",
   "SystemName": "Widgets.MarketLocator",
   "Version": "1.0.0",
-  "SupportedVersions": [ "4.70" ],
-  "Author": "Your Store",
+  "SupportedVersions": [ "5.00" ],
+  "Author": "Rose Cottage Croft",
   "DisplayOrder": 1,
   "FileName": "Nop.Plugin.Widgets.MarketLocator.dll",
-  "Description": "Displays an interactive map of farmers market / pop-up locations and upcoming dates."
+  "Description": "Displays an interactive map of market / pop-up locations and upcoming dates."
 }

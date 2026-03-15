@@ -1,57 +1,111 @@
-using Nop.Core;
+﻿using Nop.Core;
+using Nop.Core.Domain.Common;
+using Nop.Core.Domain.Orders;
+using Nop.Core.Domain.Shipping;
+using Nop.Plugin.Widgets.MarketLocator.Components;
+using Nop.Plugin.Widgets.MarketLocator.Services;
 using Nop.Services.Cms;
 using Nop.Services.Configuration;
+using Nop.Services.Helpers;
 using Nop.Services.Localization;
 using Nop.Services.Plugins;
+using Nop.Services.Shipping;
+using Nop.Services.Shipping.Pickup;
+using Nop.Services.Shipping.Tracking;
 using Nop.Web.Framework.Infrastructure;
 
 namespace Nop.Plugin.Widgets.MarketLocator;
 
-public class MarketLocatorPlugin : BasePlugin, IWidgetPlugin
+public class MarketLocatorPlugin : BasePlugin, IWidgetPlugin, IPickupPointProvider
 {
     private readonly ISettingService _settingService;
     private readonly ILocalizationService _localizationService;
     private readonly IWebHelper _webHelper;
+    private readonly IMarketLocationService _locationService;
 
     public MarketLocatorPlugin(
         ISettingService settingService,
         ILocalizationService localizationService,
-        IWebHelper webHelper)
+        IWebHelper webHelper,
+        IMarketLocationService locationService)
     {
         _settingService = settingService;
         _localizationService = localizationService;
         _webHelper = webHelper;
+        _locationService = locationService;
     }
 
     public bool HideInWidgetList => false;
 
-    public string GetWidgetViewComponentName(string widgetZone) => widgetZone switch
+    public Type GetWidgetViewComponent(string widgetZone)
     {
-        // Homepage teaser bar
-        PublicWidgetZones.HomepageTop                  => "MarketTeaser",
+        if (widgetZone.Equals(PublicWidgetZones.HomepageTop, StringComparison.InvariantCultureIgnoreCase))
+            return typeof(MarketTeaserViewComponent);
 
-        // Checkout: location + date picker (injected when Market Pickup is chosen)
-        "checkout_shipping_method_buttons"             => "MarketPickupSelector",
+        if (widgetZone.Equals(PublicWidgetZones.CheckoutShippingAddressTop, StringComparison.InvariantCultureIgnoreCase))
+            return typeof(MarketPickupSelectorViewComponent);
 
-        // Public order detail / confirmation page
-        PublicWidgetZones.OrderSummaryContentAfter     => "MarketPickupSummary",
+        if (widgetZone.Equals(PublicWidgetZones.OrderSummaryContentAfter, StringComparison.InvariantCultureIgnoreCase))
+            return typeof(MarketPickupSummaryViewComponent);
 
-        // Admin order detail sidebar
-        "admin_order_details_info_right"               => "MarketPickupSummary",
+        if (widgetZone.Equals("admin_order_details_info_right", StringComparison.InvariantCultureIgnoreCase))
+            return typeof(MarketPickupSummaryViewComponent);
 
-        _                                              => "MarketTeaser",
-    };
+        return typeof(MarketTeaserViewComponent);
+    }
 
-    public Task<IList<string>> GetWidgetZonesAsync() =>
-        Task.FromResult<IList<string>>(new List<string>
+    public Task<IList<string>> GetWidgetZonesAsync()
+    {
+        return Task.FromResult<IList<string>>(new List<string>
         {
             PublicWidgetZones.HomepageTop,
-            "checkout_shipping_method_buttons",
+            PublicWidgetZones.CheckoutShippingAddressTop,
             PublicWidgetZones.OrderSummaryContentAfter,
             "admin_order_details_info_right",
         });
+    }
+
+    // ── IPickupPointProvider ────────────────────────────────────────
+
+    public async Task<GetPickupPointsResponse> GetPickupPointsAsync(IList<ShoppingCartItem> cart, Address address)
+    {
+        var response = new GetPickupPointsResponse();
+
+        // Only offer pickup if there are published markets with upcoming dates.
+        var markets = await _locationService.GetAllAsync(showUnpublished: false);
+        var activeMarkets = markets
+            .Where(m => MarketDateHelper.HasFutureDates(m.UpcomingDates))
+            .ToList();
+
+        if (!activeMarkets.Any())
+            return response;
+
+        foreach (var market in activeMarkets)
+        {
+            response.PickupPoints.Add(new PickupPoint
+            {
+                Id = market.Id.ToString(),
+                Name = market.Name,
+                Description = market.Hours,
+                Address = market.Address,
+                City = market.City,
+                Latitude = market.Latitude,
+                Longitude = market.Longitude,
+                PickupFee = 0m,
+                ProviderSystemName = "Widgets.MarketLocator"
+            });
+        }
+
+        return response;
+    }
+
+    public Task<IShipmentTracker> GetShipmentTrackerAsync() =>
+        Task.FromResult<IShipmentTracker>(null!);
+
+    // ── BasePlugin ────────────────────────────────────────────────────────────
 
     public override string GetConfigurationPageUrl() =>
+
         $"{_webHelper.GetStoreLocation()}Admin/MarketLocatorAdmin/Configure";
 
     public override async Task InstallAsync()
@@ -86,7 +140,7 @@ public class MarketLocatorPlugin : BasePlugin, IWidgetPlugin
             ["Plugins.Widgets.MarketLocator.Settings.TeaserMaxItems"]   = "Teaser: max markets to show (1–5)",
             // Pickup shipping
             ["Plugins.Shipping.MarketPickup.Name"]        = "Market Pickup",
-            ["Plugins.Shipping.MarketPickup.Description"] = "Collect at one of our farmers markets — free.",
+            ["Plugins.Shipping.MarketPickup.Description"] = "Collect at one of our markets — free.",
         });
 
         await base.InstallAsync();

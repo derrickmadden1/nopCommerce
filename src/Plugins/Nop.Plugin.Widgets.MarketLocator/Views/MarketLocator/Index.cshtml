@@ -5,11 +5,33 @@
     var zoom = (int)ViewBag.DefaultZoom;
     var lat = (decimal)ViewBag.DefaultLat;
     var lng = (decimal)ViewBag.DefaultLng;
-}
 
-@section head {
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
-    <link rel="stylesheet" href="~/Plugins/Widgets.MarketLocator/css/market-map.css" />
+    NopHtml.AppendCssFileParts("https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css");
+    NopHtml.AppendCssFileParts("~/Plugins/Widgets.MarketLocator/wwwroot/css/market-map.css");
+
+    NopHtml.AppendScriptParts(ResourceLocation.Footer, "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js");
+    if (hasAzure)
+    {
+        NopHtml.AppendScriptParts(ResourceLocation.Footer, "https://atlas.microsoft.com/sdk/javascript/mapcontrol/2/atlas.min.js");
+    }
+
+    var useAzure = hasAzure ? "true" : "false";
+    var inlineConfig = $@"
+        <script>
+        window.MarketLocatorConfig = {{
+            dataUrl: '/market-locations/data',
+            useAzure: {useAzure},
+            azureKey: '{azureKey}',
+            defaultLat: {lat.ToString(System.Globalization.CultureInfo.InvariantCulture)},
+            defaultLng: {lng.ToString(System.Globalization.CultureInfo.InvariantCulture)},
+            defaultZoom: {zoom}
+        }};
+        console.log('MarketLocator: Config injected.');
+        document.getElementById('market-count').textContent = 'Config injected, waiting for script...';
+        </script>
+    ";
+    NopHtml.AddInlineScriptParts(ResourceLocation.Footer, inlineConfig);
+    NopHtml.AddScriptParts(ResourceLocation.Footer, "~/Plugins/Widgets.MarketLocator/wwwroot/js/market-map.js");
 }
 
 <div class="market-locator-page">
@@ -18,7 +40,7 @@
         <div class="market-hero__label">📍 Market Locations</div>
         <h1 class="market-hero__title">Find Us at a Market Near You</h1>
         <p class="market-hero__sub">
-            We're out in the community every week. Come taste before you buy and bring the family.
+            We're out in the community most weeks. Come and see us, discover the fragrances before you buy and bring the family.
         </p>
     </div>
 
@@ -49,22 +71,3 @@
     </div>
 
 </div>
-
-@section scripts {
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-    @if (hasAzure)
-    {
-        <script src="https://atlas.microsoft.com/sdk/javascript/mapcontrol/2/atlas.min.js"></script>
-    }
-    <script>
-        window.MarketLocatorConfig = {
-            dataUrl: '/market-locations/data',
-            useAzure: @(hasAzure ? "true" : "false"),
-            azureKey: '@azureKey',
-            defaultLat: @lat,
-            defaultLng: @lng,
-            defaultZoom: @zoom
-        };
-    </script>
-    <script src="~/Plugins/Widgets.MarketLocator/js/market-map.js"></script>
-}

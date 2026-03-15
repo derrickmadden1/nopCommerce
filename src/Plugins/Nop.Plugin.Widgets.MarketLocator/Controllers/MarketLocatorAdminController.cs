@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Nop.Plugin.Widgets.MarketLocator.Domain;
 using Nop.Plugin.Widgets.MarketLocator.Models;
 using Nop.Plugin.Widgets.MarketLocator.Services;
@@ -41,7 +42,7 @@ public class MarketLocatorAdminController : BasePluginController
 
     public async Task<IActionResult> Configure()
     {
-        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManagePlugins))
+        if (!await _permissionService.AuthorizeAsync(StandardPermission.Configuration.MANAGE_PLUGINS))
             return AccessDeniedView();
 
         var settings = await _settingService.LoadSettingAsync<MarketLocatorSettings>();
@@ -61,7 +62,7 @@ public class MarketLocatorAdminController : BasePluginController
     [HttpPost]
     public async Task<IActionResult> Configure(MarketLocatorSettingsModel model)
     {
-        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManagePlugins))
+        if (!await _permissionService.AuthorizeAsync(StandardPermission.Configuration.MANAGE_PLUGINS))
             return AccessDeniedView();
 
         if (!ModelState.IsValid)
@@ -87,13 +88,16 @@ public class MarketLocatorAdminController : BasePluginController
 
     public async Task<IActionResult> List()
     {
-        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManagePlugins))
+        if (!await _permissionService.AuthorizeAsync(StandardPermission.Configuration.MANAGE_PLUGINS))
             return AccessDeniedView();
 
         var locations = await _locationService.GetAllAsync(showUnpublished: true);
-        var model = new MarketLocationListModel();
-        model.Data = locations.Select(MapToModel);
-        model.Total = locations.TotalCount;
+        var model = new MarketLocationListModel
+        {
+            Data = locations.Select(MapToModel),
+            RecordsTotal = locations.TotalCount,
+            RecordsFiltered = locations.TotalCount
+        };
 
         return View("~/Plugins/Widgets.MarketLocator/Views/Admin/List.cshtml", model);
     }
@@ -109,17 +113,43 @@ public class MarketLocatorAdminController : BasePluginController
     [HttpPost]
     public async Task<IActionResult> Create(MarketLocationModel model)
     {
-        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManagePlugins))
+        if (!await _permissionService.AuthorizeAsync(StandardPermission.Configuration.MANAGE_PLUGINS))
             return AccessDeniedView();
 
         if (!ModelState.IsValid)
+        {
+            // Re-populate frequencies for the dropdown if we return the view
+            model.AvailableFrequencies = new List<SelectListItem>
+            {
+                new("Weekly",     "Weekly"),
+                new("Bi-weekly",  "Bi-weekly"),
+                new("Monthly",    "Monthly"),
+                new("One-time",   "One-time"),
+            };
             return View("~/Plugins/Widgets.MarketLocator/Views/Admin/CreateOrEdit.cshtml", model);
+        }
 
-        var entity = MapToEntity(model, new MarketLocation());
-        await _locationService.InsertAsync(entity);
+        try
+        {
+            var entity = MapToEntity(model, new MarketLocation());
+            await _locationService.InsertAsync(entity);
 
-        _notificationService.SuccessNotification("Market location created.");
-        return RedirectToAction(nameof(List));
+            _notificationService.SuccessNotification("Market location created.");
+            return RedirectToAction(nameof(List));
+        }
+        catch (Exception ex)
+        {
+            _notificationService.ErrorNotification($"Error creating location: {ex.Message}");
+            // Re-populate frequencies for the dropdown if we return the view
+            model.AvailableFrequencies = new List<SelectListItem>
+            {
+                new("Weekly",     "Weekly"),
+                new("Bi-weekly",  "Bi-weekly"),
+                new("Monthly",    "Monthly"),
+                new("One-time",   "One-time"),
+            };
+            return View("~/Plugins/Widgets.MarketLocator/Views/Admin/CreateOrEdit.cshtml", model);
+        }
     }
 
     // ── Edit ──────────────────────────────────────────────────────────────────
@@ -136,20 +166,46 @@ public class MarketLocatorAdminController : BasePluginController
     [HttpPost]
     public async Task<IActionResult> Edit(MarketLocationModel model)
     {
-        if (!await _permissionService.AuthorizeAsync(StandardPermissionProvider.ManagePlugins))
+        if (!await _permissionService.AuthorizeAsync(StandardPermission.Configuration.MANAGE_PLUGINS))
             return AccessDeniedView();
 
         var location = await _locationService.GetByIdAsync(model.Id);
         if (location is null) return NotFound();
 
         if (!ModelState.IsValid)
+        {
+            // Re-populate frequencies for the dropdown if we return the view
+            model.AvailableFrequencies = new List<SelectListItem>
+            {
+                new("Weekly",     "Weekly"),
+                new("Bi-weekly",  "Bi-weekly"),
+                new("Monthly",    "Monthly"),
+                new("One-time",   "One-time"),
+            };
             return View("~/Plugins/Widgets.MarketLocator/Views/Admin/CreateOrEdit.cshtml", model);
+        }
 
-        MapToEntity(model, location);
-        await _locationService.UpdateAsync(location);
+        try
+        {
+            MapToEntity(model, location);
+            await _locationService.UpdateAsync(location);
 
-        _notificationService.SuccessNotification("Market location updated.");
-        return RedirectToAction(nameof(List));
+            _notificationService.SuccessNotification("Market location updated.");
+            return RedirectToAction(nameof(List));
+        }
+        catch (Exception ex)
+        {
+            _notificationService.ErrorNotification($"Error updating location: {ex.Message}");
+            // Re-populate frequencies for the dropdown if we return the view
+            model.AvailableFrequencies = new List<SelectListItem>
+            {
+                new("Weekly",     "Weekly"),
+                new("Bi-weekly",  "Bi-weekly"),
+                new("Monthly",    "Monthly"),
+                new("One-time",   "One-time"),
+            };
+            return View("~/Plugins/Widgets.MarketLocator/Views/Admin/CreateOrEdit.cshtml", model);
+        }
     }
 
     // ── Delete ────────────────────────────────────────────────────────────────
@@ -192,8 +248,9 @@ public class MarketLocatorAdminController : BasePluginController
         e.Hours = m.Hours;
         // Convert textarea newlines → pipe-delimited storage
         e.UpcomingDates = string.Join("|",
-            m.UpcomingDatesRaw.Split('\n', StringSplitOptions.RemoveEmptyEntries)
-                              .Select(d => d.Trim()));
+            (m.UpcomingDatesRaw ?? string.Empty)
+                .Split('\n', StringSplitOptions.RemoveEmptyEntries)
+                .Select(d => d.Trim()));
         e.Frequency = m.Frequency;
         e.Published = m.Published;
         e.DisplayOrder = m.DisplayOrder;

@@ -1,15 +1,235 @@
 @model Nop.Plugin.Widgets.MarketLocator.Models.MarketPickupSelectorModel
 @using Nop.Plugin.Widgets.MarketLocator.Models
 
-@if (!Model.Markets.Any())
-{
-    <div class="market-pickup-unavailable">
-        <p>No market pickup locations are currently available. Please choose another shipping method.</p>
-    </div>
-    return;
+<div class="market-locator-checkout-ui">
+
+<style>
+/* Scoped styles for the top-level picker */
+.ml-method-selector {
+    background: #fdfbf7;
+    border: 1px solid #ede5d3;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+.ml-method-selector h3 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    font-size: 1.2rem;
+    color: #3d2b1f;
+}
+.ml-method-option {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 0;
+    cursor: pointer;
+    border-bottom: 1px solid #ede5d3;
+}
+.ml-method-option:last-child {
+    border-bottom: none;
+}
+.ml-method-option input[type="radio"] {
+    margin-right: 1rem;
+    transform: scale(1.2);
+}
+.ml-method-option strong {
+    font-size: 1.05rem;
+    color: #4a6741;
 }
 
-<div class="market-pickup-selector" id="market-pickup-selector" data-selected-id="@Model.SelectedMarketId">
+/* ── Checkout Delivery Address Picker Styles ──────────────────── */
+.market-pickup-selector {
+    background: #fdfbf7;
+    border: 1px solid #ede5d3;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.pickup-selector-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #ede5d3;
+}
+.pickup-icon {
+    font-size: 2rem;
+}
+.pickup-selector-header div {
+    display: flex;
+    flex-direction: column;
+}
+.pickup-selector-header strong {
+    font-size: 1.25rem;
+    color: #3d2b1f;
+}
+.pickup-selector-header span {
+    font-size: 0.9rem;
+    color: #8c7b6b;
+}
+
+.pickup-step {
+    margin-bottom: 2rem;
+}
+.pickup-step-label {
+    font-weight: 600;
+    color: #3d2b1f;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.step-num {
+    background: #4a6741;
+    color: white;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.pickup-market-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+}
+.pickup-market-card {
+    border: 2px solid #ede5d3;
+    border-radius: 8px;
+    padding: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    background: white;
+}
+.pickup-market-card:hover {
+    border-color: #6a8f60;
+    background: #fdfdfc;
+}
+.pickup-market-card.is-selected {
+    border-color: #4a6741;
+    background: #f4f8f3;
+}
+.pmc-radio input {
+    margin-top: 0.25rem;
+    transform: scale(1.2);
+}
+.pmc-body {
+    flex: 1;
+    cursor: pointer;
+}
+.pmc-name {
+    font-weight: 700;
+    color: #3d2b1f;
+    margin-bottom: 0.25rem;
+    font-size: 1.05rem;
+}
+.pmc-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    font-size: 0.85rem;
+    color: #8c7b6b;
+}
+
+.pickup-date-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+.pickup-date-btn {
+    border: 2px solid #ede5d3;
+    background: white;
+    padding: 0.75rem 1.25rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    color: #3d2b1f;
+    transition: all 0.2s ease;
+}
+.pickup-date-btn:hover {
+    border-color: #6a8f60;
+    background: #fafafa;
+}
+.pickup-date-btn.is-selected {
+    background: #4a6741;
+    border-color: #4a6741;
+    color: white;
+}
+
+.is-hidden {
+    display: none !important;
+}
+
+.pickup-confirmation {
+    margin-top: 1.5rem;
+    padding: 1rem;
+    background: #eaf3e8;
+    border: 1px solid #6a8f60;
+    border-radius: 6px;
+    color: #4a6741;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+.pickup-check {
+    background: #4a6741;
+    color: white;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+}
+
+.pickup-validation-msg {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    background: #fde8e8;
+    color: #c0392b;
+    border-radius: 6px;
+    font-weight: 500;
+}
+</style>
+
+<div class="ml-method-selector" id="ml-method-selector" style="display: none;">
+    <h3>How would you like to receive your order?</h3>
+    
+    <label class="ml-method-option" id="ml-opt-shipping">
+        <input type="radio" name="ml_delivery_type" value="shipping" checked />
+        <span><strong>Ship to my address</strong></span>
+    </label>
+    
+    <label class="ml-method-option" id="ml-opt-farm" style="display: none;">
+        <input type="radio" name="ml_delivery_type" value="farm" />
+        <span><strong>Pick up at Rose Cottage Croft</strong></span>
+    </label>
+
+    <label class="ml-method-option" id="ml-opt-market">
+        <input type="radio" name="ml_delivery_type" value="market" />
+        <span><strong>Pick up at a market</strong></span>
+    </label>
+</div>
+
+@if (!Model.Markets.Any())
+{
+    <div class="market-pickup-unavailable" id="market-pickup-unavailable" style="display: none;">
+        <p>No market pickup locations are currently available with upcoming dates.</p>
+    </div>
+}
+
+<div class="market-pickup-selector" id="market-pickup-selector" style="display: none;" data-selected-id="@Model.SelectedMarketId">
 
     <div class="pickup-selector-header">
         <span class="pickup-icon">🥕</span>
@@ -93,102 +313,246 @@
     <input type="hidden" id="pickup-date-val" value="@Model.SelectedDate" />
 </div>
 
-@section scripts {
 <script>
 (function () {
-    const selector   = document.getElementById('market-pickup-selector');
-    if (!selector) return;
+    // ── Wait for DOM to be ready via a small delay ──
+    setTimeout(function () {
+        const nativePickupBox = document.querySelector('.pickup-in-store');
+        const nativePickupCb  = document.getElementById('PickupInStore');
+        const nativeSelectDiv = document.querySelector('.select-pickup-point');
+        const nativeSelect    = document.getElementById('pickup-points-select');
+        const nativeHiddenId  = document.getElementById('pickup-points-id');
 
-    const stepDate   = document.getElementById('pickup-step-date');
-    const confirm    = document.getElementById('pickup-confirmation');
-    const confirmTxt = document.getElementById('pickup-confirmation-text');
-    const valMsg     = document.getElementById('pickup-validation-msg');
-    const hiddenId   = document.getElementById('pickup-market-id-val');
-    const hiddenDate = document.getElementById('pickup-date-val');
+        const topContainer    = document.getElementById('ml-method-selector');
+        const marketUI        = document.getElementById('market-pickup-selector');
+        const unavailableMsg  = document.getElementById('market-pickup-unavailable');
 
-    // ── Location selection ──────────────────────────────────────────────────
-    selector.querySelectorAll('.pickup-market-card').forEach(card => {
-        card.addEventListener('click', () => {
-            const marketId = card.dataset.marketId;
+        const optShipping     = document.querySelector('input[name="ml_delivery_type"][value="shipping"]');
+        const optFarm         = document.querySelector('input[name="ml_delivery_type"][value="farm"]');
+        const optMarket       = document.querySelector('input[name="ml_delivery_type"][value="market"]');
+        
+        // Hide native pickup checkbox
+        if (nativePickupBox) nativePickupBox.style.display = 'none';
 
-            // Update card styles
-            selector.querySelectorAll('.pickup-market-card').forEach(c =>
-                c.classList.remove('is-selected'));
-            card.classList.add('is-selected');
-            card.querySelector('input[type=radio]').checked = true;
-
-            // Show date step, hide other market's dates
-            selector.querySelectorAll('.pickup-date-group').forEach(g =>
-                g.classList.add('is-hidden'));
-            document.getElementById(`pickup-dates-${marketId}`)?.classList.remove('is-hidden');
-            stepDate.classList.remove('is-hidden');
-
-            // Reset date selection
-            selector.querySelectorAll('.pickup-date-btn').forEach(b =>
-                b.classList.remove('is-selected'));
-            hiddenId.value   = marketId;
-            hiddenDate.value = '';
-            confirm.classList.add('is-hidden');
-        });
-    });
-
-    // ── Date selection ──────────────────────────────────────────────────────
-    selector.querySelectorAll('.pickup-date-btn').forEach(btn => {
-        btn.addEventListener('click', async () => {
-            const marketId = btn.dataset.marketId;
-            const date     = btn.dataset.date;
-            const marketName = selector.querySelector(`[data-market-id="${marketId}"] .pmc-name`)?.textContent?.trim();
-
-            selector.querySelectorAll('.pickup-date-btn').forEach(b =>
-                b.classList.remove('is-selected'));
-            btn.classList.add('is-selected');
-
-            hiddenDate.value = date;
-            confirmTxt.textContent = `${date} at ${marketName}`;
-            confirm.classList.remove('is-hidden');
-            valMsg.classList.add('is-hidden');
-
-            // Persist to server session
-            await saveSelection(parseInt(marketId), date);
-        });
-    });
-
-    // ── Save to server ──────────────────────────────────────────────────────
-    async function saveSelection(marketId, date) {
-        try {
-            await fetch('/market-pickup/select', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'RequestVerificationToken': document
-                        .querySelector('input[name="__RequestVerificationToken"]')?.value ?? ''
-                },
-                body: JSON.stringify({ marketId, pickupDate: date })
+        // Examine native options to see if we have non-market options (e.g. Farm)
+        let hasFarmOption = false;
+        if (nativeSelect) {
+            Array.from(nativeSelect.options).forEach(opt => {
+                if (opt.value && !opt.value.includes('Widgets.MarketLocator')) {
+                    hasFarmOption = true;
+                }
             });
-        } catch (e) {
-            console.warn('Could not save pickup selection', e);
-        }
-    }
-
-    // ── Intercept checkout "Continue" button to validate ──────────────────
-    // nopCommerce fires shippingMethodSelected before advancing steps.
-    // Hook the shipping method form submit instead.
-    const shippingForm = document.querySelector('#shipping-method-form, form.shipping-method-form');
-    if (shippingForm) {
-        shippingForm.addEventListener('submit', function (e) {
-            const marketPickupRadio = shippingForm.querySelector(
-                'input[type=radio][value*="MarketPickup"]:checked');
-            if (!marketPickupRadio) return; // Another method selected — let it through
-
-            const mId   = hiddenId.value;
-            const mDate = hiddenDate.value;
-            if (!mId || mId === '0' || !mDate) {
-                e.preventDefault();
-                valMsg.classList.remove('is-hidden');
-                selector.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else if (nativeHiddenId) {
+            if (nativeHiddenId.value && !nativeHiddenId.value.includes('Widgets.MarketLocator')) {
+                hasFarmOption = true;
             }
-        }, true);
-    }
+        }
+        
+        if (hasFarmOption) {
+            const farmLabel = document.getElementById('ml-opt-farm');
+            if (farmLabel) farmLabel.style.display = 'flex';
+        }
+        
+        
+        // --- TRANSPLANT CUSTOM UI OUTSIDE THE HIDDEN ZONE ---
+        // NopCommerce natively completely hides #shipping-addresses-form when Pickup is selected.
+        // Because we are injected INSIDE it, we get wiped out. 
+        // We must move our UI to sit immediately BEFORE the #shipping-addresses-form.
+        const shippingAddressesForm = document.getElementById('shipping-addresses-form');
+        if (shippingAddressesForm && shippingAddressesForm.parentNode) {
+            if (topContainer) shippingAddressesForm.parentNode.insertBefore(topContainer, shippingAddressesForm);
+            if (unavailableMsg) shippingAddressesForm.parentNode.insertBefore(unavailableMsg, shippingAddressesForm);
+            if (marketUI) shippingAddressesForm.parentNode.insertBefore(marketUI, shippingAddressesForm);
+        }
+
+        // Show our top UI
+        if (topContainer) topContainer.style.display = 'block';
+
+        // The native forms Nopcommerce uses for address selection
+        // We only hide the internal elements, NOT #shipping-addresses-form which contains US!
+        const addressGrid    = document.querySelector('.select-shipping-address');
+        const addressNewForm = document.getElementById('shippingaddress-new-form');
+
+        function updateNativeState(mode) {
+            if (mode === 'shipping') {
+                if (nativePickupCb && nativePickupCb.checked) {
+                    nativePickupCb.checked = false;
+                    if (typeof togglePickupInStore === 'function') togglePickupInStore(nativePickupCb);
+                }
+                
+                // Show the standard address forms
+                if (addressGrid) addressGrid.style.display = '';
+                if (addressNewForm)  addressNewForm.style.display = '';
+
+                if (nativeSelectDiv) nativeSelectDiv.style.display = 'none';
+                if (marketUI) marketUI.style.display = 'none';
+                if (unavailableMsg) unavailableMsg.style.display = 'none';
+            } else if (mode === 'farm') {
+                if (nativePickupCb && !nativePickupCb.checked) {
+                    nativePickupCb.checked = true;
+                    if (typeof togglePickupInStore === 'function') togglePickupInStore(nativePickupCb);
+                }
+
+                // Hide the standard address forms
+                if (addressGrid) addressGrid.style.display = 'none';
+                if (addressNewForm)  addressNewForm.style.display = 'none';
+
+                if (marketUI) marketUI.style.display = 'none';
+                if (unavailableMsg) unavailableMsg.style.display = 'none';
+                
+                // Show native dropdown but hide market options from it
+                if (nativeSelectDiv) nativeSelectDiv.style.display = 'block';
+                if (nativeSelect) {
+                    Array.from(nativeSelect.options).forEach(opt => {
+                        if (opt.value.includes('Widgets.MarketLocator')) {
+                            opt.style.display = 'none';
+                        } else {
+                            opt.style.display = 'block';
+                            nativeSelect.value = opt.value; // Select a valid farm
+                        }
+                    });
+                }
+            } else if (mode === 'market') {
+                if (nativePickupCb && !nativePickupCb.checked) {
+                    nativePickupCb.checked = true;
+                    if (typeof togglePickupInStore === 'function') togglePickupInStore(nativePickupCb);
+                }
+
+                // Hide the standard address forms
+                if (addressGrid) addressGrid.style.display = 'none';
+                if (addressNewForm)  addressNewForm.style.display = 'none';
+
+                // Hide native dropdown
+                if (nativeSelectDiv) nativeSelectDiv.style.display = 'none';
+                
+                if (marketUI) {
+                    marketUI.style.display = 'block';
+                } else if (unavailableMsg) {
+                    unavailableMsg.style.display = 'block';
+                }
+            }
+        }
+
+        // Listen for standard radio changes
+        document.querySelectorAll('input[name="ml_delivery_type"]').forEach(radio => {
+            radio.addEventListener('change', (e) => updateNativeState(e.target.value));
+        });
+
+        // Initial sync
+        if (nativePickupCb && nativePickupCb.checked) {
+            let selectedMarket = false;
+            if (nativeSelect && nativeSelect.value.includes('Widgets.MarketLocator')) selectedMarket = true;
+            if (nativeHiddenId && nativeHiddenId.value.includes('Widgets.MarketLocator')) selectedMarket = true;
+
+            if (selectedMarket) {
+                if (optMarket) optMarket.checked = true;
+                updateNativeState('market');
+            } else if (hasFarmOption) {
+                if (optFarm) optFarm.checked = true;
+                updateNativeState('farm');
+            } else {
+                if (optShipping) optShipping.checked = true;
+                updateNativeState('shipping');
+            }
+        } else {
+            if (optShipping) optShipping.checked = true;
+            updateNativeState('shipping');
+        }
+
+        // ── Hook Market Form interactions ──
+        if (!marketUI) return;
+
+        const stepDate   = document.getElementById('pickup-step-date');
+        const confirm    = document.getElementById('pickup-confirmation');
+        const confirmTxt = document.getElementById('pickup-confirmation-text');
+        const valMsg     = document.getElementById('pickup-validation-msg');
+        const hiddenId   = document.getElementById('pickup-market-id-val');
+        const hiddenDate = document.getElementById('pickup-date-val');
+
+        marketUI.querySelectorAll('.pickup-market-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const marketId = card.dataset.marketId;
+
+                // Sync with NopCommerce native dropdown
+                if (nativeSelect) {
+                    Array.from(nativeSelect.options).forEach(opt => {
+                        if (opt.value === `${marketId}___Widgets.MarketLocator`) {
+                            nativeSelect.value = opt.value;
+                        }
+                    });
+                }
+
+                marketUI.querySelectorAll('.pickup-market-card').forEach(c => c.classList.remove('is-selected'));
+                card.classList.add('is-selected');
+                card.querySelector('input[type=radio]').checked = true;
+
+                marketUI.querySelectorAll('.pickup-date-group').forEach(g => g.classList.add('is-hidden'));
+                document.getElementById(`pickup-dates-${marketId}`)?.classList.remove('is-hidden');
+                stepDate.classList.remove('is-hidden');
+
+                marketUI.querySelectorAll('.pickup-date-btn').forEach(b => b.classList.remove('is-selected'));
+                hiddenId.value   = marketId;
+                hiddenDate.value = '';
+                confirm.classList.add('is-hidden');
+            });
+        });
+
+        marketUI.querySelectorAll('.pickup-date-btn').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const marketId = btn.dataset.marketId;
+                const date     = btn.dataset.date;
+                const marketName = marketUI.querySelector(`[data-market-id="${marketId}"] .pmc-name`)?.textContent?.trim();
+
+                marketUI.querySelectorAll('.pickup-date-btn').forEach(b => b.classList.remove('is-selected'));
+                btn.classList.add('is-selected');
+
+                hiddenDate.value = date;
+                confirmTxt.textContent = `${date} at ${marketName}`;
+                confirm.classList.remove('is-hidden');
+                valMsg.classList.add('is-hidden');
+
+                await saveSelection(parseInt(marketId), date);
+            });
+        });
+
+        async function saveSelection(marketId, date) {
+            try {
+                await fetch('/market-pickup/select', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value ?? ''
+                    },
+                    body: JSON.stringify({ marketId, pickupDate: date })
+                });
+                
+                // Auto-forward to the next step
+                const nextBtn = document.getElementById('shippingaddress-next-button');
+                if (nextBtn) {
+                     nextBtn.click();
+                }
+
+            } catch (e) {
+                console.warn('Could not save pickup selection', e);
+            }
+        }
+
+        // Block NopCommerce address submission if they selected market but no date
+        const shippingForm = document.getElementById('shipping-form');
+        if (shippingForm) {
+            shippingForm.addEventListener('submit', function (e) {
+                if (optMarket.checked) {
+                    const mId   = hiddenId.value;
+                    const mDate = hiddenDate.value;
+                    if (!mId || mId === '0' || !mDate) {
+                        e.preventDefault();
+                        valMsg.classList.remove('is-hidden');
+                        marketUI.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }
+            }, true);
+        }
+    }, 100);
 }());
 </script>
-}
+</div>

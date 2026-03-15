@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
     <Copyright>Copyright © Your Store</Copyright>
     <RootNamespace>Nop.Plugin.Widgets.MarketLocator</RootNamespace>
     <AssemblyName>Nop.Plugin.Widgets.MarketLocator</AssemblyName>
@@ -29,6 +29,9 @@
     <None Update="wwwroot\**\*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <Content Include="Views\**\*.cshtml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
 </Project>

@@ -70,22 +70,38 @@ public class MarketLocationService : IMarketLocationService
 
                 var status = ComputeStatus(dates, today);
 
-                return new MarketLocationDto
+                // Calculate an approximate Datetime for chronological sorting
+                DateTime sortDate = DateTime.MaxValue;
+                if (MarketDateHelper.TryParseDate(dates[0], today.Year, out var dt))
                 {
-                    Id         = m.Id,
-                    Name       = m.Name,
-                    Address    = m.Address,
-                    City       = m.City,
-                    Latitude   = (double)m.Latitude,
-                    Longitude  = (double)m.Longitude,
-                    Hours      = m.Hours,
-                    Dates      = dates.ToList(),
-                    Frequency  = m.Frequency,
-                    Status     = status,
+                    sortDate = dt;
+                    if (dt.Date < today.Date) sortDate = sortDate.AddYears(1);
+                }
+
+                return new
+                {
+                    Dto = new MarketLocationDto
+                    {
+                        Id         = m.Id,
+                        Name       = m.Name,
+                        Address    = m.Address,
+                        City       = m.City,
+                        Latitude   = (double)m.Latitude,
+                        Longitude  = (double)m.Longitude,
+                        Hours      = m.Hours,
+                        Dates      = dates.ToList(),
+                        Frequency  = m.Frequency,
+                        Status     = status,
+                    },
+                    SortDate = sortDate,
+                    DisplayOrder = m.DisplayOrder
                 };
             })
-            .Where(dto => dto is not null)
-            .Select(dto => dto!)
+            .Where(x => x != null)
+            .OrderBy(x => x!.SortDate)
+            .ThenBy(x => x!.DisplayOrder)
+            .ThenBy(x => x!.Dto.Name)
+            .Select(x => x!.Dto)
             .ToList();
     }
 
