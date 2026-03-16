@@ -1,0 +1,25 @@
+name: Weekly Azure Cleanup
+
+on:
+  schedule:
+    # Runs at 00:00 every Sunday
+    - cron: '0 0 * * 0'
+  workflow_dispatch: # Allows you to run it manually
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Force Scale Down & Delete Slots
+      run: |
+        echo "Ensuring App Service Plan is D1..."
+        az appservice plan update --name Default1 --resource-group Default-Web-NorthEurope --sku D1 || true
+        
+        echo "Checking for orphaned staging slots..."
+        # This will attempt to delete the 'staging' slot if it exists
+        az webapp slot delete --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --slot staging || echo "No staging slot found."
