@@ -108,11 +108,15 @@ jobs:
         echo "Scaling up to S1..."
         az appservice plan update --name Default1 --resource-group Default-Web-NorthEurope --sku S1
         
+        echo "Verifying Web App exists..."
+        az webapp show --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --query "state"
+        
         echo "Configuring Run-From-Package..."
-        az webapp config appsettings set --name ${{ vars.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --settings WEBSITE_RUN_FROM_PACKAGE="1"
+        az webapp config appsettings set --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --settings WEBSITE_RUN_FROM_PACKAGE="1"
         
         echo "Creating staging slot..."
-        az webapp slot create --name ${{ vars.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --slot staging
+        # We add the --configuration-source to ensure it clones your settings
+        az webapp deployment slot create --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --slot staging --configuration-source ${{ secrets.AZURE_WEBAPP_NAME }}
 
     - name: Deploy to Staging
       uses: azure/webapps-deploy@v3
