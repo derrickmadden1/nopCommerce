@@ -60,11 +60,17 @@ jobs:
         echo "Attempting to inject version: $VERSION_STR"
         
         if [ -f "$FOOTER_PATH" ]; then
-          # Using | as a delimiter in case the version string contains / or other chars
-          sed -i "s||$VERSION_STR|g" "$FOOTER_PATH"
-          echo "Success: Version injected into $FOOTER_PATH"
+          # Use Node.js to do a safe string replacement
+          node -e "
+            const fs = require('fs');
+            const path = '$FOOTER_PATH';
+            const content = fs.readFileSync(path, 'utf8');
+            const updated = content.replace('', '$VERSION_STR');
+            fs.writeFileSync(path, updated);
+          "
+          echo "Success: Version injected via Node."
         else
-          echo "Skip: Footer file not found at $FOOTER_PATH. Check your nopCommerce folder structure."
+          echo "Skip: Footer file not found at $FOOTER_PATH."
         fi
 
     - name: Zip Artifact
