@@ -170,9 +170,9 @@ jobs:
               "to": [{"email": "support@rosecottagecroft.co.uk"}]
             }],
             "from": {"email": "deployments@rosecottagecroft.co.uk},
-            "subject": "ALERT: Deployment Failed for ${{ args.AZURE_WEBAPP_NAME }}",
+            "subject": "ALERT: Deployment Failed for ${{ vars.AZURE_WEBAPP_NAME }}",
             "content": [{
               "type": "text/html",
-              "value": "The deployment for <b>${{ args.AZURE_WEBAPP_NAME }}</b> failed. The swap was aborted and the site scaled back to D1. Check logs: <a href=\"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\">GitHub Action Logs</a>"
+              "value": "The deployment for <b>${{ vars.AZURE_WEBAPP_NAME }}</b> failed. The swap was aborted and the site scaled back to D1. Check logs: <a href=\"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\">GitHub Action Logs</a>"
             }]
           }'
