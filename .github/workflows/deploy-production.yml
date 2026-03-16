@@ -32,12 +32,12 @@ jobs:
       shell: bash
       run: |
         # 1. Get Kudu Credentials for live site
-        creds=$(az webapp deployment list-publishing-credentials --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --query "[publishingUserName, publishingPassword]" -o tsv)
+        creds=$(az webapp deployment list-publishing-credentials --name ${{ vars.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --query "[publishingUserName, publishingPassword]" -o tsv)
         USER=$(echo "$creds" | sed -n '1p')
         PASS=$(echo "$creds" | sed -n '2p')
         
         # 2. Download Live configuration
-        curl -u "$USER:$PASS" -o ./live_plugins.json "https://${{ secrets.AZURE_WEBAPP_NAME }}.scm.azurewebsites.net/api/vfs/site/wwwroot/App_Data/plugins.json" || echo '{"InstalledPluginNames":[]}' > ./live_plugins.json
+        curl -u "$USER:$PASS" -o ./live_plugins.json "https://${{ vars.AZURE_WEBAPP_NAME }}.scm.azurewebsites.net/api/vfs/site/wwwroot/App_Data/plugins.json" || echo '{"InstalledPluginNames":[]}' > ./live_plugins.json
         
         # 3. Prune based on Live + Force Keep
         INSTALLED=$(jq -r '.InstalledPluginNames[] // empty' ./live_plugins.json)
@@ -74,7 +74,7 @@ jobs:
     # SECRETS ARE LEGAL IN THE ENVIRONMENT BLOCK
     environment: 
       name: Production
-      url: https://${{ secrets.AZURE_WEBAPP_NAME }}-staging.azurewebsites.net
+      url: https://${{ vars.AZURE_WEBAPP_NAME }}-staging.azurewebsites.net
     steps:
     - name: Download artifact
       uses: actions/download-artifact@v4
@@ -92,15 +92,15 @@ jobs:
         az appservice plan update --name Default1 --resource-group Default-Web-NorthEurope --sku S1
         
         echo "Configuring Run-From-Package..."
-        az webapp config appsettings set --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --settings WEBSITE_RUN_FROM_PACKAGE="1"
+        az webapp config appsettings set --name ${{ vars.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --settings WEBSITE_RUN_FROM_PACKAGE="1"
         
         echo "Creating staging slot..."
-        az webapp slot create --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --slot staging
+        az webapp slot create --name ${{ vars.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --slot staging
 
     - name: Deploy to Staging
       uses: azure/webapps-deploy@v3
       with:
-        app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
+        app-name: ${{ vars.AZURE_WEBAPP_NAME }}
         slot-name: 'staging'
         package: 'nop-app.zip'
 
@@ -108,7 +108,7 @@ jobs:
       run: |
         echo "Waiting for staging slot initialization..."
         sleep 45 
-        URL="https://${{ secrets.AZURE_WEBAPP_NAME }}-staging.azurewebsites.net"
+        URL="https://${{ vars.AZURE_WEBAPP_NAME }}-staging.azurewebsites.net"
         curl -sL --retry 3 --retry-delay 20 "$URL" | grep -q "${{ env.SMOKE_TEST_KEYWORD }}" || (echo "Smoke test failed!" && exit 1)
 
     - name: Prepare Maintenance Mode
@@ -118,27 +118,27 @@ jobs:
             <h1>Updating Our Store</h1><p>We'll be back in just a few seconds!</p>
         </div>
         EOF
-        creds=$(az webapp deployment list-publishing-credentials --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --slot staging --query "[publishingUserName, publishingPassword]" -o tsv)
+        creds=$(az webapp deployment list-publishing-credentials --name ${{ vars.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --slot staging --query "[publishingUserName, publishingPassword]" -o tsv)
         USER=$(echo "$creds" | sed -n '1p')
         PASS=$(echo "$creds" | sed -n '2p')
-        curl -X PUT -u "$USER:$PASS" --data-binary "@app_offline.htm" "https://${{ secrets.AZURE_WEBAPP_NAME }}-staging.scm.azurewebsites.net/api/vfs/site/wwwroot/app_offline.htm"
+        curl -X PUT -u "$USER:$PASS" --data-binary "@app_offline.htm" "https://${{ vars.AZURE_WEBAPP_NAME }}-staging.scm.azurewebsites.net/api/vfs/site/wwwroot/app_offline.htm"
 
     - name: Swap and Cleanup
       if: always()
       run: |
         if [[ "${{ job.status }}" == "success" ]]; then
           echo "Executing Swap..."
-          az webapp deployment slot swap --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --slot staging --target-slot production
+          az webapp deployment slot swap --name ${{ vars.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --slot staging --target-slot production
           
           # Remove Maintenance Mode from Production
-          creds=$(az webapp deployment list-publishing-credentials --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --query "[publishingUserName, publishingPassword]" -o tsv)
+          creds=$(az webapp deployment list-publishing-credentials --name ${{ vars.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --query "[publishingUserName, publishingPassword]" -o tsv)
           USER=$(echo "$creds" | sed -n '1p')
           PASS=$(echo "$creds" | sed -n '2p')
-          curl -X DELETE -u "$USER:$PASS" "https://${{ secrets.AZURE_WEBAPP_NAME }}.scm.azurewebsites.net/api/vfs/site/wwwroot/app_offline.htm" || true
+          curl -X DELETE -u "$USER:$PASS" "https://${{ vars.AZURE_WEBAPP_NAME }}.scm.azurewebsites.net/api/vfs/site/wwwroot/app_offline.htm" || true
         fi
         
         echo "Deleting slot and scaling down..."
-        az webapp slot delete --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --slot staging || true
+        az webapp slot delete --name ${{ vars.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --slot staging || true
         az appservice plan update --name Default1 --resource-group Default-Web-NorthEurope --sku D1
 
     - name: Notify Failure
@@ -149,5 +149,5 @@ jobs:
       with:
         from: 'deployments@yourdomain.com'
         to: 'your-email@domain.com'
-        subject: 'ALERT: Deployment Failed for ${{ secrets.AZURE_WEBAPP_NAME }}'
+        subject: 'ALERT: Deployment Failed for ${{ vars.AZURE_WEBAPP_NAME }}'
         html: 'Check the GitHub Action logs. The swap was aborted and the site scaled back to D1.'
