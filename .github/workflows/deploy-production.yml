@@ -52,13 +52,19 @@ jobs:
             [[ $INSTALLED =~ $folder || $FORCE_KEEP =~ $folder ]] || rm -rf "$dir"
         done
 
-        # 4. Inject Version Info into Footer (Short SHA fix)
+        # 4. Inject Version Info into Footer
         SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
         VERSION_STR="Build #${{ github.run_number }} ($SHORT_SHA) - $(date +'%Y-%m-%d')"
         FOOTER_PATH="./app_publish/Views/Shared/Components/Footer/Default.cshtml"
+        
+        echo "Attempting to inject version: $VERSION_STR"
+        
         if [ -f "$FOOTER_PATH" ]; then
-          sed -i "s//$VERSION_STR/g" "$FOOTER_PATH"
-          echo "Injected version: $VERSION_STR"
+          # Using | as a delimiter in case the version string contains / or other chars
+          sed -i "s||$VERSION_STR|g" "$FOOTER_PATH"
+          echo "Success: Version injected into $FOOTER_PATH"
+        else
+          echo "Skip: Footer file not found at $FOOTER_PATH. Check your nopCommerce folder structure."
         fi
 
     - name: Zip Artifact
