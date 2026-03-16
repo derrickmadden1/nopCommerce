@@ -149,18 +149,22 @@ jobs:
       run: |
         if [[ "${{ job.status }}" == "success" ]]; then
           echo "Executing Swap..."
-          az webapp deployment slot swap --name ${{ vars.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --slot staging --target-slot production
+          az webapp deployment slot swap --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --slot staging --target-slot production
           
-          # Remove Maintenance Mode from Production
-          creds=$(az webapp deployment list-publishing-credentials --name ${{ vars.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --query "[publishingUserName, publishingPassword]" -o tsv)
+          # Remove Maintenance Mode
+          creds=$(az webapp deployment list-publishing-credentials --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --query "[publishingUserName, publishingPassword]" -o tsv)
           USER=$(echo "$creds" | sed -n '1p')
           PASS=$(echo "$creds" | sed -n '2p')
-          curl -X DELETE -u "$USER:$PASS" "https://${{ vars.AZURE_WEBAPP_NAME }}.scm.azurewebsites.net/api/vfs/site/wwwroot/app_offline.htm" || true
+          curl -X DELETE -u "$USER:$PASS" "https://${{ secrets.AZURE_WEBAPP_NAME }}.scm.azurewebsites.net/api/vfs/site/wwwroot/app_offline.htm" || true
         fi
         
-        echo "Deleting slot and scaling down..."
-        az webapp slot delete --name ${{ vars.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --slot staging || true
-        az appservice plan update --name Default1 --resource-group Default-Web-NorthEurope --sku D1
+        echo "Deleting slot..."
+        # Use the full command path
+        az webapp deployment slot delete --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --slot staging || true
+        
+        echo "Attempting scale down to D1..."
+        # If this fails again, the script will end, but we use '|| true' to prevent total workflow failure
+        az appservice plan update --name Default1 --resource-group Default-Web-NorthEurope --sku D1 || echo "Scale down failed. Check storage quota!"
 
     - name: Notify Failure
       if: failure()
