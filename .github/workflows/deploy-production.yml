@@ -7,9 +7,8 @@ on:
 
 env:
   DOTNET_VERSION: '9.0.x'
-  # List any brand-new plugins here
+  # Plain text variables are allowed here
   FORCE_KEEP_PLUGINS: '["Widgets.MarketLocator", "Shipping.MarketPickup"]'
-  # Hardcode your keyword here or call the secret directly in the step
   SMOKE_TEST_KEYWORD: "Rose Cottage Croft" 
 
 jobs:
@@ -48,12 +47,13 @@ jobs:
             [[ $INSTALLED =~ $folder || $FORCE_KEEP =~ $folder ]] || rm -rf "$dir"
         done
 
-        # 4. Inject Version Info into Footer (Short SHA fixed here)
+        # 4. Inject Version Info into Footer (Short SHA fix)
         SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
         VERSION_STR="Build #${{ github.run_number }} ($SHORT_SHA) - $(date +'%Y-%m-%d')"
         FOOTER_PATH="./app_publish/Views/Shared/Components/Footer/Default.cshtml"
         if [ -f "$FOOTER_PATH" ]; then
           sed -i "s//$VERSION_STR/g" "$FOOTER_PATH"
+          echo "Injected version: $VERSION_STR"
         fi
 
     - name: Zip Artifact
@@ -71,6 +71,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: build
+    # SECRETS ARE LEGAL IN THE ENVIRONMENT BLOCK
     environment: 
       name: Production
       url: https://${{ secrets.AZURE_WEBAPP_NAME }}-staging.azurewebsites.net
@@ -87,8 +88,13 @@ jobs:
 
     - name: Prepare Infrastructure
       run: |
+        echo "Scaling up to S1..."
         az appservice plan update --name Default1 --resource-group Default-Web-NorthEurope --sku S1
+        
+        echo "Configuring Run-From-Package..."
         az webapp config appsettings set --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --settings WEBSITE_RUN_FROM_PACKAGE="1"
+        
+        echo "Creating staging slot..."
         az webapp slot create --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --slot staging
 
     - name: Deploy to Staging
@@ -100,6 +106,7 @@ jobs:
 
     - name: Warm Up & Smoke Test
       run: |
+        echo "Waiting for staging slot initialization..."
         sleep 45 
         URL="https://${{ secrets.AZURE_WEBAPP_NAME }}-staging.azurewebsites.net"
         curl -sL --retry 3 --retry-delay 20 "$URL" | grep -q "${{ env.SMOKE_TEST_KEYWORD }}" || (echo "Smoke test failed!" && exit 1)
@@ -120,11 +127,27 @@ jobs:
       if: always()
       run: |
         if [[ "${{ job.status }}" == "success" ]]; then
+          echo "Executing Swap..."
           az webapp deployment slot swap --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --slot staging --target-slot production
+          
+          # Remove Maintenance Mode from Production
           creds=$(az webapp deployment list-publishing-credentials --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --query "[publishingUserName, publishingPassword]" -o tsv)
           USER=$(echo "$creds" | sed -n '1p')
           PASS=$(echo "$creds" | sed -n '2p')
           curl -X DELETE -u "$USER:$PASS" "https://${{ secrets.AZURE_WEBAPP_NAME }}.scm.azurewebsites.net/api/vfs/site/wwwroot/app_offline.htm" || true
         fi
+        
+        echo "Deleting slot and scaling down..."
         az webapp slot delete --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --slot staging || true
         az appservice plan update --name Default1 --resource-group Default-Web-NorthEurope --sku D1
+
+    - name: Notify Failure
+      if: failure()
+      uses: sendgrid/sendgrid-action@v1
+      env:
+        SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
+      with:
+        from: 'deployments@yourdomain.com'
+        to: 'your-email@domain.com'
+        subject: 'ALERT: Deployment Failed for ${{ secrets.AZURE_WEBAPP_NAME }}'
+        html: 'Check the GitHub Action logs. The swap was aborted and the site scaled back to D1.'
