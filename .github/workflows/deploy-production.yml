@@ -160,11 +160,19 @@ jobs:
 
     - name: Notify Failure
       if: failure()
-      uses: sendgrid/sendgrid-action@v1
-      env:
-        SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
-      with:
-        from: 'deployments@yourdomain.com'
-        to: 'your-email@domain.com'
-        subject: 'ALERT: Deployment Failed for ${{ vars.AZURE_WEBAPP_NAME }}'
-        html: 'Check the GitHub Action logs. The swap was aborted and the site scaled back to D1.'
+      run: |
+        curl --request POST \
+          --url https://api.sendgrid.com/v3/mail/send \
+          --header "Authorization: Bearer ${{ secrets.SENDGRID_API_KEY }}" \
+          --header "Content-Type: application/json" \
+          --data '{
+            "personalizations": [{
+              "to": [{"email": "support@rosecottagecroft.co.uk"}]
+            }],
+            "from": {"email": "deployments@rosecottagecroft.co.uk},
+            "subject": "ALERT: Deployment Failed for ${{ args.AZURE_WEBAPP_NAME }}",
+            "content": [{
+              "type": "text/html",
+              "value": "The deployment for <b>${{ args.AZURE_WEBAPP_NAME }}</b> failed. The swap was aborted and the site scaled back to D1. Check logs: <a href=\"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\">GitHub Action Logs</a>"
+            }]
+          }'
