@@ -7,7 +7,6 @@ on:
 
 env:
   DOTNET_VERSION: '9.0.x'
-  # Plain text variables only here
   FORCE_KEEP_PLUGINS: '["Widgets.MarketLocator", "Shipping.MarketPickup"]'
   SMOKE_TEST_KEYWORD: "Rose Cottage Croft" 
 
@@ -16,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-
+  
     - name: Azure Login
       uses: azure/login@v1
       with:
@@ -36,13 +35,13 @@ jobs:
     - name: Smart Prune & Version Inject
       shell: bash
       run: |
-        # 1. Get Kudu Credentials for live site to see installed plugins
+        # 1. Get Kudu Credentials for live site
         creds=$(az webapp deployment list-publishing-credentials --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --query "[publishingUserName, publishingPassword]" -o tsv)
         USER=$(echo "$creds" | sed -n '1p')
         PASS=$(echo "$creds" | sed -n '2p')
         curl -u "$USER:$PASS" -o ./live_plugins.json "https://${{ secrets.AZURE_WEBAPP_NAME }}.scm.azurewebsites.net/api/vfs/site/wwwroot/App_Data/plugins.json" || echo '{"InstalledPluginNames":[]}' > ./live_plugins.json
         
-        # 2. Prune based on Live + Force Keep
+        # 2. Prune Plugins
         INSTALLED=$(jq -r '.InstalledPluginNames[] // empty' ./live_plugins.json)
         FORCE_KEEP=$(echo '${{ env.FORCE_KEEP_PLUGINS }}' | jq -r '.[]')
         for dir in ./app_publish/Plugins/*/; do
@@ -50,23 +49,32 @@ jobs:
             [[ $INSTALLED =~ $folder || $FORCE_KEEP =~ $folder ]] || rm -rf "$dir"
         done
 
-        # 3. Clear Thumbnails & Logs to stay under 1GB D1 limit
+        # 3. Clear Storage space (1GB Limit)
         rm -rf ./app_publish/wwwroot/images/thumbs/*
         rm -rf ./app_publish/App_Data/Logs/*
 
-        # 4. Inject Version Info via Node.js
+        # 4. Inject Version (Fixed the search string for you)
         SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
         VERSION_STR="Build #${{ github.run_number }} ($SHORT_SHA) - $(date +'%Y-%m-%d')"
         FOOTER_PATH="./app_publish/Views/Shared/Components/Footer/Default.cshtml"
         if [ -f "$FOOTER_PATH" ]; then
-          node -e "const fs=require('fs'); const p='$FOOTER_PATH'; const c=fs.readFileSync(p,'utf8'); fs.writeFileSync(p, c.replace('','$VERSION_STR'));"
+          node -e "const fs=require('fs'); const p='$FOOTER_PATH'; const c=fs.readFileSync(p,'utf8'); fs.writeFileSync(p, c.replace('', '$VERSION_STR'));"
         fi
 
-    - name: Zip Artifact
+    - name: Bake Config & Zip
       run: |
-        # Remove local configs so we use the ones we inject in the deploy job
-        rm -f ./app_publish/appsettings.json
-        rm -f ./app_publish/App_Data/dataSettings.json
+        # Ensure App_Data exists
+        mkdir -p ./app_publish/App_Data
+        
+        # Create dataSettings.json INSIDE the publish folder so it is in the READ-ONLY zip
+        cat > ./app_publish/App_Data/dataSettings.json << 'EOF'
+        {
+          "DataProvider": "sqlserver",
+          "DataConnectionString": "Data Source=tcp:${{ secrets.PROD_SQL_SERVER }}.database.windows.net,1433;Initial Catalog=${{ secrets.PROD_SQL_DATABASE }};Persist Security Info=False;User ID=${{ secrets.SQL_ADMIN_USERNAME }};Password=${{ secrets.SQL_ADMIN_PASSWORD }};MultipleActiveResultSets=False;Connect Timeout=30;Encrypt=True;TrustServerCertificate=False",
+          "RawDataSettings": {}
+        }
+        EOF
+
         cd app_publish && zip -r ../nop-app.zip .
 
     - name: Upload Zip
@@ -80,7 +88,7 @@ jobs:
     needs: build
     environment: 
       name: Production
-      url: https://${{ vars.AZURE_WEBAPP_NAME }}-staging.azurewebsites.net
+      url: https://${{ secrets.AZURE_WEBAPP_NAME }}-staging.azurewebsites.net
     steps:
     - name: Download artifact
       uses: actions/download-artifact@v4
@@ -104,24 +112,6 @@ jobs:
         slot-name: 'staging'
         package: 'nop-app.zip'
 
-    - name: Inject Connection JSON (Bypass Installer)
-      run: |
-        creds=$(az webapp deployment list-publishing-credentials --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --slot staging --query "[publishingUserName, publishingPassword]" -o tsv)
-        USER=$(echo "$creds" | sed -n '1p')
-        PASS=$(echo "$creds" | sed -n '2p')
-        
-        # Create dataSettings.json to signal the app is already installed
-        cat > dataSettings.json << 'EOF'
-        {
-          "DataProvider": "sqlserver",
-          "DataConnectionString": "Data Source=tcp:${{ secrets.PROD_SQL_SERVER }}.database.windows.net,1433;Initial Catalog=${{ secrets.PROD_SQL_DATABASE }};Persist Security Info=False;User ID=${{ secrets.SQL_ADMIN_USERNAME }};Password=${{ secrets.SQL_ADMIN_PASSWORD }};MultipleActiveResultSets=False;Connect Timeout=30;Encrypt=True;TrustServerCertificate=False",
-          "RawDataSettings": {}
-        }
-        EOF
-        
-        # Push to App_Data
-        curl -X PUT -u "$USER:$PASS" --data-binary "@dataSettings.json" "https://${{ secrets.AZURE_WEBAPP_NAME }}-staging.scm.azurewebsites.net/api/vfs/site/wwwroot/App_Data/dataSettings.json"
-
     - name: Warm Up & Smoke Test
       run: |
         echo "Waiting 90 seconds for initialization..."
@@ -140,15 +130,14 @@ jobs:
       if: always()
       run: |
         if [[ "${{ job.status }}" == "success" ]]; then
-          echo "Executing Swap..."
           az webapp deployment slot swap --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --slot staging --target-slot production || echo "Swap failed!"
         fi
         
         echo "Deleting staging slot..."
         az webapp deployment slot delete --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --slot staging || true
         
-        echo "Forcing scale down to D1..."
-        az appservice plan update --name Default1 --resource-group Default-Web-NorthEurope --sku D1 || echo "Scale down failed. Check storage quota (1GB limit)!"
+        echo "Forcing scale down..."
+        az appservice plan update --name Default1 --resource-group Default-Web-NorthEurope --sku D1 || echo "Scale down failed. Check storage quota!"
 
     - name: Notify Failure
       if: failure()
