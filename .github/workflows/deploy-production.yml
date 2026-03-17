@@ -7,6 +7,7 @@ on:
 
 env:
   DOTNET_VERSION: '9.0.x'
+  # Plain text variables only here
   FORCE_KEEP_PLUGINS: '["Widgets.MarketLocator", "Shipping.MarketPickup"]'
   SMOKE_TEST_KEYWORD: "Rose Cottage Croft" 
 
@@ -15,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-  
+
     - name: Azure Login
       uses: azure/login@v1
       with:
@@ -32,14 +33,16 @@ jobs:
         dotnet build src/NopCommerce.sln -c Release --no-restore
         dotnet publish src/Presentation/Nop.Web/Nop.Web.csproj -c Release -o ./app_publish --no-build
 
-    - name: Smart Prune & Storage Cleanup
+    - name: Smart Prune & Version Inject
       shell: bash
       run: |
-        # 1. Prune unused plugins
+        # 1. Get Kudu Credentials for live site to see installed plugins
         creds=$(az webapp deployment list-publishing-credentials --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --query "[publishingUserName, publishingPassword]" -o tsv)
         USER=$(echo "$creds" | sed -n '1p')
         PASS=$(echo "$creds" | sed -n '2p')
         curl -u "$USER:$PASS" -o ./live_plugins.json "https://${{ secrets.AZURE_WEBAPP_NAME }}.scm.azurewebsites.net/api/vfs/site/wwwroot/App_Data/plugins.json" || echo '{"InstalledPluginNames":[]}' > ./live_plugins.json
+        
+        # 2. Prune based on Live + Force Keep
         INSTALLED=$(jq -r '.InstalledPluginNames[] // empty' ./live_plugins.json)
         FORCE_KEEP=$(echo '${{ env.FORCE_KEEP_PLUGINS }}' | jq -r '.[]')
         for dir in ./app_publish/Plugins/*/; do
@@ -47,22 +50,23 @@ jobs:
             [[ $INSTALLED =~ $folder || $FORCE_KEEP =~ $folder ]] || rm -rf "$dir"
         done
 
-        # 2. CLEAR THUMBNAILS (Critical to stay under 1GB D1 limit)
+        # 3. Clear Thumbnails & Logs to stay under 1GB D1 limit
         rm -rf ./app_publish/wwwroot/images/thumbs/*
         rm -rf ./app_publish/App_Data/Logs/*
 
-        # 3. Inject Version Info
+        # 4. Inject Version Info via Node.js
         SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
         VERSION_STR="Build #${{ github.run_number }} ($SHORT_SHA) - $(date +'%Y-%m-%d')"
         FOOTER_PATH="./app_publish/Views/Shared/Components/Footer/Default.cshtml"
         if [ -f "$FOOTER_PATH" ]; then
-          node -e "const fs=require('fs');const c=fs.readFileSync('$FOOTER_PATH','utf8');fs.writeFileSync('$FOOTER_PATH',c.replace('','$VERSION_STR'));"
+          node -e "const fs=require('fs'); const p='$FOOTER_PATH'; const c=fs.readFileSync(p,'utf8'); fs.writeFileSync(p, c.replace('','$VERSION_STR'));"
         fi
 
     - name: Zip Artifact
       run: |
-        # We delete sensitive local config so Azure uses our injected one
+        # Remove local configs so we use the ones we inject in the deploy job
         rm -f ./app_publish/appsettings.json
+        rm -f ./app_publish/App_Data/dataSettings.json
         cd app_publish && zip -r ../nop-app.zip .
 
     - name: Upload Zip
@@ -106,31 +110,28 @@ jobs:
         USER=$(echo "$creds" | sed -n '1p')
         PASS=$(echo "$creds" | sed -n '2p')
         
-        # Create the legacy dataSettings.json that nopCommerce expects
+        # Create dataSettings.json to signal the app is already installed
         cat > dataSettings.json << 'EOF'
         {
-          "DbName": "${{ secrets.PROD_SQL_DATABASE }}",
-          "DbServer": "${{ secrets.PROD_SQL_SERVER }}.database.windows.net",
-          "DbUser": "${{ secrets.SQL_ADMIN_USERNAME }}",
-          "DbPassword": "${{ secrets.SQL_ADMIN_PASSWORD }}",
           "DataProvider": "sqlserver",
-          "SQLCommandTimeout": null,
-          "ConnectionString": "Data Source=tcp:${{ secrets.PROD_SQL_SERVER }}.database.windows.net,1433;Initial Catalog=${{ secrets.PROD_SQL_DATABASE }};User ID=${{ secrets.SQL_ADMIN_USERNAME }};Password=${{ secrets.SQL_ADMIN_PASSWORD }};Persist Security Info=False;MultipleActiveResultSets=False;Connect Timeout=30;Encrypt=True;TrustServerCertificate=False"
+          "DataConnectionString": "Data Source=tcp:${{ secrets.PROD_SQL_SERVER }}.database.windows.net,1433;Initial Catalog=${{ secrets.PROD_SQL_DATABASE }};Persist Security Info=False;User ID=${{ secrets.SQL_ADMIN_USERNAME }};Password=${{ secrets.SQL_ADMIN_PASSWORD }};MultipleActiveResultSets=False;Connect Timeout=30;Encrypt=True;TrustServerCertificate=False",
+          "RawDataSettings": {}
         }
         EOF
         
-        # Push it to App_Data (not root)
-        curl -X PUT -u "$USER:$PASS" --data-binary "@dataSettings.json" \
-          "https://${{ secrets.AZURE_WEBAPP_NAME }}-staging.scm.azurewebsites.net/api/vfs/site/wwwroot/App_Data/dataSettings.json"
+        # Push to App_Data
+        curl -X PUT -u "$USER:$PASS" --data-binary "@dataSettings.json" "https://${{ secrets.AZURE_WEBAPP_NAME }}-staging.scm.azurewebsites.net/api/vfs/site/wwwroot/App_Data/dataSettings.json"
 
     - name: Warm Up & Smoke Test
       run: |
+        echo "Waiting 90 seconds for initialization..."
         sleep 90
         URL="https://${{ secrets.AZURE_WEBAPP_NAME }}-staging.azurewebsites.net"
         RESPONSE=$(curl -sL --retry 5 --retry-delay 30 "$URL")
-        if echo "$RESPONSE" | grep -qi "Cottage"; then
-          echo "Smoke test passed!"
+        if echo "$RESPONSE" | grep -qi "${{ env.SMOKE_TEST_KEYWORD }}"; then
+          echo "SUCCESS: Store loaded correctly."
         else
+          echo "ERROR: Keyword not found. Response snippet below:"
           echo "$RESPONSE" | head -c 1000
           exit 1
         fi
@@ -138,11 +139,21 @@ jobs:
     - name: Swap and Cleanup
       if: always()
       run: |
-        # Use ; instead of && to ensure execution continues
         if [[ "${{ job.status }}" == "success" ]]; then
-          az webapp deployment slot swap --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --slot staging --target-slot production ;
+          echo "Executing Swap..."
+          az webapp deployment slot swap --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --slot staging --target-slot production || echo "Swap failed!"
         fi
         
-        echo "Cleaning up..."
-        az webapp deployment slot delete --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --slot staging || true ;
-        az appservice plan update --name Default1 --resource-group Default-Web-NorthEurope --sku D1 || true
+        echo "Deleting staging slot..."
+        az webapp deployment slot delete --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --slot staging || true
+        
+        echo "Forcing scale down to D1..."
+        az appservice plan update --name Default1 --resource-group Default-Web-NorthEurope --sku D1 || echo "Scale down failed. Check storage quota (1GB limit)!"
+
+    - name: Notify Failure
+      if: failure()
+      run: |
+        curl --request POST --url https://api.sendgrid.com/v3/mail/send \
+          --header "Authorization: Bearer ${{ secrets.SENDGRID_API_KEY }}" \
+          --header "Content-Type: application/json" \
+          --data '{"personalizations": [{"to": [{"email": "your-email@domain.com"}]}], "from": {"email": "deployments@yourdomain.com"}, "subject": "ALERT: Deployment Failed", "content": [{"type": "text/html", "value": "Deployment failed for ${{ secrets.AZURE_WEBAPP_NAME }}. Check GitHub logs."}]}'
