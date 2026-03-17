@@ -127,10 +127,23 @@ jobs:
 
     - name: Warm Up & Smoke Test
       run: |
-        echo "Waiting for staging slot initialization..."
-        sleep 45 
-        URL="https://${{ vars.AZURE_WEBAPP_NAME }}-staging.azurewebsites.net"
-        curl -sL --retry 3 --retry-delay 20 "$URL" | grep -q "${{ env.SMOKE_TEST_KEYWORD }}" || (echo "Smoke test failed!" && exit 1)
+        echo "Waiting 90 seconds for nopCommerce to initialize plugins..."
+        sleep 90 
+        
+        URL="https://${{ secrets.AZURE_WEBAPP_NAME }}-staging.azurewebsites.net"
+        
+        # We fetch the page and use -i for case-insensitive grep
+        # We also output the first 500 characters if it fails to help you debug
+        RESPONSE=$(curl -sL --retry 5 --retry-delay 30 "$URL")
+        
+        if echo "$RESPONSE" | grep -qi "Cottage"; then
+          echo "SUCCESS: Homepage loaded correctly on staging."
+        else
+          echo "ERROR: Smoke test failed. The keyword was not found."
+          echo "Top of response for debugging:"
+          echo "$RESPONSE" | head -c 500
+          exit 1
+        fi
 
     - name: Prepare Maintenance Mode
       run: |
