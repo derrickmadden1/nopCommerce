@@ -100,22 +100,28 @@ jobs:
         slot-name: 'staging'
         package: 'nop-app.zip'
 
-    - name: Inject Connection String (Fix 500.30)
+    - name: Inject Connection JSON (Bypass Installer)
       run: |
         creds=$(az webapp deployment list-publishing-credentials --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --slot staging --query "[publishingUserName, publishingPassword]" -o tsv)
         USER=$(echo "$creds" | sed -n '1p')
         PASS=$(echo "$creds" | sed -n '2p')
         
-        # Build appsettings.json with your DB details
-        cat > appsettings.json << 'EOF'
+        # Create the legacy dataSettings.json that nopCommerce expects
+        cat > dataSettings.json << 'EOF'
         {
-          "ConnectionStrings": {
-            "DefaultConnection": "Data Source=tcp:${{ secrets.DB_SERVER }}.database.windows.net,1433;Initial Catalog=${{ secrets.DB_NAME }};User ID=${{ secrets.DB_USER }};Password=${{ secrets.DB_PASS }};Persist Security Info=False;MultipleActiveResultSets=False;Connect Timeout=30;Encrypt=True;TrustServerCertificate=False"
-          }
+          "DbName": "${{ secrets.PROD_SQL_DATABASE }}",
+          "DbServer": "${{ secrets.PROD_SQL_SERVER }}.database.windows.net",
+          "DbUser": "${{ secrets.SQL_ADMIN_USERNAME }}",
+          "DbPassword": "${{ secrets.SQL_ADMIN_PASSWORD }}",
+          "DataProvider": "sqlserver",
+          "SQLCommandTimeout": null,
+          "ConnectionString": "Data Source=tcp:${{ secrets.PROD_SQL_SERVER }}.database.windows.net,1433;Initial Catalog=${{ secrets.PROD_SQL_DATABASE }};User ID=${{ secrets.SQL_ADMIN_USERNAME }};Password=${{ secrets.SQL_ADMIN_PASSWORD }};Persist Security Info=False;MultipleActiveResultSets=False;Connect Timeout=30;Encrypt=True;TrustServerCertificate=False"
         }
         EOF
         
-        curl -X PUT -u "$USER:$PASS" --data-binary "@appsettings.json" "https://${{ secrets.AZURE_WEBAPP_NAME }}-staging.scm.azurewebsites.net/api/vfs/site/wwwroot/appsettings.json"
+        # Push it to App_Data (not root)
+        curl -X PUT -u "$USER:$PASS" --data-binary "@dataSettings.json" \
+          "https://${{ secrets.AZURE_WEBAPP_NAME }}-staging.scm.azurewebsites.net/api/vfs/site/wwwroot/App_Data/dataSettings.json"
 
     - name: Warm Up & Smoke Test
       run: |
