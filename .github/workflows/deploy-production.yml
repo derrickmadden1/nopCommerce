@@ -34,27 +34,21 @@ jobs:
         FOOTER_PATH="./app_publish/Views/Shared/Components/Footer/Default.cshtml"
         
         if [ -f "$FOOTER_PATH" ]; then
-          # Fixed the empty replace string and stabilized the Node.js call
-          node -e "const fs=require('fs'); const p='$FOOTER_PATH'; let c=fs.readFileSync(p,'utf8'); if(c.includes('')) { fs.writeFileSync(p, c.replace('', '$VERSION_STR')); console.log('Version injected.'); } else { console.log('Placeholder not found.'); }"
+          node -e "const fs=require('fs'); const p='$FOOTER_PATH'; let c=fs.readFileSync(p,'utf8'); if(c.includes('')) { fs.writeFileSync(p, c.replace('', '$VERSION_STR')); console.log('Version injected.'); }"
         fi
 
         # 2. Storage Cleanup
         rm -rf ./app_publish/wwwroot/images/thumbs/*
         rm -rf ./app_publish/App_Data/Logs/*
         
-        # 3. Create App_Data if it doesn't exist, then bake dataSettings
-        mkdir -p ./app_publish/App_Data
-        cat > ./app_publish/App_Data/dataSettings.json << 'EOF'
-        {
-          "DataProvider": "sqlserver",
-          "DataConnectionString": "Server=tcp:${{ secrets.PROD_SQL_SERVER }}.database.windows.net,1433;Initial Catalog=${{ secrets.PROD_SQL_DATABASE }};Persist Security Info=False;User ID=${{ secrets.SQL_ADMIN_USERNAME }};Password=${{ secrets.SQL_ADMIN_PASSWORD }};MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=True;Connection Timeout=30;",
-          "RawDataSettings": {}
-        }
-        EOF
-
-        # 4. Create the appsettings.json
+        # 3. Bake appsettings.json (The 4.70 Way)
+        # This includes BOTH the Database and the Blob config in one file.
         cat > ./app_publish/appsettings.json << 'EOF'
         {
+          "ConnectionStrings": {
+            "ConnectionString": "Server=tcp:${{ secrets.PROD_SQL_SERVER }}.database.windows.net,1433;Initial Catalog=${{ secrets.PROD_SQL_DATABASE }};Persist Security Info=False;User ID=${{ secrets.SQL_ADMIN_USERNAME }};Password=${{ secrets.SQL_ADMIN_PASSWORD }};MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=True;Connection Timeout=30;",
+            "DataProvider": "sqlserver"
+          },
           "AzureBlobConfig": {
             "ConnectionString": "${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}",
             "ContainerName": "nop-config",
@@ -64,7 +58,7 @@ jobs:
         }
         EOF
 
-        # 5. Zip it all up
+        # 4. Zip it all up
         cd app_publish && zip -r ../nop-app.zip .
 
     - name: Upload Zip
@@ -88,19 +82,13 @@ jobs:
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-    - name: Prepare Infrastructure & Cloud Config
+    - name: Prepare Infrastructure
       run: |
         az appservice plan update --name Default1 --resource-group Default-Web-NorthEurope --sku S1
-        
         az webapp deployment slot create --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --slot staging --configuration-source ${{ secrets.AZURE_WEBAPP_NAME }}
         
-        # Point nopCommerce to the Blob for App_Data
-        az webapp config appsettings set --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --slot staging --settings \
-          AzureBlobConfig__ConnectionString="${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}" \
-          AzureBlobConfig__ContainerName="nop-config" \
-          AzureBlobConfig__EndPoint="${{ secrets.AZURE_STORAGE_BLOB_ENDPOINT }}" \
-          AzureBlobConfig__AppendContainerName="false" \
-          ASPNETCORE_ENVIRONMENT="Development"
+        # Verbose errors for staging only
+        az webapp config appsettings set --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --slot staging --settings ASPNETCORE_ENVIRONMENT="Development"
 
     - name: Deploy to Staging
       uses: azure/webapps-deploy@v3
@@ -116,10 +104,10 @@ jobs:
         URL="https://${{ secrets.AZURE_WEBAPP_NAME }}-staging.azurewebsites.net"
         RESPONSE=$(curl -sL --retry 5 --retry-delay 30 "$URL")
         if echo "$RESPONSE" | grep -qi "${{ env.SMOKE_TEST_KEYWORD }}"; then
-          echo "SUCCESS: Store loaded from Cloud Config."
+          echo "SUCCESS: Store loaded."
         else
-          echo "ERROR: Keyword not found. Full response below:"
-          echo "$RESPONSE"
+          echo "ERROR: Keyword not found. Response snippet below:"
+          echo "$RESPONSE" | head -c 2000
           exit 1
         fi
 
@@ -127,11 +115,7 @@ jobs:
       if: always()
       run: |
         if [[ "${{ job.status }}" == "success" ]]; then
-          az webapp deployment slot swap --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --slot staging --target-slot production || echo "Swap failed!"
+          az webapp deployment slot swap --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --slot staging --target-slot production
         fi
-        
-        # Reset staging security
-        az webapp config appsettings set --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --slot staging --settings ASPNETCORE_ENVIRONMENT="Production" || true
-        
         az webapp deployment slot delete --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --slot staging || true
         az appservice plan update --name Default1 --resource-group Default-Web-NorthEurope --sku D1 || true
