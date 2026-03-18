@@ -63,14 +63,13 @@ jobs:
 
     - name: Bake Config & Zip
       run: |
-        # Ensure App_Data exists
         mkdir -p ./app_publish/App_Data
         
-        # Create dataSettings.json INSIDE the publish folder so it is in the READ-ONLY zip
+        # We use 'Server=' and 'TrustServerCertificate=True' to ensure Azure SQL likes it
         cat > ./app_publish/App_Data/dataSettings.json << 'EOF'
         {
           "DataProvider": "sqlserver",
-          "DataConnectionString": "Data Source=tcp:${{ secrets.PROD_SQL_SERVER }}.database.windows.net,1433;Initial Catalog=${{ secrets.PROD_SQL_DATABASE }};Persist Security Info=False;User ID=${{ secrets.SQL_ADMIN_USERNAME }};Password=${{ secrets.SQL_ADMIN_PASSWORD }};MultipleActiveResultSets=False;Connect Timeout=30;Encrypt=True;TrustServerCertificate=False",
+          "DataConnectionString": "Server=tcp:${{ secrets.PROD_SQL_SERVER }}.database.windows.net,1433;Initial Catalog=${{ secrets.PROD_SQL_DATABASE }};Persist Security Info=False;User ID=${{ secrets.SQL_ADMIN_USERNAME }};Password=${{ secrets.SQL_ADMIN_PASSWORD }};MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=True;Connection Timeout=30;",
           "RawDataSettings": {}
         }
         EOF
@@ -103,7 +102,12 @@ jobs:
     - name: Prepare Infrastructure
       run: |
         az appservice plan update --name Default1 --resource-group Default-Web-NorthEurope --sku S1
+        
+        echo "Creating/Updating Staging Slot..."
         az webapp deployment slot create --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --slot staging --configuration-source ${{ secrets.AZURE_WEBAPP_NAME }}
+        
+        echo "Enabling Verbose Errors for Staging..."
+        az webapp config appsettings set --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --slot staging --settings ASPNETCORE_ENVIRONMENT="Development"
 
     - name: Deploy to Staging
       uses: azure/webapps-deploy@v3
