@@ -28,21 +28,23 @@ jobs:
 
     - name: Version Inject & Clean
       run: |
-        # 1. Surgical Version Inject
+        # 1. Surgical Version Inject (Updated to be encoding-safe)
         SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
         VERSION_STR="Build #${{ github.run_number }} ($SHORT_SHA) - $(date +'%Y-%m-%d')"
         FOOTER_PATH="./app_publish/Views/Shared/Components/Footer/Default.cshtml"
         
         if [ -f "$FOOTER_PATH" ]; then
-          node -e "const fs=require('fs'); const p='$FOOTER_PATH'; let c=fs.readFileSync(p,'utf8'); if(c.includes('')) { fs.writeFileSync(p, c.replace('', '$VERSION_STR')); console.log('Version injected.'); }"
+          # Use sed for a literal string replacement that preserves the start of the file
+          # This avoids the Node.js encoding overhead that usually causes the @model error
+          sed -i "s//$VERSION_STR/g" "$FOOTER_PATH"
+          echo "Version injected using sed."
         fi
 
         # 2. Storage Cleanup
         rm -rf ./app_publish/wwwroot/images/thumbs/*
         rm -rf ./app_publish/App_Data/Logs/*
         
-        # 3. Bake appsettings.json (The 4.70 Way)
-        # This includes BOTH the Database and the Blob config in one file.
+        # 3. Bake appsettings.json (Keep your existing 4.70 logic here)
         cat > ./app_publish/appsettings.json << 'EOF'
         {
           "ConnectionStrings": {
@@ -58,7 +60,6 @@ jobs:
         }
         EOF
 
-        # 4. Zip it all up
         cd app_publish && zip -r ../nop-app.zip .
 
     - name: Upload Zip
