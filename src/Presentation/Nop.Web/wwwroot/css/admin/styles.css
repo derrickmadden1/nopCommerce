@@ -1,4 +1,4 @@
-﻿/* COMMON */
+/* COMMON */
 .content, .content-wrapper > .content {
   padding: 0 10px 55px 10px;
 }
@@ -2108,4 +2108,26 @@ div.dt-container div.dt-paging {
   .float-lg-right {
     float: none;
   }
+}
+
+/* Fix DataTables double header issue when scrollX is true */
+.dataTables_scrollBody thead tr {
+    height: 0px !important;
+}
+.dataTables_scrollBody thead tr th,
+.dataTables_scrollBody thead tr td {
+    padding-top: 0px !important;
+    padding-bottom: 0px !important;
+    border-top: none !important;
+    border-bottom: none !important;
+    height: 0px !important;
+    overflow: hidden !important;
+    color: transparent !important;
+}
+.dataTables_scrollBody thead *:before,
+.dataTables_scrollBody thead *:after {
+    display: none !important;
+}
+.dataTables_scrollBody thead .mastercheckbox {
+    display: none !important;
 }
