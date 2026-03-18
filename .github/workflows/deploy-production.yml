@@ -32,15 +32,39 @@ jobs:
         SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
         VERSION_STR="Build #${{ github.run_number }} ($SHORT_SHA) - $(date +'%Y-%m-%d')"
         FOOTER_PATH="./app_publish/Views/Shared/Components/Footer/Default.cshtml"
+        
         if [ -f "$FOOTER_PATH" ]; then
-          node -e "const fs=require('fs'); const p='$FOOTER_PATH'; let c=fs.readFileSync(p,'utf8'); fs.writeFileSync(p, c.replace('', '$VERSION_STR'));"
+          # Fixed the empty replace string and stabilized the Node.js call
+          node -e "const fs=require('fs'); const p='$FOOTER_PATH'; let c=fs.readFileSync(p,'utf8'); if(c.includes('')) { fs.writeFileSync(p, c.replace('', '$VERSION_STR')); console.log('Version injected.'); } else { console.log('Placeholder not found.'); }"
         fi
 
-        # 2. Storage Cleanup (Keep the zip light)
+        # 2. Storage Cleanup
         rm -rf ./app_publish/wwwroot/images/thumbs/*
         rm -rf ./app_publish/App_Data/Logs/*
         
-        # 3. Zip - We NO LONGER bake dataSettings.json here
+        # 3. Create App_Data if it doesn't exist, then bake dataSettings
+        mkdir -p ./app_publish/App_Data
+        cat > ./app_publish/App_Data/dataSettings.json << 'EOF'
+        {
+          "DataProvider": "sqlserver",
+          "DataConnectionString": "Server=tcp:${{ secrets.PROD_SQL_SERVER }}.database.windows.net,1433;Initial Catalog=${{ secrets.PROD_SQL_DATABASE }};Persist Security Info=False;User ID=${{ secrets.SQL_ADMIN_USERNAME }};Password=${{ secrets.SQL_ADMIN_PASSWORD }};MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=True;Connection Timeout=30;",
+          "RawDataSettings": {}
+        }
+        EOF
+
+        # 4. Create the appsettings.json
+        cat > ./app_publish/appsettings.json << 'EOF'
+        {
+          "AzureBlobConfig": {
+            "ConnectionString": "${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}",
+            "ContainerName": "nop-config",
+            "EndPoint": "${{ secrets.AZURE_STORAGE_BLOB_ENDPOINT }}",
+            "AppendContainerName": false
+          }
+        }
+        EOF
+
+        # 5. Zip it all up
         cd app_publish && zip -r ../nop-app.zip .
 
     - name: Upload Zip
