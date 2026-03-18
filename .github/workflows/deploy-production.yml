@@ -28,27 +28,31 @@ jobs:
 
     - name: Version Inject & Clean
       run: |
-        # 1. Version String definition
+        # 1. Prepare Version Data
         SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
-        VERSION_STR="Build #${{ github.run_number }} ($SHORT_SHA) - $(date +'%Y-%m-%d')"
-        FOOTER_PATH="./app_publish/Views/Shared/Components/Footer/Default.cshtml"
+        export VERSION_STR="Build #${{ github.run_number }} ($SHORT_SHA) - $(date +'%Y-%m-%d')"
+        export FOOTER_PATH="./app_publish/Views/Shared/Components/Footer/Default.cshtml"
+        export PLACEHOLDER=""
         
         if [ -f "$FOOTER_PATH" ]; then
           echo "Injecting version: $VERSION_STR"
-          # Use '|' as a delimiter to avoid issues with slashes in dates/paths
-          # The 'g' flag replaces all instances of the placeholder
-          sed -i "s||$VERSION_STR|g" "$FOOTER_PATH"
           
-          # SAFETY CHECK: Ensure the first line still starts with @model
-          # If sed accidentally added a newline or space at the top, this fixes it
+          # Use env vars inside sed to avoid shell expansion errors
+          # Using ':' as the delimiter this time
+          sed -i "s:$PLACEHOLDER:$VERSION_STR:g" "$FOOTER_PATH"
+          
+          # SAFETY: Remove any accidental whitespace/BOM issues at the very start of line 1
+          # This ensures @model is character #1
           sed -i '1s/^[[:space:]]*//' "$FOOTER_PATH"
+          
+          echo "Injection and First-line cleanup complete."
         fi
 
         # 2. Storage Cleanup
         rm -rf ./app_publish/wwwroot/images/thumbs/*
         rm -rf ./app_publish/App_Data/Logs/*
         
-        # 3. Bake appsettings.json (Your existing 4.70 logic)
+        # 3. Bake appsettings.json
         cat > ./app_publish/appsettings.json << 'EOF'
         {
           "ConnectionStrings": {
