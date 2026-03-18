@@ -30,29 +30,32 @@ jobs:
       run: |
         # 1. Prepare Version Data
         SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
-        export VERSION_STR="Build #${{ github.run_number }} ($SHORT_SHA) - $(date +'%Y-%m-%d')"
-        export FOOTER_PATH="./app_publish/Views/Shared/Components/Footer/Default.cshtml"
-        export PLACEHOLDER=""
+        VERSION_STR="Build #${{ github.run_number }} ($SHORT_SHA) - $(date +'%Y-%m-%d')"
+        FOOTER_PATH="./app_publish/Views/Shared/Components/Footer/Default.cshtml"
         
         if [ -f "$FOOTER_PATH" ]; then
           echo "Injecting version: $VERSION_STR"
           
-          # Use env vars inside sed to avoid shell expansion errors
-          # Using ':' as the delimiter this time
-          sed -i "s:$PLACEHOLDER:$VERSION_STR:g" "$FOOTER_PATH"
-          
-          # SAFETY: Remove any accidental whitespace/BOM issues at the very start of line 1
-          # This ensures @model is character #1
-          sed -i '1s/^[[:space:]]*//' "$FOOTER_PATH"
-          
-          echo "Injection and First-line cleanup complete."
+          # Use Python to safely swap the text and trim leading whitespace to save the @model directive
+          python3 -c "
+          import os
+          path = os.environ['FOOTER_PATH']
+          ver = os.environ['VERSION_STR']
+          with open(path, 'r', encoding='utf-8-sig') as f:
+              content = f.read()
+          # Replace placeholder and ensure no whitespace before @model
+          new_content = content.replace('', ver).lstrip()
+          with open(path, 'w', encoding='utf-8') as f:
+              f.write(new_content)
+          "
+          echo "Python injection and @model safety check complete."
         fi
 
         # 2. Storage Cleanup
         rm -rf ./app_publish/wwwroot/images/thumbs/*
         rm -rf ./app_publish/App_Data/Logs/*
         
-        # 3. Bake appsettings.json
+        # 3. Bake appsettings.json (Your 4.70 Logic)
         cat > ./app_publish/appsettings.json << 'EOF'
         {
           "ConnectionStrings": {
@@ -69,6 +72,9 @@ jobs:
         EOF
 
         cd app_publish && zip -r ../nop-app.zip .
+      env:
+        VERSION_STR: "Build #${{ github.run_number }} ($(echo ${{ github.sha }} | cut -c1-7)) - $(date +'%Y-%m-%d')"
+        FOOTER_PATH: "./app_publish/Views/Shared/Components/Footer/Default.cshtml"
 
     - name: Upload Zip
       uses: actions/upload-artifact@v4
