@@ -116,6 +116,14 @@ jobs:
             {
               "SystemName": "Search.AzureAI",
               "Version": "1.0.1"
+            },
+            {
+              "SystemName": "Widgets.MarketLocator",
+              "Version": "1.0.0"
+            },
+            {
+              "SystemName": "Shipping.MarketPickup",
+              "Version": "1.0.0"
             }
           ],
           "PluginNamesToUninstall": [],
