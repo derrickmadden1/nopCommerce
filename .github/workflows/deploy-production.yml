@@ -1,4 +1,4 @@
-name: Deploy to Production
+name: Deploy to Production (Phase 2 - Blob Config)
 
 on:
   push:
@@ -7,7 +7,6 @@ on:
 
 env:
   DOTNET_VERSION: '9.0.x'
-  FORCE_KEEP_PLUGINS: '["Widgets.MarketLocator", "Shipping.MarketPickup"]'
   SMOKE_TEST_KEYWORD: "Rose Cottage Croft" 
 
 jobs:
@@ -15,11 +14,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
-  
-    - name: Azure Login
-      uses: azure/login@v1
-      with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
@@ -32,64 +26,21 @@ jobs:
         dotnet build src/NopCommerce.sln -c Release --no-restore
         dotnet publish src/Presentation/Nop.Web/Nop.Web.csproj -c Release -o ./app_publish --no-build
 
-    - name: Smart Prune & Version Inject
-      shell: bash
+    - name: Version Inject & Clean
       run: |
-        # 1. Get Kudu Credentials for live site
-        creds=$(az webapp deployment list-publishing-credentials --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --query "[publishingUserName, publishingPassword]" -o tsv)
-        USER=$(echo "$creds" | sed -n '1p')
-        PASS=$(echo "$creds" | sed -n '2p')
-        curl -u "$USER:$PASS" -o ./live_plugins.json "https://${{ secrets.AZURE_WEBAPP_NAME }}.scm.azurewebsites.net/api/vfs/site/wwwroot/App_Data/plugins.json" || echo '{"InstalledPluginNames":[]}' > ./live_plugins.json
-        
-        # 2. Prune Plugins
-        INSTALLED=$(jq -r '.InstalledPluginNames[] // empty' ./live_plugins.json)
-        FORCE_KEEP=$(echo '${{ env.FORCE_KEEP_PLUGINS }}' | jq -r '.[]')
-        for dir in ./app_publish/Plugins/*/; do
-            folder=$(basename "$dir")
-            [[ $INSTALLED =~ $folder || $FORCE_KEEP =~ $folder ]] || rm -rf "$dir"
-        done
-
-        # 3. Clear Storage space (1GB Limit)
-        rm -rf ./app_publish/wwwroot/images/thumbs/*
-        rm -rf ./app_publish/App_Data/Logs/*
-
-        # 4. Inject Version Info (Improved Surgery)
+        # 1. Surgical Version Inject
         SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
         VERSION_STR="Build #${{ github.run_number }} ($SHORT_SHA) - $(date +'%Y-%m-%d')"
         FOOTER_PATH="./app_publish/Views/Shared/Components/Footer/Default.cshtml"
-        
         if [ -f "$FOOTER_PATH" ]; then
-          node -e "
-            const fs = require('fs');
-            const path = '$FOOTER_PATH';
-            let content = fs.readFileSync(path, 'utf8');
-            
-            // Check if our placeholder exists before replacing
-            const placeholder = '';
-            if (content.includes(placeholder)) {
-                // Using split/join is safer than replace() for literal strings
-                content = content.split(placeholder).join('$VERSION_STR');
-                fs.writeFileSync(path, content);
-                console.log('Version injected successfully.');
-            } else {
-                console.log('Warning: Placeholder not found in footer.');
-            }
-          "
+          node -e "const fs=require('fs'); const p='$FOOTER_PATH'; let c=fs.readFileSync(p,'utf8'); fs.writeFileSync(p, c.replace('', '$VERSION_STR'));"
         fi
 
-    - name: Bake Config & Zip
-      run: |
-        mkdir -p ./app_publish/App_Data
+        # 2. Storage Cleanup (Keep the zip light)
+        rm -rf ./app_publish/wwwroot/images/thumbs/*
+        rm -rf ./app_publish/App_Data/Logs/*
         
-        # We use 'Server=' and 'TrustServerCertificate=True' to ensure Azure SQL likes it
-        cat > ./app_publish/App_Data/dataSettings.json << 'EOF'
-        {
-          "DataProvider": "sqlserver",
-          "DataConnectionString": "Server=tcp:${{ secrets.PROD_SQL_SERVER }}.database.windows.net,1433;Initial Catalog=${{ secrets.PROD_SQL_DATABASE }};Persist Security Info=False;User ID=${{ secrets.SQL_ADMIN_USERNAME }};Password=${{ secrets.SQL_ADMIN_PASSWORD }};MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=True;Connection Timeout=30;",
-          "RawDataSettings": {}
-        }
-        EOF
-
+        # 3. Zip - We NO LONGER bake dataSettings.json here
         cd app_publish && zip -r ../nop-app.zip .
 
     - name: Upload Zip
@@ -101,9 +52,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: build
-    environment: 
-      name: Production
-      url: https://${{ vars.AZURE_WEBAPP_NAME }}-staging.azurewebsites.net
+    environment: Production
     steps:
     - name: Download artifact
       uses: actions/download-artifact@v4
@@ -115,15 +64,19 @@ jobs:
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-    - name: Prepare Infrastructure
+    - name: Prepare Infrastructure & Cloud Config
       run: |
-        az appservice plan update --name Default1 --resource-group Default-Web-NorthEurope --sku S1
+        az appservice plan update --name Default1 --resource-group rosecottagecroft --sku S1
         
-        echo "Creating/Updating Staging Slot..."
         az webapp deployment slot create --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --slot staging --configuration-source ${{ secrets.AZURE_WEBAPP_NAME }}
         
-        echo "Enabling Verbose Errors for Staging..."
-        az webapp config appsettings set --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --slot staging --settings ASPNETCORE_ENVIRONMENT="Development"
+        # Point nopCommerce to the Blob for App_Data
+        az webapp config appsettings set --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --slot staging --settings \
+          AzureBlobConfig:ConnectionString="${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}" \
+          AzureBlobConfig:ContainerName="nop-config" \
+          AzureBlobConfig:EndPoint="${{ secrets.AZURE_STORAGE_BLOB_ENDPOINT }}" \
+          AzureBlobConfig:AppendContainerName="true" \
+          ASPNETCORE_ENVIRONMENT="Development"
 
     - name: Deploy to Staging
       uses: azure/webapps-deploy@v3
@@ -139,10 +92,10 @@ jobs:
         URL="https://${{ secrets.AZURE_WEBAPP_NAME }}-staging.azurewebsites.net"
         RESPONSE=$(curl -sL --retry 5 --retry-delay 30 "$URL")
         if echo "$RESPONSE" | grep -qi "${{ env.SMOKE_TEST_KEYWORD }}"; then
-          echo "SUCCESS: Store loaded correctly."
+          echo "SUCCESS: Store loaded from Cloud Config."
         else
-          echo "ERROR: Keyword not found. Response snippet below:"
-          echo "$RESPONSE" | head -c 1000
+          echo "ERROR: Keyword not found. Full response below:"
+          echo "$RESPONSE"
           exit 1
         fi
 
@@ -153,16 +106,8 @@ jobs:
           az webapp deployment slot swap --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --slot staging --target-slot production || echo "Swap failed!"
         fi
         
-        echo "Deleting staging slot..."
-        az webapp deployment slot delete --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --slot staging || true
+        # Reset staging security
+        az webapp config appsettings set --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --slot staging --settings ASPNETCORE_ENVIRONMENT="Production" || true
         
-        echo "Forcing scale down..."
-        az appservice plan update --name Default1 --resource-group Default-Web-NorthEurope --sku D1 || echo "Scale down failed. Check storage quota!"
-
-    - name: Notify Failure
-      if: failure()
-      run: |
-        curl --request POST --url https://api.sendgrid.com/v3/mail/send \
-          --header "Authorization: Bearer ${{ secrets.SENDGRID_API_KEY }}" \
-          --header "Content-Type: application/json" \
-          --data '{"personalizations": [{"to": [{"email": "your-email@domain.com"}]}], "from": {"email": "deployments@yourdomain.com"}, "subject": "ALERT: Deployment Failed", "content": [{"type": "text/html", "value": "Deployment failed for ${{ secrets.AZURE_WEBAPP_NAME }}. Check GitHub logs."}]}'
+        az webapp deployment slot delete --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --slot staging || true
+        az appservice plan update --name Default1 --resource-group Default-Web-NorthEurope --sku D1 || true
