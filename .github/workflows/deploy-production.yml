@@ -53,12 +53,28 @@ jobs:
         rm -rf ./app_publish/wwwroot/images/thumbs/*
         rm -rf ./app_publish/App_Data/Logs/*
 
-        # 4. Inject Version (Fixed the search string for you)
+        # 4. Inject Version Info (Improved Surgery)
         SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
         VERSION_STR="Build #${{ github.run_number }} ($SHORT_SHA) - $(date +'%Y-%m-%d')"
         FOOTER_PATH="./app_publish/Views/Shared/Components/Footer/Default.cshtml"
+        
         if [ -f "$FOOTER_PATH" ]; then
-          node -e "const fs=require('fs'); const p='$FOOTER_PATH'; const c=fs.readFileSync(p,'utf8'); fs.writeFileSync(p, c.replace('', '$VERSION_STR'));"
+          node -e "
+            const fs = require('fs');
+            const path = '$FOOTER_PATH';
+            let content = fs.readFileSync(path, 'utf8');
+            
+            // Check if our placeholder exists before replacing
+            const placeholder = '';
+            if (content.includes(placeholder)) {
+                // Using split/join is safer than replace() for literal strings
+                content = content.split(placeholder).join('$VERSION_STR');
+                fs.writeFileSync(path, content);
+                console.log('Version injected successfully.');
+            } else {
+                console.log('Warning: Placeholder not found in footer.');
+            }
+          "
         fi
 
     - name: Bake Config & Zip
