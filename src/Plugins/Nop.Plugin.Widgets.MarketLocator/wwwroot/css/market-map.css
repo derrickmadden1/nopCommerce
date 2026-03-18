@@ -1,0 +1,350 @@
+/* =========================================================
+   Market Locator Plugin — Public Styles
+   Drop into your theme's custom.css or load via plugin
+   ========================================================= */
+
+:root {
+    --ml-bark:    #3d2b1f;
+    --ml-moss:    #4a6741;
+    --ml-moss-lt: #6a8f60;
+    --ml-amber:   #c8832a;
+    --ml-amber-lt:#e8a84a;
+    --ml-stone:   #8c7b6b;
+    --ml-cream:   #f5f0e8;
+    --ml-parch:   #ede5d3;
+    --ml-white:   #fdfbf7;
+    --ml-red:     #c0392b;
+}
+
+/* ── Hero ──────────────────────────────────────────────── */
+.market-hero {
+    background: linear-gradient(135deg, var(--ml-bark) 0%, #2a1d15 100%);
+    color: var(--ml-white);
+    padding: 2.5rem 2rem 2rem;
+    text-align: center;
+}
+.market-hero__label {
+    font-size: .75rem; font-weight: 600; letter-spacing: .15em;
+    text-transform: uppercase; color: var(--ml-amber-lt); margin-bottom: .6rem;
+}
+.market-hero__title {
+    font-size: clamp(1.6rem, 3vw, 2.4rem); font-weight: 700;
+    margin-bottom: .6rem; line-height: 1.15;
+}
+.market-hero__sub { font-size: .9rem; opacity: .8; max-width: 480px; margin: 0 auto; }
+
+/* ── Filters ────────────────────────────────────────────── */
+.market-filters {
+    background: var(--ml-white); border-bottom: 1px solid var(--ml-parch);
+    padding: .75rem 1.5rem; display: flex; gap: .75rem; align-items: center;
+    flex-wrap: wrap; position: sticky; top: 0; z-index: 50;
+    box-shadow: 0 2px 6px rgba(61,43,31,.08);
+}
+.market-filters__label { font-size: .72rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--ml-stone); }
+.mf-subscribe {
+    font-size: .78rem; font-weight: 500; color: var(--ml-bark);
+    text-decoration: none; white-space: nowrap; padding: .3rem .5rem;
+    border-radius: 6px; transition: background .15s;
+}
+.mf-subscribe:hover { background: #eaf3e8; }
+
+.market-filters__spacer { flex: 1; }
+.mf-btn {
+    padding: .35rem .8rem; border-radius: 99px;
+    border: 1.5px solid var(--ml-parch); background: var(--ml-white);
+    font-size: .8rem; color: var(--ml-bark); cursor: pointer; font-weight: 500;
+    transition: all .15s;
+}
+.mf-btn:hover { border-color: var(--ml-moss-lt); color: var(--ml-moss); }
+.mf-btn.active { background: var(--ml-moss); color: white; border-color: var(--ml-moss); }
+
+.market-view-toggle { display: none; border: 1.5px solid var(--ml-parch); border-radius: 7px; overflow: hidden; }
+.mv-btn { padding: .35rem .8rem; border: none; background: var(--ml-white); font-size: .8rem; color: var(--ml-stone); cursor: pointer; font-weight: 500; transition: all .15s; }
+.mv-btn.active { background: var(--ml-bark); color: white; }
+
+/* ── Layout ─────────────────────────────────────────────── */
+.market-layout {
+    display: grid;
+    grid-template-columns: 360px 1fr;
+    height: 560px;
+}
+#market-map { width: 100%; height: 100%; }
+
+/* ── Sidebar ─────────────────────────────────────────────── */
+.market-sidebar {
+    overflow-y: auto; background: var(--ml-white);
+    border-right: 1px solid var(--ml-parch);
+}
+.market-sidebar__header {
+    padding: .85rem 1.1rem .65rem; border-bottom: 1px solid var(--ml-parch);
+    display: flex; justify-content: space-between; align-items: baseline;
+    position: sticky; top: 0; background: var(--ml-white); z-index: 2;
+}
+.market-sidebar__header strong { font-size: .9rem; }
+#market-count { font-size: .75rem; color: var(--ml-stone); }
+
+/* ── Cards ───────────────────────────────────────────────── */
+.ml-card {
+    padding: .9rem 1.1rem; border-bottom: 1px solid var(--ml-parch);
+    cursor: pointer; transition: background .15s;
+    display: flex; gap: .75rem; align-items: flex-start;
+}
+.ml-card:hover { background: #faf6f0; }
+.ml-card.is-active { background: #f0ede6; border-left: 3px solid var(--ml-moss); }
+
+.ml-card__dot {
+    width: 9px; height: 9px; border-radius: 50%; margin-top: .35rem; flex-shrink: 0;
+}
+.ml-card__dot.status-today   { background: var(--ml-red); }
+.ml-card__dot.status-soon    { background: var(--ml-amber); }
+.ml-card__dot.status-upcoming{ background: var(--ml-moss); }
+
+.ml-card__body { flex: 1; }
+.ml-card__name { font-weight: 600; font-size: .88rem; color: var(--ml-bark); margin-bottom: .2rem; }
+.ml-card__date { font-size: .76rem; color: var(--ml-moss); font-weight: 500; margin-bottom: .2rem; }
+.ml-card__meta { font-size: .74rem; color: var(--ml-stone); }
+.ml-card__badge {
+    padding: .18rem .5rem; border-radius: 99px;
+    font-size: .66rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .07em; flex-shrink: 0; margin-top: .1rem;
+}
+
+/* ── Badges ──────────────────────────────────────────────── */
+.badge-today    { background: #fde8e8; color: var(--ml-red); }
+.badge-soon     { background: #fef3e2; color: #c87320; }
+.badge-upcoming { background: #eaf3e8; color: var(--ml-moss); }
+
+/* ── Leaflet Popup ───────────────────────────────────────── */
+.leaflet-popup-content-wrapper {
+    border-radius: 12px; box-shadow: 0 8px 28px rgba(61,43,31,.18);
+    border: 1px solid var(--ml-parch); font-family: inherit;
+    overflow: hidden; padding: 0;
+}
+.leaflet-popup-content { margin: 0; }
+.ml-popup { padding: 1rem 1.1rem; min-width: 220px; }
+.ml-popup__badge {
+    display: inline-block; padding: .18rem .5rem; border-radius: 99px;
+    font-size: .66rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .07em; margin-bottom: .45rem;
+}
+.ml-popup__name { font-size: 1rem; font-weight: 700; color: var(--ml-bark); margin-bottom: .3rem; }
+.ml-popup__meta { font-size: .76rem; color: var(--ml-stone); line-height: 1.7; margin-bottom: .7rem; }
+.ml-popup__meta span { display: block; }
+.ml-popup__actions { display: flex; gap: .5rem; }
+.ml-btn {
+    flex: 1; padding: .38rem .6rem; border-radius: 7px;
+    font-size: .74rem; font-weight: 600; cursor: pointer;
+    border: none; text-align: center; text-decoration: none; display: inline-block;
+    transition: background .15s;
+}
+.ml-btn--primary  { background: var(--ml-bark); color: white; }
+.ml-btn--primary:hover  { background: #2a1d15; }
+.ml-btn--secondary{ background: var(--ml-parch); color: var(--ml-bark); }
+.ml-btn--secondary:hover{ background: #ddd5c0; }
+
+/* ── Teaser Widget ───────────────────────────────────────── */
+.market-teaser {
+    display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+    background: var(--ml-moss); color: white;
+    padding: .75rem 1.5rem; font-size: .85rem;
+}
+.market-teaser__icon { font-size: 1.2rem; }
+.market-teaser__headline { font-weight: 600; margin-right: .5rem; opacity: .85; }
+.market-teaser__item { margin: 0 .4rem; }
+.market-teaser__item.today strong::after { content: " 🔴"; }
+.market-teaser__item.soon  strong::after { content: " 🟡"; }
+.market-teaser__more { opacity: .7; font-size: .8rem; }
+.market-teaser__cta {
+    margin-left: auto; color: var(--ml-amber-lt); font-weight: 600;
+    text-decoration: none; white-space: nowrap; font-size: .82rem;
+}
+.market-teaser__cta:hover { text-decoration: underline; }
+
+/* ── Mobile ──────────────────────────────────────────────── */
+@media (max-width: 700px) {
+    .market-view-toggle { display: flex; }
+    
+    .market-layout {
+        display: block;
+        height: auto;
+    }
+    
+    #market-map { 
+        height: 65vh; 
+        min-height: 400px; 
+    }
+    
+    .market-sidebar { 
+        max-height: none; 
+        border-right: none;
+    }
+
+    /* Toggling Logic */
+    .market-layout:not([data-view="list"]) .market-sidebar { display: none; }
+    .market-layout[data-view="list"] #market-map { display: none; }
+}
+
+/* ── Checkout Delivery Address Picker ──────────────────── */
+.market-pickup-selector {
+    background: var(--ml-white);
+    border: 1px solid var(--ml-parch);
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.pickup-selector-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--ml-parch);
+}
+.pickup-icon {
+    font-size: 2rem;
+}
+.pickup-selector-header div {
+    display: flex;
+    flex-direction: column;
+}
+.pickup-selector-header strong {
+    font-size: 1.25rem;
+    color: var(--ml-bark);
+}
+.pickup-selector-header span {
+    font-size: 0.9rem;
+    color: var(--ml-stone);
+}
+
+.pickup-step {
+    margin-bottom: 2rem;
+}
+.pickup-step-label {
+    font-weight: 600;
+    color: var(--ml-bark);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.step-num {
+    background: var(--ml-moss);
+    color: white;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.pickup-market-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+}
+.pickup-market-card {
+    border: 2px solid var(--ml-parch);
+    border-radius: 8px;
+    padding: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    background: white;
+}
+.pickup-market-card:hover {
+    border-color: var(--ml-moss-lt);
+    background: #fdfdfc;
+}
+.pickup-market-card.is-selected {
+    border-color: var(--ml-moss);
+    background: #f4f8f3;
+}
+.pmc-radio input {
+    margin-top: 0.25rem;
+    transform: scale(1.2);
+}
+.pmc-body {
+    flex: 1;
+    cursor: pointer;
+}
+.pmc-name {
+    font-weight: 700;
+    color: var(--ml-bark);
+    margin-bottom: 0.25rem;
+    font-size: 1.05rem;
+}
+.pmc-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    font-size: 0.85rem;
+    color: var(--ml-stone);
+}
+
+.pickup-date-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+.pickup-date-btn {
+    border: 2px solid var(--ml-parch);
+    background: white;
+    padding: 0.75rem 1.25rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--ml-bark);
+    transition: all 0.2s ease;
+}
+.pickup-date-btn:hover {
+    border-color: var(--ml-moss-lt);
+    background: #fafafa;
+}
+.pickup-date-btn.is-selected {
+    background: var(--ml-moss);
+    border-color: var(--ml-moss);
+    color: white;
+}
+
+.is-hidden {
+    display: none !important;
+}
+
+.pickup-confirmation {
+    margin-top: 1.5rem;
+    padding: 1rem;
+    background: #eaf3e8;
+    border: 1px solid var(--ml-moss-lt);
+    border-radius: 6px;
+    color: var(--ml-moss);
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+.pickup-check {
+    background: var(--ml-moss);
+    color: white;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+}
+
+.pickup-validation-msg {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    background: #fde8e8;
+    color: var(--ml-red);
+    border-radius: 6px;
+    font-weight: 500;
+}

@@ -1,0 +1,20 @@
+@model Nop.Plugin.Widgets.MarketLocator.Models.MarketPickupSummaryModel
+@if (!Model.HasPickup) { return; }
+
+<div class="market-pickup-order-summary">
+    <div class="mpos-header">
+        <span class="mpos-icon">🥕</span>
+        <strong>Market Pickup</strong>
+    </div>
+    <ul class="mpos-details">
+        <li><span class="mpos-label">Market:</span> @Model.MarketName</li>
+        <li><span class="mpos-label">Date:</span> <strong>@Model.PickupDate</strong></li>
+        <li><span class="mpos-label">Hours:</span> @Model.Hours</li>
+        <li>
+            <span class="mpos-label">Location:</span> @Model.Address
+            <a href="@Model.DirectionsUrl" target="_blank" class="mpos-directions">
+                Get directions →
+            </a>
+        </li>
+    </ul>
+</div>

@@ -1,0 +1,73 @@
+@{
+    Layout = "_ColumnsOne";
+    var azureKey = (string)ViewBag.AzureMapsKey;
+    var hasAzure = !string.IsNullOrWhiteSpace(azureKey);
+    var zoom = (int)ViewBag.DefaultZoom;
+    var lat = (decimal)ViewBag.DefaultLat;
+    var lng = (decimal)ViewBag.DefaultLng;
+
+    NopHtml.AppendCssFileParts("https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css");
+    NopHtml.AppendCssFileParts("~/Plugins/Widgets.MarketLocator/wwwroot/css/market-map.css");
+
+    NopHtml.AppendScriptParts(ResourceLocation.Footer, "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js");
+    if (hasAzure)
+    {
+        NopHtml.AppendScriptParts(ResourceLocation.Footer, "https://atlas.microsoft.com/sdk/javascript/mapcontrol/2/atlas.min.js");
+    }
+
+    var useAzure = hasAzure ? "true" : "false";
+    var inlineConfig = $@"
+        <script>
+        window.MarketLocatorConfig = {{
+            dataUrl: '/market-locations/data',
+            useAzure: {useAzure},
+            azureKey: '{azureKey}',
+            defaultLat: {lat.ToString(System.Globalization.CultureInfo.InvariantCulture)},
+            defaultLng: {lng.ToString(System.Globalization.CultureInfo.InvariantCulture)},
+            defaultZoom: {zoom}
+        }};
+        console.log('MarketLocator: Config injected.');
+        document.getElementById('market-count').textContent = 'Config injected, waiting for script...';
+        </script>
+    ";
+    NopHtml.AddInlineScriptParts(ResourceLocation.Footer, inlineConfig);
+    NopHtml.AddScriptParts(ResourceLocation.Footer, "~/Plugins/Widgets.MarketLocator/wwwroot/js/market-map.js");
+}
+
+<div class="market-locator-page">
+
+    <div class="market-hero">
+        <div class="market-hero__label">📍 Market Locations</div>
+        <h1 class="market-hero__title">Find Us at a Market Near You</h1>
+        <p class="market-hero__sub">
+            We're out in the community most weeks. Come and see us, discover the fragrances before you buy and bring the family.
+        </p>
+    </div>
+
+    <div class="market-filters" id="market-filters">
+        <span class="market-filters__label">Show:</span>
+        <button class="mf-btn active" data-filter="all">All Markets</button>
+        <button class="mf-btn" data-filter="this-week">This Week</button>
+        <button class="mf-btn" data-filter="monthly">Monthly</button>
+        <div class="market-filters__spacer"></div>
+        <a href="/market-locations/ics" class="mf-subscribe" title="Subscribe in Google Calendar, Apple Calendar, Outlook…">
+            📅 Subscribe to all dates
+        </a>
+        <div class="market-view-toggle">
+            <button class="mv-btn active" id="btn-map">🗺 Map</button>
+            <button class="mv-btn" id="btn-list">☰ List</button>
+        </div>
+    </div>
+
+    <div class="market-layout" id="market-layout">
+        <div class="market-sidebar" id="market-sidebar">
+            <div class="market-sidebar__header">
+                <strong>Upcoming Markets</strong>
+                <span id="market-count">Loading…</span>
+            </div>
+            <div id="market-card-list"></div>
+        </div>
+        <div id="market-map"></div>
+    </div>
+
+</div>

@@ -1,0 +1,131 @@
+@model Nop.Plugin.Widgets.MarketLocator.Models.MarketLocationModel
+@{
+    Layout = "_AdminLayout";
+    var isEdit = Model.Id > 0;
+    ViewBag.Title = isEdit ? $"Edit — {Model.Name}" : "Add Market Location";
+}
+
+<div class="content-header clearfix">
+    <h1 class="float-left">@ViewBag.Title</h1>
+    <div class="float-right">
+        <a asp-action="List" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to List
+        </a>
+    </div>
+</div>
+
+<div class="content">
+    <div class="card card-default">
+        <div class="card-body">
+            <form asp-action="@(isEdit ? "Edit" : "Create")" method="post">
+                <input type="hidden" asp-for="Id" />
+                <div asp-validation-summary="All" class="alert alert-danger"></div>
+
+                <div class="row">
+                    <div class="col-md-8">
+
+                        <div class="form-group row">
+                            <div class="col-md-3"><nop-label asp-for="Name" /></div>
+                            <div class="col-md-9">
+                                <nop-editor asp-for="Name" />
+                                <span asp-validation-for="Name" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <div class="col-md-3"><nop-label asp-for="Address" /></div>
+                            <div class="col-md-9">
+                                <nop-editor asp-for="Address" />
+                                <span asp-validation-for="Address" class="text-danger"></span>
+                                <span class="hint">Full street address — used for the "Get Directions" link.</span>
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <div class="col-md-3"><nop-label asp-for="City" /></div>
+                            <div class="col-md-9">
+                                <nop-editor asp-for="City" />
+                                <span asp-validation-for="City" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <div class="col-md-3"><nop-label asp-for="Hours" /></div>
+                            <div class="col-md-9">
+                                <nop-editor asp-for="Hours" />
+                                <span class="hint">e.g. "8:00 AM – 1:00 PM"</span>
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <div class="col-md-3"><nop-label asp-for="UpcomingDatesRaw" /></div>
+                            <div class="col-md-9">
+                                <textarea asp-for="UpcomingDatesRaw" class="form-control" rows="5"
+                                          placeholder="Sat, Mar 14&#10;Sat, Mar 21&#10;Sat, Mar 28"></textarea>
+                                <span asp-validation-for="UpcomingDatesRaw" class="text-danger"></span>
+                                <span class="hint">One date per line. Displayed in the map popup.</span>
+                            </div>
+                        </div>
+
+                    </div>
+                    <div class="col-md-4">
+
+                        <div class="form-group row">
+                            <div class="col-md-5"><nop-label asp-for="Latitude" /></div>
+                            <div class="col-md-7">
+                                <nop-editor asp-for="Latitude" />
+                                <span asp-validation-for="Latitude" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <div class="col-md-5"><nop-label asp-for="Longitude" /></div>
+                            <div class="col-md-7">
+                                <nop-editor asp-for="Longitude" />
+                                <span asp-validation-for="Longitude" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <div class="col-md-5"><nop-label asp-for="Frequency" /></div>
+                            <div class="col-md-7">
+                                <select asp-for="Frequency"
+                                        asp-items="Model.AvailableFrequencies"
+                                        class="form-control"></select>
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <div class="col-md-5"><nop-label asp-for="DisplayOrder" /></div>
+                            <div class="col-md-7"><nop-editor asp-for="DisplayOrder" /></div>
+                        </div>
+
+                        <div class="form-group row">
+                            <div class="col-md-5"><nop-label asp-for="Published" /></div>
+                            <div class="col-md-7"><nop-editor asp-for="Published" /></div>
+                        </div>
+
+                        <div class="alert alert-info small mt-3">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>Finding coordinates:</strong><br />
+                            Right-click any location on
+                            <a href="https://maps.google.com" target="_blank">Google Maps</a>
+                            and select "What's here?" to copy lat/lng.
+                        </div>
+
+                    </div>
+                </div>
+
+                <div class="form-group row mt-3">
+                    <div class="col-md-12">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> @(isEdit ? "Save Changes" : "Create Location")
+                        </button>
+                        <a asp-action="List" class="btn btn-secondary ml-2">Cancel</a>
+                    </div>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>
