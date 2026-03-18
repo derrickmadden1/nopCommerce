@@ -75,7 +75,7 @@ jobs:
           AzureBlobConfig__ConnectionString="${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}" \
           AzureBlobConfig__ContainerName="nop-config" \
           AzureBlobConfig__EndPoint="${{ secrets.AZURE_STORAGE_BLOB_ENDPOINT }}" \
-          AzureBlobConfig__AppendContainerName="true" \
+          AzureBlobConfig__AppendContainerName="false" \
           ASPNETCORE_ENVIRONMENT="Development"
 
     - name: Deploy to Staging
@@ -98,31 +98,6 @@ jobs:
           echo "$RESPONSE"
           exit 1
         fi
-
-    - name: Capture Staging Logs on Failure
-      if: failure()
-      run: |
-        echo "Smoke test failed. Fetching logs from Kudu..."
-        
-        # 1. Enable logging on the slot specifically via CLI to be certain
-        az webapp log config --name ${{ secrets.AZURE_WEBAPP_NAME }} \
-          --resource-group rosecottagecroft \
-          --slot staging \
-          --application-logging filesystem \
-          --level verbose
-
-        # 2. Download the logs as a zip
-        az webapp log download --name ${{ secrets.AZURE_WEBAPP_NAME }} \
-          --resource-group rosecottagecroft \
-          --slot staging \
-          --log-file staging_logs.zip
-
-    - name: Upload Logs as Artifact
-      if: failure()
-      uses: actions/upload-artifact@v4
-      with:
-        name: staging-diagnostic-logs
-        path: staging_logs.zip
 
     - name: Swap and Cleanup
       if: always()
