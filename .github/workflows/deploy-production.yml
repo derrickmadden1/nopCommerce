@@ -37,7 +37,7 @@ jobs:
           echo "Injecting version: $VERSION_STR"
           
           # This one-liner reads the file, replaces the tag, and lstrips to fix the @model error
-          python3 -c "import os; p=os.environ['FOOTER_PATH']; v=os.environ['VERSION_STR']; data=open(p, 'r', encoding='utf-8-sig').read(); open(p, 'w', encoding='utf-8').write(data.replace('', v).lstrip())"
+          python3 -c "import os; p=os.environ['FOOTER_PATH']; v=os.environ['VERSION_STR']; data=open(p, 'r', encoding='utf-8-sig').read(); open(p, 'w', encoding='utf-8').write(data.replace('VERSION_STRING', v).lstrip())"
           
           echo "Python injection and @model safety check complete."
         fi
