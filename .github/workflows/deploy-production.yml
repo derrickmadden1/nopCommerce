@@ -62,6 +62,68 @@ jobs:
         }
         EOF
 
+        # 4. Bake the Plugin State (This tells nopCommerce which plugins are "Installed")
+        cat > ./app_publish/App_Data/plugins.json << 'EOF'
+        {
+          "InstalledPluginNames": [
+            "Obsolete field, using only for compatibility"
+          ],
+          "InstalledPlugins": [
+            {
+              "SystemName": "Payments.PayPalCommerce",
+              "Version": "5.00.6"
+            },
+            {
+              "SystemName": "Payments.Square",
+              "Version": "5.00.1"
+            },
+            {
+              "SystemName": "Pickup.PickupInStore",
+              "Version": "5.00.6"
+            },
+            {
+              "SystemName": "ExternalAuth.Facebook",
+              "Version": "5.00.3"
+            },
+            {
+              "SystemName": "Shipping.FixedByWeightByTotal",
+              "Version": "5.00.7"
+            },
+            {
+              "SystemName": "Misc.Zettle",
+              "Version": "5.00.4"
+            },
+            {
+              "SystemName": "Tax.FixedOrByCountryStateZip",
+              "Version": "5.00.4"
+            },
+            {
+              "SystemName": "Widgets.GoogleAnalytics",
+              "Version": "5.00.3"
+            },
+            {
+              "SystemName": "PromotionFeed.GoogleShopping",
+              "Version": "1.92"
+            },
+            {
+              "SystemName": "Misc.AzureBlob",
+              "Version": "5.00.2"
+            },
+            {
+              "SystemName": "DiscountRequirement.MultiBuy",
+              "Version": "5.00.1"
+            },
+            {
+              "SystemName": "Search.AzureAI",
+              "Version": "1.0.1"
+            }
+          ],
+          "PluginNamesToUninstall": [],
+          "PluginNamesToDelete": [],
+          "PluginNamesToInstall": []
+        }
+        EOF
+
         cd app_publish && zip -r ../nop-app.zip .
 
     - name: Upload Zip
