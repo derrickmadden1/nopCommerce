@@ -72,10 +72,10 @@ jobs:
         
         # Point nopCommerce to the Blob for App_Data
         az webapp config appsettings set --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --slot staging --settings \
-          AzureBlobConfig:ConnectionString="${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}" \
-          AzureBlobConfig:ContainerName="nop-config" \
-          AzureBlobConfig:EndPoint="${{ secrets.AZURE_STORAGE_BLOB_ENDPOINT }}" \
-          AzureBlobConfig:AppendContainerName="true" \
+          AzureBlobConfig__ConnectionString="${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}" \
+          AzureBlobConfig__ContainerName="nop-config" \
+          AzureBlobConfig__EndPoint="${{ secrets.AZURE_STORAGE_BLOB_ENDPOINT }}" \
+          AzureBlobConfig__AppendContainerName="true" \
           ASPNETCORE_ENVIRONMENT="Development"
 
     - name: Deploy to Staging
