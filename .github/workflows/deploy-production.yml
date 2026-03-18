@@ -66,7 +66,7 @@ jobs:
 
     - name: Prepare Infrastructure & Cloud Config
       run: |
-        az appservice plan update --name Default1 --resource-group rosecottagecroft --sku S1
+        az appservice plan update --name Default1 --resource-group Default-Web-NorthEurope --sku S1
         
         az webapp deployment slot create --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --slot staging --configuration-source ${{ secrets.AZURE_WEBAPP_NAME }}
         
