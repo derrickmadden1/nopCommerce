@@ -33,5 +33,21 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
+  
+  <!--
+    Also copy wwwroot into Nop.Web/wwwroot/Plugins/Widgets.MarketLocator/ at build time.
+    nopCommerce serves plugin static files from there, not from the plugin bin folder.
+    Without this, CSS/JS 404 even though the plugin loads fine.
+  -->
+  <Target Name="CopyPluginStaticFiles" AfterTargets="Build">
+    <ItemGroup>
+      <PluginStaticFiles Include="wwwroot\**\*" />
+    </ItemGroup>
+    <Copy
+      SourceFiles="@(PluginStaticFiles)"
+      DestinationFiles="@(PluginStaticFiles->'..\..\Presentation\Nop.Web\wwwroot\Plugins\Widgets.MarketLocator\%(RecursiveDir)%(Filename)%(Extension)')"
+      SkipUnchangedFiles="true" />
+  </Target>
+
 
 </Project>
