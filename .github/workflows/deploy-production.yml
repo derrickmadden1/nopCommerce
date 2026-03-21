@@ -124,7 +124,12 @@ jobs:
             {
               "SystemName": "Shipping.MarketPickup",
               "Version": "1.0.0"
+            },
+            {
+              "SystemName": "Widgets.ImagePuzzle",
+              "Version": "1.00"
             }
+
           ],
           "PluginNamesToUninstall": [],
           "PluginNamesToDelete": [],

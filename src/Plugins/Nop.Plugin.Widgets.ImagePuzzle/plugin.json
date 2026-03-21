@@ -1,0 +1,13 @@
+﻿{
+  "Group": "Widgets",
+  "FriendlyName": "Product Image Sliding Puzzle",
+  "SystemName": "Widgets.ImagePuzzle",
+  "Version": "1.00",
+  "SupportedVersions": [
+    "5.00"
+  ],
+  "Author": "Rose Cottage Croft",
+  "DisplayOrder": 1,
+  "FileName": "Nop.Plugin.Widgets.ImagePuzzle.dll",
+  "Description": "Turns product images into an interactive sliding puzzle on long-press or right-click."
+}
