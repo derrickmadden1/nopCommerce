@@ -25,7 +25,6 @@ public class PluginNopStartup : INopStartup
         });
 
         //register services and interfaces
-        services.AddScoped<PuzzleRequirementRule>();
     }
 
     /// <summary>

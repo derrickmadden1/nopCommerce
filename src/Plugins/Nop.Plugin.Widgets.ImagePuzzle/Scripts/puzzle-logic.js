@@ -6,6 +6,14 @@ function closePuzzle() {
   document.getElementById('puzzle-overlay').classList.remove('active');
   document.body.classList.remove('puzzle-open');
   document.documentElement.classList.remove('puzzle-open');
+  
+  // Hide success banner for next time
+  const banner = document.getElementById('puzzle-success-banner');
+  if (banner) {
+    banner.style.display = 'none';
+    banner.classList.remove('visible');
+  }
+
   // Clear the canvas to save memory
   if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
@@ -181,7 +189,14 @@ function handleVictory() {
   fetch('/Plugins/ImagePuzzle/ApplyPuzzleDiscount', { method: 'POST' })
   .then(response => response.json())
   .then(data => {
-    if (data.success) alert("Discount applied automatically!");
+    if (data.success) {
+      const banner = document.getElementById('puzzle-success-banner');
+      if (banner) {
+        banner.innerHTML = "✨ <b>Discount Applied!</b> Your savings are ready at checkout.";
+        banner.style.display = 'block';
+        banner.classList.add('visible');
+      }
+    }
   });
 }
   function savePuzzleState(productId) {

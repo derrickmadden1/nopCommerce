@@ -1,9 +1,13 @@
 using Microsoft.AspNetCore.Mvc;
 using Nop.Core;
+using Nop.Core.Domain.Discounts;
 using Nop.Services.Common;
 using Nop.Services.Customers;
 using Nop.Services.Discounts;
+using Nop.Services.Security;
+using Nop.Web.Framework;
 using Nop.Web.Framework.Controllers;
+using Nop.Web.Framework.Mvc.Filters;
 
 namespace Nop.Plugin.Widgets.ImagePuzzle.Controllers;
 
@@ -27,6 +31,7 @@ public partial class PuzzleController : BasePluginController
         _storeContext = storeContext;
         _workContext = workContext;
     }
+
     [HttpPost]
     public async Task<IActionResult> ApplyPuzzleDiscount()
     {
@@ -57,5 +62,46 @@ public partial class PuzzleController : BasePluginController
         await _genericAttributeService.SaveAttributeAsync(customer, "PuzzleSolved", true);
 
         return Json(new { success = true });
+    }
+
+    [Area(AreaNames.ADMIN)]
+    [AuthorizeAdmin]
+    [Route("Admin/Puzzle/ConfigureRequirement")]
+    public async Task<IActionResult> ConfigureRequirement(int discountId, int? discountRequirementId)
+    {
+        // Use concrete model to avoid RuntimeBinderException
+        var model = new Models.RequirementModel
+        {
+            DiscountId = discountId,
+            RequirementId = discountRequirementId ?? 0
+        };
+ 
+        return View("~/Plugins/Widgets.ImagePuzzle/Views/ConfigureRequirement.cshtml", model);
+    }
+
+    [HttpPost]
+    [Area(AreaNames.ADMIN)]
+    [AuthorizeAdmin]
+    [AutoValidateAntiforgeryToken]
+    [Route("Admin/Puzzle/ConfigureRequirement")]
+    [CheckPermission(StandardPermission.Promotions.DISCOUNTS_CREATE_EDIT_DELETE)]
+    public async Task<IActionResult> ConfigureRequirement(int discountId, int? requirementId, bool unused = true)
+    {
+        var discount = await _discountService.GetDiscountByIdAsync(discountId);
+        if (discount == null)
+            return Json(new { Errors = new[] { "Discount could not be loaded" } });
+
+        var discountRequirement = await _discountService.GetDiscountRequirementByIdAsync(requirementId ?? 0);
+        if (discountRequirement == null)
+        {
+            discountRequirement = new DiscountRequirement
+            {
+                DiscountId = discount.Id,
+                DiscountRequirementRuleSystemName = "Widgets.ImagePuzzle"
+            };
+            await _discountService.InsertDiscountRequirementAsync(discountRequirement);
+        }
+
+        return Json(new { NewRequirementId = discountRequirement.Id });
     }
 }

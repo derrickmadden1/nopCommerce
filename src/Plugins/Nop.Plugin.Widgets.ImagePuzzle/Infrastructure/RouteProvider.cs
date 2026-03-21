@@ -21,6 +21,10 @@ public class RouteProvider : IRouteProvider
         endpointRouteBuilder.MapControllerRoute(name: "Plugin.Widgets.ImagePuzzle.MarkAsSolved",
             pattern: "Plugins/ImagePuzzle/MarkAsSolved",
             defaults: new { controller = "Puzzle", action = "MarkAsSolved" });
+ 
+        endpointRouteBuilder.MapControllerRoute(name: "Plugin.Widgets.ImagePuzzle.ConfigureRequirement",
+            pattern: "Admin/Puzzle/ConfigureRequirement",
+            defaults: new { controller = "Puzzle", action = "ConfigureRequirement", area = "Admin" });
     }
 
     /// <summary>
