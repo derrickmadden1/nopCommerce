@@ -1,0 +1,105 @@
+@model Nop.Plugin.Widgets.ImagePuzzle.Models.PuzzleModel
+
+@* Inject the puzzle stylesheet *@
+<link rel="stylesheet" href="~/Plugins/Widgets.ImagePuzzle/Content/puzzle.css" />
+@* The Modal Overlay (Hidden by default) *@
+<div id="image-puzzle-marker" style="display:none;" data-msg="ImagePuzzle Rendered"></div>
+<div id="puzzle-overlay" style="display:none;">
+    <div class="puzzle-container">
+        <div id="puzzle-success-banner" class="puzzle-success-banner" style="display:none;"></div>
+        <div id="puzzle-message"></div>
+        <canvas id="puzzle-canvas"></canvas>
+        <div class="puzzle-controls">
+            <button id="puzzle-resume-btn" class="button-1" style="display:none;" onclick="resumePuzzle()">Resume</button>
+            <button class="button-2" onclick="closePuzzle()">Close</button>
+            <button class="button-1" onclick="shuffleTiles(); drawPuzzle();">Reset</button>
+        </div>
+    </div>
+</div>
+
+@* Inject the logic *@
+<script src="~/Plugins/Widgets.ImagePuzzle/Scripts/puzzle-logic.js" asp-location="Footer"></script>
+
+<script asp-location="Footer">
+    var currentProductId = @Model.ProductId;
+    var puzzleGridSize = @Model.GridSize;
+
+    function resumePuzzle() {
+        if (window.lastSavedPuzzleState) {
+            const state = window.lastSavedPuzzleState;
+            startPuzzle(state.imageSrc, state.gridSize, state.tiles, state.emptySlot);
+            document.getElementById('puzzle-resume-btn').style.display = 'none';
+        }
+    }
+
+    function initImagePuzzle() {
+        const allImgs = document.querySelectorAll('.picture img');
+        let productImg = null;
+        
+        for (let img of allImgs) {
+            const r = img.getBoundingClientRect();
+            if (r.width > 0 && r.height > 0 && !productImg) {
+                productImg = img;
+            }
+        }
+
+        if (productImg) {
+            function triggerPuzzle(e) {
+                if (!document.getElementById('puzzle-overlay').classList.contains('active')) {
+                    if (e) e.preventDefault();
+                    startPuzzle(productImg.src, puzzleGridSize);
+                }
+            }
+
+            // Add the puzzle hint badge
+            if (!document.querySelector('.puzzle-hint-badge')) {
+                const badge = document.createElement('div');
+                badge.className = 'puzzle-hint-badge';
+                badge.title = 'Right-click or Long-press to play the image puzzle!';
+                
+                productImg.parentElement.style.position = 'relative'; 
+                productImg.parentElement.appendChild(badge);
+
+                badge.onclick = triggerPuzzle;
+                badge.oncontextmenu = triggerPuzzle;
+
+                // Badge Long Press
+                let badgeTimer;
+                badge.ontouchstart = (e) => {
+                    badgeTimer = window.setTimeout(() => triggerPuzzle(e), 800);
+                };
+                badge.ontouchend = () => clearTimeout(badgeTimer);
+            }
+
+            // Image Handle Right Click
+            productImg.addEventListener('contextmenu', triggerPuzzle);
+
+            // Image Handle Long Press (Mobile)
+            let pressTimer;
+            productImg.addEventListener('touchstart', (e) => {
+                pressTimer = window.setTimeout(() => triggerPuzzle(e), 800);
+            });
+            productImg.addEventListener('touchend', () => clearTimeout(pressTimer));
+        } else {
+            console.log("ImagePuzzle: NO VISIBLE image found in '.picture img' [V7]");
+        }
+
+        // Check for saved state
+        try {
+            if (typeof loadPuzzleState === 'function') {
+                const savedState = loadPuzzleState(currentProductId);
+                if (savedState) {
+                    const resumeBtn = document.getElementById('puzzle-resume-btn');
+                    if (resumeBtn) resumeBtn.style.display = 'inline-block';
+                    window.lastSavedPuzzleState = savedState;
+                }
+            }
+        } catch (err) { }
+    }
+
+    if (document.readyState === "complete" || document.readyState === "interactive") {
+        initImagePuzzle();
+    } else {
+        document.addEventListener("DOMContentLoaded", initImagePuzzle);
+    }
+</script>

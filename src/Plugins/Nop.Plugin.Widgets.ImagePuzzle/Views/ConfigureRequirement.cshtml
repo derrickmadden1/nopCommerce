@@ -1,0 +1,56 @@
+@{
+    Layout = "";
+}
+@model Nop.Plugin.Widgets.ImagePuzzle.Models.RequirementModel
+
+<div class="card-body">
+    <div class="form-group row">
+        <div class="col-md-3">
+            <label class="col-form-label">
+                Puzzle Requirement
+            </label>
+        </div>
+        <div class="col-md-9">
+            <div class="form-text-row">
+                Customers must solve the interactive product image puzzle to qualify for this discount. No further configuration is required.
+            </div>
+            <input type="hidden" name="discountId" value="@Model.DiscountId" />
+            <input type="hidden" name="discountRequirementId" value="@Model.RequirementId" />
+        </div>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+        $('#save-requirement-@Model.RequirementId').on('click', function (e) {
+            e.preventDefault();
+            var postData = {
+                discountId: @Model.DiscountId,
+                requirementId: @Model.RequirementId
+            };
+            addRequirement(postData);
+        });
+    });
+
+    function addRequirement(postData) {
+        $.ajax({
+            cache: false,
+            type: "POST",
+            url: "@(Url.Action("ConfigureRequirement", "Puzzle", new { area = "Admin" }))",
+            data: postData,
+            success: function (data, textStatus, jqXHR) {
+                if (data.NewRequirementId) {
+                    // Update requirement list
+                    $('#discountRequirementContainer').trigger('requirementUpdate', [data.NewRequirementId]);
+                } else if (data.Errors) {
+                    for (var i = 0; i < data.Errors.length; i++) {
+                        alert(data.Errors[i]);
+                    }
+                }
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                alert('Error saving requirement');
+            }
+        });
+    }
+</script>
