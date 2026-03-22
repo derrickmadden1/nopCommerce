@@ -1,4 +1,4 @@
-﻿@using Nop.Core.Domain.Catalog
+@using Nop.Core.Domain.Catalog
 @using Nop.Core.Domain.Common
 @using Nop.Core.Domain.FilterLevels
 @using Nop.Core.Domain.Seo
@@ -103,6 +103,82 @@
 </head>
 <body>
     <nop-antiforgery-token />
+
+    <!-- 🐣 EASTER BACKGROUND START 🐣 -->
+    <div id="easter-layer">
+        <div class="grass">
+            <svg viewBox="0 0 1440 56" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M0,56 L0,32 Q10,8 20,28 Q30,48 40,26 Q50,4 60,24 Q70,44 80,22 Q90,0 100,20 Q110,40 120,18 Q130,0 145,22 Q160,44 175,20 Q190,0 205,24 Q220,48 235,22 Q250,0 265,20 Q280,40 295,18 Q310,0 330,22 Q350,44 370,20 Q390,0 410,22 Q430,44 450,20 Q470,0 490,22 Q510,44 530,18 Q550,0 575,22 Q600,44 625,20 Q650,0 675,22 Q700,44 725,18 Q750,0 775,22 Q800,44 825,20 Q850,0 875,22 Q900,44 925,18 Q950,0 980,22 Q1010,44 1040,20 Q1070,0 1100,22 Q1130,44 1160,18 Q1190,0 1220,22 Q1250,44 1280,20 Q1310,0 1340,22 Q1370,44 1400,18 Q1420,4 1440,20 L1440,56 Z" fill="#7bc47f" />
+                <path d="M0,56 L0,38 Q15,22 30,36 Q45,50 60,34 Q75,18 90,34 Q105,50 120,34 Q135,18 155,36 Q175,54 195,36 Q215,18 235,34 Q255,50 275,34 Q295,18 320,36 Q345,54 370,36 Q395,18 420,36 Q445,54 470,36 Q495,18 525,36 Q555,54 585,36 Q615,18 645,36 Q675,54 705,34 Q735,14 765,34 Q795,54 825,34 Q855,14 890,36 Q925,58 960,36 Q995,14 1030,34 Q1065,54 1100,34 Q1135,14 1170,36 Q1205,58 1240,36 Q1275,14 1310,34 Q1345,54 1380,36 Q1410,22 1440,34 L1440,56 Z" fill="#5aad5e" opacity="0.8" />
+            </svg>
+        </div>
+    </div>
+
+    <style>
+        #easter-layer { position: fixed; inset: 0; pointer-events: none; z-index: 9999; overflow: hidden; }
+        #easter-layer .grass { position: absolute; bottom: 0; left: 0; right: 0; height: 56px; }
+        #easter-layer .grass svg { width: 100%; height: 100%; }
+        .cloud { position: absolute; top: 6%; opacity: 0.55; animation: driftCloud linear infinite; }
+        @@keyframes driftCloud { from { transform: translateX(-260px); } to { transform: translateX(calc(100vw + 260px)); } }
+        .egg { position: absolute; bottom: 38px; animation: eggBob ease-in-out infinite alternate; transform-origin: center bottom; }
+        @@keyframes eggBob { from { transform: rotate(-8deg) translateY(0); } to { transform: rotate(8deg) translateY(-22px); } }
+        .bunny { position: absolute; bottom: 34px; width: 52px; height: 52px; animation: bunnyHop linear infinite; }
+        @@keyframes bunnyHop {
+            0% { transform: translateX(0) scaleX(1); bottom: 34px; }
+            50% { transform: translateX(var(--hop-dist, 100px)) scaleX(1); bottom: 34px; }
+            50.1% { transform: translateX(var(--hop-dist, 100px)) scaleX(-1); }
+            100% { transform: translateX(0) scaleX(-1); bottom: 34px; }
+        }
+    </style>
+
+    <script>
+        (function() {
+            var l = document.getElementById('easter-layer');
+            if (!l) return;
+            var r = function(a, b) { return Math.random() * (b - a) + a; };
+            var el = function(t, s, a) {
+                var e = document.createElement(t);
+                if (s) for (var k in s) e.style[k] = s[k];
+                if (a) for (var n in a) e.setAttribute(n, a[n]);
+                return e;
+            };
+            function spawn(type) {
+                var w = r(120, 200);
+                var d = el('div', { position: 'absolute', zIndex: type==='egg'?2:1 });
+                d.className = type;
+                if (type==='cloud') {
+                    d.style.top = r(2, 20) + '%'; d.style.left = '-250px';
+                    // Using a light blue fill for visibility on white/light backgrounds
+                    d.innerHTML = '<svg width="'+w+'" height="'+(w*0.5)+'" viewBox="0 0 120 60"><path d="M20,50 Q5,50 5,38 Q5,28 15,26 Q14,10 28,9 Q36,2 46,8 Q54,2 65,8 Q78,3 82,14 Q96,12 98,26 Q110,26 110,38 Q110,50 96,50 Z" fill="#e3f2fd" stroke="#bbdefb" stroke-width="1"/></svg>';
+                    d.style.animationDuration = r(40, 90) + 's';
+                } else if (type==='egg') {
+                    d.style.bottom = '46px'; d.style.left = r(2, 98) + 'vw';
+                    d.innerHTML = '<svg width="40" height="52" viewBox="0 0 44 56"><ellipse cx="22" cy="30" rx="18" ry="24" fill="hsl('+r(0,360)+',75%,75%)" stroke="white" stroke-width="2"/></svg>';
+                    d.style.animationDuration = r(2, 4) + 's';
+                } else {
+                    d.style.bottom = '40px'; d.style.left = r(5, 80) + 'vw';
+                    d.style.setProperty('--hop-dist', r(80, 200) + 'px');
+                    d.style.animationDuration = r(10, 20) + 's';
+                    // Improved Bunny with ears and tail
+                    d.innerHTML = '<svg width="52" height="52" viewBox="0 0 52 52">'+
+                        '<ellipse cx="18" cy="12" rx="4" ry="10" fill="#f0e0d0" />' + // ear L
+                        '<ellipse cx="28" cy="10" rx="4" ry="10" fill="#f0e0d0" />' + // ear R
+                        '<circle cx="26" cy="36" r="14" fill="#f0e0d0" stroke="#dcb790"/>' + // body
+                        '<circle cx="23" cy="24" r="10" fill="#f5ece2" />' + // head
+                        '<circle cx="39" cy="36" r="5" fill="white" />' + // tail
+                        '<circle cx="26" cy="22" r="1.5" fill="#3a2010" />' + // eye
+                        '</svg>';
+                }
+                l.appendChild(d);
+            }
+            console.log("Easter Background: Spawning...");
+            for (var i=0; i<5; i++) spawn('cloud');
+            for (var i=0; i<8; i++) spawn('egg');
+            for (var i=0; i<3; i++) spawn('bunny');
+        })();
+    </script>
+    <!-- 🐣 EASTER BACKGROUND END 🐣 -->
+
     @RenderBody()
 
     @NopHtml.GenerateScripts(ResourceLocation.Footer)
@@ -127,7 +203,7 @@
         <img height="1" width="1" style="display:none"
              src="https://www.facebook.com/tr?id=548170455596594&ev=PageView&noscript=1" />
     </noscript>
-    <!-- End Facebook Pixel Code
+    <!-- End Facebook Pixel Code -->
     <!-- Freshchat Code-->
     <script>
         window.fcWidget.init({
