@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Nop.Core;
 using Nop.Core.Caching;
@@ -1198,11 +1198,14 @@ public partial class ShoppingCartModelFactory : IShoppingCartModelFactory
             var currentLanguage = await _workContext.GetWorkingLanguageAsync();
             model.SubTotal = await _priceFormatter.FormatPriceAsync(subtotal, true, currentCurrency, currentLanguage.Id, subTotalIncludingTax);
 
+            //subtotal discount is now combined with order total discount below
+            /*
             if (orderSubTotalDiscountAmountBase > decimal.Zero)
             {
                 var orderSubTotalDiscountAmount = await _currencyService.ConvertFromPrimaryStoreCurrencyAsync(orderSubTotalDiscountAmountBase, currentCurrency);
                 model.SubTotalDiscount = await _priceFormatter.FormatPriceAsync(-orderSubTotalDiscountAmount, true, currentCurrency, currentLanguage.Id, subTotalIncludingTax);
             }
+            */
 
             //shipping info
             model.RequiresShipping = await _shoppingCartService.ShoppingCartRequiresShippingAsync(cart);
@@ -1295,11 +1298,12 @@ public partial class ShoppingCartModelFactory : IShoppingCartModelFactory
                 model.OrderTotal = await _priceFormatter.FormatPriceAsync(shoppingCartTotal, true, false);
             }
 
-            //discount
-            if (orderTotalDiscountAmountBase > decimal.Zero)
+            //cumulative discount
+            var cumulativeDiscountAmountBase = orderSubTotalDiscountAmountBase + orderTotalDiscountAmountBase;
+            if (cumulativeDiscountAmountBase > decimal.Zero)
             {
-                var orderTotalDiscountAmount = await _currencyService.ConvertFromPrimaryStoreCurrencyAsync(orderTotalDiscountAmountBase, currentCurrency);
-                model.OrderTotalDiscount = await _priceFormatter.FormatPriceAsync(-orderTotalDiscountAmount, true, false);
+                var cumulativeDiscountAmount = await _currencyService.ConvertFromPrimaryStoreCurrencyAsync(cumulativeDiscountAmountBase, currentCurrency);
+                model.OrderTotalDiscount = await _priceFormatter.FormatPriceAsync(-cumulativeDiscountAmount, true, false);
             }
 
             //gift cards

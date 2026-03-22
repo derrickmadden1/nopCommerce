@@ -1,4 +1,4 @@
-﻿@using Nop.Core.Domain.Catalog
+@using Nop.Core.Domain.Catalog
 @using Nop.Core.Domain.Common
 @using Nop.Core.Domain.FilterLevels
 @using Nop.Core.Domain.Seo
@@ -75,7 +75,7 @@
             {
                 foreach (var url in preloadList.Distinct())
                 {
-                    <text><link rel="preload" as="image" href="@url" importance="high" /></text>
+                                <text><link rel="preload" as="image" href="@url" importance="high" /></text>
                 }
             }
         }
@@ -103,6 +103,489 @@
 </head>
 <body>
     <nop-antiforgery-token />
+
+    <!-- 🐣 EASTER BACKGROUND START 🐣 -->
+    <div id="easter-layer">
+        <div class="grass">
+            <svg viewBox="0 0 1440 56" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M0,56 L0,32 Q10,8 20,28 Q30,48 40,26 Q50,4 60,24 Q70,44 80,22 Q90,0 100,20 Q110,40 120,18 Q130,0 145,22 Q160,44 175,20 Q190,0 205,24 Q220,48 235,22 Q250,0 265,20 Q280,40 295,18 Q310,0 330,22 Q350,44 370,20 Q390,0 410,22 Q430,44 450,20 Q470,0 490,22 Q510,44 530,18 Q550,0 575,22 Q600,44 625,20 Q650,0 675,22 Q700,44 725,18 Q750,0 775,22 Q800,44 825,20 Q850,0 875,22 Q900,44 925,18 Q950,0 980,22 Q1010,44 1040,20 Q1070,0 1100,22 Q1130,44 1160,18 Q1190,0 1220,22 Q1250,44 1280,20 Q1310,0 1340,22 Q1370,44 1400,18 Q1420,4 1440,20 L1440,56 Z" fill="#7bc47f" />
+                <path d="M0,56 L0,38 Q15,22 30,36 Q45,50 60,34 Q75,18 90,34 Q105,50 120,34 Q135,18 155,36 Q175,54 195,36 Q215,18 235,34 Q255,50 275,34 Q295,18 320,36 Q345,54 370,36 Q395,18 420,36 Q445,54 470,36 Q495,18 525,36 Q555,54 585,36 Q615,18 645,36 Q675,54 705,34 Q735,14 765,34 Q795,54 825,34 Q855,14 890,36 Q925,58 960,36 Q995,14 1030,34 Q1065,54 1100,34 Q1135,14 1170,36 Q1205,58 1240,36 Q1275,14 1310,34 Q1345,54 1380,36 Q1410,22 1440,34 L1440,56 Z" fill="#5aad5e" opacity="0.8" />
+            </svg>
+        </div>
+    </div>
+
+    <style>
+  /* ─── EASTER CANVAS LAYER ──────────────────────────────────── */
+  #easter-layer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;   /* never blocks clicks */
+    z-index: 9999;
+    background-image: none;
+    background-color: transparent;
+  }
+
+  /* ─── GRASS STRIP ──────────────────────────────────────────── */
+  #easter-layer .grass {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 56px;
+  }
+  #easter-layer .grass svg { width: 100%; height: 100%; }
+
+  /* ─── CLOUDS ───────────────────────────────────────────────── */
+  .cloud {
+    position: absolute;
+    top: 6%;
+    opacity: 0.55;
+    animation: driftCloud linear infinite;
+  }
+  @@keyframes driftCloud {
+    from { transform: translateX(-260px); }
+    to   { transform: translateX(calc(100vw + 260px)); }
+  }
+
+  /* ─── EASTER EGG ───────────────────────────────────────────── */
+  .egg {
+    position: absolute;
+    bottom: 38px;
+    animation: eggBob ease-in-out infinite alternate;
+    transform-origin: center bottom;
+  }
+  @@keyframes eggBob {
+    from { transform: rotate(-3deg) translateY(0); }
+    to   { transform: rotate(3deg) translateY(-5px); }
+  }
+
+  /* ─── FALLING PETAL ────────────────────────────────────────── */
+  .petal {
+    position: absolute;
+    top: -30px;
+    border-radius: 50% 0 50% 0;
+    animation: petalFall linear infinite;
+    opacity: 0.7;
+  }
+  @@keyframes petalFall {
+    0%   { transform: translateY(0)      rotate(0deg)   translateX(0); opacity: .7; }
+    50%  { transform: translateY(45vh)   rotate(180deg) translateX(30px); }
+    100% { transform: translateY(100vh)  rotate(360deg) translateX(-20px); opacity: 0; }
+  }
+
+  /* ─── BUNNY ─────────────────────────────────────────────────── */
+  .bunny {
+    position: absolute;
+    bottom: 34px;
+    width: 52px;
+    height: 52px;
+    animation: bunnyHop linear infinite;
+  }
+  @@keyframes bunnyHop {
+    0%   { transform: translateX(0)     scaleX(1);  bottom: 34px; }
+    4%   { bottom: 60px; }
+    8%   { bottom: 34px; }
+    12%  { bottom: 54px; }
+    16%  { bottom: 34px; }
+    /* pause walking between hops */
+    50%  { transform: translateX(var(--hop-dist)) scaleX(1); bottom: 34px; }
+    50.1%{ transform: translateX(var(--hop-dist)) scaleX(-1); }
+    54%  { bottom: 60px; }
+    58%  { bottom: 34px; }
+    62%  { bottom: 54px; }
+    66%  { bottom: 34px; }
+    100% { transform: translateX(0)     scaleX(-1); bottom: 34px; }
+  }
+
+  /* ─── BUTTERFLY ─────────────────────────────────────────────── */
+  .butterfly {
+    position: absolute;
+    animation: butterflyFloat ease-in-out infinite;
+  }
+  .butterfly svg .wing {
+    transform-origin: center;
+    animation: wingFlap 0.3s ease-in-out infinite alternate;
+  }
+  .butterfly svg .wing-r {
+    animation: wingFlapR 0.3s ease-in-out infinite alternate;
+    transform-origin: center;
+  }
+  @@keyframes wingFlap  { from { transform: scaleX(1); } to { transform: scaleX(0.2); } }
+  @@keyframes wingFlapR { from { transform: scaleX(-1); } to { transform: scaleX(-0.2); } }
+  @@keyframes butterflyFloat {
+    0%   { transform: translate(0,0); }
+    25%  { transform: translate(18px, -22px); }
+    50%  { transform: translate(35px, 5px); }
+    75%  { transform: translate(10px, 20px); }
+    100% { transform: translate(0,0); }
+  }
+
+    </style>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     EASTER BACKGROUND SCRIPT
+     Self-contained – no external dependencies.
+     ═══════════════════════════════════════════════════════════════ -->
+<script>
+(function () {
+  'use strict';
+
+  const layer = document.getElementById('easter-layer');
+  if (!layer) return;
+
+  /* ── Helpers ─────────────────────────────────────────────────── */
+  var rnd  = (a, b) => Math.random() * (b - a) + a;
+  var pick = arr   => arr[Math.floor(Math.random() * arr.length)];
+
+  function el(tag, css = {}, attrs = {}) {
+    const e = document.createElement(tag);
+    Object.assign(e.style, css);
+    Object.entries(attrs).forEach(([k, v]) => e.setAttribute(k, v));
+    return e;
+  }
+
+  /* ── Palette ─────────────────────────────────────────────────── */
+  var eggPalettes = [
+    ['#f9e04b','#e05b96','#fff'],   // yellow/pink
+    ['#7ed8f6','#e05b96','#fff'],   // sky/pink
+    ['#b5e86a','#f4a732','#fff'],   // green/orange
+    ['#c89be0','#f9e04b','#fff'],   // lavender/yellow
+    ['#f7a35c','#7ed8f6','#fff'],   // peach/sky
+    ['#f77171','#b5e86a','#fff'],   // coral/lime
+  ];
+
+  var petalColors = ['#ffb7c5','#ffd6e0','#ffe0a3','#d4f1a3','#c9e8ff','#e8c9ff'];
+
+  /* ── SVG builders ────────────────────────────────────────────── */
+
+  // Easter egg SVG with stripes / dots pattern
+  function makeEggSVG(size = 44) {
+    const [c1, c2, c3] = pick(eggPalettes);
+    const pat = Math.random() > 0.5 ? 'stripes' : 'dots';
+    const ns = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('width', size); svg.setAttribute('height', size * 1.28);
+    svg.setAttribute('viewBox', '0 0 44 56');
+
+    // clip path for egg shape
+    const defs = document.createElementNS(ns, 'defs');
+    const clip = document.createElementNS(ns, 'clipPath');
+    clip.setAttribute('id', `ec-${Math.random().toString(36).slice(2,6)}`);
+    const cEgg = document.createElementNS(ns, 'ellipse');
+    cEgg.setAttribute('cx','22'); cEgg.setAttribute('cy','30');
+    cEgg.setAttribute('rx','18'); cEgg.setAttribute('ry','24');
+    clip.appendChild(cEgg); defs.appendChild(clip); svg.appendChild(defs);
+
+    const g = document.createElementNS(ns, 'g');
+    g.setAttribute('clip-path', `url(#${clip.id})`);
+
+    // base fill
+    const base = document.createElementNS(ns, 'rect');
+    base.setAttribute('width','44'); base.setAttribute('height','56');
+    base.setAttribute('fill', c1); g.appendChild(base);
+
+    if (pat === 'stripes') {
+      for (let y = 10; y < 56; y += 12) {
+        const stripe = document.createElementNS(ns, 'rect');
+        stripe.setAttribute('x','0'); stripe.setAttribute('y', y);
+        stripe.setAttribute('width','44'); stripe.setAttribute('height','6');
+        stripe.setAttribute('fill', c2); g.appendChild(stripe);
+      }
+      // zigzag line
+      const zag = document.createElementNS(ns, 'polyline');
+      zag.setAttribute('points', '0,24 6,18 12,24 18,18 24,24 30,18 36,24 42,18 44,20');
+      zag.setAttribute('fill','none'); zag.setAttribute('stroke', c3);
+      zag.setAttribute('stroke-width','2'); g.appendChild(zag);
+    } else {
+      for (let row = 0; row < 5; row++) {
+        for (let col = 0; col < 4; col++) {
+          const dot = document.createElementNS(ns, 'circle');
+          dot.setAttribute('cx', 6 + col * 11 + (row % 2) * 5);
+          dot.setAttribute('cy', 10 + row * 11);
+          dot.setAttribute('r', '3');
+          dot.setAttribute('fill', c2); g.appendChild(dot);
+        }
+      }
+    }
+
+    // sheen
+    const sheen = document.createElementNS(ns, 'ellipse');
+    sheen.setAttribute('cx','14'); sheen.setAttribute('cy','15');
+    sheen.setAttribute('rx','5'); sheen.setAttribute('ry','7');
+    sheen.setAttribute('fill','rgba(255,255,255,0.3)');
+    sheen.setAttribute('transform','rotate(-20 14 15)');
+    g.appendChild(sheen);
+
+    // outline
+    const outline = document.createElementNS(ns, 'ellipse');
+    outline.setAttribute('cx','22'); outline.setAttribute('cy','30');
+    outline.setAttribute('rx','18'); outline.setAttribute('ry','24');
+    outline.setAttribute('fill','none'); outline.setAttribute('stroke','rgba(0,0,0,0.08)');
+    outline.setAttribute('stroke-width','1');
+    g.appendChild(outline);
+
+    svg.appendChild(g);
+    return svg;
+  }
+
+  // Bunny SVG (side-profile, cute minimal style)
+  function makeBunnySVG(flip = false) {
+    const ns = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('width','52'); svg.setAttribute('height','52');
+    svg.setAttribute('viewBox','0 0 52 52');
+    if (flip) svg.setAttribute('transform','scale(-1,1)');
+
+    const g = document.createElementNS(ns, 'g');
+    // ear left
+    const el1 = document.createElementNS(ns, 'ellipse');
+    el1.setAttribute('cx','18'); el1.setAttribute('cy','10');
+    el1.setAttribute('rx','5'); el1.setAttribute('ry','12');
+    el1.setAttribute('fill','#f0e0d0'); g.appendChild(el1);
+    const el1i = document.createElementNS(ns, 'ellipse');
+    el1i.setAttribute('cx','18'); el1i.setAttribute('cy','10');
+    el1i.setAttribute('rx','2.5'); el1i.setAttribute('ry','8');
+    el1i.setAttribute('fill','#f4b8c0'); g.appendChild(el1i);
+
+    // ear right
+    const er1 = document.createElementNS(ns, 'ellipse');
+    er1.setAttribute('cx','28'); er1.setAttribute('cy','8');
+    er1.setAttribute('rx','5'); er1.setAttribute('ry','12');
+    er1.setAttribute('fill','#f0e0d0'); g.appendChild(er1);
+    const er1i = document.createElementNS(ns, 'ellipse');
+    er1i.setAttribute('cx','28'); er1i.setAttribute('cy','8');
+    er1i.setAttribute('rx','2.5'); er1i.setAttribute('ry','8');
+    er1i.setAttribute('fill','#f4b8c0'); g.appendChild(er1i);
+
+    // body
+    const body = document.createElementNS(ns, 'ellipse');
+    body.setAttribute('cx','26'); body.setAttribute('cy','36');
+    body.setAttribute('rx','14'); body.setAttribute('ry','13');
+    body.setAttribute('fill','#f0e0d0'); g.appendChild(body);
+
+    // head
+    const head = document.createElementNS(ns, 'circle');
+    head.setAttribute('cx','23'); head.setAttribute('cy','24');
+    head.setAttribute('r','11'); head.setAttribute('fill','#f5ece2'); g.appendChild(head);
+
+    // tail
+    const tail = document.createElementNS(ns, 'circle');
+    tail.setAttribute('cx','39'); tail.setAttribute('cy','34');
+    tail.setAttribute('r','5'); tail.setAttribute('fill','#fff'); g.appendChild(tail);
+
+    // eye
+    const eye = document.createElementNS(ns, 'circle');
+    eye.setAttribute('cx','26'); eye.setAttribute('cy','22');
+    eye.setAttribute('r','2'); eye.setAttribute('fill','#3a2010'); g.appendChild(eye);
+    const eyeShine = document.createElementNS(ns, 'circle');
+    eyeShine.setAttribute('cx','27'); eyeShine.setAttribute('cy','21');
+    eyeShine.setAttribute('r','0.7'); eyeShine.setAttribute('fill','white'); g.appendChild(eyeShine);
+
+    // nose
+    const nose = document.createElementNS(ns, 'ellipse');
+    nose.setAttribute('cx','29'); nose.setAttribute('cy','25');
+    nose.setAttribute('rx','2'); nose.setAttribute('ry','1.2');
+    nose.setAttribute('fill','#f4a0b0'); g.appendChild(nose);
+
+    // mouth
+    const mouth = document.createElementNS(ns, 'path');
+    mouth.setAttribute('d','M27,27 Q29,29 31,27');
+    mouth.setAttribute('fill','none'); mouth.setAttribute('stroke','#c47080');
+    mouth.setAttribute('stroke-width','1'); g.appendChild(mouth);
+
+    // front leg
+    const leg = document.createElementNS(ns, 'ellipse');
+    leg.setAttribute('cx','18'); leg.setAttribute('cy','46');
+    leg.setAttribute('rx','4'); leg.setAttribute('ry','3');
+    leg.setAttribute('fill','#e8d0bc'); g.appendChild(leg);
+
+    svg.appendChild(g);
+    return svg;
+  }
+
+  // Simple cloud SVG
+  function makeCloudSVG(w = 120, h = 60) {
+    const ns = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('width', w); svg.setAttribute('height', h);
+    svg.setAttribute('viewBox','0 0 120 60');
+    const path = document.createElementNS(ns, 'path');
+    path.setAttribute('d',
+      'M20,50 Q5,50 5,38 Q5,28 15,26 Q14,10 28,9 Q36,2 46,8 Q54,2 65,8 Q78,3 82,14 Q96,12 98,26 Q110,26 110,38 Q110,50 96,50 Z');
+    path.setAttribute('fill','gray'); svg.appendChild(path);
+    return svg;
+  }
+
+  // Butterfly SVG
+  function makeButterflySVG() {
+    const ns = 'http://www.w3.org/2000/svg';
+    const colors = pick([
+      ['#f9a8d4','#fbcfe8'],['#93c5fd','#bfdbfe'],
+      ['#86efac','#bbf7d0'],['#fcd34d','#fde68a'],
+    ]);
+    const svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('width','34'); svg.setAttribute('height','28');
+    svg.setAttribute('viewBox','0 0 34 28');
+
+    // left wing
+    const lw = document.createElementNS(ns, 'ellipse');
+    lw.setAttribute('cx','10'); lw.setAttribute('cy','13');
+    lw.setAttribute('rx','10'); lw.setAttribute('ry','8');
+    lw.setAttribute('fill', colors[0]); lw.setAttribute('class','wing');
+    svg.appendChild(lw);
+
+    // right wing
+    const rw = document.createElementNS(ns, 'ellipse');
+    rw.setAttribute('cx','24'); rw.setAttribute('cy','13');
+    rw.setAttribute('rx','10'); rw.setAttribute('ry','8');
+    rw.setAttribute('fill', colors[1]); rw.setAttribute('class','wing-r');
+    svg.appendChild(rw);
+
+    // lower left
+    const llw = document.createElementNS(ns, 'ellipse');
+    llw.setAttribute('cx','10'); llw.setAttribute('cy','21');
+    llw.setAttribute('rx','7'); llw.setAttribute('ry','5');
+    llw.setAttribute('fill', colors[0]); llw.setAttribute('class','wing');
+    svg.appendChild(llw);
+
+    // lower right
+    const lrw = document.createElementNS(ns, 'ellipse');
+    lrw.setAttribute('cx','24'); lrw.setAttribute('cy','21');
+    lrw.setAttribute('rx','7'); lrw.setAttribute('ry','5');
+    lrw.setAttribute('fill', colors[1]); lrw.setAttribute('class','wing-r');
+    svg.appendChild(lrw);
+
+    // body
+    const body = document.createElementNS(ns, 'ellipse');
+    body.setAttribute('cx','17'); body.setAttribute('cy','15');
+    body.setAttribute('rx','2'); body.setAttribute('ry','8');
+    body.setAttribute('fill','#78350f');
+    svg.appendChild(body);
+
+    return svg;
+  }
+
+  /* ── Spawn clouds ────────────────────────────────────────────── */
+  function spawnCloud() {
+    const w = rnd(100, 180), h = w * 0.5;
+    const div = el('div', {
+      position: 'absolute',
+      top: rnd(2, 18) + '%',
+      left: '-200px',
+      opacity: rnd(0.3, 0.6),
+      zIndex: '0'
+    });
+    div.classList.add('cloud');
+    div.appendChild(makeCloudSVG(w, h));
+    const dur = rnd(40, 90);
+    div.style.animationDuration = dur + 's';
+    div.style.animationDelay    = rnd(-dur, 0) + 's';
+    layer.appendChild(div);
+  }
+
+  for (let i = 0; i < 5; i++) spawnCloud();
+
+  /* ── Spawn eggs ──────────────────────────────────────────────── */
+  function spawnEgg() {
+    const size = rnd(32, 52);
+    const div  = el('div', { position: 'absolute', bottom: '34px', zIndex: '1' });
+    div.classList.add('egg');
+    div.style.left = rnd(3, 95) + 'vw';
+    div.appendChild(makeEggSVG(size));
+    const dur = rnd(2, 4);
+    div.style.animationDuration = dur + 's';
+    div.style.animationDelay    = rnd(0, -dur) + 's';
+    layer.appendChild(div);
+  }
+
+  const eggCount = Math.min(Math.floor(window.innerWidth / 160), 10);
+  for (let i = 0; i < eggCount; i++) spawnEgg();
+
+  /* ── Spawn bunnies ───────────────────────────────────────────── */
+  function spawnBunny() {
+    const startX = rnd(5, 80);          // vw
+    const hopDist = rnd(80, 200);       // px both ways
+    const dur = rnd(12, 22);
+
+    const div = el('div', { position: 'absolute', zIndex: '2' });
+    div.classList.add('bunny');
+    div.style.left = startX + 'vw';
+    div.style.setProperty('--hop-dist', hopDist + 'px');
+    div.style.animationDuration = dur + 's';
+    div.style.animationDelay    = rnd(-dur, 0) + 's';
+
+    div.appendChild(makeBunnySVG());
+    layer.appendChild(div);
+  }
+
+  const bunnyCount = Math.min(Math.floor(window.innerWidth / 400) + 2, 5);
+  for (let i = 0; i < bunnyCount; i++) spawnBunny();
+
+  /* ── Spawn petals ────────────────────────────────────────────── */
+  function spawnPetal() {
+    const size = rnd(8, 16);
+    const div  = el('div', {
+      position: 'absolute',
+      top: '-30px',
+      left: rnd(0, 100) + 'vw',
+      width: size + 'px',
+      height: size + 'px',
+      background: pick(petalColors),
+      borderRadius: '50% 0 50% 0',
+      opacity: '0',
+    });
+    div.classList.add('petal');
+    const dur = rnd(6, 14);
+    div.style.animationDuration = dur + 's';
+    div.style.animationDelay    = rnd(0, -dur * 0.6) + 's';
+    layer.appendChild(div);
+
+    // recycle petal position when animation ends
+    div.addEventListener('animationiteration', () => {
+      div.style.left = rnd(0, 100) + 'vw';
+    });
+  }
+
+  const petalCount = Math.min(Math.floor(window.innerWidth / 80), 20);
+  for (let i = 0; i < petalCount; i++) spawnPetal();
+
+  /* ── Spawn butterflies ───────────────────────────────────────── */
+  function spawnButterfly() {
+    const div = el('div', {
+      position: 'absolute',
+      top:  rnd(8, 55) + 'vh',
+      left: rnd(5, 88) + 'vw',
+      zIndex: '1'
+    });
+    div.classList.add('butterfly');
+    div.style.animationDuration = rnd(5, 9) + 's';
+    div.style.animationDelay    = rnd(-8, 0) + 's';
+    div.appendChild(makeButterflySVG());
+    layer.appendChild(div);
+  }
+
+  for (let i = 0; i < 4; i++) spawnButterfly();
+
+  /* ── Subtle sky gradient ─────────────────────────────────────── */
+  /*layer.style.background =
+    'linear-gradient(180deg, #e8f5ff 0%, #fdf8f0 70%, #fdf6ee 100%)';*/
+
+  /* ── Reduced motion respect ──────────────────────────────────── */
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    const style = document.createElement('style');
+    style.textContent = `
+      .bunny, .petal, .butterfly, .egg, .cloud { animation: none !important; }
+    `;
+    document.head.appendChild(style);
+  }
+
+})();
+</script>
+
+
+    <!-- 🐣 EASTER BACKGROUND END 🐣 -->
+
     @RenderBody()
 
     @NopHtml.GenerateScripts(ResourceLocation.Footer)
@@ -127,7 +610,7 @@
         <img height="1" width="1" style="display:none"
              src="https://www.facebook.com/tr?id=548170455596594&ev=PageView&noscript=1" />
     </noscript>
-    <!-- End Facebook Pixel Code
+    <!-- End Facebook Pixel Code -->
     <!-- Freshchat Code-->
     <script>
         window.fcWidget.init({
