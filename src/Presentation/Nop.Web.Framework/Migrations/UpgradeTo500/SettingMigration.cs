@@ -5,6 +5,7 @@ using Nop.Core.Domain.Catalog;
 using Nop.Core.Domain.Common;
 using Nop.Core.Domain.Customers;
 using Nop.Core.Domain.Media;
+using Nop.Core.Domain.PriceLists;
 using Nop.Core.Domain.Orders;
 using Nop.Core.Domain.Reminders;
 using Nop.Core.Domain.Messages;
@@ -104,6 +105,9 @@ public class SettingMigration : MigrationBase
         this.SetSettingIfNotExists<MediaSettings, bool>(settings => settings.Object3dAutoRotateEnabled, false);
         this.SetSettingIfNotExists<MediaSettings, bool>(settings => settings.Object3dLazyLoadingEnabled, true);
         this.SetSettingIfNotExists<MediaSettings, int>(settings => settings.Object3dUploadSizeLimit, 20);
+
+        //#8098
+        this.SetSettingIfNotExists<CatalogSettings, PriceListStrategy>(settings => settings.PriceListStrategy, PriceListStrategy.MinimalPrice);
     }
 
     public override void Down()

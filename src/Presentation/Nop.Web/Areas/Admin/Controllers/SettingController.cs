@@ -651,6 +651,7 @@ public partial class SettingController : BaseAdminController
             await _settingService.SaveSettingOverridablePerStoreAsync(catalogSettings, x => x.ProductUrlStructureTypeId, model.ProductUrlStructureTypeId_OverrideForStore, storeScope, false);
             await _settingService.SaveSettingOverridablePerStoreAsync(catalogSettings, x => x.ShowSearchTermHistory, model.ShowSearchTermHistory_OverrideForStore, storeScope, false);
             await _settingService.SaveSettingOverridablePerStoreAsync(catalogSettings, x => x.NumberOfSearchTermHistoryItems, model.NumberOfSearchTermHistoryItems_OverrideForStore, storeScope, false);
+            await _settingService.SaveSettingOverridablePerStoreAsync(catalogSettings, x => x.PriceListStrategy, model.PriceListStrategy_OverrideForStore, storeScope, false);
 
             //now settings not overridable per store
             await _settingService.SaveSettingAsync(catalogSettings, x => x.IgnoreDiscounts, 0, false);
