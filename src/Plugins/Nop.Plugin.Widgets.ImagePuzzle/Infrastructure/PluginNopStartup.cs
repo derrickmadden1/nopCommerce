@@ -2,11 +2,12 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Mvc.Razor;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Nop.Core.Infrastructure;
-using Nop.Plugin.Widgets.ImagePuzzle;
-using Nop.Services.Configuration;
-using Nop.Core.Domain.Cms;
 using Nop.Core;
+using Nop.Core.Domain.Cms;
+using Nop.Core.Infrastructure;
+using Nop.Services.Catalog;
+using Nop.Services.Configuration;
+using Nop.Plugin.Widgets.ImagePuzzle.Services;
 
 namespace Nop.Plugin.Widgets.ImagePuzzle.Infrastructure;
 
@@ -25,6 +26,7 @@ public class PluginNopStartup : INopStartup
         });
 
         //register services and interfaces
+        services.AddScoped<IPriceCalculationService, PuzzlePriceCalculationService>();
     }
 
     /// <summary>
