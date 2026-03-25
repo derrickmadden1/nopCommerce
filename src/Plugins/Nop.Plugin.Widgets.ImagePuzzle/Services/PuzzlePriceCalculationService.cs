@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -77,18 +77,18 @@ public partial class PuzzlePriceCalculationService : PriceCalculationService
         });
 
         // Debug logging for price results
-        try {
+        /*try {
             var logPath = "C:\\Users\\madde\\source\\repos\\derrickmadden1\\nopCommerce\\src\\Presentation\\Nop.Web\\logs\\puzzle_price_debug.log";
             System.IO.File.AppendAllText(logPath, $"[{DateTime.Now}] RESULT GetFinalPriceAsync - Product: {product.Id}, Original: {result.priceWithoutDiscounts}, Final: {result.finalPrice}, Applied: {result.appliedDiscountAmount}, Discounts: {result.appliedDiscounts.Count}\n");
-        } catch {}
+        } catch {}*/
 
         return result;
     }
 
     protected override async Task<IList<Discount>> GetAllowedDiscountsAsync(Product product, Customer customer)
     {
-        var logPath = "C:\\Users\\madde\\source\\repos\\derrickmadden1\\nopCommerce\\src\\Presentation\\Nop.Web\\logs\\puzzle_price_debug.log";
-        string logEntry = $"[{DateTime.Now}] START GetAllowedDiscountsAsync - Product: {product.Id}, Customer: {customer.Id}\n";
+        /*var logPath = "C:\\Users\\madde\\source\\repos\\derrickmadden1\\nopCommerce\\src\\Presentation\\Nop.Web\\logs\\puzzle_price_debug.log";
+        string logEntry = $"[{DateTime.Now}] START GetAllowedDiscountsAsync - Product: {product.Id}, Customer: {customer.Id}\n";*/
         try
         {
             var allowedDiscounts = await base.GetAllowedDiscountsAsync(product, customer);
@@ -96,33 +96,33 @@ public partial class PuzzlePriceCalculationService : PriceCalculationService
             
             if (!puzzleDiscountIds.Any())
             {
-                logEntry += " - EXIT: No puzzle discounts configured.\n";
-                System.IO.File.AppendAllText(logPath, logEntry);
+                //logEntry += " - EXIT: No puzzle discounts configured.\n";
+                //System.IO.File.AppendAllText(logPath, logEntry);
                 return allowedDiscounts;
             }
 
             // Determine if this product is part of an active MultiBuy saving
             bool isMultiBuy = await IsProductInMultiBuyAsync(product);
-            logEntry += $" - isMultiBuy: {isMultiBuy}\n";
+            //logEntry += $" - isMultiBuy: {isMultiBuy}\n";
 
             // Determine if the puzzle for THIS product is solved
             var solvedIdsString = await _genericAttributeService.GetAttributeAsync<string>(customer, "SolvedPuzzleProductIds") ?? "";
             var solvedIds = solvedIdsString.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
             bool isSolved = solvedIds.Contains(product.Id.ToString());
-            logEntry += $" - isSolved: {isSolved} (SolvedIds: {solvedIdsString})\n";
+            //logEntry += $" - isSolved: {isSolved} (SolvedIds: {solvedIdsString})\n";
 
             var finalDiscounts = new List<Discount>();
 
             // Case A: Product is in a MultiBuy saving -> NO puzzle discounts allowed
             if (isMultiBuy)
             {
-                logEntry += " - SKIPPING: MultiBuy override active.\n";
+                //logEntry += " - SKIPPING: MultiBuy override active.\n";
                 foreach (var d in allowedDiscounts)
                 {
                     if (!puzzleDiscountIds.Contains(d.Id))
                         finalDiscounts.Add(d);
                 }
-                System.IO.File.AppendAllText(logPath, logEntry);
+                //System.IO.File.AppendAllText(logPath, logEntry);
                 return finalDiscounts;
             }
 
@@ -135,7 +135,7 @@ public partial class PuzzlePriceCalculationService : PriceCalculationService
                 }
                 else
                 {
-                    logEntry += $" - Note: Removing pre-existing puzzle discount {d.Id} to re-validate.\n";
+                    //logEntry += $" - Note: Removing pre-existing puzzle discount {d.Id} to re-validate.\n";
                 }
             }
 
@@ -145,11 +145,11 @@ public partial class PuzzlePriceCalculationService : PriceCalculationService
                 foreach (var discountId in puzzleDiscountIds)
                 {
                     var discount = await _discountService.GetDiscountByIdAsync(discountId);
-                    if (discount == null) { logEntry += $" - Error: Discount {discountId} not found.\n"; continue; }
-                    if (!discount.IsActive) { logEntry += $" - Note: Discount {discountId} is inactive.\n"; continue; }
+                    //if (discount == null) { logEntry += $" - Error: Discount {discountId} not found.\n"; continue; }
+                    //if (!discount.IsActive) { logEntry += $" - Note: Discount {discountId} is inactive.\n"; continue; }
 
                     var valResult = await _discountService.ValidateDiscountAsync(discount, customer, couponCodes);
-                    logEntry += $" - Validating Discount {discountId}: IsValid={valResult.IsValid}, Errors=[{string.Join(", ", valResult.Errors ?? new List<string>())}]\n";
+                    //logEntry += $" - Validating Discount {discountId}: IsValid={valResult.IsValid}, Errors=[{string.Join(", ", valResult.Errors ?? new List<string>())}]\n";
                     
                     if (valResult.IsValid)
                         finalDiscounts.Add(discount);
@@ -157,17 +157,17 @@ public partial class PuzzlePriceCalculationService : PriceCalculationService
             }
             else
             {
-                logEntry += " - Result: Product not solved, no extra discounts added.\n";
+                //logEntry += " - Result: Product not solved, no extra discounts added.\n";
             }
 
-            logEntry += $" - FINAL DISCOUNT COUNT: {finalDiscounts.Count}\n";
-            System.IO.File.AppendAllText(logPath, logEntry);
+            //logEntry += $" - FINAL DISCOUNT COUNT: {finalDiscounts.Count}\n";
+            //System.IO.File.AppendAllText(logPath, logEntry);
             return finalDiscounts;
         }
         catch (Exception ex)
         {
-            logEntry += $" [ERROR] {ex.Message}\n";
-            System.IO.File.AppendAllText(logPath, logEntry);
+            //logEntry += $" [ERROR] {ex.Message}\n";
+            //System.IO.File.AppendAllText(logPath, logEntry);
             // Fallback to base in case of errors
             return await base.GetAllowedDiscountsAsync(product, customer);
         }
