@@ -173,7 +173,9 @@ jobs:
         # Use the Better Stack API to pause the monitor
         # Replace '123456' with your actual Monitor ID (found in the Monitor URL)
         curl -X POST "https://uptime.betterstack.com/api/v2/monitors/3352825/pause" \
-             -H "Authorization: Bearer ${{ secrets.BETTERSTACK_API_TOKEN }}"
+             -H "Authorization: Bearer ${{ secrets.BETTERSTACK_API_TOKEN }}" \
+             -H "Content-Type: application/json" \
+             -d '{"paused": true}'
     
     - name: Deploy to Staging
       uses: azure/webapps-deploy@v3
@@ -209,4 +211,6 @@ jobs:
       if: always() # Ensures monitoring is resumed even if the deploy fails
       run: |
         curl -X POST "https://uptime.betterstack.com/api/v2/monitors/3352825/resume" \
-             -H "Authorization: Bearer ${{ secrets.BETTERSTACK_API_TOKEN }}" 
+             -H "Authorization: Bearer ${{ secrets.BETTERSTACK_API_TOKEN }}" \
+             -H "Content-Type: application/json" \
+             -d '{"paused": false}'
