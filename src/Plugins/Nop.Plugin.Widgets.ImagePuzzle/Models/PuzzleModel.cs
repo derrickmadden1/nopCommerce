@@ -12,4 +12,5 @@ public partial record PuzzleModel : BaseNopModel
 {
     public int ProductId { get; set; }
     public int GridSize { get; set; }
+    public bool IsMultiBuy { get; set; }
 }

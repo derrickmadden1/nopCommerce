@@ -27,6 +27,7 @@ public partial class PuzzlePriceCalculationService : PriceCalculationService
 {
     private readonly IGenericAttributeService _genericAttributeService;
     private readonly ISettingService _settingService;
+    private readonly IPuzzleService _puzzleService;
 
     public PuzzlePriceCalculationService(CatalogSettings catalogSettings,
         CurrencySettings currencySettings,
@@ -39,11 +40,13 @@ public partial class PuzzlePriceCalculationService : PriceCalculationService
         IProductService productService,
         IStaticCacheManager staticCacheManager,
         IGenericAttributeService genericAttributeService,
-        ISettingService settingService)
+        ISettingService settingService,
+        IPuzzleService puzzleService)
         : base(catalogSettings, currencySettings, categoryService, currencyService, customerService, discountService, manufacturerService, productAttributeParser, productService, staticCacheManager)
     {
         _genericAttributeService = genericAttributeService;
         _settingService = settingService;
+        _puzzleService = puzzleService;
     }
 
     public override async Task<(decimal priceWithoutDiscounts, decimal finalPrice, decimal appliedDiscountAmount, List<Discount> appliedDiscounts)> GetFinalPriceAsync(Product product,
@@ -193,57 +196,6 @@ public partial class PuzzlePriceCalculationService : PriceCalculationService
     /// </summary>
     private async Task<bool> IsProductInMultiBuyAsync(Product product)
     {
-        var activeMultiBuyReqIds = await GetActiveMultiBuyRequirementIdsAsync();
-        
-        var result = await _staticCacheManager.GetAsync(
-            _staticCacheManager.PrepareKeyForDefaultCache(new CacheKey($"Nop.multibuy-check-{product.Id}"), product),
-            async () =>
-            {
-                var allSettings = await _settingService.GetAllSettingsAsync();
-                foreach (var s in allSettings)
-                {
-                    if (string.IsNullOrEmpty(s.Name) || string.IsNullOrEmpty(s.Value)) continue;
-
-                    bool isRequirementKey = s.Name.StartsWith("DiscountRequirement.RestrictedProductIds-", StringComparison.OrdinalIgnoreCase);
-                    
-                    if (isRequirementKey)
-                    {
-                        var parts = s.Name.Split('-');
-                        if (parts.Length > 1 && int.TryParse(parts[1], out var reqId))
-                        {
-                            // ONLY process if this Requirement ID belongs to an ACTIVE MultiBuy discount
-                            if (!activeMultiBuyReqIds.Contains(reqId))
-                                continue;
-                            
-                            if (s.Value.Contains(product.Id.ToString()))
-                                return true;
-                        }
-                    }
-                }
-                return false;
-            });
-
-        return result;
-    }
-
-    private async Task<HashSet<int>> GetActiveMultiBuyRequirementIdsAsync()
-    {
-        var cacheKey = _staticCacheManager.PrepareKeyForDefaultCache(new CacheKey("Nop.active-multibuy-req-ids-V1"));
-        return await _staticCacheManager.GetAsync(cacheKey, async () =>
-        {
-            var discounts = await _discountService.GetAllDiscountsAsync();
-            var ids = new HashSet<int>();
-            foreach (var d in discounts)
-            {
-                if (!d.IsActive) continue;
-                var reqs = await _discountService.GetAllDiscountRequirementsAsync(d.Id);
-                foreach (var r in reqs)
-                {
-                    if (r.DiscountRequirementRuleSystemName == "DiscountRequirement.MultiBuy")
-                        ids.Add(r.Id);
-                }
-            }
-            return ids;
-        });
+        return await _puzzleService.IsProductInMultiBuyAsync(product);
     }
 }

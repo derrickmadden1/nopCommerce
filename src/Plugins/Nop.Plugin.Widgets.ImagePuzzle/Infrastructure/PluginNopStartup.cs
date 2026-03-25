@@ -27,6 +27,7 @@ public class PluginNopStartup : INopStartup
 
         //register services and interfaces
         services.AddScoped<IPriceCalculationService, PuzzlePriceCalculationService>();
+        services.AddScoped<IPuzzleService, PuzzleService>();
     }
 
     /// <summary>
