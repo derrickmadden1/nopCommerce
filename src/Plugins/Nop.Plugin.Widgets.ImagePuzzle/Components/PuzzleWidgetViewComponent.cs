@@ -1,7 +1,9 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Nop.Web.Framework.Components;
 using Nop.Plugin.Widgets.ImagePuzzle.Models;
 using Nop.Services.Configuration;
+using Nop.Plugin.Widgets.ImagePuzzle.Services;
+using Nop.Services.Catalog;
 
 namespace Nop.Plugin.Widgets.ImagePuzzle.Components;
 
