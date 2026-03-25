@@ -199,7 +199,7 @@
     }
 
     // Butterflies
-    for (let i = 0; i < qty(4, intensity); i++) {
+    /*for (let i = 0; i < qty(4, intensity); i++) {
       const d = div({
         position: 'absolute',
         top: rnd(8,55)+'vh', left: rnd(5,88)+'vw', zIndex:'1',
@@ -207,7 +207,7 @@
       });
       d.appendChild(makeButterflySVG());
       layer.appendChild(d);
-    }
+    }*/
   }
 
   /* ═══════════════════════════════════════════════════════════════
