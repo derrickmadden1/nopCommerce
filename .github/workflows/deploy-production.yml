@@ -168,6 +168,13 @@ jobs:
         # Verbose errors for staging only
         az webapp config appsettings set --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --slot staging --settings ASPNETCORE_ENVIRONMENT="Development"
 
+    - name: Pause Better Stack Monitoring
+      run: |
+        # Use the Better Stack API to pause the monitor
+        # Replace '123456' with your actual Monitor ID (found in the Monitor URL)
+        curl -X POST "https://uptime.betterstack.com/api/v2/monitors/3352825/pause" \
+             -H "Authorization: Bearer ${{ secrets.BETTERSTACK_API_TOKEN }}"
+    
     - name: Deploy to Staging
       uses: azure/webapps-deploy@v3
       with:
@@ -197,3 +204,9 @@ jobs:
         fi
         az webapp deployment slot delete --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --slot staging || true
         az appservice plan update --name Default1 --resource-group Default-Web-NorthEurope --sku D1 || true
+
+    - name: Resume Better Stack Monitoring
+      if: always() # Ensures monitoring is resumed even if the deploy fails
+      run: |
+        curl -X POST "https://uptime.betterstack.com/api/v2/monitors/3352825/resume" \
+             -H "Authorization: Bearer ${{ secrets.BETTERSTACK_API_TOKEN }}" 

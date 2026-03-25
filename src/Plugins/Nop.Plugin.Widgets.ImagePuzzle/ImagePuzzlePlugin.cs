@@ -1,18 +1,20 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Nop.Plugin.Widgets.ImagePuzzle.Components;
-using Nop.Services.Cms;
-using Nop.Services.Plugins;
-using Nop.Services.Configuration;
-using Nop.Services.Localization;
-using Nop.Web.Framework.Infrastructure;
-using Nop.Services.Common;
-using Nop.Services.Discounts;
-using Nop.Core.Infrastructure;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.Mvc.Routing;
+using Nop.Core.Domain.Orders;
+using Nop.Core.Infrastructure;
+using Nop.Plugin.Widgets.ImagePuzzle.Components;
+using Nop.Services.Cms;
+using Nop.Services.Common;
+using Nop.Services.Configuration;
+using Nop.Services.Discounts;
+using Nop.Services.Localization;
+using Nop.Services.Orders;
+using Nop.Services.Plugins;
+using Nop.Web.Framework.Infrastructure;
 
 namespace Nop.Plugin.Widgets.ImagePuzzle;
 
@@ -21,14 +23,17 @@ public partial class ImagePuzzlePlugin : BasePlugin, IWidgetPlugin, IDiscountReq
     private readonly IGenericAttributeService _genericAttributeService;
     private readonly ILocalizationService _localizationService;
     private readonly ISettingService _settingService;
+    private readonly IShoppingCartService _shoppingCartService;
 
     public ImagePuzzlePlugin(IGenericAttributeService genericAttributeService,
         ILocalizationService localizationService,
-        ISettingService settingService)
+        ISettingService settingService,
+        IShoppingCartService shoppingCartService)
     {
         _genericAttributeService = genericAttributeService;
         _localizationService = localizationService;
         _settingService = settingService;
+        _shoppingCartService = shoppingCartService;
     }
 
     public bool HideInWidgetList => false;
@@ -92,13 +97,18 @@ public partial class ImagePuzzlePlugin : BasePlugin, IWidgetPlugin, IDiscountReq
         if (request == null)
             throw new ArgumentNullException(nameof(request));
 
-        // Check if the "PuzzleSolved" flag exists in the customer's generic attributes
-        var isSolved = await _genericAttributeService.GetAttributeAsync<bool>(request.Customer, "PuzzleSolved");
+        var customer = request.Customer;
+        var solvedIdsString = await _genericAttributeService.GetAttributeAsync<string>(customer, "SolvedPuzzleProductIds") ?? "";
+        var solvedIds = solvedIdsString.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).ToList();
+
+        // Check if the customer has solved any puzzle at all.
+        // The more granular filtering happens in PuzzlePriceCalculationService where we know the current product.
+        bool hasSolvedAnyPuzzle = solvedIds.Any();
 
         return new DiscountRequirementValidationResult
         {
-            IsValid = isSolved,
-            UserError = await _localizationService.GetResourceAsync("Plugins.Widgets.ImagePuzzle.RequirementError") ?? "You must solve the product puzzle to use this discount!"
+            IsValid = hasSolvedAnyPuzzle,
+            UserError = await _localizationService.GetResourceAsync("Plugins.Widgets.ImagePuzzle.RequirementError") ?? "This discount only applies to products you have solved the puzzle for!"
         };
     }
 

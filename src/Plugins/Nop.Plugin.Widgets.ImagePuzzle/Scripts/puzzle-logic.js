@@ -185,18 +185,18 @@ function handleVictory() {
   if (badge) badge.remove();
 
   // Optional: Fire an AJAX call to the server to log the win or 
-  // apply a discount to the current session automatically.
-  fetch('/Plugins/ImagePuzzle/ApplyPuzzleDiscount', { method: 'POST' })
-  .then(response => response.json())
-  .then(data => {
-    if (data.success) {
-      const banner = document.getElementById('puzzle-success-banner');
-      if (banner) {
-        banner.innerHTML = "✨ <b>Discount Applied!</b> Your savings are ready at checkout.";
-        banner.style.display = 'block';
-        banner.classList.add('visible');
+  fetch(`/Plugins/ImagePuzzle/MarkAsSolved?productId=${currentProductId}`, { method: 'POST' })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        const banner = document.getElementById('puzzle-success-banner');
+        if (banner) {
+          banner.innerHTML = "✨ <b>Discount applied for this product!</b> Your savings are ready at checkout.";
+          banner.style.display = 'block';
+          banner.classList.add('visible');
+        }
       }
-    }
+    });
   });
 }
   function savePuzzleState(productId) {
