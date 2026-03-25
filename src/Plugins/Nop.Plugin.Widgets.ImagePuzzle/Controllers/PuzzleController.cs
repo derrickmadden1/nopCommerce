@@ -75,7 +75,7 @@ public partial class PuzzleController : BasePluginController
             /*try { 
                 var logPath = "C:\\Users\\madde\\source\\repos\\derrickmadden1\\nopCommerce\\src\\Presentation\\Nop.Web\\logs\\puzzle_debug.log";
                 System.IO.File.AppendAllText(logPath, $"[{DateTime.Now}] Product {productId} marked as solved for Customer {customer.Id}\n"); 
-            }*/ catch {}
+            } catch {}*/
         }
 
         return Json(new { success = true });
