@@ -59,7 +59,16 @@ jobs:
         EOF
 
         # 3. Try to Fetch Master appsettings.json from Blob (Override)
-        az storage blob download --connection-string "${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}" --container-name "nop-config" --name "appsettings.json" --file "./app_publish/appsettings.json" || echo "Note: No cloud appsettings.json found, using baked fallback."
+        az storage blob download --connection-string "${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}" --container-name "nop-config" --name "appsettings.json" --file "./app_publish/appsettings.json.tmp" || echo "Note: No cloud appsettings.json found."
+        if [ -f "./app_publish/appsettings.json.tmp" ]; then
+          if python3 -c "import json; json.load(open('./app_publish/appsettings.json.tmp'))" 2>/dev/null; then
+            mv ./app_publish/appsettings.json.tmp ./app_publish/appsettings.json
+            echo "Cloud appsettings.json applied successfully."
+          else
+            echo "WARNING: Cloud appsettings.json is malformed! Keeping baked fallback."
+            rm ./app_publish/appsettings.json.tmp
+          fi
+        fi
 
         # 4. Bake Default plugins.json (Fallback)
         cat > ./app_publish/App_Data/plugins.json << 'EOF'
@@ -91,7 +100,16 @@ jobs:
         EOF
 
         # 5. Try to Fetch Master plugins.json from Blob (Override)
-        az storage blob download --connection-string "${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}" --container-name "nop-config" --name "plugins.json" --file "./app_publish/App_Data/plugins.json" || echo "Note: No cloud plugins.json found, using baked fallback."
+        az storage blob download --connection-string "${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}" --container-name "nop-config" --name "plugins.json" --file "./app_publish/App_Data/plugins.json.tmp" || echo "Note: No cloud plugins.json found."
+        if [ -f "./app_publish/App_Data/plugins.json.tmp" ]; then
+          if python3 -c "import json; json.load(open('./app_publish/App_Data/plugins.json.tmp'))" 2>/dev/null; then
+            mv ./app_publish/App_Data/plugins.json.tmp ./app_publish/App_Data/plugins.json
+            echo "Cloud plugins.json applied successfully."
+          else
+            echo "WARNING: Cloud plugins.json is malformed! Keeping baked fallback."
+            rm ./app_publish/App_Data/plugins.json.tmp
+          fi
+        fi
 
         # 6. Prune Unused Plugins (Python Janitor)
         python3 -c "
