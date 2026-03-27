@@ -1176,7 +1176,7 @@ label+* {
   background-position: 0 0;
 }
 
-.follow-us .social .twitter a {
+.follow-us .social .x a {
   background-position: -38px 0;
 }
 
@@ -6043,13 +6043,6 @@ label+* {
   margin: 20px 0;
 }
 
-.private-message-send-page .bb-code-editor-wrapper {
-  max-width: 400px;
-  margin: 20px auto;
-  background-color: #ddd;
-  padding: 10px;
-}
-
 .private-message-send-page .toolbar .button {
   margin: 0 2px 0 0;
   border: #cec6b5 1px solid;
@@ -8190,13 +8183,6 @@ label+* {
   .private-message-send-page textarea {
     width: 600px;
     height: 250px;
-  }
-
-  .private-message-send-page .bb-code-editor-wrapper {
-    display: inline-block;
-    width: 400px;
-    margin: 10px 0;
-    vertical-align: middle;
   }
 }
 
