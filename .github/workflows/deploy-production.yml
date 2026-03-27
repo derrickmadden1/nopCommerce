@@ -26,27 +26,17 @@ jobs:
         dotnet build src/NopCommerce.sln -c Release --no-restore
         dotnet publish src/Presentation/Nop.Web/Nop.Web.csproj -c Release -o ./app_publish --no-build
 
-    - name: Version Inject & Clean
-      run: |
-        # 1. Prepare Version Data
-        export SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
-        export VERSION_STR="Build #${{ github.run_number }} ($SHORT_SHA) - $(date +'%Y-%m-%d')"
-        export FOOTER_PATH="./app_publish/Views/Shared/Components/Footer/Default.cshtml"
-        
-        if [ -f "$FOOTER_PATH" ]; then
-          echo "Injecting version: $VERSION_STR"
-          
-          # This one-liner reads the file, replaces the tag, and lstrips to fix the @model error
-          python3 -c "import os; p=os.environ['FOOTER_PATH']; v=os.environ['VERSION_STR']; data=open(p, 'r', encoding='utf-8-sig').read(); open(p, 'w', encoding='utf-8').write(data.replace('VERSION_STRING', v).lstrip())"
-          
-          echo "Python injection and @model safety check complete."
-        fi
+    - name: Azure Login (Config Phase)
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-        # 2. Storage Cleanup
-        rm -rf ./app_publish/wwwroot/images/thumbs/*
-        rm -rf ./app_publish/App_Data/Logs/*
-        
-        # 3. Bake appsettings.json
+    - name: Prepare Config, Plugins & Version
+      run: |
+        # 1. Create App_Data directory
+        mkdir -p ./app_publish/App_Data
+
+        # 2. Bake Default appsettings.json (Fallback)
         cat > ./app_publish/appsettings.json << 'EOF'
         {
           "ConnectionStrings": {
@@ -58,78 +48,41 @@ jobs:
             "ContainerName": "nop-config",
             "EndPoint": "${{ secrets.AZURE_STORAGE_BLOB_ENDPOINT }}",
             "AppendContainerName": false
+          },
+          "AzureBlobStorageDataProtectionConfig": {
+            "Enabled": true,
+            "ConnectionString": "${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}",
+            "ContainerName": "nop-config",
+            "BlobName": "DataProtectionKeys.xml"
           }
         }
         EOF
 
-        # 4. Bake the Plugin State (This tells nopCommerce which plugins are "Installed")
+        # 3. Try to Fetch Master appsettings.json from Blob (Override)
+        az storage blob download --connection-string "${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}" --container-name "nop-config" --name "appsettings.json" --file "./app_publish/appsettings.json" || echo "Note: No cloud appsettings.json found, using baked fallback."
+
+        # 4. Bake Default plugins.json (Fallback)
         cat > ./app_publish/App_Data/plugins.json << 'EOF'
         {
           "InstalledPluginNames": [
             "Obsolete field, using only for compatibility"
           ],
           "InstalledPlugins": [
-            {
-              "SystemName": "Payments.PayPalCommerce",
-              "Version": "5.00.6"
-            },
-            {
-              "SystemName": "Payments.Square",
-              "Version": "5.00.1"
-            },
-            {
-              "SystemName": "Pickup.PickupInStore",
-              "Version": "5.00.6"
-            },
-            {
-              "SystemName": "ExternalAuth.Facebook",
-              "Version": "5.00.3"
-            },
-            {
-              "SystemName": "Shipping.FixedByWeightByTotal",
-              "Version": "5.00.7"
-            },
-            {
-              "SystemName": "Misc.Zettle",
-              "Version": "5.00.4"
-            },
-            {
-              "SystemName": "Tax.FixedOrByCountryStateZip",
-              "Version": "5.00.4"
-            },
-            {
-              "SystemName": "Widgets.GoogleAnalytics",
-              "Version": "5.00.3"
-            },
-            {
-              "SystemName": "PromotionFeed.GoogleShopping",
-              "Version": "1.92"
-            },
-            {
-              "SystemName": "Misc.AzureBlob",
-              "Version": "5.00.2"
-            },
-            {
-              "SystemName": "DiscountRequirement.MultiBuy",
-              "Version": "5.00.1"
-            },
-            {
-              "SystemName": "Search.AzureAI",
-              "Version": "1.0.1"
-            },
-            {
-              "SystemName": "Widgets.MarketLocator",
-              "Version": "1.0.0"
-            },
-            {
-              "SystemName": "Shipping.MarketPickup",
-              "Version": "1.0.0"
-            },
-            {
-              "SystemName": "Widgets.ImagePuzzle",
-              "Version": "1.00"
-            }
-
+            { "SystemName": "Payments.PayPalCommerce", "Version": "5.00.6" },
+            { "SystemName": "Payments.Square", "Version": "5.00.1" },
+            { "SystemName": "Pickup.PickupInStore", "Version": "5.00.6" },
+            { "SystemName": "ExternalAuth.Facebook", "Version": "5.00.3" },
+            { "SystemName": "Shipping.FixedByWeightByTotal", "Version": "5.00.7" },
+            { "SystemName": "Misc.Zettle", "Version": "5.00.4" },
+            { "SystemName": "Tax.FixedOrByCountryStateZip", "Version": "5.00.4" },
+            { "SystemName": "Widgets.GoogleAnalytics", "Version": "5.00.3" },
+            { "SystemName": "PromotionFeed.GoogleShopping", "Version": "1.92" },
+            { "SystemName": "Misc.AzureBlob", "Version": "5.00.2" },
+            { "SystemName": "DiscountRequirement.MultiBuy", "Version": "5.00.1" },
+            { "SystemName": "Search.AzureAI", "Version": "1.0.1" },
+            { "SystemName": "Widgets.MarketLocator", "Version": "1.0.0" },
+            { "SystemName": "Shipping.MarketPickup", "Version": "1.0.0" },
+            { "SystemName": "Widgets.ImagePuzzle", "Version": "1.00" }
           ],
           "PluginNamesToUninstall": [],
           "PluginNamesToDelete": [],
@@ -137,7 +90,49 @@ jobs:
         }
         EOF
 
+        # 5. Try to Fetch Master plugins.json from Blob (Override)
+        az storage blob download --connection-string "${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}" --container-name "nop-config" --name "plugins.json" --file "./app_publish/App_Data/plugins.json" || echo "Note: No cloud plugins.json found, using baked fallback."
+
+        # 6. Prune Unused Plugins (Python Janitor)
+        python3 -c "
+        import os, json, shutil
+        plugins_json = './app_publish/App_Data/plugins.json'
+        plugins_dir = './app_publish/Plugins'
+        if os.path.exists(plugins_json):
+            with open(plugins_json, 'r') as f:
+                installed = [p['SystemName'] for p in json.load(f).get('InstalledPlugins', [])]
+            whitelist = set(installed)
+            for folder in os.listdir(plugins_dir):
+                path = os.path.join(plugins_dir, folder)
+                if os.path.isdir(path) and folder not in whitelist:
+                    shutil.rmtree(path)
+                    print(f'Pruned: {folder}')
+        "
+
+        # 7. Version Inject & Clean
+        export SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+        export VERSION_STR="Build #${{ github.run_number }} ($SHORT_SHA) - $(date +'%Y-%m-%d')"
+        export FOOTER_PATH="./app_publish/Views/Shared/Components/Footer/Default.cshtml"
+        
+        if [ -f "$FOOTER_PATH" ]; then
+          echo "Injecting version: $VERSION_STR"
+          python3 -c "import os; p=os.environ['FOOTER_PATH']; v=os.environ['VERSION_STR']; data=open(p, 'r', encoding='utf-8-sig').read(); open(p, 'w', encoding='utf-8').write(data.replace('VERSION_STRING', v).lstrip())"
+          echo "Python injection and @model safety check complete."
+        fi
+
+        # 8. Storage Cleanup
+        rm -rf ./app_publish/wwwroot/images/thumbs/*
+        rm -rf ./app_publish/App_Data/Logs/*
+
+        # 9. Package
         cd app_publish && zip -r ../nop-app.zip .
+
+        # 10. Summary
+        SIZE_BYTES=$(stat -c%s "../nop-app.zip")
+        SIZE_MB=$(echo "scale=2; $SIZE_BYTES/1048576" | bc)
+        echo "------------------------------------------"
+        echo "FINAL PACKAGE SIZE: $SIZE_MB MB"
+        echo "------------------------------------------"
 
     - name: Upload Zip
       uses: actions/upload-artifact@v4
@@ -172,10 +167,7 @@ jobs:
       run: |
         # Use the Better Stack API to pause the monitor
         # Replace '123456' with your actual Monitor ID (found in the Monitor URL)
-        curl -X POST "https://uptime.betterstack.com/api/v2/monitors/3352825/pause" \
-             -H "Authorization: Bearer ${{ secrets.BETTERSTACK_API_TOKEN }}" \
-             -H "Content-Type: application/json" \
-             -d '{"paused": true}'
+        curl --request PATCH --url https://uptime.betterstack.com/api/v2/monitors/3352825 --header "Authorization: Bearer FVYp3YNFdyXDkzPuCqEpNvg5" --header "Content-Type:  application/json" --data "{\"paused\": true}"
     
     - name: Deploy to Staging
       uses: azure/webapps-deploy@v3
@@ -210,7 +202,4 @@ jobs:
     - name: Resume Better Stack Monitoring
       if: always() # Ensures monitoring is resumed even if the deploy fails
       run: |
-        curl -X POST "https://uptime.betterstack.com/api/v2/monitors/3352825/resume" \
-             -H "Authorization: Bearer ${{ secrets.BETTERSTACK_API_TOKEN }}" \
-             -H "Content-Type: application/json" \
-             -d '{"paused": false}'
+        curl --request PATCH --url https://uptime.betterstack.com/api/v2/monitors/3352825 --header "Authorization: Bearer FVYp3YNFdyXDkzPuCqEpNvg5" --header "Content-Type:  application/json" --data "{\"paused\": false}"
