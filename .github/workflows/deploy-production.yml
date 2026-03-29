@@ -186,7 +186,7 @@ jobs:
       run: |
         # Use the Better Stack API to pause the monitor
         # Replace '123456' with your actual Monitor ID (found in the Monitor URL)
-        curl --request PATCH --url https://uptime.betterstack.com/api/v2/monitors/3352825 --header "Authorization: Bearer FVYp3YNFdyXDkzPuCqEpNvg5" --header "Content-Type:  application/json" --data "{\"paused\": true}"
+        curl --request PATCH --url https://uptime.betterstack.com/api/v2/monitors/3352825 --header "Authorization: Bearer ${{ secrets.BETTERSTACK_API_TOKEN }}" --header "Content-Type:  application/json" --data "{\"paused\": true}"
     
     - name: Deploy to Staging
       uses: azure/webapps-deploy@v3
@@ -221,4 +221,4 @@ jobs:
     - name: Resume Better Stack Monitoring
       if: always() # Ensures monitoring is resumed even if the deploy fails
       run: |
-        curl --request PATCH --url https://uptime.betterstack.com/api/v2/monitors/3352825 --header "Authorization: Bearer FVYp3YNFdyXDkzPuCqEpNvg5" --header "Content-Type:  application/json" --data "{\"paused\": false}"
+        curl --request PATCH --url https://uptime.betterstack.com/api/v2/monitors/3352825 --header "Authorization: Bearer ${{ secrets.BETTERSTACK_API_TOKEN }}" --header "Content-Type:  application/json" --data "{\"paused\": false}"
