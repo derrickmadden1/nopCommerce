@@ -8,7 +8,6 @@ on:
 env:
   DOTNET_VERSION: '9.0.x'
   SMOKE_TEST_KEYWORD: "Rose Cottage Croft"
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   build:
@@ -28,7 +27,7 @@ jobs:
         dotnet publish src/Presentation/Nop.Web/Nop.Web.csproj -c Release -o ./app_publish --no-build
 
     - name: Azure Login (Config Phase)
-      uses: azure/login@v2
+      uses: azure/login@v1
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
@@ -170,7 +169,7 @@ jobs:
         name: nopcommerce-app
 
     - name: Azure Login
-      uses: azure/login@v2
+      uses: azure/login@v1
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
@@ -178,6 +177,8 @@ jobs:
       run: |
         az appservice plan update --name Default1 --resource-group Default-Web-NorthEurope --sku S1
         az webapp deployment slot create --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --slot staging --configuration-source ${{ secrets.AZURE_WEBAPP_NAME }}
+        echo "Waiting 30s for slot SCM site to initialize..."
+        sleep 30
         
         # Verbose errors for staging only
         az webapp config appsettings set --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --slot staging --settings ASPNETCORE_ENVIRONMENT="Development"
