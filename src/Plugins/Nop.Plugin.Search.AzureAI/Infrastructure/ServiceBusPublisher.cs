@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.Logging;
 using Nop.Plugin.Search.AzureAI.Messages;
@@ -53,6 +53,41 @@ public class ServiceBusPublisher : IAsyncDisposable
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to publish Service Bus message for product {ProductId}", message.ProductId);
+        }
+    }
+
+    // New overload: publish arbitrary message to specified destination (queue or topic)
+    public async Task PublishAsync(string destination, object message)
+    {
+        if (message == null) return;
+        if (string.IsNullOrWhiteSpace(destination)) return;
+
+        if (string.IsNullOrWhiteSpace(_settings.ServiceBusConnectionString))
+        {
+            _logger.LogWarning("Service Bus is not configured — skipping message to {Destination}", destination);
+            return;
+        }
+
+        try
+        {
+            // Ensure client exists
+            _client ??= new ServiceBusClient(_settings.ServiceBusConnectionString);
+
+            // Create a sender for the requested destination and dispose it after use
+            await using var sender = _client.CreateSender(destination);
+            var json = JsonSerializer.Serialize(message);
+            var busMessage = new ServiceBusMessage(json)
+            {
+                ContentType = "application/json",
+                MessageId = Guid.NewGuid().ToString()
+            };
+
+            await sender.SendMessageAsync(busMessage);
+            _logger.LogInformation("Published message to {Destination}", destination);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to publish message to {Destination}", destination);
         }
     }
 

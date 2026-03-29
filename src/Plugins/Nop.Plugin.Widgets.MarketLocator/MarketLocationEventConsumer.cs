@@ -1,6 +1,8 @@
 ﻿using Nop.Core.Events;
 using Nop.Plugin.Widgets.MarketLocator.Domain;
 using Nop.Services.Events;
+using Nop.Services.Messaging;
+using Nop.Plugin.Widgets.MarketLocator;
 
 public class MarketLocationEventConsumer :
     IConsumer<EntityInsertedEvent<MarketLocation>>,
@@ -26,9 +28,6 @@ public class MarketLocationEventConsumer :
             ChangeType = changeType,
             MarketName = market.Name,
             Location = market.Address,
-            StartDate = market.StartDate,
-            EndDate = market.EndDate,
-            Description = market.Description,
             MapUrl = $"https://yoursite.com/markets?id={market.Id}"
         };
 
