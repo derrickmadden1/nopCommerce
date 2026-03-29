@@ -777,7 +777,7 @@
     #seasonal-layer {
       position: fixed; inset: 0;
       pointer-events: none;
-      z-index: 0;
+      z-index: -1;
       overflow: hidden;
     }
     @keyframes sbDriftCloud  { from{transform:translateX(-260px)} to{transform:translateX(calc(100vw + 260px))} }

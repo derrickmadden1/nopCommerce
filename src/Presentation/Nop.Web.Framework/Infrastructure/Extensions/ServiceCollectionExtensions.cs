@@ -1,4 +1,4 @@
-﻿using System.Threading.RateLimiting;
+using System.Threading.RateLimiting;
 using FluentValidation;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.DataProtection;
@@ -241,11 +241,24 @@ public static class ServiceCollectionExtensions
     /// <param name="services">Collection of service descriptors</param>
     public static void AddNopDataProtection(this IServiceCollection services)
     {
-        var dataProtectionKeysPath = CommonHelper.DefaultFileProvider.MapPath(NopDataProtectionDefaults.DataProtectionKeysPath);
-        var dataProtectionKeysFolder = new System.IO.DirectoryInfo(dataProtectionKeysPath);
+        var appSettings = Singleton<AppSettings>.Instance;
+        var azureBlobStorageDataProtectionConfig = appSettings.Get<AzureBlobStorageDataProtectionConfig>();
 
-        //configure the data protection system to persist keys to the specified directory
-        services.AddDataProtection().PersistKeysToFileSystem(dataProtectionKeysFolder);
+        if (azureBlobStorageDataProtectionConfig.Enabled)
+        {
+            services.AddDataProtection()
+                .PersistKeysToAzureBlobStorage(azureBlobStorageDataProtectionConfig.ConnectionString,
+                    azureBlobStorageDataProtectionConfig.ContainerName,
+                    azureBlobStorageDataProtectionConfig.BlobName);
+        }
+        else
+        {
+            var dataProtectionKeysPath = CommonHelper.DefaultFileProvider.MapPath(NopDataProtectionDefaults.DataProtectionKeysPath);
+            var dataProtectionKeysFolder = new System.IO.DirectoryInfo(dataProtectionKeysPath);
+
+            //configure the data protection system to persist keys to the specified directory
+            services.AddDataProtection().PersistKeysToFileSystem(dataProtectionKeysFolder);
+        }
     }
 
     /// <summary>

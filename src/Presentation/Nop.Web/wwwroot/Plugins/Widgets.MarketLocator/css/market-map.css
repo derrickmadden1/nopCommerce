@@ -18,20 +18,24 @@
 
 /* ── Hero ──────────────────────────────────────────────── */
 .market-hero {
-    background: linear-gradient(135deg, var(--ml-bark) 0%, #2a1d15 100%);
-    color: var(--ml-white);
+    background: linear-gradient(135deg, var(--ml-cream) 0%, var(--ml-parch) 100%);
+    color: var(--ml-bark);
     padding: 2.5rem 2rem 2rem;
     text-align: center;
+    border-bottom: 1px solid var(--ml-parch);
 }
 .market-hero__label {
     font-size: .75rem; font-weight: 600; letter-spacing: .15em;
-    text-transform: uppercase; color: var(--ml-amber-lt); margin-bottom: .6rem;
+    text-transform: uppercase; color: var(--ml-amber); margin-bottom: .6rem;
 }
 .market-hero__title {
     font-size: clamp(1.6rem, 3vw, 2.4rem); font-weight: 700;
     margin-bottom: .6rem; line-height: 1.15;
 }
-.market-hero__sub { font-size: .9rem; opacity: .8; max-width: 480px; margin: 0 auto; }
+.market-hero__sub { 
+    font-size: .98rem; color: var(--ml-stone); max-width: 480px; margin: 0 auto; 
+    font-weight: 500; line-height: 1.5;
+}
 
 /* ── Filters ────────────────────────────────────────────── */
 .market-filters {

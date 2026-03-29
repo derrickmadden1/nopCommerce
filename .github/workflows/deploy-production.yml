@@ -7,7 +7,8 @@ on:
 
 env:
   DOTNET_VERSION: '9.0.x'
-  SMOKE_TEST_KEYWORD: "Rose Cottage Croft" 
+  SMOKE_TEST_KEYWORD: "Rose Cottage Croft"
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   build:
@@ -27,7 +28,7 @@ jobs:
         dotnet publish src/Presentation/Nop.Web/Nop.Web.csproj -c Release -o ./app_publish --no-build
 
     - name: Azure Login (Config Phase)
-      uses: azure/login@v1
+      uses: azure/login@v2
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
@@ -169,7 +170,7 @@ jobs:
         name: nopcommerce-app
 
     - name: Azure Login
-      uses: azure/login@v1
+      uses: azure/login@v2
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
@@ -185,7 +186,7 @@ jobs:
       run: |
         # Use the Better Stack API to pause the monitor
         # Replace '123456' with your actual Monitor ID (found in the Monitor URL)
-        curl --request PATCH --url https://uptime.betterstack.com/api/v2/monitors/3352825 --header "Authorization: Bearer FVYp3YNFdyXDkzPuCqEpNvg5" --header "Content-Type:  application/json" --data "{\"paused\": true}"
+        curl --request PATCH --url https://uptime.betterstack.com/api/v2/monitors/3352825 --header "Authorization: Bearer ${{ secrets.BETTERSTACK_API_TOKEN }}" --header "Content-Type:  application/json" --data "{\"paused\": true}"
     
     - name: Deploy to Staging
       uses: azure/webapps-deploy@v3
@@ -220,4 +221,4 @@ jobs:
     - name: Resume Better Stack Monitoring
       if: always() # Ensures monitoring is resumed even if the deploy fails
       run: |
-        curl --request PATCH --url https://uptime.betterstack.com/api/v2/monitors/3352825 --header "Authorization: Bearer FVYp3YNFdyXDkzPuCqEpNvg5" --header "Content-Type:  application/json" --data "{\"paused\": false}"
+        curl --request PATCH --url https://uptime.betterstack.com/api/v2/monitors/3352825 --header "Authorization: Bearer ${{ secrets.BETTERSTACK_API_TOKEN }}" --header "Content-Type:  application/json" --data "{\"paused\": false}"
