@@ -1,0 +1,26 @@
+name: Cleanup Artifacts
+
+on:
+  schedule:
+    - cron: "0 3 * * 0"   # Every Sunday at 03:00 UTC
+  workflow_dispatch:       # Allow manual runs
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Delete all artifacts
+        run: |
+          artifacts=$(gh api \
+            -H "Accept: application/vnd.github+json" \
+            /repos/${{ github.repository }}/actions/artifacts \
+            --jq '.artifacts[].id')
+
+          for id in $artifacts; do
+            echo "Deleting artifact $id"
+            gh api \
+              -X DELETE \
+              -H "Accept: application/vnd.github+json" \
+              /repos/${{ github.repository }}/actions/artifacts/$id
+          done
