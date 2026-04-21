@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <Copyright>Copyright © Nop Solutions, Ltd</Copyright>
@@ -26,6 +26,8 @@
     <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="3.116.1" />
     <PackageReference Include="Svg.Skia" Version="3.0.6" />
     <PackageReference Include="System.Linq.Dynamic.Core" Version="1.6.7" />
+    <PackageReference Include="Azure.Messaging.ServiceBus" Version="7.20.1" />
+    <PackageReference Include="Azure.Core" Version="1.49.1" />
   </ItemGroup>
 
   <ItemGroup>

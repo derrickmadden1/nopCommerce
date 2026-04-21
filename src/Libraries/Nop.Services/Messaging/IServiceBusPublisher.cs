@@ -7,9 +7,20 @@ namespace Nop.Services.Messaging
     /// </summary>
     public interface IServiceBusPublisher
     {
-        /// <summary>
-        /// Publish a message to the specified destination (queue or topic).
-        /// </summary>
-        Task PublishAsync(string destination, object message);
+        Task PublishAsync<T>(
+            string topicOrQueue,
+            T message,
+            CancellationToken cancellationToken = default);
+
+        Task<long> ScheduleAsync<T>(
+            string topicOrQueue,
+            T message,
+            DateTimeOffset scheduledEnqueueTime,
+            CancellationToken cancellationToken = default);
+
+        Task CancelScheduledAsync(
+            string topicOrQueue,
+            long sequenceNumber,
+            CancellationToken cancellationToken = default);
     }
 }

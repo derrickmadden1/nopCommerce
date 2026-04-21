@@ -1,4 +1,4 @@
-﻿namespace Nop.Plugin.Widgets.MarketLocator
+﻿namespace Nop.Plugin.Widgets.MarketLocator.Messaging.Messages
 {
     public class MarketEventMessage
     {

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Nop.Core;
 using Nop.Plugin.Widgets.MarketLocator.Domain;
 using Nop.Plugin.Widgets.MarketLocator.Models;
 using Nop.Plugin.Widgets.MarketLocator.Services;
@@ -23,19 +24,22 @@ public class MarketLocatorAdminController : BasePluginController
     private readonly INotificationService _notificationService;
     private readonly ILocalizationService _localizationService;
     private readonly IPermissionService _permissionService;
+    private readonly IStoreContext _storeContext;
 
     public MarketLocatorAdminController(
         IMarketLocationService locationService,
         ISettingService settingService,
         INotificationService notificationService,
         ILocalizationService localizationService,
-        IPermissionService permissionService)
+        IPermissionService permissionService,
+        IStoreContext storeContext)
     {
         _locationService = locationService;
         _settingService = settingService;
         _notificationService = notificationService;
         _localizationService = localizationService;
         _permissionService = permissionService;
+        _storeContext = storeContext;
     }
 
     // ── Settings ─────────────────────────────────────────────────────────────
@@ -54,7 +58,17 @@ public class MarketLocatorAdminController : BasePluginController
             DefaultLongitude = settings.DefaultLongitude,
             ShowTeaserWidget = settings.ShowTeaserWidget,
             TeaserMaxItems = settings.TeaserMaxItems,
+            EnableSocialPublishing = settings.EnableSocialPublishing,
+            SocialPublishDaysBeforeMarket = settings.SocialPublishDaysBeforeMarket,
+            StoreUrl = settings.StoreUrl,
         };
+
+        // Automatically derive StoreUrl if it hasn't been set yet
+        if (string.IsNullOrEmpty(model.StoreUrl))
+        {
+            var currentStore = await _storeContext.GetCurrentStoreAsync();
+            model.StoreUrl = currentStore.Url;
+        }
 
         return View("~/Plugins/Widgets.MarketLocator/Views/Admin/Configure.cshtml", model);
     }
@@ -75,6 +89,9 @@ public class MarketLocatorAdminController : BasePluginController
         settings.DefaultLongitude = model.DefaultLongitude;
         settings.ShowTeaserWidget = model.ShowTeaserWidget;
         settings.TeaserMaxItems = model.TeaserMaxItems;
+        settings.EnableSocialPublishing = model.EnableSocialPublishing;
+        settings.SocialPublishDaysBeforeMarket = model.SocialPublishDaysBeforeMarket;
+        settings.StoreUrl = model.StoreUrl;
 
         await _settingService.SaveSettingAsync(settings);
 
