@@ -1,4 +1,4 @@
-﻿@using Nop.Core.Domain.Catalog
+@using Nop.Core.Domain.Catalog
 @using Nop.Core.Domain.Common
 @using Nop.Core.Domain.FilterLevels
 @using Nop.Core.Domain.Seo
@@ -75,7 +75,7 @@
             {
                 foreach (var url in preloadList.Distinct())
                 {
-                    <text><link rel="preload" as="image" href="@url" importance="high" /></text>
+                                <text><link rel="preload" as="image" href="@url" importance="high" /></text>
                 }
             }
         }
@@ -103,6 +103,9 @@
 </head>
 <body>
     <nop-antiforgery-token />
+    <div id="seasonal-layer"></div>
+    <script src="~/js/seasonal-bg.js"></script>    
+
     @RenderBody()
 
     @NopHtml.GenerateScripts(ResourceLocation.Footer)
@@ -127,7 +130,7 @@
         <img height="1" width="1" style="display:none"
              src="https://www.facebook.com/tr?id=548170455596594&ev=PageView&noscript=1" />
     </noscript>
-    <!-- End Facebook Pixel Code
+    <!-- End Facebook Pixel Code -->
     <!-- Freshchat Code-->
     <script>
         window.fcWidget.init({

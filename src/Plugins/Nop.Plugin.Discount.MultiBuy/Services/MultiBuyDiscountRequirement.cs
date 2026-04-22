@@ -13,6 +13,7 @@ using Nop.Services.Plugins;
 using Nop.Services.Cms;
 using Nop.Services.Localization;
 using System.Collections.Generic;
+using Nop.Services.Helpers;
 
 namespace Nop.Plugin.DiscountRules.MultiBuy.Services
 {

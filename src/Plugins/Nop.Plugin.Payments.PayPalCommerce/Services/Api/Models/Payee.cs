@@ -12,13 +12,13 @@ public class Payee
     /// <summary>
     /// Gets or sets the email address of merchant.
     /// </summary>
-    [JsonProperty(PropertyName = "email_address")]
+    [JsonProperty(PropertyName = "email_address", NullValueHandling = NullValueHandling.Ignore)]
     public string EmailAddress { get; set; }
 
     /// <summary>
     /// Gets or sets the encrypted PayPal account ID of the merchant.
     /// </summary>
-    [JsonProperty(PropertyName = "merchant_id")]
+    [JsonProperty(PropertyName = "merchant_id", NullValueHandling = NullValueHandling.Ignore)]
     public string MerchantId { get; set; }
 
     #endregion

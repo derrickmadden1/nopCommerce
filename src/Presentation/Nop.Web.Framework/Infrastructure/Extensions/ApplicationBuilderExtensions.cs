@@ -30,6 +30,7 @@ using Nop.Services.Logging;
 using Nop.Services.Media;
 using Nop.Services.Security;
 using Nop.Services.Seo;
+using Nop.Services.Themes;
 using Nop.Web.Framework.Globalization;
 using Nop.Web.Framework.Mvc.Routing;
 using Nop.Web.Framework.WebOptimizer;
@@ -373,6 +374,15 @@ public static class ApplicationBuilderExtensions
     }
 
     /// <summary>
+    /// Configure middleware storing the current user theme in the context
+    /// </summary>
+    /// <param name="application">Builder for configuring an application's request pipeline</param>
+    public static void UseThemes(this IApplicationBuilder application)
+    {
+        application.UseMiddleware<ThemesMiddleware>();
+    }
+
+    /// <summary>
     /// Configure middleware checking whether database is installed
     /// </summary>
     /// <param name="application">Builder for configuring an application's request pipeline</param>
@@ -406,9 +416,7 @@ public static class ApplicationBuilderExtensions
 
         var fontPaths = fileProvider.EnumerateFiles(fileProvider.MapPath(NopCommonDefaults.PdfFontDirectoryPath), "*.ttf") ?? Enumerable.Empty<string>();
         foreach (var fp in fontPaths)
-        {
             FontFactory.Register(fp, fileProvider.GetFileNameWithoutExtension(fp));
-        }
     }
 
     /// <summary>

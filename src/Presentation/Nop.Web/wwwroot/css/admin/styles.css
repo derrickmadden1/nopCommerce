@@ -1,4 +1,4 @@
-﻿/* COMMON */
+/* COMMON */
 .content, .content-wrapper > .content {
   padding: 0 10px 55px 10px;
 }
@@ -2099,13 +2099,35 @@ div.dt-container div.dt-paging {
 
   div.dt-container div.dt-length {
     text-align: center;
-  }
+  border: 1px solid #eaeaea;
+}
+}
 
-  .float-lg-left {
-    float: none;
-  }
-
-  .float-lg-right {
-    float: none;
-  }
+/* Fix DataTables double header issue when scrollX is true */
+.dataTables_scrollBody thead tr,
+.dt-scroll-body thead tr {
+    height: 0px !important;
+}
+.dataTables_scrollBody thead tr th,
+.dataTables_scrollBody thead tr td,
+.dt-scroll-body thead tr th,
+.dt-scroll-body thead tr td {
+    padding-top: 0px !important;
+    padding-bottom: 0px !important;
+    border-top: none !important;
+    border-bottom: none !important;
+    height: 0px !important;
+    overflow: hidden !important;
+    color: transparent !important;
+    line-height: 0 !important;
+}
+.dataTables_scrollBody thead *:before,
+.dataTables_scrollBody thead *:after,
+.dt-scroll-body thead *:before,
+.dt-scroll-body thead *:after {
+    display: none !important;
+}
+.dataTables_scrollBody thead .mastercheckbox,
+.dt-scroll-body thead .mastercheckbox {
+    display: none !important;
 }

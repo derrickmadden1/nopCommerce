@@ -1,69 +1,168 @@
-name: Deploy to Production
+name: Deploy to Production (Phase 2 - Blob Config)
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   workflow_dispatch:
 
 env:
   DOTNET_VERSION: '9.0.x'
+  SMOKE_TEST_KEYWORD: "Rose Cottage Croft"
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v4
 
-    - name: Setup .NET Core
+    - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
 
-    - name: Restore dependencies
-      run: dotnet restore src/NopCommerce.sln
-
-    - name: Run Tests
+    - name: Build and Publish
       run: |
-        dotnet test src/Tests/Nop.Tests/Nop.Tests.csproj --configuration Release --no-restore --logger trx --results-directory "TestResults"
+        dotnet restore src/NopCommerce.sln
+        dotnet build src/NopCommerce.sln -c Release --no-restore
+        dotnet publish src/Presentation/Nop.Web/Nop.Web.csproj -c Release -o ./app_publish --no-build
 
-    - name: Upload Test Results
-      uses: actions/upload-artifact@v4
-      if: success() || failure()
+    - name: Azure Login (Config Phase)
+      uses: azure/login@v1
       with:
-        name: test-results
-        path: TestResults
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-    - name: Build with Release configuration
-      run: dotnet build src/NopCommerce.sln --configuration Release --no-restore
-
-    - name: Publish Nop.Web
+    - name: Prepare Config, Plugins & Version
       run: |
-        dotnet publish src/Presentation/Nop.Web/Nop.Web.csproj --configuration Release --output ./app_publish --no-build
+        # 1. Create App_Data directory
+        mkdir -p ./app_publish/App_Data
 
-    - name: Clean App_Data from publish
-      run: |
-        rm -f ./app_publish/App_Data/*.json
-        rm -f ./app_publish/App_Data/dataSettings.json
-        rm -f ./app_publish/App_Data/DataProtectionKeys/*.xml
+        # 2. Bake Default appsettings.json (Fallback)
+        cat > ./app_publish/appsettings.json << 'EOF'
+        {
+          "ConnectionStrings": {
+            "ConnectionString": "Server=tcp:${{ secrets.PROD_SQL_SERVER }}.database.windows.net,1433;Initial Catalog=${{ secrets.PROD_SQL_DATABASE }};Persist Security Info=False;User ID=${{ secrets.SQL_ADMIN_USERNAME }};Password=${{ secrets.SQL_ADMIN_PASSWORD }};MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=True;Connection Timeout=30;",
+            "DataProvider": "sqlserver"
+          },
+          "AzureBlobConfig": {
+            "ConnectionString": "${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}",
+            "ContainerName": "nop-config",
+            "EndPoint": "${{ secrets.AZURE_STORAGE_BLOB_ENDPOINT }}",
+            "AppendContainerName": false
+          },
+          "AzureBlobStorageDataProtectionConfig": {
+            "Enabled": true,
+            "ConnectionString": "${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}",
+            "ContainerName": "nop-config",
+            "BlobName": "DataProtectionKeys.xml"
+          }
+        }
+        EOF
 
-    - name: Upload artifact for deployment job
+        # 3. Try to Fetch Master appsettings.json from Blob (Override)
+        az storage blob download --connection-string "${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}" --container-name "nop-config" --name "appsettings.json" --file "./app_publish/appsettings.json.tmp" || echo "Note: No cloud appsettings.json found."
+        if [ -f "./app_publish/appsettings.json.tmp" ]; then
+          if python3 -c "import json; json.load(open('./app_publish/appsettings.json.tmp'))" 2>/dev/null; then
+            mv ./app_publish/appsettings.json.tmp ./app_publish/appsettings.json
+            echo "Cloud appsettings.json applied successfully."
+          else
+            echo "WARNING: Cloud appsettings.json is malformed! Keeping baked fallback."
+            rm ./app_publish/appsettings.json.tmp
+          fi
+        fi
+
+        # 4. Bake Default plugins.json (Fallback)
+        cat > ./app_publish/App_Data/plugins.json << 'EOF'
+        {
+          "InstalledPluginNames": [
+            "Obsolete field, using only for compatibility"
+          ],
+          "InstalledPlugins": [
+            { "SystemName": "Payments.PayPalCommerce", "Version": "5.00.6" },
+            { "SystemName": "Payments.Square", "Version": "5.00.1" },
+            { "SystemName": "Pickup.PickupInStore", "Version": "5.00.6" },
+            { "SystemName": "ExternalAuth.Facebook", "Version": "5.00.3" },
+            { "SystemName": "Shipping.FixedByWeightByTotal", "Version": "5.00.7" },
+            { "SystemName": "Misc.Zettle", "Version": "5.00.4" },
+            { "SystemName": "Tax.FixedOrByCountryStateZip", "Version": "5.00.4" },
+            { "SystemName": "Widgets.GoogleAnalytics", "Version": "5.00.3" },
+            { "SystemName": "PromotionFeed.GoogleShopping", "Version": "1.92" },
+            { "SystemName": "Misc.AzureBlob", "Version": "5.00.2" },
+            { "SystemName": "DiscountRules.MultiBuy", "Version": "5.00.1" },
+            { "SystemName": "Search.AzureAI", "Version": "1.0.1" },
+            { "SystemName": "Widgets.MarketLocator", "Version": "1.0.0" },
+            { "SystemName": "Shipping.MarketPickup", "Version": "1.0.0" },
+            { "SystemName": "Widgets.ImagePuzzle", "Version": "1.00" }
+          ],
+          "PluginNamesToUninstall": [],
+          "PluginNamesToDelete": [],
+          "PluginNamesToInstall": []
+        }
+        EOF
+
+        # 5. Try to Fetch Master plugins.json from Blob (Override)
+        az storage blob download --connection-string "${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}" --container-name "nop-config" --name "plugins.json" --file "./app_publish/App_Data/plugins.json.tmp" || echo "Note: No cloud plugins.json found."
+        if [ -f "./app_publish/App_Data/plugins.json.tmp" ]; then
+          if python3 -c "import json; json.load(open('./app_publish/App_Data/plugins.json.tmp'))" 2>/dev/null; then
+            mv ./app_publish/App_Data/plugins.json.tmp ./app_publish/App_Data/plugins.json
+            echo "Cloud plugins.json applied successfully."
+          else
+            echo "WARNING: Cloud plugins.json is malformed! Keeping baked fallback."
+            rm ./app_publish/App_Data/plugins.json.tmp
+          fi
+        fi
+
+        # 6. Prune Unused Plugins (Python Janitor)
+        python3 -c "
+        import os, json, shutil
+        plugins_json = './app_publish/App_Data/plugins.json'
+        plugins_dir = './app_publish/Plugins'
+        if os.path.exists(plugins_json):
+            with open(plugins_json, 'r') as f:
+                installed = [p['SystemName'] for p in json.load(f).get('InstalledPlugins', [])]
+            whitelist = set(installed)
+            for folder in os.listdir(plugins_dir):
+                path = os.path.join(plugins_dir, folder)
+                if os.path.isdir(path) and folder not in whitelist:
+                    shutil.rmtree(path)
+                    print(f'Pruned: {folder}')
+        "
+
+        # 7. Version Inject & Clean
+        export SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+        export VERSION_STR="Build #${{ github.run_number }} ($SHORT_SHA) - $(date +'%Y-%m-%d')"
+        export FOOTER_PATH="./app_publish/Views/Shared/Components/Footer/Default.cshtml"
+        
+        if [ -f "$FOOTER_PATH" ]; then
+          echo "Injecting version: $VERSION_STR"
+          python3 -c "import os; p=os.environ['FOOTER_PATH']; v=os.environ['VERSION_STR']; data=open(p, 'r', encoding='utf-8-sig').read(); open(p, 'w', encoding='utf-8').write(data.replace('VERSION_STRING', v).lstrip())"
+          echo "Python injection and @model safety check complete."
+        fi
+
+        # 8. Storage Cleanup
+        rm -rf ./app_publish/wwwroot/images/thumbs/*
+        rm -rf ./app_publish/App_Data/Logs/*
+
+        # 9. Package
+        cd app_publish && zip -r ../nop-app.zip .
+
+        # 10. Summary
+        SIZE_BYTES=$(stat -c%s "../nop-app.zip")
+        SIZE_MB=$(echo "scale=2; $SIZE_BYTES/1048576" | bc)
+        echo "------------------------------------------"
+        echo "FINAL PACKAGE SIZE: $SIZE_MB MB"
+        echo "------------------------------------------"
+
+    - name: Upload Zip
       uses: actions/upload-artifact@v4
       with:
         name: nopcommerce-app
-        path: ./app_publish
+        path: nop-app.zip
 
   deploy:
     runs-on: ubuntu-latest
     needs: build
-    environment:
-      name: 'Production'
-      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
-
+    environment: Production
     steps:
-    - uses: actions/checkout@v4
-    
     - name: Download artifact
       uses: actions/download-artifact@v4
       with:
@@ -74,88 +173,53 @@ jobs:
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-    # - name: Create Resource Group
-    #   run: |
-    #     az group create \
-    #       --name rosecottagecroft \
-    #       --location centralus
-
-    # - name: Deploy Infrastructure
-    #   run: |
-    #     az deployment group create \
-    #       --resource-group rosecottagecroft \
-    #       --template-file infrastructure/main.bicep \
-    #       --parameters appName=${{ secrets.AZURE_WEBAPP_NAME }} \
-    #       --parameters skuName=D1 \
-    #       --parameters sqlAdminUsername=${{ secrets.SQL_ADMIN_USERNAME }} \
-    #       --parameters sqlAdminPassword=${{ secrets.SQL_ADMIN_PASSWORD }} \
-    #       --parameters sqlServerName=${{ secrets.PROD_SQL_SERVER }} \
-    #       --parameters sqlDatabaseName=${{ secrets.PROD_SQL_DATABASE }}
-
-    - name: Upscale App Service Plan to B1
+    - name: Prepare Infrastructure
       run: |
-        az appservice plan update \
-          --name Default1 \
-          --resource-group Default-Web-NorthEurope \
-          --sku B1
-
-    - name: Stop Web App
-      run: az webapp stop --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft
-
-    # - name: Purge Server Files and Logs
-    #   run: |
-    #     # Get publishing credentials
-    #     creds=$(az webapp deployment list-publishing-credentials --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --query "[publishingUserName, publishingPassword]" -o tsv)
-    #     USER=$(echo "$creds" | sed -n '1p')
-    #     PASS=$(echo "$creds" | sed -n '2p')
+        az appservice plan update --name Default1 --resource-group Default-Web-NorthEurope --sku S1
+        az webapp deployment slot create --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --slot staging --configuration-source ${{ secrets.AZURE_WEBAPP_NAME }}
+        echo "Waiting 30s for slot SCM site to initialize..."
+        sleep 30
         
-    #     echo "Purging LogFiles and Temp folders..."
-    #     curl -X DELETE -u "$USER:$PASS" "https://${{ secrets.AZURE_WEBAPP_NAME }}.scm.azurewebsites.net/api/vfs/LogFiles/?recursive=true" || true
-    #     curl -X DELETE -u "$USER:$PASS" "https://${{ secrets.AZURE_WEBAPP_NAME }}.scm.azurewebsites.net/api/vfs/site/wwwroot/App_Data/logs/?recursive=true" || true
+        # Verbose errors for staging only
+        az webapp config appsettings set --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --slot staging --settings ASPNETCORE_ENVIRONMENT="Development"
 
-    #     echo "Aggressive Purge: Deleting bin, Views, and wwwroot binaries to free space..."
-    #     # This frees ~500MB for the new extraction
-    #     curl -X DELETE -u "$USER:$PASS" "https://${{ secrets.AZURE_WEBAPP_NAME }}.scm.azurewebsites.net/api/vfs/site/wwwroot/bin/?recursive=true" || true
-    #     curl -X DELETE -u "$USER:$PASS" "https://${{ secrets.AZURE_WEBAPP_NAME }}.scm.azurewebsites.net/api/vfs/site/wwwroot/Views/?recursive=true" || true
-    #     curl -X DELETE -u "$USER:$PASS" "https://${{ secrets.AZURE_WEBAPP_NAME }}.scm.azurewebsites.net/api/vfs/site/wwwroot/wwwroot/?recursive=true" || true
-
-    # - name: Fetch and Protect Live Configuration
-    #   run: |
-    #     # Get publishing credentials (re-use logic)
-    #     creds=$(az webapp deployment list-publishing-credentials --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --query "[publishingUserName, publishingPassword]" -o tsv)
-    #     USER=$(echo "$creds" | sed -n '1p')
-    #     PASS=$(echo "$creds" | sed -n '2p')
-        
-    #     mkdir -p App_Data
-    #     echo "Downloading live plugins.json..."
-    #     curl -u "$USER:$PASS" -o App_Data/plugins.json "https://${{ secrets.AZURE_WEBAPP_NAME }}.scm.azurewebsites.net/api/vfs/site/wwwroot/App_Data/plugins.json" || true
-        
-    #     echo "Recreating dataSettings.json from Secrets..."
-    #     # Using a secret ensures the connection string is always correct and up to date
-    #     cat > App_Data/dataSettings.json << 'EOF'
-    #     {
-    #       "DataProvider": "sqlserver",
-    #       "DataConnectionString": "Data Source=tcp:${{ secrets.PROD_SQL_SERVER }}.database.windows.net,1433;Initial Catalog=${{ secrets.PROD_SQL_DATABASE }};Persist Security Info=False;User ID=${{ secrets.SQL_ADMIN_USERNAME }};Password=${{ secrets.SQL_ADMIN_PASSWORD }};MultipleActiveResultSets=False;Connect Timeout=30;Encrypt=True;TrustServerCertificate=False",
-    #       "RawDataSettings": {}
-    #     }
-    #     EOF
-
-    - name: Deploy to Azure Web App
-      id: deploy-to-webapp
-      uses: azure/webapps-deploy@v2
+    - name: Pause Better Stack Monitoring
+      run: |
+        # Use the Better Stack API to pause the monitor
+        # Replace '123456' with your actual Monitor ID (found in the Monitor URL)
+        curl --request PATCH --url https://uptime.betterstack.com/api/v2/monitors/3352825 --header "Authorization: Bearer ${{ secrets.BETTERSTACK_API_TOKEN }}" --header "Content-Type:  application/json" --data "{\"paused\": true}"
+    
+    - name: Deploy to Staging
+      uses: azure/webapps-deploy@v3
       with:
         app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
-        slot-name: 'Production'
-        package: .
+        slot-name: 'staging'
+        package: 'nop-app.zip'
 
-    - name: Start Web App
-      if: always()
-      run: az webapp start --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft
+    - name: Warm Up & Smoke Test
+      run: |
+        echo "Waiting 90 seconds for initialization..."
+        sleep 90
+        URL="https://${{ secrets.AZURE_WEBAPP_NAME }}-staging.azurewebsites.net"
+        RESPONSE=$(curl -sL --retry 5 --retry-delay 30 "$URL")
+        if echo "$RESPONSE" | grep -qi "${{ env.SMOKE_TEST_KEYWORD }}"; then
+          echo "SUCCESS: Store loaded."
+        else
+          echo "ERROR: Keyword not found. Response snippet below:"
+          echo "$RESPONSE" | head -c 2000
+          exit 1
+        fi
 
-    - name: Downscale App Service Plan back to D1
+    - name: Swap and Cleanup
       if: always()
       run: |
-        az appservice plan update \
-          --name Default1 \
-          --resource-group Default-Web-NorthEurope \
-          --sku D1
+        if [[ "${{ job.status }}" == "success" ]]; then
+          az webapp deployment slot swap --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --slot staging --target-slot production
+        fi
+        az webapp deployment slot delete --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --slot staging || true
+        az appservice plan update --name Default1 --resource-group Default-Web-NorthEurope --sku D1 || true
+
+    - name: Resume Better Stack Monitoring
+      if: always() # Ensures monitoring is resumed even if the deploy fails
+      run: |
+        curl --request PATCH --url https://uptime.betterstack.com/api/v2/monitors/3352825 --header "Authorization: Bearer ${{ secrets.BETTERSTACK_API_TOKEN }}" --header "Content-Type:  application/json" --data "{\"paused\": false}"

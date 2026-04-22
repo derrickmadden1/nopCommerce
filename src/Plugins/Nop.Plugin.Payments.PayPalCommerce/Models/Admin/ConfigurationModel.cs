@@ -16,6 +16,7 @@ public record ConfigurationModel : BaseNopModel
     public ConfigurationModel()
     {
         PaymentTypes = new List<SelectListItem>();
+        LandingPages = new List<SelectListItem>();
     }
 
     #endregion
@@ -87,6 +88,15 @@ public record ConfigurationModel : BaseNopModel
 
     [NopResourceDisplayName("Plugins.Payments.PayPalCommerce.Fields.UseShipmentTracking")]
     public bool UseShipmentTracking { get; set; }
+
+    [NopResourceDisplayName("Plugins.Payments.PayPalCommerce.Fields.ImmediatePaymentRequired")]
+    public bool ImmediatePaymentRequired { get; set; }
+    public bool ImmediatePaymentRequired_OverrideForStore { get; set; }
+
+    [NopResourceDisplayName("Plugins.Payments.PayPalCommerce.Fields.LandingPage")]
+    public int LandingPageId { get; set; }
+    public bool LandingPageId_OverrideForStore { get; set; }
+    public IList<SelectListItem> LandingPages { get; set; }
 
     [NopResourceDisplayName("Plugins.Payments.PayPalCommerce.Fields.SkipOrderConfirmPage")]
     public bool SkipOrderConfirmPage { get; set; }

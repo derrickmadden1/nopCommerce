@@ -1,0 +1,21 @@
+@model Nop.Plugin.Widgets.MarketLocator.Models.MarketTeaserModel
+@if (Model.NextMarkets.Any())
+{
+    <div class="market-teaser">
+        <div class="market-teaser__icon">📍</div>
+        <div class="market-teaser__content">
+            <span class="market-teaser__headline">Find us at a market:</span>
+            @foreach (var item in Model.NextMarkets)
+            {
+                <span class="market-teaser__item @item.Status">
+                    <strong>@item.Name</strong> · @item.NextDate
+                </span>
+            }
+            @if (Model.TotalCount > Model.NextMarkets.Count)
+            {
+                <span class="market-teaser__more">+@(Model.TotalCount - Model.NextMarkets.Count) more</span>
+            }
+        </div>
+        <a href="/market-locations" class="market-teaser__cta">See all locations →</a>
+    </div>
+}

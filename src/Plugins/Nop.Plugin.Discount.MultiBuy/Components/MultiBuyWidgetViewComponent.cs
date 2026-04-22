@@ -1,6 +1,5 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Nop.Core;
-using Nop.Core.Domain.Discounts;
 using Nop.Core.Domain.Orders;
 using Nop.Plugin.DiscountRules.MultiBuy.Models;
 using Nop.Plugin.DiscountRules.MultiBuy.Services;
@@ -11,11 +10,6 @@ using Nop.Services.Orders;
 using Nop.Web.Framework.Components;
 using Nop.Web.Framework.Infrastructure;
 using Nop.Web.Models.Catalog;
-using Nop.Web.Models.Catalog;
-using Nop.Web.Models.ShoppingCart;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace Nop.Plugin.DiscountRules.MultiBuy.Components
 {

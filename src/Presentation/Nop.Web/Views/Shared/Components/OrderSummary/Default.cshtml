@@ -5,11 +5,16 @@
 @using Nop.Core.Domain.Media
 @using Nop.Core.Domain.Orders
 @using Nop.Core.Domain.Tax
+@using Nop.Services.Helpers
 
 @inject IWebHelper webHelper
 @inject IWorkContext workContext
 @inject MediaSettings mediaSettings
 @inject OrderSettings orderSettings
+
+@{
+    NopHtml.AppendScriptParts(ResourceLocation.Footer, "~/js/spendMore.js");
+}
 
 <div class="order-summary-content">
     @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.OrderSummaryContentBefore, additionalData = Model })

@@ -1,0 +1,33 @@
+@model Nop.Plugin.Widgets.MarketLocator.Models.MarketPickupSummaryModel
+@if (!Model.HasPickup) { return; }
+
+<div class="card card-default market-pickup-admin-card">
+    <div class="card-header">
+        <span>🥕 Market Pickup Details</span>
+    </div>
+    <div class="card-body">
+        <div class="form-group row">
+            <div class="col-md-4 col-form-label"><label>Market</label></div>
+            <div class="col-md-8 col-form-label"><strong>@Model.MarketName</strong></div>
+        </div>
+        <div class="form-group row">
+            <div class="col-md-4 col-form-label"><label>Pickup Date</label></div>
+            <div class="col-md-8 col-form-label">
+                <strong class="text-success">@Model.PickupDate</strong>
+            </div>
+        </div>
+        <div class="form-group row">
+            <div class="col-md-4 col-form-label"><label>Hours</label></div>
+            <div class="col-md-8 col-form-label">@Model.Hours</div>
+        </div>
+        <div class="form-group row">
+            <div class="col-md-4 col-form-label"><label>Address</label></div>
+            <div class="col-md-8 col-form-label">
+                @Model.Address
+                <a href="@Model.DirectionsUrl" target="_blank" class="btn btn-sm btn-secondary ml-2">
+                    <i class="fas fa-map-marker-alt"></i> Directions
+                </a>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,157 @@
+/* =========================================================
+   Market Pickup — Checkout & Order Summary Styles
+   ========================================================= */
+
+/* ── Selector wrapper ─────────────────────────────────── */
+.market-pickup-selector {
+    margin-top: 1.25rem;
+    border: 1.5px solid #e0d8cc;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #fdfbf7;
+}
+
+.pickup-selector-header {
+    display: flex;
+    align-items: center;
+    gap: .85rem;
+    padding: .9rem 1.1rem;
+    background: #f0ede6;
+    border-bottom: 1px solid #e0d8cc;
+}
+.pickup-icon { font-size: 1.4rem; }
+.pickup-selector-header strong { display: block; font-size: .9rem; color: #3d2b1f; }
+.pickup-selector-header span   { font-size: .78rem; color: #8c7b6b; }
+
+/* ── Steps ────────────────────────────────────────────── */
+.pickup-step { padding: 1rem 1.1rem; border-bottom: 1px solid #ede5d3; }
+.pickup-step.is-hidden { display: none; }
+
+.pickup-step-label {
+    font-size: .78rem;
+    font-weight: 600;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    color: #8c7b6b;
+    margin-bottom: .75rem;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+}
+.step-num {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: #4a6741;
+    color: white;
+    font-size: .7rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+/* ── Market location cards ────────────────────────────── */
+.pickup-market-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: .6rem;
+}
+.pickup-market-card {
+    display: flex;
+    gap: .6rem;
+    padding: .75rem;
+    border: 1.5px solid #e0d8cc;
+    border-radius: 9px;
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+    background: white;
+}
+.pickup-market-card:hover { border-color: #6a8f60; }
+.pickup-market-card.is-selected {
+    border-color: #4a6741;
+    background: #eaf3e8;
+}
+.pmc-radio input { accent-color: #4a6741; margin-top: .25rem; cursor: pointer; }
+.pmc-body { cursor: pointer; flex: 1; }
+.pmc-name { font-weight: 600; font-size: .85rem; color: #3d2b1f; margin-bottom: .3rem; }
+.pmc-meta { font-size: .74rem; color: #8c7b6b; line-height: 1.6; }
+.pmc-meta span { display: block; }
+
+/* ── Date buttons ─────────────────────────────────────── */
+.pickup-date-group.is-hidden { display: none; }
+.pickup-date-options { display: flex; flex-wrap: wrap; gap: .5rem; }
+
+.pickup-date-btn {
+    padding: .4rem .9rem;
+    border-radius: 99px;
+    border: 1.5px solid #e0d8cc;
+    background: white;
+    font-size: .82rem;
+    color: #3d2b1f;
+    cursor: pointer;
+    font-family: inherit;
+    font-weight: 500;
+    transition: all .15s;
+}
+.pickup-date-btn:hover { border-color: #6a8f60; color: #4a6741; }
+.pickup-date-btn.is-selected {
+    background: #4a6741;
+    border-color: #4a6741;
+    color: white;
+}
+
+/* ── Confirmation strip ───────────────────────────────── */
+.pickup-confirmation {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    padding: .75rem 1.1rem;
+    background: #eaf3e8;
+    font-size: .82rem;
+    color: #3d2b1f;
+    font-weight: 500;
+}
+.pickup-confirmation.is-hidden { display: none; }
+.pickup-check { color: #4a6741; font-size: 1rem; }
+
+/* ── Validation message ───────────────────────────────── */
+.pickup-validation-msg {
+    padding: .6rem 1.1rem;
+    background: #fde8e8;
+    color: #c0392b;
+    font-size: .8rem;
+    font-weight: 500;
+}
+.pickup-validation-msg.is-hidden { display: none; }
+
+/* ── Public order summary ─────────────────────────────── */
+.market-pickup-order-summary {
+    margin-top: 1.25rem;
+    padding: 1rem 1.25rem;
+    border: 1.5px solid #e0d8cc;
+    border-radius: 10px;
+    background: #fdfbf7;
+}
+.mpos-header {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    margin-bottom: .75rem;
+    font-size: .9rem;
+    color: #3d2b1f;
+}
+.mpos-icon { font-size: 1.1rem; }
+.mpos-details { list-style: none; padding: 0; margin: 0; font-size: .83rem; line-height: 1.8; }
+.mpos-label { color: #8c7b6b; margin-right: .35rem; }
+.mpos-directions {
+    margin-left: .5rem;
+    color: #4a6741;
+    font-weight: 500;
+    text-decoration: none;
+    font-size: .78rem;
+}
+.mpos-directions:hover { text-decoration: underline; }
+
+/* ── Admin card ───────────────────────────────────────── */
+.market-pickup-admin-card { margin-top: 1rem; }
