@@ -152,6 +152,10 @@ public partial record OrderSettingsModel : BaseNopModel, ISettingsModel
     public bool AllowCustomersCancelOrders { get; set; }
     public bool AllowCustomersCancelOrders_OverrideForStore { get; set; }
 
+    [NopResourceDisplayName("Admin.Configuration.Settings.Order.NextRecurringPaymentNotificationDays")]
+    public int NextRecurringPaymentNotificationDays { get; set; }
+    public bool NextRecurringPaymentNotificationDays_OverrideForStore { get; set; }
+
     public ReturnRequestReasonSearchModel ReturnRequestReasonSearchModel { get; set; }
 
     public ReturnRequestActionSearchModel ReturnRequestActionSearchModel { get; set; }

@@ -520,6 +520,10 @@ public class LocalizationMigration : MigrationBase
             ["Admin.System.Maintenance.ClearSearchHistory.Text"] = "Delete search history data from the database.",
             ["Admin.System.Maintenance.ClearSearchHistory.Complete"] = "Clearing search history data completed",
             ["Admin.System.Maintenance.ClearSearchHistory.TotalDeleted"] = "{0} items were deleted",
+
+            //#309
+            ["Admin.Configuration.Settings.Order.NextRecurringPaymentNotificationDays"] = "Next Recurring Payment Notification Days",
+            ["Admin.Configuration.Settings.Order.NextRecurringPaymentNotificationDays.Hint"] = "Number of days before the next recurring payment when customers should receive a notification email. Set to 0 to disable this notification.",
         });
 
         #endregion

@@ -202,4 +202,9 @@ public partial class OrderSettings : ISettings
     /// Gets or sets a value indicating whether to allow customers to cancel orders
     /// </summary>
     public bool AllowCustomersCancelOrders { get; set; }
+
+    /// <summary>
+    /// Gets or sets the number of days before the next recurring payment when the notification should be sent to customers
+    /// </summary>
+    public int NextRecurringPaymentNotificationDays { get; set; }
 }

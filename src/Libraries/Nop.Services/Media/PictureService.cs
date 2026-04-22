@@ -371,7 +371,7 @@ public partial class PictureService : IPictureService
     /// A task that represents the asynchronous operation
     /// The task result contains the file extension
     /// </returns>
-    public virtual Task<string> GetFileExtensionFromMimeTypeAsync(string mimeType)
+    public virtual Task<string> GetFileExtensionFromMimeTypeAsync(string mimeType) 
     {
         if (mimeType == null)
             return Task.FromResult<string>(null);
