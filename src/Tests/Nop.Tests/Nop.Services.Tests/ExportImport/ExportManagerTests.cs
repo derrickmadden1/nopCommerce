@@ -346,7 +346,8 @@ public class ExportManagerTests : ServiceTest
             "CustomerCustomerRoleMappings", "CustomerAddressMappings", "EntityCacheKey", "VendorId",
             "DateOfBirth", "CountryId",
             "StateProvinceId", "VatNumberStatusId", "TimeZoneId",
-            "CurrencyId", "LanguageId", "TaxDisplayTypeId", "TaxDisplayType", "TaxDisplayType", "VatNumberStatusId", "MustChangePassword" };
+            "CurrencyId", "LanguageId", "TaxDisplayTypeId", "TaxDisplayType", "TaxDisplayType", "VatNumberStatusId", "MustChangePassword",
+            "LastShoppingCartUpdateDateUtc", "LastAbandonedCartFollowUpNumber", "LastAbandonedCartFollowUpDateUtc", "RegistrationFollowUpDateUtc" };
 
         if (!_customerSettings.FirstNameEnabled)
             ignore.Add("FirstName");
