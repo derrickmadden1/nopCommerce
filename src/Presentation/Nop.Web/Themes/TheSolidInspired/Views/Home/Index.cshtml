@@ -1,10 +1,12 @@
 @inherits Nop.Web.Framework.Mvc.Razor.NopRazorPage<TModel>
 
+@using Nop.Web.Framework.Infrastructure
+
 @{
     Layout = "_ColumnsOne";
 }
 
-@await Component.InvokeAsync("Widget", new { widgetZone = "homepage_top" })
+@await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.HomepageTop })
 
 <!-- HERO SECTION -->
 <section class="hero">
@@ -30,7 +32,7 @@
         <h2>Featured Collection</h2>
     </div>
     <div class="product-grid">
-        @await Component.InvokeAsync("Widget", new { widgetZone = "homepage_featured_collection" })
+        @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.HomepageBeforeProducts })
     </div>
 </section>
 
@@ -44,4 +46,4 @@
 <!-- HOMEPAGE TEXT TOPIC -->
 @await Component.InvokeAsync("TopicBlock", new { systemName = "HomepageText" })
 
-@await Component.InvokeAsync("Widget", new { widgetZone = "homepage_bottom" })
+@await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.HomepageBottom })

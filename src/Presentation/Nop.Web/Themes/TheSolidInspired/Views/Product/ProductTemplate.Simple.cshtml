@@ -6,7 +6,6 @@
 @using Nop.Services.Html
 
 @inject IHtmlFormatter htmlFormatter
-@inject IWebHelper webHelper
 @inject SeoSettings seoSettings
 
 @{
@@ -34,12 +33,15 @@
 {
     @await Html.PartialAsync("_ProductBreadcrumb", Model.Breadcrumb)
 }
+@await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.ProductDetailsAfterBreadcrumb, additionalData = Model })
 
 <div class="page product-details-page section-container">
     <div class="page-body">
+        @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.ProductDetailsTop, additionalData = Model })
         <form asp-route="Product" asp-route-sename="@Model.SeName" method="post" id="product-details-form">
             <article data-productid="@Model.Id">
                 <div class="product-essential-modern">
+                    @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.ProductDetailsEssentialTop, additionalData = Model })
                     <div class="product-gallery">
                         @await Html.PartialAsync("_ProductDetailsPictures", Model)
                     </div>
@@ -55,7 +57,9 @@
                             @{
                                 var dataDictPrice = new ViewDataDictionary(ViewData);
                                 dataDictPrice.TemplateInfo.HtmlFieldPrefix = $"price_{Model.Id}";
+                                @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.ProductPriceTop, additionalData = Model })
                                 @await Html.PartialAsync("_ProductPrice", Model.ProductPrice, dataDictPrice)
+                                @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.ProductPriceBottom, additionalData = Model })
                             }
                         </div>
 
@@ -91,10 +95,16 @@
                         </div>
 
                         <div class="product-sharing">
+                            @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.ProductDetailsInsideOverviewButtonsBefore, additionalData = Model })
                             @await Html.PartialAsync("_ShareButton", Model)
+                            @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.ProductDetailsInsideOverviewButtonsAfter, additionalData = Model })
                         </div>
+                        @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.ProductDetailsOverviewBottom, additionalData = Model })
                     </div>
+                    @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.ProductDetailsEssentialBottom, additionalData = Model })
                 </div>
+
+                @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.ProductDetailsBeforeCollateral, additionalData = Model })
 
                 <div class="product-description-tabs">
                     <div class="tab-header">
@@ -142,5 +152,10 @@
 
             </article>
         </form>
+        @if (Model.ProductReviewOverview.AllowCustomerReviews)
+        {
+            @await Html.PartialAsync("_ProductReviews", Model.ProductReviews)
+        }
+        @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.ProductDetailsBottom, additionalData = Model })
     </div>
 </div>

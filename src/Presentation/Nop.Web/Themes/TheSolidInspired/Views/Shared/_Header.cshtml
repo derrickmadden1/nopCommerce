@@ -125,6 +125,7 @@
     }
 </style>
 
+@await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.HeaderBefore })
 <header class="header-modern">
 
     <!-- Top Announcement Bar (Turquoise) -->
@@ -190,6 +191,7 @@
     </div>
 
 </header>
+@await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.HeaderAfter })
 
 <!-- Panels moved OUTSIDE the header for isolation -->
 <div id="mini-cart-overlay" class="mini-cart-overlay" style="display: none !important;"></div>

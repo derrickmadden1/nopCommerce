@@ -18,10 +18,8 @@
     <None Remove="Views\ConfigureRequirement.cshtml" />
     <None Remove="Views\_ViewImports.cshtml" />
     <None Remove="Areas\Admin\Views\_ViewImports.cshtml" />
-    <None Remove="Scripts\puzzle-logic.js" />
-    <None Remove="Content\puzzle.css" />
+    <None Remove="wwwroot\**\*" />
   </ItemGroup>
-
   <ItemGroup>
     <Content Include="logo.jpg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
@@ -41,10 +39,7 @@
     <Content Include="Areas\Admin\Views\_ViewImports.cshtml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Scripts\puzzle-logic.js">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Content\puzzle.css">
+    <Content Include="wwwroot\**\*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
@@ -67,8 +62,8 @@
     <Folder Include="Areas\Admin\Validators\" />
     <Folder Include="Extensions\" />
     <Folder Include="Factories\" />
-    <Folder Include="Content\" />
-    <Folder Include="Scripts\" />
+    <Folder Include="wwwroot\css\" />
+    <Folder Include="wwwroot\js\" />
     <Folder Include="Services\" />
     <Folder Include="Validators\" />    
   </ItemGroup>
@@ -76,6 +71,13 @@
   <!-- This target execute after "Build" target -->
   <Target Name="NopTarget" AfterTargets="Build">
     <MSBuild Projects="@(ClearPluginAssemblies)" Properties="PluginPath=$(OutDir)" Targets="NopClear" />
+  </Target>
+
+  <Target Name="CopyPluginStaticFiles" AfterTargets="Build">
+    <ItemGroup>
+      <PluginStaticFiles Include="wwwroot\**\*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(PluginStaticFiles)" DestinationFiles="@(PluginStaticFiles->'..\..\Presentation\Nop.Web\wwwroot\Plugins\Widgets.ImagePuzzle\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
   </Target>
 
 </Project>

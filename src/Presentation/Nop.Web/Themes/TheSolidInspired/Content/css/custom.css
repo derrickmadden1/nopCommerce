@@ -741,12 +741,43 @@ h6 {
     text-align: left !important;
 }
 
-.add-to-cart-button,
-.qty-input,
+.add-to-cart-panel {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.add-to-cart-button {
+    background-color: var(--brand-magenta, #D0021B);
+    color: #fff;
+    border: none;
+    padding: 12px 35px;
+    font-size: 1rem;
+    font-family: var(--heading-font, inherit);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.add-to-cart-button:hover {
+    background-color: var(--dark-grey, #333);
+    transform: translateY(-2px);
+}
+
+.qty-input {
+    width: 70px;
+    padding: 10px;
+    text-align: center;
+    border: 1px solid var(--border-color, #eee);
+    font-size: 1rem;
+}
+
 .qty-label {
-    display: inline-block !important;
-    visibility: visible !important;
-    opacity: 1 !important;
+    font-weight: 600;
+    color: var(--dark-grey, #333);
 }
 
 /* --- PRODUCT DETAILS (MODERN) --- */
