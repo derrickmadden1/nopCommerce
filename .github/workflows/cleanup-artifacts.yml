@@ -11,6 +11,7 @@ jobs:
 
     steps:
       - name: Delete all artifacts
+        env: GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           artifacts=$(gh api \
             -H "Accept: application/vnd.github+json" \
