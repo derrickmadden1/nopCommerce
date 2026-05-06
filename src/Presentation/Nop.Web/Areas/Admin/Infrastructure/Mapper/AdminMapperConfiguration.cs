@@ -1315,7 +1315,12 @@ public partial class AdminMapperConfiguration : Profile, IOrderedMapperProfile
             .ForMember(model => model.ReturnRequestsEnabled_OverrideForStore, options => options.Ignore())
             .ForMember(model => model.TermsOfServiceOnOrderConfirmPage_OverrideForStore, options => options.Ignore())
             .ForMember(model => model.TermsOfServiceOnShoppingCartPage_OverrideForStore, options => options.Ignore())
-            .ForMember(model => model.PrimaryStoreCurrencyCode, options => options.Ignore());
+            .ForMember(model => model.PrimaryStoreCurrencyCode, options => options.Ignore())
+            .ForMember(model => model.AutoCancelEnabled_OverrideForStore, options => options.Ignore())
+            .ForMember(model => model.AutoCancelDelay_OverrideForStore, options => options.Ignore())
+            .ForMember(model => model.AutoCancelIgnoredPaymentMethods_OverrideForStore, options => options.Ignore())
+            .ForMember(model => model.AutoCancelRestoreShoppingCart_OverrideForStore, options => options.Ignore())
+            .ForMember(model => model.AvailablePaymentMethods, options => options.Ignore());
         CreateMap<OrderSettingsModel, OrderSettings>()
             .ForMember(settings => settings.GeneratePdfInvoiceInCustomerLanguage, options => options.Ignore())
             .ForMember(settings => settings.MinimumOrderPlacementInterval, options => options.Ignore())
