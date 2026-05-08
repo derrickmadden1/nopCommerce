@@ -1,7 +1,7 @@
 ﻿{
   "Group": "Discount requirements",
   "FriendlyName": "Multibuy product rules",
-  "SystemName": "DiscountRequirement.MultiBuy",
+  "SystemName": "DiscountRules.MultiBuy",
   "Version": "5.00.1",
   "SupportedVersions": [ "5.00" ],
   "Author": "Rose Cottage Croft",
