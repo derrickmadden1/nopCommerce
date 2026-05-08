@@ -1328,7 +1328,8 @@ public partial class AdminMapperConfiguration : Profile, IOrderedMapperProfile
             .ForMember(settings => settings.ReturnRequestsFileMaximumSize, options => options.Ignore())
             .ForMember(settings => settings.DisplayOrderSummary, options => options.Ignore())
             .ForMember(settings => settings.PlaceOrderWithLock, options => options.Ignore())
-            .ForMember(settings => settings.CustomerOrdersPageSize, options => options.Ignore());
+            .ForMember(settings => settings.CustomerOrdersPageSize, options => options.Ignore())
+            .ForMember(settings => settings.AutoCancelIgnoreBeforeUtc, options => options.Ignore());
 
         CreateMap<ReturnRequestAction, ReturnRequestActionModel>();
         CreateMap<ReturnRequestActionModel, ReturnRequestAction>();
