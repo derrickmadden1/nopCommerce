@@ -42,4 +42,13 @@ public class MarketLocation : BaseEntity
 
     /// <summary>Controls sidebar sort order.</summary>
     public int DisplayOrder { get; set; }
+    
+    /// <summary>A short description for social media posts and map popups.</summary>
+    public string Description { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Service Bus sequence number of the pending scheduled social post.
+    /// Null if no message is currently scheduled.
+    /// </summary>
+    public long? PendingSocialPostSequenceNumber { get; set; }
 }

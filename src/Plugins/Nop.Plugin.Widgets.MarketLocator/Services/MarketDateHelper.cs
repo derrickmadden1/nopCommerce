@@ -71,4 +71,49 @@ public static class MarketDateHelper
     /// </summary>
     public static bool HasFutureDates(string pipeDates) =>
         GetFutureDates(pipeDates).Count > 0;
+
+    /// <summary>
+    /// Derives the next market start and end date/time from the UpcomingDates and Hours fields.
+    /// Returns null if no future dates are found or parsing fails.
+    /// </summary>
+    public static (DateTime? StartDate, DateTime? EndDate) GetNextMarketOccurrence(string upcomingDates, string hours)
+    {
+        var futureDates = GetFutureDates(upcomingDates);
+        if (futureDates.Count == 0)
+            return (null, null);
+
+        // Take the first upcoming date
+        if (!TryParseDate(futureDates[0], DateTime.UtcNow.Year, out var nextDate))
+            return (null, null);
+
+        // Try to parse hours like "8:00 AM – 1:00 PM"
+        var parts = hours.Split(new[] { '-', '–', '—' }, StringSplitOptions.RemoveEmptyEntries)
+                         .Select(p => p.Trim())
+                         .ToList();
+
+        if (parts.Count < 2)
+        {
+            // Fallback to just the date at 9 AM if hours are missing/malformed
+            return (nextDate.Date.AddHours(9), nextDate.Date.AddHours(17));
+        }
+
+        // Clean up parts to ensure space before AM/PM for more reliable parsing
+        var startTimeStr = System.Text.RegularExpressions.Regex.Replace(parts[0], "([0-9])([AP]M)", "$1 $2", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        var endTimeStr = System.Text.RegularExpressions.Regex.Replace(parts[1], "([0-9])([AP]M)", "$1 $2", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+        if (DateTime.TryParse(startTimeStr, out var startTime) && DateTime.TryParse(endTimeStr, out var endTime))
+        {
+            // Combine nextDate with the times from Hours
+            var start = nextDate.Date.Add(startTime.TimeOfDay);
+            var end = nextDate.Date.Add(endTime.TimeOfDay);
+
+            // Handle cases where end time is the next day (unlikely for a market, but good practice)
+            if (end < start)
+                end = end.AddDays(1);
+
+            return (start, end);
+        }
+
+        return (nextDate.Date.AddHours(9), nextDate.Date.AddHours(17));
+    }
 }
