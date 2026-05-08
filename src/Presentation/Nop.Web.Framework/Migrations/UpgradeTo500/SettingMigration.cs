@@ -4,8 +4,9 @@ using Nop.Core.Domain.ArtificialIntelligence;
 using Nop.Core.Domain.Catalog;
 using Nop.Core.Domain.Common;
 using Nop.Core.Domain.Customers;
-using Nop.Core.Domain.Reminders;
+using Nop.Core.Domain.Media;
 using Nop.Core.Domain.Orders;
+using Nop.Core.Domain.Reminders;
 using Nop.Core.Domain.Shipping;
 using Nop.Data;
 using Nop.Data.Migrations;
@@ -21,12 +22,12 @@ public class SettingMigration : MigrationBase
     {
         if (!DataSettingsManager.IsDatabaseInstalled())
             return;
-        
+
         //#7898
         this.SetSettingIfNotExists<ArtificialIntelligenceSettings, bool>(settings => settings.LogRequests, false);
 
         //#7336
-        this.SetSettingIfNotExists<PrivateMessageSettings, bool>(settings => settings.AllowPrivateMessages, 
+        this.SetSettingIfNotExists<PrivateMessageSettings, bool>(settings => settings.AllowPrivateMessages,
             this.GetSettingByKey($"ForumSettings.{nameof(PrivateMessageSettings.AllowPrivateMessages)}", false));
 
         this.SetSettingIfNotExists<PrivateMessageSettings, bool>(settings => settings.NotifyAboutPrivateMessages,
@@ -87,6 +88,13 @@ public class SettingMigration : MigrationBase
         this.SetSettingIfNotExists<OrderSettings, List<string>>(settings => settings.AutoCancelIgnoredPaymentMethods, []);
         this.SetSettingIfNotExists<OrderSettings, bool>(settings => settings.AutoCancelRestoreShoppingCart, false);
         this.SetSettingIfNotExists<OrderSettings, DateTime?>(settings => settings.AutoCancelIgnoreBeforeUtc, DateTime.UtcNow);
+
+        //#4279
+        this.SetSettingIfNotExists<MediaSettings, bool>(settings => settings.Object3dCameraControlEnabled, true);
+        this.SetSettingIfNotExists<MediaSettings, bool>(settings => settings.Object3dZoomEnabled, true);
+        this.SetSettingIfNotExists<MediaSettings, bool>(settings => settings.Object3dAutoRotateEnabled, false);
+        this.SetSettingIfNotExists<MediaSettings, bool>(settings => settings.Object3dLazyLoadingEnabled, true);
+        this.SetSettingIfNotExists<MediaSettings, int>(settings => settings.Object3dUploadSizeLimit, 20);
     }
 
     public override void Down()

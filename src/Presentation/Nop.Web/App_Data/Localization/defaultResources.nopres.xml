@@ -2415,8 +2415,8 @@
   <LocaleResource Name="Admin.Catalog.Categories.Updated">
     <Value>The category has been updated successfully.</Value>
   </LocaleResource>
-    <LocaleResource Name="Admin.Catalog.FilterLevelValue.AddNew">
-  <Value>Add a new filter level value</Value>
+  <LocaleResource Name="Admin.Catalog.FilterLevelValue.AddNew">
+    <Value>Add a new filter level value</Value>
   </LocaleResource>
   <LocaleResource Name="Admin.Catalog.FilterLevelValue.BackToList">
     <Value>back to filter level value list</Value>
@@ -2459,7 +2459,7 @@
   </LocaleResource>
   <LocaleResource Name="Admin.Catalog.FilterLevelValues.Updated">
     <Value>The filter level value has been updated successfully.</Value>
-  </LocaleResource>  
+  </LocaleResource>
   <LocaleResource Name="Admin.Catalog.Manufacturers">
     <Value>Manufacturers</Value>
   </LocaleResource>
@@ -3788,6 +3788,30 @@
   </LocaleResource>
   <LocaleResource Name="Admin.Catalog.Products.Multimedia">
     <Value>Multimedia</Value>
+  </LocaleResource>
+  <LocaleResource Name="Admin.Catalog.Products.Multimedia.Object3d">
+    <Value>3D model</Value>
+  </LocaleResource>
+  <LocaleResource Name="Admin.Catalog.Products.Multimedia.Object3d.Fields.FileName">
+    <Value>3D model file</Value>
+  </LocaleResource>
+  <LocaleResource Name="Admin.Catalog.Products.Multimedia.Object3d.Fields.FileName.Hint">
+    <Value>Upload a .glb file containing a 3D model to be displayed on the product page.</Value>
+  </LocaleResource>
+  <LocaleResource Name="Admin.Catalog.Products.Multimedia.Object3d.Fields.Preview">
+    <Value>Preview</Value>
+  </LocaleResource>
+  <LocaleResource Name="Admin.Catalog.Products.Multimedia.Object3d.Fields.Preview.Hint">
+    <Value>Upload an image to be used as the thumbnail and displayed as a poster in the viewport until the 3D object is loaded.</Value>
+  </LocaleResource>
+  <LocaleResource Name="Admin.Catalog.Products.Multimedia.Object3d.Fields.AltAttribute">
+    <Value>Alternative text</Value>
+  </LocaleResource>
+  <LocaleResource Name="Admin.Catalog.Products.Multimedia.Object3d.Fields.AltAttribute.Hint">
+    <Value>The "alt" attribute for the "model-viewer" HTML element.</Value>
+  </LocaleResource>
+  <LocaleResource Name="Admin.Catalog.Products.Multimedia.Object3d.Save">
+    <Value>Save</Value>
   </LocaleResource>
   <LocaleResource Name="Admin.Catalog.Products.Multimedia.Pictures">
     <Value>Pictures</Value>
@@ -6185,7 +6209,7 @@
   </LocaleResource>
   <LocaleResource Name="Admin.Configuration.Settings.Catalog.ArtificialIntelligence.MetaTitleQuery.Hint">
     <Value>Set the query to generate meta title with artificial intelligence.</Value>
-  </LocaleResource>  
+  </LocaleResource>
   <LocaleResource Name="Admin.Configuration.Settings.Catalog.ArtificialIntelligence.ProductDescriptionQuery">
     <Value>AI query to generate product description</Value>
   </LocaleResource>
@@ -8144,7 +8168,8 @@
   </LocaleResource>
   <LocaleResource Name="Admin.Configuration.Settings.GeneralCommon.Translation.Info">
     <Value>
-        <![CDATA[<p>Pre-translate functionality allows you to use third-party translation services such as <a href='https://cloud.google.com/translate' target='_blank'>Google's Cloud Translation</a> or <a href='https://www.deepl.com/products/api' target='_blank'>DeepL</a> to automatically translate localizable fields of entities such as products and their attributes, categories, manufacturers, etc.</p><p><strong>Note:</strong> This functionality will not change any translations that you have added, or edited, manually.</p>]]></Value>
+      <![CDATA[<p>Pre-translate functionality allows you to use third-party translation services such as <a href='https://cloud.google.com/translate' target='_blank'>Google's Cloud Translation</a> or <a href='https://www.deepl.com/products/api' target='_blank'>DeepL</a> to automatically translate localizable fields of entities such as products and their attributes, categories, manufacturers, etc.</p><p><strong>Note:</strong> This functionality will not change any translations that you have added, or edited, manually.</p>]]>
+    </Value>
   </LocaleResource>
   <LocaleResource Name="Admin.Configuration.Settings.GeneralCommon.TranslationService">
     <Value>Translation service</Value>
@@ -8236,6 +8261,9 @@
   <LocaleResource Name="Admin.Configuration.Settings.Media.BlockTitle.Product">
     <Value>Product</Value>
   </LocaleResource>
+  <LocaleResource Name="Admin.Configuration.Settings.Media.BlockTitle.Product3dObject">
+    <Value>Product 3D models</Value>
+  </LocaleResource>
   <LocaleResource Name="Admin.Configuration.Settings.Media.CartThumbPictureSize">
     <Value>Cart/Wishlist thumbnail image size</Value>
   </LocaleResource>
@@ -8302,18 +8330,48 @@
   <LocaleResource Name="Admin.Configuration.Settings.Media.OrderThumbPictureSize.Hint">
     <Value>The default size (pixels) for product thumbnail images on the order details page.</Value>
   </LocaleResource>
-    <LocaleResource Name="Admin.Configuration.Settings.Media.PicturePath">
-        <Value>Path to the picture files</Value>
-    </LocaleResource>
-    <LocaleResource Name="Admin.Configuration.Settings.Media.PicturePath.Hint">
-        <Value>Set up the path on the file system to store the picture files</Value>
-    </LocaleResource>
-    <LocaleResource Name="Admin.Configuration.Settings.Media.PicturePath.Move">
-        <Value>Move pictures</Value>
-    </LocaleResource>
-    <LocaleResource Name="Admin.Configuration.Settings.Media.PicturePath.NotGrantedPermission">
-        <Value>The '{0}' account is not granted with Modify permission on folder '{1}'. Please configure these permissions.</Value>
-    </LocaleResource>
+  <LocaleResource Name="Admin.Configuration.Settings.Media.Object3dAutoRotateEnabled">
+    <Value>Auto-rotate</Value>
+  </LocaleResource>
+  <LocaleResource Name="Admin.Configuration.Settings.Media.Object3dAutoRotateEnabled.Hint">
+    <Value>Check this option to enable automatic rotation of product 3D models in the viewport.</Value>
+  </LocaleResource>
+  <LocaleResource Name="Admin.Configuration.Settings.Media.Object3dCameraControlEnabled">
+    <Value>Camera control</Value>
+  </LocaleResource>
+  <LocaleResource Name="Admin.Configuration.Settings.Media.Object3dCameraControlEnabled.Hint">
+    <Value>Check this option to enable camera control in the viewport.</Value>
+  </LocaleResource>
+  <LocaleResource Name="Admin.Configuration.Settings.Media.Object3dLazyLoadingEnabled">
+    <Value>Lazy loading</Value>
+  </LocaleResource>
+  <LocaleResource Name="Admin.Configuration.Settings.Media.Object3dLazyLoadingEnabled.Hint">
+    <Value>Check this option to enable lazy loading of 3D models on the product details page.</Value>
+  </LocaleResource>
+  <LocaleResource Name="Admin.Configuration.Settings.Media.Object3dUploadSizeLimit">
+    <Value>Upload size limit</Value>
+  </LocaleResource>
+  <LocaleResource Name="Admin.Configuration.Settings.Media.Object3dUploadSizeLimit.Hint">
+    <Value>The maximum allowed upload size for product 3D model (in megabytes).</Value>
+  </LocaleResource>
+  <LocaleResource Name="Admin.Configuration.Settings.Media.Object3dZoomEnabled">
+    <Value>Zoom</Value>
+  </LocaleResource>
+  <LocaleResource Name="Admin.Configuration.Settings.Media.Object3dZoomEnabled.Hint">
+    <Value>Check this option to enable zoom functionality for product 3D models.</Value>
+  </LocaleResource>
+  <LocaleResource Name="Admin.Configuration.Settings.Media.PicturePath">
+    <Value>Path to the picture files</Value>
+  </LocaleResource>
+  <LocaleResource Name="Admin.Configuration.Settings.Media.PicturePath.Hint">
+    <Value>Set up the path on the file system to store the picture files</Value>
+  </LocaleResource>
+  <LocaleResource Name="Admin.Configuration.Settings.Media.PicturePath.Move">
+    <Value>Move pictures</Value>
+  </LocaleResource>
+  <LocaleResource Name="Admin.Configuration.Settings.Media.PicturePath.NotGrantedPermission">
+    <Value>The '{0}' account is not granted with Modify permission on folder '{1}'. Please configure these permissions.</Value>
+  </LocaleResource>
   <LocaleResource Name="Admin.Configuration.Settings.Media.PicturesStoredIntoDatabase">
     <Value>Pictures are stored into...</Value>
   </LocaleResource>
@@ -8388,7 +8446,7 @@
   </LocaleResource>
   <LocaleResource Name="Admin.Configuration.Settings.Order.AllowCustomersCancelOrders.Hint">
     <Value>Check to allow customers to cancel orders</Value>
-  </LocaleResource>    
+  </LocaleResource>
   <LocaleResource Name="Admin.Configuration.Settings.Order.AnonymousCheckoutAllowed">
     <Value>Anonymous checkout allowed</Value>
   </LocaleResource>
@@ -9674,8 +9732,9 @@
     <Value>Measures</Value>
   </LocaleResource>
   <LocaleResource Name="Admin.Configuration.Shipping.Measures.AdditionalConfirm">
-    <Value><![CDATA[<p>WARNING. It is not recommended to do this on live sites because: </p><ol><li>Other rates have to be updated manually</li><li>You have to ensure that each product has a valid measure (dimension and weights) - they are not adjusted automatically</li></ol>]]>
-        </Value>
+    <Value>
+      <![CDATA[<p>WARNING. It is not recommended to do this on live sites because: </p><ol><li>Other rates have to be updated manually</li><li>You have to ensure that each product has a valid measure (dimension and weights) - they are not adjusted automatically</li></ol>]]>
+    </Value>
   </LocaleResource>
   <LocaleResource Name="Admin.Configuration.Shipping.Measures.Dimensions">
     <Value>Dimensions</Value>
@@ -15927,7 +15986,7 @@
     <Value>Total files: {0}</Value>
   </LocaleResource>
   <LocaleResource Name="Admin.System.Maintenance.DeleteThumbFiles.FilesSize">
-     <Value>Total file size: {0} MB</Value>
+    <Value>Total file size: {0} MB</Value>
   </LocaleResource>
   <LocaleResource Name="Admin.System.Maintenance.DeleteThumbFiles.IsNotSupported">
     <Value>Delete image thumbs is not supported by current picture thumb service.</Value>
@@ -15958,7 +16017,7 @@
   </LocaleResource>
   <LocaleResource Name="Admin.System.Maintenance.ShrinkDatabase.DatabaseSize">
     <Value>Current database size is {0} MB</Value>
-  </LocaleResource>    
+  </LocaleResource>
   <LocaleResource Name="Admin.System.Maintenance.ShrinkDatabase.Progress">
     <Value>Processing...</Value>
   </LocaleResource>
@@ -16327,7 +16386,7 @@
   </LocaleResource>
   <LocaleResource Name="Admin.System.SystemInfo.LoadedAssemblies.Hint">
     <Value>A list of loaded assemblies.</Value>
-  </LocaleResource>    
+  </LocaleResource>
   <LocaleResource Name="Admin.System.SystemInfo.NopLatestVersion">
     <Value>Latest nopCommerce version</Value>
   </LocaleResource>
@@ -17859,10 +17918,10 @@
     <Value>Vendor</Value>
   </LocaleResource>
   <LocaleResource Name="Enums.Nop.Core.Domain.Menus.MenuItemType.Product">
-      <Value>Product</Value>
+    <Value>Product</Value>
   </LocaleResource>
   <LocaleResource Name="Enums.Nop.Core.Domain.Menus.MenuItemType.Text">
-      <Value>Text without link</Value>
+    <Value>Text without link</Value>
   </LocaleResource>
   <LocaleResource Name="Enums.Nop.Core.Domain.Messages.EmailAuthenticationMethod.None">
     <Value>No authentication</Value>
