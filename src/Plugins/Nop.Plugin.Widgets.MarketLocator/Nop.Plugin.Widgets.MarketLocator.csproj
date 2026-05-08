@@ -21,6 +21,10 @@
     <ProjectReference Include="..\..\Libraries\Nop.Data\Nop.Data.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Azure.Messaging.ServiceBus" Version="7.20.1" />
+  </ItemGroup>
+
   <!-- Embed plugin.json and static assets -->
   <ItemGroup>
     <None Update="plugin.json">
