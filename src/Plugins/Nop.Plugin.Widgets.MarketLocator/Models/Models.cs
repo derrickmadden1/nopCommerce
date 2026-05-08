@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Nop.Web.Framework.Models;
 using Nop.Web.Framework.Mvc.ModelBinding;
@@ -109,4 +109,7 @@ public record MarketLocatorSettingsModel : BaseNopModel
 
     [NopResourceDisplayName("Plugins.Widgets.MarketLocator.Settings.StoreUrl")]
     public string StoreUrl { get; set; } = string.Empty;
+
+    [NopResourceDisplayName("Plugins.Widgets.MarketLocator.Settings.QueueName")]
+    public string QueueName { get; set; } = string.Empty;
 }

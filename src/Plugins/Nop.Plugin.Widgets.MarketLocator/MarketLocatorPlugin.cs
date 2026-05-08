@@ -140,7 +140,8 @@ public class MarketLocatorPlugin : BasePlugin, IWidgetPlugin, IPickupPointProvid
             ["Plugins.Widgets.MarketLocator.Settings.TeaserMaxItems"]   = "Teaser: max markets to show (1–5)",
             ["Plugins.Widgets.MarketLocator.Settings.EnableSocialPublishing"]   = "Enable Social Publishing",
             ["Plugins.Widgets.MarketLocator.Settings.StoreUrl"]   = "Store URL",
-            ["Plugins.Widgets.MarketLocator.Settings.SocialPublishDaysBeforeMarket"]   = "Social Publish Days Before Market",
+            ["Plugins.Widgets.MarketLocator.Settings.SocialPublishDaysBeforeMarket"]   = "Days Before Market to Post",
+            ["Plugins.Widgets.MarketLocator.Settings.QueueName"] = "Service Bus Queue Name",
             // Pickup shipping
             ["Plugins.Shipping.MarketPickup.Name"]        = "Market Pickup",
             ["Plugins.Shipping.MarketPickup.Description"] = "Collect at one of our markets — free.",

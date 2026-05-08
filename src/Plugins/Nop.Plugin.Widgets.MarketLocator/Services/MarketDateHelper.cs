@@ -78,42 +78,70 @@ public static class MarketDateHelper
     /// </summary>
     public static (DateTime? StartDate, DateTime? EndDate) GetNextMarketOccurrence(string upcomingDates, string hours)
     {
-        var futureDates = GetFutureDates(upcomingDates);
-        if (futureDates.Count == 0)
-            return (null, null);
+        var allFuture = GetAllFutureMarketOccurrences(upcomingDates, hours);
+        return allFuture.Count > 0 ? allFuture[0] : (null, null);
+    }
 
-        // Take the first upcoming date
-        if (!TryParseDate(futureDates[0], DateTime.UtcNow.Year, out var nextDate))
-            return (null, null);
+    /// <summary>
+    /// Derives ALL future market start and end date/times from the UpcomingDates and Hours fields.
+    /// </summary>
+    public static List<(DateTime? StartDate, DateTime? EndDate)> GetAllFutureMarketOccurrences(string upcomingDates, string hours)
+    {
+        var futureDates = GetFutureDates(upcomingDates);
+        var results = new List<(DateTime? StartDate, DateTime? EndDate)>();
+
+        if (futureDates.Count == 0)
+            return results;
 
         // Try to parse hours like "8:00 AM – 1:00 PM"
         var parts = hours.Split(new[] { '-', '–', '—' }, StringSplitOptions.RemoveEmptyEntries)
                          .Select(p => p.Trim())
                          .ToList();
 
-        if (parts.Count < 2)
+        bool hasValidHours = false;
+        TimeSpan startTime = TimeSpan.Zero;
+        TimeSpan endTime = TimeSpan.Zero;
+
+        if (parts.Count >= 2)
         {
-            // Fallback to just the date at 9 AM if hours are missing/malformed
-            return (nextDate.Date.AddHours(9), nextDate.Date.AddHours(17));
+            var startTimeStr = System.Text.RegularExpressions.Regex.Replace(parts[0], "([0-9])([AP]M)", "$1 $2", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            var endTimeStr = System.Text.RegularExpressions.Regex.Replace(parts[1], "([0-9])([AP]M)", "$1 $2", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+            if (DateTime.TryParse(startTimeStr, out var st) && DateTime.TryParse(endTimeStr, out var et))
+            {
+                hasValidHours = true;
+                startTime = st.TimeOfDay;
+                endTime = et.TimeOfDay;
+            }
         }
 
-        // Clean up parts to ensure space before AM/PM for more reliable parsing
-        var startTimeStr = System.Text.RegularExpressions.Regex.Replace(parts[0], "([0-9])([AP]M)", "$1 $2", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-        var endTimeStr = System.Text.RegularExpressions.Regex.Replace(parts[1], "([0-9])([AP]M)", "$1 $2", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        var today = DateTime.UtcNow.Date;
+        int year = today.Year;
 
-        if (DateTime.TryParse(startTimeStr, out var startTime) && DateTime.TryParse(endTimeStr, out var endTime))
+        foreach (var dateStr in futureDates)
         {
-            // Combine nextDate with the times from Hours
-            var start = nextDate.Date.Add(startTime.TimeOfDay);
-            var end = nextDate.Date.Add(endTime.TimeOfDay);
+            if (TryParseDate(dateStr, year, out var nextDate))
+            {
+                // Handle year-boundary for parsed dates
+                if (nextDate.Date < today && year == today.Year && today.Month >= 11 && nextDate.Month <= 3)
+                {
+                    TryParseDate(dateStr, year + 1, out nextDate);
+                }
 
-            // Handle cases where end time is the next day (unlikely for a market, but good practice)
-            if (end < start)
-                end = end.AddDays(1);
-
-            return (start, end);
+                if (hasValidHours)
+                {
+                    var start = nextDate.Date.Add(startTime);
+                    var end = nextDate.Date.Add(endTime);
+                    if (end < start) end = end.AddDays(1);
+                    results.Add((start, end));
+                }
+                else
+                {
+                    results.Add((nextDate.Date.AddHours(9), nextDate.Date.AddHours(17)));
+                }
+            }
         }
 
-        return (nextDate.Date.AddHours(9), nextDate.Date.AddHours(17));
+        return results;
     }
 }

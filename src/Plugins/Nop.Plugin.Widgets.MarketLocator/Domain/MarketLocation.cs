@@ -47,8 +47,8 @@ public class MarketLocation : BaseEntity
     public string Description { get; set; } = string.Empty;
 
     /// <summary>
-    /// Service Bus sequence number of the pending scheduled social post.
-    /// Null if no message is currently scheduled.
+    /// Service Bus sequence numbers of the pending scheduled social posts, comma separated.
+    /// Null or empty if no messages are currently scheduled.
     /// </summary>
-    public long? PendingSocialPostSequenceNumber { get; set; }
+    public string PendingSocialPostSequenceNumbers { get; set; } = string.Empty;
 }

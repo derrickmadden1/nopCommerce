@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Nop.Core;
+using Nop.Core.Configuration;
 using Nop.Plugin.Widgets.MarketLocator.Domain;
 using Nop.Plugin.Widgets.MarketLocator.Models;
 using Nop.Plugin.Widgets.MarketLocator.Services;
@@ -25,6 +26,8 @@ public class MarketLocatorAdminController : BasePluginController
     private readonly ILocalizationService _localizationService;
     private readonly IPermissionService _permissionService;
     private readonly IStoreContext _storeContext;
+    private readonly AppSettings _appSettings;
+    private readonly Nop.Core.Infrastructure.INopFileProvider _fileProvider;
 
     public MarketLocatorAdminController(
         IMarketLocationService locationService,
@@ -32,7 +35,9 @@ public class MarketLocatorAdminController : BasePluginController
         INotificationService notificationService,
         ILocalizationService localizationService,
         IPermissionService permissionService,
-        IStoreContext storeContext)
+        IStoreContext storeContext,
+        AppSettings appSettings,
+        Nop.Core.Infrastructure.INopFileProvider fileProvider)
     {
         _locationService = locationService;
         _settingService = settingService;
@@ -40,6 +45,8 @@ public class MarketLocatorAdminController : BasePluginController
         _localizationService = localizationService;
         _permissionService = permissionService;
         _storeContext = storeContext;
+        _appSettings = appSettings;
+        _fileProvider = fileProvider;
     }
 
     // ── Settings ─────────────────────────────────────────────────────────────
@@ -50,6 +57,8 @@ public class MarketLocatorAdminController : BasePluginController
             return AccessDeniedView();
 
         var settings = await _settingService.LoadSettingAsync<MarketLocatorSettings>();
+        var config = _appSettings.Get<MarketLocatorConfig>() ?? new MarketLocatorConfig();
+
         var model = new MarketLocatorSettingsModel
         {
             AzureMapsKey = settings.AzureMapsKey,
@@ -61,6 +70,7 @@ public class MarketLocatorAdminController : BasePluginController
             EnableSocialPublishing = settings.EnableSocialPublishing,
             SocialPublishDaysBeforeMarket = settings.SocialPublishDaysBeforeMarket,
             StoreUrl = settings.StoreUrl,
+            QueueName = config.QueueName,
         };
 
         // Automatically derive StoreUrl if it hasn't been set yet
@@ -94,6 +104,10 @@ public class MarketLocatorAdminController : BasePluginController
         settings.StoreUrl = model.StoreUrl;
 
         await _settingService.SaveSettingAsync(settings);
+
+        var config = _appSettings.Get<MarketLocatorConfig>() ?? new MarketLocatorConfig();
+        config.QueueName = model.QueueName;
+        Nop.Core.Configuration.AppSettingsHelper.SaveAppSettings(new List<Nop.Core.Configuration.IConfig> { config }, _fileProvider);
 
         _notificationService.SuccessNotification(
             await _localizationService.GetResourceAsync("Admin.Plugins.Saved"));

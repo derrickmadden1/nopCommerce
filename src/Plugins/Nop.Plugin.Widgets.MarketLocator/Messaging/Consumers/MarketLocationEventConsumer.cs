@@ -1,4 +1,4 @@
-﻿using Azure.Messaging.ServiceBus;
+using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.Logging;
 using Nop.Core.Events;
 using Nop.Plugin.Widgets.MarketLocator;
@@ -13,12 +13,20 @@ public class MarketLocationEventConsumer :
     IConsumer<EntityUpdatedEvent<MarketLocation>>,
     IConsumer<EntityDeletedEvent<MarketLocation>>
 {
-    private const string QueueName = "market-social-posts";
-
     private readonly IServiceBusPublisher _publisher;
     private readonly IMarketLocationService _marketLocationService;
     private readonly ILogger<MarketLocationEventConsumer> _logger;
     private readonly MarketLocatorSettings _settings;
+    private readonly Nop.Core.Configuration.AppSettings _appSettings;
+
+    private string QueueName
+    {
+        get
+        {
+            var config = _appSettings.Get<MarketLocatorConfig>();
+            return config == null || string.IsNullOrEmpty(config.QueueName) ? "market-social-posts" : config.QueueName;
+        }
+    }
 
     private int DaysBeforeMarket => _settings.SocialPublishDaysBeforeMarket;
 
@@ -26,12 +34,14 @@ public class MarketLocationEventConsumer :
         IServiceBusPublisher publisher,
         IMarketLocationService marketLocationService,
         ILogger<MarketLocationEventConsumer> logger,
-        MarketLocatorSettings settings)
+        MarketLocatorSettings settings,
+        Nop.Core.Configuration.AppSettings appSettings)
     {
         _publisher = publisher;
         _marketLocationService = marketLocationService;
         _logger = logger;
         _settings = settings;
+        _appSettings = appSettings;
     }
 
     public async Task HandleEventAsync(EntityInsertedEvent<MarketLocation> eventMessage)
@@ -45,83 +55,102 @@ public class MarketLocationEventConsumer :
 
     // --- Created ---
 
+    private static readonly AsyncLocal<bool> _processingUpdate = new AsyncLocal<bool>();
+
     private async Task HandleCreatedAsync(MarketLocation market)
     {
-        if (!ShouldPublish(market))
+        if (_processingUpdate.Value)
             return;
 
+        _processingUpdate.Value = true;
         try
         {
-            var (message, scheduledTime) = BuildMessageAndTime(market, "Created");
-            long? sequenceNumber = null;
+            if (!ShouldPublish(market))
+                return;
 
-            if (scheduledTime.HasValue)
+            try
             {
-                sequenceNumber = await _publisher.ScheduleAsync(QueueName, message, scheduledTime.Value);
-            }
-            else
-            {
-                await _publisher.PublishAsync(QueueName, message);
-            }
+                var schedules = BuildMessagesAndTimes(market, "Created");
+                var sequenceNumbers = new List<long>();
 
-            // Persist the sequence number so we can cancel later if needed
-            market.PendingSocialPostSequenceNumber = sequenceNumber;
-            await _marketLocationService.UpdateAsync(market);
+                foreach (var (message, scheduledTime) in schedules)
+                {
+                    if (scheduledTime.HasValue)
+                    {
+                        var seq = await _publisher.ScheduleAsync(QueueName, message, scheduledTime.Value);
+                        sequenceNumbers.Add(seq);
+                    }
+                    else
+                    {
+                        await _publisher.PublishAsync(QueueName, message);
+                    }
+                }
+
+                // Persist the sequence numbers so we can cancel later if needed
+                market.PendingSocialPostSequenceNumbers = string.Join(",", sequenceNumbers);
+                await _marketLocationService.UpdateAsync(market);
+            }
+            catch (ServiceBusException ex) when (ex.IsTransient)
+            {
+                _logger.LogWarning(ex, "Transient Service Bus error on Created for {MarketName}", market.Name);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error handling Created for {MarketName}", market.Name);
+            }
         }
-        catch (ServiceBusException ex) when (ex.IsTransient)
+        finally
         {
-            _logger.LogWarning(ex, "Transient Service Bus error on Created for {MarketName}", market.Name);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error handling Created for {MarketName}", market.Name);
+            _processingUpdate.Value = false;
         }
     }
 
     // --- Updated ---
 
-    [ThreadStatic]
-    private static bool _processingUpdate;
     private async Task HandleUpdatedAsync(MarketLocation market)
     {
-    // Guard against re-entrant updates triggered by persisting the sequence number
-    if (_processingUpdate)
+        // Guard against re-entrant updates triggered by persisting the sequence number
+        if (_processingUpdate.Value)
             return;
 
-        _processingUpdate = true;
+        _processingUpdate.Value = true;
 
         try
         {
             if (!ShouldPublish(market))
             {
                 // Market has been unpublished — cancel any pending post
-                await TryCancelPendingAsync(market);
+                await TryCancelPendingAsync(market, saveToDb: true);
                 return;
             }
 
             try
             {
-                // Cancel the existing scheduled message if one exists
-                await TryCancelPendingAsync(market);
+                // Cancel the existing scheduled messages if they exist (don't save DB yet)
+                await TryCancelPendingAsync(market, saveToDb: false);
 
-                // Re-schedule with the (potentially new) date
-                var (message, scheduledTime) = BuildMessageAndTime(market, "Updated");
-                long? sequenceNumber = null;
+                // Re-schedule with the (potentially new) dates
+                var schedules = BuildMessagesAndTimes(market, "Updated");
+                var sequenceNumbers = new List<long>();
 
-                if (scheduledTime.HasValue)
+                foreach (var (message, scheduledTime) in schedules)
                 {
-                    sequenceNumber = await _publisher.ScheduleAsync(QueueName, message, scheduledTime.Value);
-                    _logger.LogInformation(
-                        "Rescheduled social post for {MarketName} — new sequence {SequenceNumber}",
-                        market.Name, sequenceNumber);
-                }
-                else
-                {
-                    // Market is imminent — post immediately
-                    await _publisher.PublishAsync(QueueName, message);
+                    if (scheduledTime.HasValue)
+                    {
+                        var seq = await _publisher.ScheduleAsync(QueueName, message, scheduledTime.Value);
+                        sequenceNumbers.Add(seq);
+                        _logger.LogInformation(
+                            "Rescheduled social post for {MarketName} — new sequence {SequenceNumber}",
+                            market.Name, seq);
+                    }
+                    else
+                    {
+                        // Market is imminent — post immediately
+                        await _publisher.PublishAsync(QueueName, message);
+                    }
                 }
 
-                market.PendingSocialPostSequenceNumber = sequenceNumber;
+                market.PendingSocialPostSequenceNumbers = string.Join(",", sequenceNumbers);
                 await _marketLocationService.UpdateAsync(market);
             }
             catch (ServiceBusException ex) when (ex.IsTransient)
@@ -135,7 +164,7 @@ public class MarketLocationEventConsumer :
         }
         finally
         {
-            _processingUpdate = false;
+            _processingUpdate.Value = false;
         }
     }
 
@@ -143,35 +172,50 @@ public class MarketLocationEventConsumer :
 
     private async Task HandleDeletedAsync(MarketLocation market)
     {
-        await TryCancelPendingAsync(market);
+        // Do not attempt to update the entity in DB as it is already deleted
+        await TryCancelPendingAsync(market, saveToDb: false);
     }
 
     // --- Helpers ---
 
-    private async Task TryCancelPendingAsync(MarketLocation market)
+    private async Task TryCancelPendingAsync(MarketLocation market, bool saveToDb)
     {
-        if (!market.PendingSocialPostSequenceNumber.HasValue)
+        if (string.IsNullOrEmpty(market.PendingSocialPostSequenceNumbers))
             return;
 
         try
         {
-            await _publisher.CancelScheduledAsync(
-                QueueName, market.PendingSocialPostSequenceNumber.Value);
+            var sequences = market.PendingSocialPostSequenceNumbers
+                .Split(',')
+                .Where(s => long.TryParse(s.Trim(), out _))
+                .Select(s => long.Parse(s.Trim()))
+                .ToList();
 
-            market.PendingSocialPostSequenceNumber = null;
-            await _marketLocationService.UpdateAsync(market);
-        }
-        catch (ServiceBusException ex) when (ex.IsTransient)
-        {
-            _logger.LogWarning(ex,
-                "Transient error cancelling sequence {SequenceNumber} for {MarketName}",
-                market.PendingSocialPostSequenceNumber, market.Name);
+            foreach (var seq in sequences)
+            {
+                try
+                {
+                    await _publisher.CancelScheduledAsync(QueueName, seq);
+                }
+                catch (ServiceBusException ex) when (ex.IsTransient)
+                {
+                    _logger.LogWarning(ex, "Transient error cancelling sequence {SequenceNumber} for {MarketName}", seq, market.Name);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error cancelling sequence {SequenceNumber} for {MarketName}", seq, market.Name);
+                }
+            }
+
+            market.PendingSocialPostSequenceNumbers = string.Empty;
+            if (saveToDb)
+            {
+                await _marketLocationService.UpdateAsync(market);
+            }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex,
-                "Error cancelling sequence {SequenceNumber} for {MarketName}",
-                market.PendingSocialPostSequenceNumber, market.Name);
+            _logger.LogError(ex, "Error processing cancelation for {MarketName}", market.Name);
         }
     }
 
@@ -184,24 +228,30 @@ public class MarketLocationEventConsumer :
         return true;
     }
 
-    private (MarketEventMessage message, DateTimeOffset? scheduledTime) BuildMessageAndTime(
+    private List<(MarketEventMessage message, DateTimeOffset? scheduledTime)> BuildMessagesAndTimes(
         MarketLocation market, string changeType)
     {
-        var (startDate, endDate) = MarketDateHelper.GetNextMarketOccurrence(market.UpcomingDates, market.Hours);
+        var occurrences = MarketDateHelper.GetAllFutureMarketOccurrences(market.UpcomingDates, market.Hours);
+        var results = new List<(MarketEventMessage, DateTimeOffset?)>();
 
-        var message = new MarketEventMessage
+        foreach (var (startDate, endDate) in occurrences)
         {
-            ChangeType = changeType,
-            MarketName = market.Name,
-            Location = market.Address,
-            StartDate = startDate,
-            EndDate = endDate,
-            Description = market.Description,
-            MapUrl = $"{_settings.StoreUrl.TrimEnd('/')}/markets?id={market.Id}"
-        };
+            var message = new MarketEventMessage
+            {
+                ChangeType = changeType,
+                MarketName = market.Name,
+                Location = market.Address,
+                StartDate = startDate,
+                EndDate = endDate,
+                Description = market.Description,
+                MapUrl = $"{_settings.StoreUrl.TrimEnd('/')}/market-locations?id={market.Id}"
+            };
 
-        var scheduledTime = CalculateScheduledTime(startDate);
-        return (message, scheduledTime);
+            var scheduledTime = CalculateScheduledTime(startDate);
+            results.Add((message, scheduledTime));
+        }
+
+        return results;
     }
 
     private DateTimeOffset? CalculateScheduledTime(DateTime? marketStartDate)
