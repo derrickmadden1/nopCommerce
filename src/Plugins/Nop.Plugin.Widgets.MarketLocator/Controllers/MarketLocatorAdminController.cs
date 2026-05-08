@@ -73,7 +73,7 @@ public class MarketLocatorAdminController : BasePluginController
             QueueName = config.QueueName,
         };
 
-        // Automatically derive StoreUrl if it hasn't been set yet
+        // Automatically derive StoreUrl if it hasn't been set yet 
         if (string.IsNullOrEmpty(model.StoreUrl))
         {
             var currentStore = await _storeContext.GetCurrentStoreAsync();
