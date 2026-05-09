@@ -29,29 +29,31 @@ public class IcsBuilder : IIcsBuilder
 
     public string BuildForLocation(MarketLocation location, string storeUrl)
     {
+        var tzId = GetIanaTimeZoneId(_dateTimeHelper.DefaultStoreTimeZone);
         var dates = ParseDates(location.UpcomingDates, DateTime.UtcNow.Year);
-        var events = dates.Select(d => BuildEvent(location, d, storeUrl));
-        return WrapCalendar(events, $"{Escape(location.Name)} — Market Dates");
+        var events = dates.Select(d => BuildEvent(location, d, storeUrl, tzId));
+        return WrapCalendar(events, $"{Escape(location.Name)} — Market Dates", tzId);
     }
 
     public string BuildForAll(IEnumerable<MarketLocation> locations, string storeUrl)
     {
+        var tzId = GetIanaTimeZoneId(_dateTimeHelper.DefaultStoreTimeZone);
         var events = locations.SelectMany(loc =>
         {
             var dates = ParseDates(loc.UpcomingDates, DateTime.UtcNow.Year);
-            return dates.Select(d => BuildEvent(loc, d, storeUrl));
+            return dates.Select(d => BuildEvent(loc, d, storeUrl, tzId));
         });
-        return WrapCalendar(events, "All Market Locations");
+        return WrapCalendar(events, "All Market Locations", tzId);
     }
 
     // ── Internals ─────────────────────────────────────────────────────────────
 
-    private static string BuildEvent(MarketLocation loc, DateTime date, string storeUrl)
+    private static string BuildEvent(MarketLocation loc, DateTime date, string storeUrl, string tzId)
     {
         var (hasTime, startDt, endDt) = TryParseHours(loc.Hours, date);
 
         var uid = $"market-{loc.Id}-{date:yyyyMMdd}@{new Uri(storeUrl).Host}";
-        var now = DateTime.UtcNow.ToString("yyyyMMddTHHmmssZ");
+        var now = loc.LastModifiedUtc.ToString("yyyyMMddTHHmmssZ");
         var mapsUrl = $"https://www.google.com/maps/search/?api=1&query={Uri.EscapeDataString(loc.Address)}";
         var description = $"Market: {loc.Name}\\nHours: {loc.Hours}\\nAddress: {loc.Address}\\n" +
                           $"Directions: {mapsUrl}\\nMore markets: {storeUrl}market-locations";
@@ -64,8 +66,8 @@ public class IcsBuilder : IIcsBuilder
 
         if (hasTime)
         {
-            sb.AppendLine($"DTSTART:{startDt:yyyyMMddTHHmmss}");
-            sb.AppendLine($"DTEND:{endDt:yyyyMMddTHHmmss}");
+            sb.AppendLine($"DTSTART;TZID={tzId}:{startDt:yyyyMMddTHHmmss}");
+            sb.AppendLine($"DTEND;TZID={tzId}:{endDt:yyyyMMddTHHmmss}");
         }
         else
         {
@@ -87,15 +89,8 @@ public class IcsBuilder : IIcsBuilder
         return sb.ToString();
     }
 
-    private string WrapCalendar(IEnumerable<string> events, string calName)
+    private static string WrapCalendar(IEnumerable<string> events, string calName, string tzId)
     {
-        // IDateTimeHelper.CurrentTimeZone returns the TimeZoneInfo configured under
-        // Admin → Configuration → General settings → Time zone.
-        // On Linux/.NET 6+ the Id is already an IANA ID ("America/Chicago").
-        // On Windows it is a Windows ID ("Central Standard Time") and must be
-        // converted — GetIanaTimeZoneId handles both cases.
-        var tzId = GetIanaTimeZoneId(_dateTimeHelper.DefaultStoreTimeZone);
-
         var sb = new StringBuilder();
         sb.AppendLine("BEGIN:VCALENDAR");
         sb.AppendLine("VERSION:2.0");
