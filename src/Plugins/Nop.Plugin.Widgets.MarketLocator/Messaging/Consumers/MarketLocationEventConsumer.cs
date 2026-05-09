@@ -13,7 +13,7 @@ public class MarketLocationEventConsumer :
     IConsumer<EntityUpdatedEvent<MarketLocation>>,
     IConsumer<EntityDeletedEvent<MarketLocation>>
 {
-    private readonly IServiceBusPublisher _publisher;
+    private readonly IServiceBusPublisher? _publisher;
     private readonly IMarketLocationService _marketLocationService;
     private readonly ILogger<MarketLocationEventConsumer> _logger;
     private readonly MarketLocatorSettings _settings;
@@ -31,13 +31,13 @@ public class MarketLocationEventConsumer :
     private int DaysBeforeMarket => _settings.SocialPublishDaysBeforeMarket;
 
     public MarketLocationEventConsumer(
-        IServiceBusPublisher publisher,
+        IEnumerable<IServiceBusPublisher> publishers,
         IMarketLocationService marketLocationService,
         ILogger<MarketLocationEventConsumer> logger,
         MarketLocatorSettings settings,
         Nop.Core.Configuration.AppSettings appSettings)
     {
-        _publisher = publisher;
+        _publisher = publishers.FirstOrDefault();
         _marketLocationService = marketLocationService;
         _logger = logger;
         _settings = settings;
@@ -180,7 +180,7 @@ public class MarketLocationEventConsumer :
 
     private async Task TryCancelPendingAsync(MarketLocation market, bool saveToDb)
     {
-        if (string.IsNullOrEmpty(market.PendingSocialPostSequenceNumbers))
+        if (_publisher == null || string.IsNullOrEmpty(market.PendingSocialPostSequenceNumbers))
             return;
 
         try
@@ -221,6 +221,8 @@ public class MarketLocationEventConsumer :
 
     private bool ShouldPublish(MarketLocation market)
     {
+        if (_publisher == null)
+            return false;
         if (!_settings.EnableSocialPublishing)
             return false;
         if (!market.Published)

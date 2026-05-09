@@ -37,12 +37,14 @@ public class MarketLocationService : IMarketLocationService
     public async Task InsertAsync(MarketLocation location)
     {
         ArgumentNullException.ThrowIfNull(location);
+        location.LastModifiedUtc = DateTime.UtcNow;
         await _repository.InsertAsync(location);
     }
 
     public async Task UpdateAsync(MarketLocation location)
     {
         ArgumentNullException.ThrowIfNull(location);
+        location.LastModifiedUtc = DateTime.UtcNow;
         await _repository.UpdateAsync(location);
     }
 

@@ -49,6 +49,8 @@ public class MarketLocation : BaseEntity
     /// <summary>
     /// Service Bus sequence numbers of the pending scheduled social posts, comma separated.
     /// Null or empty if no messages are currently scheduled.
-    /// </summary>
     public string PendingSocialPostSequenceNumbers { get; set; } = string.Empty;
+
+    /// <summary>Last modified timestamp for ICS feed DTSTAMP.</summary>
+    public DateTime LastModifiedUtc { get; set; } = DateTime.UtcNow;
 }

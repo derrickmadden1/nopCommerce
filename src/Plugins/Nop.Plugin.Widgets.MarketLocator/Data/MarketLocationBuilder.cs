@@ -19,6 +19,7 @@ public class MarketLocationBuilder : NopEntityBuilder<MarketLocation>
             .WithColumn(nameof(MarketLocation.Frequency)).AsString(50).NotNullable()
             .WithColumn(nameof(MarketLocation.Status)).AsString(20).NotNullable()
             .WithColumn(nameof(MarketLocation.Published)).AsBoolean().NotNullable()
-            .WithColumn(nameof(MarketLocation.DisplayOrder)).AsInt32().NotNullable();
+            .WithColumn(nameof(MarketLocation.DisplayOrder)).AsInt32().NotNullable()
+            .WithColumn(nameof(MarketLocation.LastModifiedUtc)).AsDateTime2().NotNullable();
     }
 }
