@@ -1,7 +1,6 @@
-﻿using AwesomeAssertions;
+using AwesomeAssertions;
 using System.Collections.Generic;
 using System.ComponentModel;
-using FluentAssertions;
 using Nop.Core;
 using Nop.Core.Domain.Orders;
 using Nop.Data;
