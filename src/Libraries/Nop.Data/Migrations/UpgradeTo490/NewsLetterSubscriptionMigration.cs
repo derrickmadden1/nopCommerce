@@ -15,6 +15,10 @@ public class NewsLetterSubscriptionMigration : ForwardOnlyMigration
     {
         this.CreateTableIfNotExists<NewsLetterSubscriptionType>();
 
+        //add new column
+        this.AddOrAlterForeignKeyColumnFor<NewsLetterSubscription, NewsLetterSubscriptionType>(t => t.TypeId,
+                onDelete: Rule.Cascade)
+            .Nullable();
         // Ensure at least one type exists
         Execute.Sql("INSERT INTO [NewsLetterSubscriptionType] ([Name],TickedByDefault,DisplayOrder,LimitedToStores) VALUES ('Default Type',1,1,0)");
                 

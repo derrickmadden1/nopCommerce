@@ -56,6 +56,10 @@ public partial class RouteProvider : BaseRouteProvider, IRouteProvider
             pattern: $"{lang}/cart/",
             defaults: new { controller = "ShoppingCart", action = "Cart" });
 
+        endpointRouteBuilder.MapControllerRoute(name: NopRouteNames.Standard.CUSTOMER_CART,
+            pattern: $"{lang}/customercart/",
+            defaults: new { controller = "ShoppingCart", action = "CustomerCart" });
+
         //estimate shipping (AJAX)
         endpointRouteBuilder.MapControllerRoute(name: NopRouteNames.Ajax.ESTIMATE_SHIPPING,
             pattern: $"cart/estimateshipping",
@@ -126,6 +130,14 @@ public partial class RouteProvider : BaseRouteProvider, IRouteProvider
         endpointRouteBuilder.MapControllerRoute(name: NopRouteNames.Ajax.PRODUCT_SEARCH_AUTOCOMPLETE,
             pattern: $"catalog/searchtermautocomplete",
             defaults: new { controller = "Catalog", action = "SearchTermAutoComplete" });
+
+        endpointRouteBuilder.MapControllerRoute(name: NopRouteNames.Ajax.PRODUCT_SEARCH_HISTORY_AUTOCOMPLETE,
+            pattern: $"catalog/searchtermhistoryautocomplete",
+            defaults: new { controller = "Catalog", action = "SearchTermHistoryAutoComplete" });
+
+        endpointRouteBuilder.MapControllerRoute(name: NopRouteNames.Ajax.DELETE_PRODUCT_SEARCH_TERMS,
+            pattern: $"catalog/deleteproductsearchterms",
+            defaults: new { controller = "Catalog", action = "DeleteProductSearchTermItems" });
 
         //change currency
         endpointRouteBuilder.MapControllerRoute(name: NopRouteNames.Standard.CHANGE_CURRENCY,

@@ -94,6 +94,9 @@ public class SchemaMigration : ForwardOnlyMigration
             .AsString(int.MaxValue)
             .Nullable();
 
+        this.AddOrAlterForeignKeyColumnFor<Customer, Currency>(t => t.CurrencyId, onDelete: Rule.SetNull)
+            .Nullable();
+
         this.AddOrAlterColumnFor<Customer>(t => t.CurrencyId)
             .AsInt32()
             .Nullable();

@@ -127,6 +127,11 @@ public static partial class NopRouteNames
         public const string CHECKOUT = "Checkout";
 
         /// <summary>
+        /// Gets the customer shopping cart route name
+        /// </summary>
+        public const string CUSTOMER_CART = "CustomerCart";
+
+        /// <summary>
         /// Gets the one page checkout route name
         /// </summary>
         public const string CHECKOUT_ONE_PAGE = "CheckoutOnePage";
@@ -621,6 +626,16 @@ public static partial class NopRouteNames
         /// Gets the product search autocomplete route name
         /// </summary>
         public const string PRODUCT_SEARCH_AUTOCOMPLETE = "ProductSearchAutoComplete";
+
+        /// <summary>
+        /// Gets the product search history route name
+        /// </summary>
+        public const string PRODUCT_SEARCH_HISTORY_AUTOCOMPLETE = "ProductSearchHistoryAutoComplete";
+
+        /// <summary>
+        /// Gets the delete product search terms route name
+        /// </summary>
+        public const string DELETE_PRODUCT_SEARCH_TERMS = "DeleteProductSearchTerms";
 
         /// <summary>
         /// Gets the set review helpfulness route name

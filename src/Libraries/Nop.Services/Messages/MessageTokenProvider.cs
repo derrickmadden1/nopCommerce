@@ -36,6 +36,7 @@ using Nop.Services.Payments;
 using Nop.Services.Seo;
 using Nop.Services.Shipping;
 using Nop.Services.Stores;
+using Nop.Services.Tax;
 using Nop.Services.Vendors;
 
 namespace Nop.Services.Messages;
@@ -70,12 +71,15 @@ public partial class MessageTokenProvider : IMessageTokenProvider
     protected readonly IPaymentPluginManager _paymentPluginManager;
     protected readonly IPaymentService _paymentService;
     protected readonly IPriceFormatter _priceFormatter;
+    protected readonly IProductAttributeFormatter _productAttributeFormatter;
     protected readonly IProductService _productService;
     protected readonly IRewardPointService _rewardPointService;
     protected readonly IShipmentService _shipmentService;
+    protected readonly IShoppingCartService _shoppingCartService;
     protected readonly IStateProvinceService _stateProvinceService;
     protected readonly IStoreContext _storeContext;
     protected readonly IStoreService _storeService;
+    protected readonly ITaxService _taxService;
     protected readonly IUrlRecordService _urlRecordService;
     protected readonly IWorkContext _workContext;
     protected readonly LinkGenerator _linkGenerator;
@@ -113,12 +117,15 @@ public partial class MessageTokenProvider : IMessageTokenProvider
         IPaymentPluginManager paymentPluginManager,
         IPaymentService paymentService,
         IPriceFormatter priceFormatter,
+        IProductAttributeFormatter productAttributeFormatter,
         IProductService productService,
         IRewardPointService rewardPointService,
         IShipmentService shipmentService,
+        IShoppingCartService shoppingCartService,
         IStateProvinceService stateProvinceService,
         IStoreContext storeContext,
         IStoreService storeService,
+        ITaxService taxService,
         IUrlRecordService urlRecordService,
         IWorkContext workContext,
         LinkGenerator linkGenerator,
@@ -150,12 +157,15 @@ public partial class MessageTokenProvider : IMessageTokenProvider
         _paymentPluginManager = paymentPluginManager;
         _paymentService = paymentService;
         _priceFormatter = priceFormatter;
+        _productAttributeFormatter = productAttributeFormatter;
         _productService = productService;
         _rewardPointService = rewardPointService;
         _shipmentService = shipmentService;
+        _shoppingCartService = shoppingCartService;
         _stateProvinceService = stateProvinceService;
         _storeContext = storeContext;
         _storeService = storeService;
+        _taxService = taxService;
         _urlRecordService = urlRecordService;
         _workContext = workContext;
         _linkGenerator = linkGenerator;
@@ -222,6 +232,16 @@ public partial class MessageTokenProvider : IMessageTokenProvider
                         "%Customer.AccountActivationURL%",
                         "%Customer.EmailRevalidationURL%",
                         "%Wishlist.URLForCustomer%"
+                    }
+                },
+
+                // shopping cart
+                {
+                    TokenGroupNames.ShoppingCartTokens,
+                    new[]
+                    {
+                        "%ShoppingCart.Cart%",
+                        "%ShoppingCart.Url%"
                     }
                 },
 
@@ -1064,7 +1084,7 @@ public partial class MessageTokenProvider : IMessageTokenProvider
         var paymentMethodName = paymentMethod != null ? await _localizationService.GetLocalizedFriendlyNameAsync(paymentMethod, languageId) : order.PaymentMethodSystemName;
         tokens.Add(new Token("Order.PaymentMethod", paymentMethodName));
         tokens.Add(new Token("Order.VatNumber", order.VatNumber));
-        
+
         var customValues = new CustomValues();
         customValues.FillByXml(order.CustomValuesXml, true);
 
@@ -1280,7 +1300,7 @@ public partial class MessageTokenProvider : IMessageTokenProvider
         var passwordRecoveryUrl = await RouteUrlAsync(routeName: NopRouteNames.Standard.PASSWORD_RECOVERY_CONFIRM, routeValues: new { token = await _genericAttributeService.GetAttributeAsync<string>(customer, NopCustomerDefaults.PasswordRecoveryTokenAttribute), guid = customer.CustomerGuid });
         var accountActivationUrl = await RouteUrlAsync(routeName: NopRouteNames.Standard.ACCOUNT_ACTIVATION, routeValues: new { token = await _genericAttributeService.GetAttributeAsync<string>(customer, NopCustomerDefaults.AccountActivationTokenAttribute), guid = customer.CustomerGuid });
         var emailRevalidationUrl = await RouteUrlAsync(routeName: NopRouteNames.Standard.EMAIL_REVALIDATION, routeValues: new { token = await _genericAttributeService.GetAttributeAsync<string>(customer, NopCustomerDefaults.EmailRevalidationTokenAttribute), guid = customer.CustomerGuid });
-        
+
         tokens.Add(new Token("Customer.PasswordRecoveryURL", passwordRecoveryUrl, true));
         tokens.Add(new Token("Customer.AccountActivationURL", accountActivationUrl, true));
         tokens.Add(new Token("Customer.EmailRevalidationURL", emailRevalidationUrl, true));
@@ -1452,6 +1472,78 @@ public partial class MessageTokenProvider : IMessageTokenProvider
     }
 
     /// <summary>
+    /// Add shopping cart tokens
+    /// </summary>
+    /// <param name="tokens">List of already added tokens</param>
+    /// <param name="cart">Shopping cart</param>
+    /// <param name="languageId">Language identifier</param>
+    /// <returns>A task that represents the asynchronous operation</returns>
+    public virtual async Task AddShoppingCartTokensAsync(IList<Token> tokens, IList<ShoppingCartItem> cart, int languageId)
+    {
+        ArgumentNullException.ThrowIfNull(tokens);
+        ArgumentNullException.ThrowIfNull(cart);
+
+        var sb = new StringBuilder();
+        sb.AppendLine("<table border=\"0\" style=\"width:100%;\">");
+
+        sb.AppendLine($"<tr style=\"background-color:{_templatesSettings.Color1};text-align:center;\">");
+        sb.AppendLine($"<th>{await _localizationService.GetResourceAsync("Messages.Order.Product(s).Name", languageId)}</th>");
+        sb.AppendLine($"<th>{await _localizationService.GetResourceAsync("Messages.Order.Product(s).Price", languageId)}</th>");
+        sb.AppendLine($"<th>{await _localizationService.GetResourceAsync("Messages.Order.Product(s).Quantity", languageId)}</th>");
+        sb.AppendLine($"<th>{await _localizationService.GetResourceAsync("Messages.Order.Product(s).Total", languageId)}</th>");
+        sb.AppendLine("</tr>");
+
+        foreach (var item in cart)
+        {
+            var product = await _productService.GetProductByIdAsync(item.ProductId);
+            if (product == null)
+                continue;
+
+            sb.AppendLine($"<tr style=\"background-color: {_templatesSettings.Color2};text-align: center;\">");
+
+            //product name
+            var productName = await _localizationService.GetLocalizedAsync(product, x => x.Name, languageId);
+            sb.AppendLine("<td style=\"padding: 0.6em 0.4em;text-align: left;\">" + WebUtility.HtmlEncode(productName));
+
+            //attributes
+            var attributes = await _productAttributeFormatter.FormatAttributesAsync(product,
+                item.AttributesXml,
+                await _customerService.GetCustomerByIdAsync(item.CustomerId),
+                await _storeService.GetStoreByIdAsync(item.StoreId),
+                renderPrices: false);
+
+            if (!string.IsNullOrEmpty(attributes))
+            {
+                sb.AppendLine("<br />");
+                sb.AppendLine(attributes);
+            }
+
+            //price
+            var (unitPrice, _, _) = await _shoppingCartService.GetUnitPriceAsync(item, true);
+            var (price, _) = await _taxService.GetProductPriceAsync(product, unitPrice);
+            sb.AppendLine($"<td style=\"padding: 0.6em 0.4em;text-align: right;\">{await _priceFormatter.FormatPriceAsync(price)}</td>");
+
+            //quantity
+            sb.AppendLine($"<td style=\"padding: 0.6em 0.4em;text-align: center;\">{item.Quantity}</td>");
+
+            //total
+            var (subTotal, _, _, _) = await _shoppingCartService.GetSubTotalAsync(item, true);
+            var (subTotalPrice, _) = await _taxService.GetProductPriceAsync(product, subTotal);
+            sb.AppendLine($"<td style=\"padding: 0.6em 0.4em;text-align: right;\">{await _priceFormatter.FormatPriceAsync(subTotalPrice)}</td>");
+
+            sb.AppendLine("</tr>");
+        }
+
+        sb.AppendLine("</table>");
+        sb.AppendLine("<br />");
+
+        tokens.Add(new Token("ShoppingCart.Cart", sb.ToString(), true));
+
+        var shoppingCartUrl = await RouteUrlAsync(routeName: NopRouteNames.Standard.CUSTOMER_CART);
+        tokens.Add(new Token("ShoppingCart.Url", shoppingCartUrl, true));
+    }
+
+    /// <summary>
     /// Get collection of allowed (supported) message tokens for campaigns
     /// </summary>
     /// <returns>
@@ -1511,7 +1603,12 @@ public partial class MessageTokenProvider : IMessageTokenProvider
             MessageTemplateSystemNames.CUSTOMER_EMAIL_VALIDATION_MESSAGE or
             MessageTemplateSystemNames.CUSTOMER_EMAIL_REVALIDATION_MESSAGE or
             MessageTemplateSystemNames.CUSTOMER_PASSWORD_RECOVERY_MESSAGE or
+            MessageTemplateSystemNames.REMINDER_REGISTRATION_FOLLOW_UP_MESSAGE or
             MessageTemplateSystemNames.DELETE_CUSTOMER_REQUEST_STORE_OWNER_NOTIFICATION => new[] { TokenGroupNames.StoreTokens, TokenGroupNames.CustomerTokens },
+
+            MessageTemplateSystemNames.REMINDER_ABANDONED_CART_FOLLOW_UP_1_MESSAGE or
+            MessageTemplateSystemNames.REMINDER_ABANDONED_CART_FOLLOW_UP_2_MESSAGE or
+            MessageTemplateSystemNames.REMINDER_ABANDONED_CART_FOLLOW_UP_3_MESSAGE => new[] { TokenGroupNames.StoreTokens, TokenGroupNames.CustomerTokens, TokenGroupNames.ShoppingCartTokens },
 
             MessageTemplateSystemNames.ORDER_PLACED_VENDOR_NOTIFICATION or
             MessageTemplateSystemNames.ORDER_PLACED_STORE_OWNER_NOTIFICATION or
@@ -1525,8 +1622,10 @@ public partial class MessageTokenProvider : IMessageTokenProvider
             MessageTemplateSystemNames.ORDER_COMPLETED_CUSTOMER_NOTIFICATION or
             MessageTemplateSystemNames.ORDER_COMPLETED_STORE_OWNER_NOTIFICATION or
             MessageTemplateSystemNames.ORDER_CANCELLED_VENDOR_NOTIFICATION or
+            MessageTemplateSystemNames.REMINDER_PENDING_ORDER_FOLLOW_UP_1_MESSAGE or
+            MessageTemplateSystemNames.REMINDER_PENDING_ORDER_FOLLOW_UP_2_MESSAGE or
             MessageTemplateSystemNames.ORDER_CANCELLED_CUSTOMER_NOTIFICATION or
-            MessageTemplateSystemNames.ORDER_CANCELLED_STORE_OWNER_NOTIFICATION=> [TokenGroupNames.StoreTokens, TokenGroupNames.OrderTokens, TokenGroupNames.CustomerTokens],
+            MessageTemplateSystemNames.ORDER_CANCELLED_STORE_OWNER_NOTIFICATION => [TokenGroupNames.StoreTokens, TokenGroupNames.OrderTokens, TokenGroupNames.CustomerTokens],
 
             MessageTemplateSystemNames.SHIPMENT_SENT_CUSTOMER_NOTIFICATION or
             MessageTemplateSystemNames.SHIPMENT_READY_FOR_PICKUP_CUSTOMER_NOTIFICATION or
