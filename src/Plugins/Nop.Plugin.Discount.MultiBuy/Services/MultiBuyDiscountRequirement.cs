@@ -1,7 +1,7 @@
-﻿using System.Threading.Tasks;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Infrastructure;
-using Microsoft.AspNetCore.Mvc.Routing;
+using Microsoft.AspNetCore.Routing;
+using Microsoft.AspNetCore.Http;
 using Nop.Core;
 using Nop.Core.Domain.Discounts;
 using Nop.Core.Domain.Orders;
@@ -21,22 +21,22 @@ namespace Nop.Plugin.DiscountRules.MultiBuy.Services
     {
         private readonly IShoppingCartService _shoppingCartService;
         private readonly ISettingService _settingService;
-        private readonly IActionContextAccessor _actionContextAccessor;
-        private readonly IUrlHelperFactory _urlHelperFactory;
+        private readonly LinkGenerator _linkGenerator;
+        private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IWebHelper _webHelper;
         private readonly ILocalizationService _localizationService;
 
         public MultiBuyDiscountRequirement(IShoppingCartService shoppingCartService,
                                            ISettingService settingService,
-                                           IActionContextAccessor actionContextAccessor,
-                                           IUrlHelperFactory urlHelperFactory,
+                                           LinkGenerator linkGenerator,
+                                           IHttpContextAccessor httpContextAccessor,
                                            IWebHelper webHelper,
                                            ILocalizationService localizationService)
         {
             _shoppingCartService = shoppingCartService;
             _settingService = settingService;
-            _actionContextAccessor = actionContextAccessor;
-            _urlHelperFactory = urlHelperFactory;
+            _linkGenerator = linkGenerator;
+            _httpContextAccessor = httpContextAccessor;
             _webHelper = webHelper;
             _localizationService = localizationService;
         }
@@ -104,9 +104,9 @@ namespace Nop.Plugin.DiscountRules.MultiBuy.Services
 
         public string GetConfigurationUrl(int discountId, int? discountRequirementId)
         {
-            var urlHelper = _urlHelperFactory.GetUrlHelper(_actionContextAccessor.ActionContext);
-
-            return urlHelper.Action("Configure", "DiscountRulesMultiBuy",
+            return _linkGenerator.GetUriByAction(
+                _httpContextAccessor.HttpContext,
+                "Configure", "DiscountRulesMultiBuy",
                 new { discountId, discountRequirementId }, _webHelper.GetCurrentRequestProtocol());
         }
 

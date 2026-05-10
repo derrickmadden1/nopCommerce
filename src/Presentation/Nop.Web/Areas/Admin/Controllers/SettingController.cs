@@ -36,6 +36,7 @@ using Nop.Services.Media;
 using Nop.Services.Messages;
 using Nop.Services.Orders;
 using Nop.Services.Plugins;
+using Nop.Services.ScheduleTasks;
 using Nop.Services.Security;
 using Nop.Services.Stores;
 using Nop.Web.Areas.Admin.Factories;
@@ -71,6 +72,7 @@ public partial class SettingController : BaseAdminController
     protected readonly INotificationService _notificationService;
     protected readonly IOrderService _orderService;
     protected readonly IPictureService _pictureService;
+    protected readonly IScheduleTaskService _scheduleTaskService;
     protected readonly ISettingModelFactory _settingModelFactory;
     protected readonly ISettingService _settingService;
     protected readonly IStoreContext _storeContext;
@@ -99,6 +101,7 @@ public partial class SettingController : BaseAdminController
         INotificationService notificationService,
         IOrderService orderService,
         IPictureService pictureService,
+        IScheduleTaskService scheduleTaskService,
         ISettingModelFactory settingModelFactory,
         ISettingService settingService,
         IStoreContext storeContext,
@@ -122,6 +125,7 @@ public partial class SettingController : BaseAdminController
         _notificationService = notificationService;
         _orderService = orderService;
         _pictureService = pictureService;
+        _scheduleTaskService = scheduleTaskService;
         _settingModelFactory = settingModelFactory;
         _settingService = settingService;
         _storeContext = storeContext;
@@ -642,6 +646,8 @@ public partial class SettingController : BaseAdminController
             await _settingService.SaveSettingOverridablePerStoreAsync(catalogSettings, x => x.AllowCustomersToSearchWithCategoryName, model.AllowCustomersToSearchWithCategoryName_OverrideForStore, storeScope, false);
             await _settingService.SaveSettingOverridablePerStoreAsync(catalogSettings, x => x.DisplayAllPicturesOnCatalogPages, model.DisplayAllPicturesOnCatalogPages_OverrideForStore, storeScope, false);
             await _settingService.SaveSettingOverridablePerStoreAsync(catalogSettings, x => x.ProductUrlStructureTypeId, model.ProductUrlStructureTypeId_OverrideForStore, storeScope, false);
+            await _settingService.SaveSettingOverridablePerStoreAsync(catalogSettings, x => x.ShowSearchTermHistory, model.ShowSearchTermHistory_OverrideForStore, storeScope, false);
+            await _settingService.SaveSettingOverridablePerStoreAsync(catalogSettings, x => x.NumberOfSearchTermHistoryItems, model.NumberOfSearchTermHistoryItems_OverrideForStore, storeScope, false);
 
             //now settings not overridable per store
             await _settingService.SaveSettingAsync(catalogSettings, x => x.IgnoreDiscounts, 0, false);
@@ -968,6 +974,10 @@ public partial class SettingController : BaseAdminController
             await _settingService.SaveSettingOverridablePerStoreAsync(orderSettings, x => x.AllowCustomersCancelOrders, model.AllowCustomersCancelOrders_OverrideForStore, storeScope, false);
             await _settingService.SaveSettingOverridablePerStoreAsync(orderSettings, x => x.ShowProductThumbnailInOrderDetailsPage, model.ShowProductThumbnailInOrderDetailsPage_OverrideForStore, storeScope, false);
             await _settingService.SaveSettingOverridablePerStoreAsync(orderSettings, x => x.DeleteGiftCardUsageHistory, model.DeleteGiftCardUsageHistory_OverrideForStore, storeScope, false);
+            await _settingService.SaveSettingOverridablePerStoreAsync(orderSettings, x => x.AutoCancelEnabled, model.AutoCancelEnabled_OverrideForStore, storeScope, false);
+            await _settingService.SaveSettingOverridablePerStoreAsync(orderSettings, x => x.AutoCancelDelay, model.AutoCancelDelay_OverrideForStore, storeScope, false);
+            await _settingService.SaveSettingOverridablePerStoreAsync(orderSettings, x => x.AutoCancelIgnoredPaymentMethods, model.AutoCancelIgnoredPaymentMethods_OverrideForStore, storeScope, false);
+            await _settingService.SaveSettingOverridablePerStoreAsync(orderSettings, x => x.AutoCancelRestoreShoppingCart, model.AutoCancelRestoreShoppingCart_OverrideForStore, storeScope, false);
             await _settingService.SaveSettingAsync(orderSettings, x => x.ActivateGiftCardsAfterCompletingOrder, 0, false);
             await _settingService.SaveSettingAsync(orderSettings, x => x.DeactivateGiftCardsAfterCancellingOrder, 0, false);
             await _settingService.SaveSettingAsync(orderSettings, x => x.DeactivateGiftCardsAfterDeletingOrder, 0, false);
@@ -1493,6 +1503,10 @@ public partial class SettingController : BaseAdminController
             storeInformationSettings.XLink = model.StoreInformationSettings.XLink;
             storeInformationSettings.YoutubeLink = model.StoreInformationSettings.YoutubeLink;
             storeInformationSettings.InstagramLink = model.StoreInformationSettings.InstagramLink;
+            storeInformationSettings.TikTokLink = model.StoreInformationSettings.TikTokLink;
+            storeInformationSettings.SnapchatLink = model.StoreInformationSettings.SnapchatLink;
+            storeInformationSettings.PinterestLink = model.StoreInformationSettings.PinterestLink;
+            storeInformationSettings.TumblrLink = model.StoreInformationSettings.TumblrLink;
             //contact us
             commonSettings.SubjectFieldOnContactUsForm = model.StoreInformationSettings.SubjectFieldOnContactUsForm;
             commonSettings.UseSystemEmailForContactUsForm = model.StoreInformationSettings.UseSystemEmailForContactUsForm;
@@ -1528,6 +1542,10 @@ public partial class SettingController : BaseAdminController
             await _settingService.SaveSettingOverridablePerStoreAsync(storeInformationSettings, x => x.XLink, model.StoreInformationSettings.XLink_OverrideForStore, storeScope, false);
             await _settingService.SaveSettingOverridablePerStoreAsync(storeInformationSettings, x => x.YoutubeLink, model.StoreInformationSettings.YoutubeLink_OverrideForStore, storeScope, false);
             await _settingService.SaveSettingOverridablePerStoreAsync(storeInformationSettings, x => x.InstagramLink, model.StoreInformationSettings.InstagramLink_OverrideForStore, storeScope, false);
+            await _settingService.SaveSettingOverridablePerStoreAsync(storeInformationSettings, x => x.TikTokLink, model.StoreInformationSettings.TikTokLink_OverrideForStore, storeScope, false);
+            await _settingService.SaveSettingOverridablePerStoreAsync(storeInformationSettings, x => x.SnapchatLink, model.StoreInformationSettings.SnapchatLink_OverrideForStore, storeScope, false);
+            await _settingService.SaveSettingOverridablePerStoreAsync(storeInformationSettings, x => x.PinterestLink, model.StoreInformationSettings.PinterestLink_OverrideForStore, storeScope, false);
+            await _settingService.SaveSettingOverridablePerStoreAsync(storeInformationSettings, x => x.TumblrLink, model.StoreInformationSettings.TumblrLink_OverrideForStore, storeScope, false);
             await _settingService.SaveSettingOverridablePerStoreAsync(commonSettings, x => x.SubjectFieldOnContactUsForm, model.StoreInformationSettings.SubjectFieldOnContactUsForm_OverrideForStore, storeScope, false);
             await _settingService.SaveSettingOverridablePerStoreAsync(commonSettings, x => x.UseSystemEmailForContactUsForm, model.StoreInformationSettings.UseSystemEmailForContactUsForm_OverrideForStore, storeScope, false);
             await _settingService.SaveSettingOverridablePerStoreAsync(commonSettings, x => x.PopupForTermsOfServiceLinks, model.StoreInformationSettings.PopupForTermsOfServiceLinks_OverrideForStore, storeScope, false);
@@ -2019,6 +2037,24 @@ public partial class SettingController : BaseAdminController
         }
 
         return Json(new { Result = string.Empty });
+    }
+
+    //Action that displays a notification (warning) to the store owner when the Auto-cancel unpaid orders task is disabled
+    public virtual async Task<IActionResult> AutoCancelOrdersTaskWarning(bool enabled)
+    {
+        if (!enabled)
+            return Json(new { Result = string.Empty });
+
+        var task = await _scheduleTaskService.GetTaskByTypeAsync("Nop.Services.Orders.AutoCancelOrdersTask, Nop.Services");
+
+        if (task is null)
+            return Json(new { Result = await _localizationService.GetResourceAsync("Admin.Configuration.Settings.Order.Warning.NotFound") });
+
+        if (task.Enabled)
+            return Json(new { Result = string.Empty });
+
+        var locale = await _localizationService.GetResourceAsync("Admin.Configuration.Settings.Order.Warning.TaskDisabled");
+        return Json(new { Result = string.Format(locale, Url.Action("List", "ScheduleTask"), task.Name) });
     }
 
     #endregion

@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <Copyright>Copyright © Your Store</Copyright>
     <RootNamespace>Nop.Plugin.Widgets.MarketLocator</RootNamespace>
     <AssemblyName>Nop.Plugin.Widgets.MarketLocator</AssemblyName>
@@ -47,10 +47,7 @@
     <ItemGroup>
       <PluginStaticFiles Include="wwwroot\**\*" />
     </ItemGroup>
-    <Copy
-      SourceFiles="@(PluginStaticFiles)"
-      DestinationFiles="@(PluginStaticFiles->'..\..\Presentation\Nop.Web\wwwroot\Plugins\Widgets.MarketLocator\%(RecursiveDir)%(Filename)%(Extension)')"
-      SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(PluginStaticFiles)" DestinationFiles="@(PluginStaticFiles->'..\..\Presentation\Nop.Web\wwwroot\Plugins\Widgets.MarketLocator\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
   </Target>
 
 

@@ -66,15 +66,15 @@ public static class FluentMigratorExtensions
     public static IMigrationRunnerBuilder AddNopDbEngines(this IMigrationRunnerBuilder builder)
     {
         if (!DataSettingsManager.IsDatabaseInstalled())
-            return builder.AddSqlServer().AddMySql5().AddPostgres92();
+            return builder.AddSqlServer().AddMySql8().AddPostgres15_0();
 
         var dataSettings = DataSettingsManager.LoadSettings();
 
         return dataSettings.DataProvider switch
         {
-            DataProviderType.MySql => builder.AddMySql5(),
+            DataProviderType.MySql => builder.AddMySql8(),
             DataProviderType.SqlServer => builder.AddSqlServer(),
-            DataProviderType.PostgreSQL => builder.AddPostgres92(),
+            DataProviderType.PostgreSQL => builder.AddPostgres15_0(),
             _ => throw new NotImplementedException(),
         };
     }
@@ -104,26 +104,6 @@ public static class FluentMigratorExtensions
     /// <typeparam name="TPrimary"></typeparam>
     /// <returns>Set column options or create a new column or set a foreign key cascade rule</returns>
     public static ICreateTableColumnOptionOrForeignKeyCascadeOrWithColumnSyntax ForeignKey<TPrimary>(this ICreateTableColumnOptionOrWithColumnSyntax column, string primaryTableName = null, string primaryColumnName = null, Rule onDelete = Rule.Cascade) where TPrimary : BaseEntity
-    {
-        if (string.IsNullOrEmpty(primaryTableName))
-            primaryTableName = NameCompatibilityManager.GetTableName(typeof(TPrimary));
-
-        if (string.IsNullOrEmpty(primaryColumnName))
-            primaryColumnName = nameof(BaseEntity.Id);
-
-        return column.Indexed().ForeignKey(primaryTableName, primaryColumnName).OnDelete(onDelete);
-    }
-
-    /// <summary>
-    /// Specifies a foreign key
-    /// </summary>
-    /// <param name="column">The foreign key column</param>
-    /// <param name="primaryTableName">The primary table name</param>
-    /// <param name="primaryColumnName">The primary tables column name</param>
-    /// <param name="onDelete">Behavior for DELETEs</param>
-    /// <typeparam name="TPrimary"></typeparam>
-    /// <returns>Alter/add a column with an optional foreign key</returns>
-    public static IAlterTableColumnOptionOrAddColumnOrAlterColumnOrForeignKeyCascadeSyntax ForeignKey<TPrimary>(this IAlterTableColumnOptionOrAddColumnOrAlterColumnSyntax column, string primaryTableName = null, string primaryColumnName = null, Rule onDelete = Rule.Cascade) where TPrimary : BaseEntity
     {
         if (string.IsNullOrEmpty(primaryTableName))
             primaryTableName = NameCompatibilityManager.GetTableName(typeof(TPrimary));
@@ -183,6 +163,55 @@ public static class FluentMigratorExtensions
         var columnName = NameCompatibilityManager.GetColumnName(typeof(TEntity), propertyMemberExpression.Member.Name);
 
         return migration.Schema.Table(tableName).Column(columnName).Exists() ? migration.Alter.Table(tableName).AlterColumn(columnName) : migration.Alter.Table(tableName).AddColumn(columnName);
+    }
+
+    /// <summary>
+    /// Adds a new column or alters an existing column in the database table
+    /// mapped to the specified entity, depending on whether the column
+    /// already exists.
+    /// </summary>
+    /// <typeparam name="TEntity">
+    /// The entity type mapped to the database table
+    /// </typeparam>
+    /// <typeparam name="TPrimary">
+    /// The entity type of the primary key that the foreign key column references
+    /// </typeparam>
+    /// <param name="migration">
+    /// The migration context used to inspect the schema and apply changes
+    /// </param>
+    /// <param name="selector">
+    /// An expression selecting the entity property that maps to the target column
+    /// </param>
+    /// <param name="onDelete">
+    /// The behavior for DELETEs on the foreign key relationship (defaults to Cascade)
+    /// </param>
+    /// <returns>
+    /// A fluent syntax interface allowing further ALTER TABLE operations
+    /// on the added or altered column.
+    /// </returns>
+    public static IAlterTableColumnOptionOrAddColumnOrAlterColumnSyntax AddOrAlterForeignKeyColumnFor<TEntity, TPrimary>(this MigrationBase migration, Expression<Func<TEntity, object>> selector, Rule onDelete = Rule.Cascade) where TEntity : BaseEntity
+    {
+        var tableName = NameCompatibilityManager.GetTableName(typeof(TEntity));
+        var propertyMemberExpression = selector.Body as MemberExpression
+            ?? (selector.Body as UnaryExpression)?.Operand as MemberExpression
+            ?? throw new ArgumentException("Selector must be a property expression.", nameof(selector));
+        var columnName = NameCompatibilityManager.GetColumnName(typeof(TEntity), propertyMemberExpression.Member.Name);
+
+        IAlterTableColumnOptionOrAddColumnOrAlterColumnSyntax rez;
+
+        if (migration.Schema.Table(tableName).Column(columnName).Exists())
+        {
+            rez = migration.Alter.Table(tableName).AlterColumn(columnName).AsInt32();
+        }
+        else
+        {
+            var primaryTableName = NameCompatibilityManager.GetTableName(typeof(TPrimary));
+            var primaryColumnName = nameof(BaseEntity.Id);
+
+            rez = migration.Alter.Table(tableName).AddColumn(columnName).AsInt32().Indexed().ForeignKey(primaryTableName, primaryColumnName).OnDelete(onDelete);
+        }
+
+        return rez;
     }
 
     /// <summary>

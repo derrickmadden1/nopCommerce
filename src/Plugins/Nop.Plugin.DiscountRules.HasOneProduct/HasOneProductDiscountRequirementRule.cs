@@ -1,6 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Infrastructure;
-using Microsoft.AspNetCore.Mvc.Routing;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Routing;
+using Microsoft.AspNetCore.Http;
 using Nop.Core;
 using Nop.Core.Domain.Orders;
 using Nop.Services.Configuration;
@@ -19,32 +19,33 @@ public partial class HasOneProductDiscountRequirementRule : BasePlugin, IDiscoun
     private const char _idsSeparator = ',';
     private const char _quantitySeparator = ':';
     private const char _maxQuantityMaxseparator = '-';
-    private readonly IActionContextAccessor _actionContextAccessor;
+    private readonly LinkGenerator _linkGenerator;
+    private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IDiscountService _discountService;
     private readonly ILocalizationService _localizationService;
     private readonly ISettingService _settingService;
     private readonly IShoppingCartService _shoppingCartService;
-    private readonly IUrlHelperFactory _urlHelperFactory;
+
     private readonly IWebHelper _webHelper;
 
     #endregion
 
     #region Ctor
 
-    public HasOneProductDiscountRequirementRule(IActionContextAccessor actionContextAccessor,
+    public HasOneProductDiscountRequirementRule(LinkGenerator linkGenerator,
+        IHttpContextAccessor httpContextAccessor,
         IDiscountService discountService,
         ILocalizationService localizationService,
         ISettingService settingService,
         IShoppingCartService shoppingCartService,
-        IUrlHelperFactory urlHelperFactory,
         IWebHelper webHelper)
     {
-        _actionContextAccessor = actionContextAccessor;
+        _linkGenerator = linkGenerator;
+        _httpContextAccessor = httpContextAccessor;
         _discountService = discountService;
         _localizationService = localizationService;
         _settingService = settingService;
         _shoppingCartService = shoppingCartService;
-        _urlHelperFactory = urlHelperFactory;
         _webHelper = webHelper;
     }
 
@@ -183,9 +184,9 @@ public partial class HasOneProductDiscountRequirementRule : BasePlugin, IDiscoun
     /// <returns>URL</returns>
     public string GetConfigurationUrl(int discountId, int? discountRequirementId)
     {
-        var urlHelper = _urlHelperFactory.GetUrlHelper(_actionContextAccessor.ActionContext);
-
-        return urlHelper.Action("Configure", "DiscountRulesHasOneProduct",
+        return _linkGenerator.GetUriByAction(
+            _httpContextAccessor.HttpContext,
+            "Configure", "DiscountRulesHasOneProduct",
             new { discountId, discountRequirementId }, _webHelper.GetCurrentRequestProtocol());
     }
 

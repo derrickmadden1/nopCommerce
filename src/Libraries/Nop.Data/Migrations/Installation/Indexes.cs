@@ -1,5 +1,4 @@
 ﻿using FluentMigrator;
-using FluentMigrator.SqlServer;
 using Nop.Core.Domain.Catalog;
 using Nop.Core.Domain.Common;
 using Nop.Core.Domain.Customers;
@@ -12,6 +11,7 @@ using Nop.Core.Domain.Security;
 using Nop.Core.Domain.Seo;
 using Nop.Core.Domain.Stores;
 using Nop.Core.Domain.Topics;
+using Nop.Data.Extensions;
 using Nop.Data.Mapping;
 
 namespace Nop.Data.Migrations.Installation;
@@ -340,6 +340,12 @@ public class Indexes : ForwardOnlyMigration
             .OnColumn(nameof(ProductManufacturer.ManufacturerId)).Ascending()
             .WithOptions().NonClustered()
             .Include(nameof(ProductManufacturer.ProductId));
+
+        Create.Index("IX_GenericAttribute_EntityId_KeyGroup_and_Key").OnTable(nameof(GenericAttribute))
+            .OnColumn(nameof(GenericAttribute.EntityId)).Ascending()
+            .OnColumn(nameof(GenericAttribute.KeyGroup)).Ascending()
+            .OnColumn(nameof(GenericAttribute.Key)).Ascending()
+            .WithOptions().NonClustered();
     }
 
     #endregion

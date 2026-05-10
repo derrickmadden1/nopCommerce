@@ -30,6 +30,7 @@ using Nop.Services.Gdpr;
 using Nop.Services.Helpers;
 using Nop.Services.Localization;
 using Nop.Services.Media;
+using Nop.Services.Payments;
 using Nop.Services.Stores;
 using Nop.Services.Themes;
 using Nop.Web.Areas.Admin.Infrastructure.Mapper.Extensions;
@@ -65,6 +66,7 @@ public partial class SettingModelFactory : ISettingModelFactory
     protected readonly IGenericAttributeService _genericAttributeService;
     protected readonly ILanguageService _languageService;
     protected readonly ILocalizationService _localizationService;
+    protected readonly IPaymentPluginManager _paymentPluginManager;
     protected readonly IPictureService _pictureService;
     protected readonly IReturnRequestModelFactory _returnRequestModelFactory;
     protected readonly IReviewTypeModelFactory _reviewTypeModelFactory;
@@ -96,6 +98,7 @@ public partial class SettingModelFactory : ISettingModelFactory
         IGenericAttributeService genericAttributeService,
         ILanguageService languageService,
         ILocalizationService localizationService,
+        IPaymentPluginManager paymentPluginManager,
         IPictureService pictureService,
         IReturnRequestModelFactory returnRequestModelFactory,
         ISettingService settingService,
@@ -123,6 +126,7 @@ public partial class SettingModelFactory : ISettingModelFactory
         _genericAttributeService = genericAttributeService;
         _languageService = languageService;
         _localizationService = localizationService;
+        _paymentPluginManager = paymentPluginManager;
         _pictureService = pictureService;
         _returnRequestModelFactory = returnRequestModelFactory;
         _settingService = settingService;
@@ -441,6 +445,10 @@ public partial class SettingModelFactory : ISettingModelFactory
             XLink = storeInformationSettings.XLink,
             YoutubeLink = storeInformationSettings.YoutubeLink,
             InstagramLink = storeInformationSettings.InstagramLink,
+            TikTokLink = storeInformationSettings.TikTokLink,
+            SnapchatLink = storeInformationSettings.SnapchatLink,
+            PinterestLink = storeInformationSettings.PinterestLink,
+            TumblrLink = storeInformationSettings.TumblrLink,
             SubjectFieldOnContactUsForm = commonSettings.SubjectFieldOnContactUsForm,
             UseSystemEmailForContactUsForm = commonSettings.UseSystemEmailForContactUsForm,
             PopupForTermsOfServiceLinks = commonSettings.PopupForTermsOfServiceLinks
@@ -462,6 +470,10 @@ public partial class SettingModelFactory : ISettingModelFactory
         model.XLink_OverrideForStore = await _settingService.SettingExistsAsync(storeInformationSettings, x => x.XLink, storeId);
         model.YoutubeLink_OverrideForStore = await _settingService.SettingExistsAsync(storeInformationSettings, x => x.YoutubeLink, storeId);
         model.InstagramLink_OverrideForStore = await _settingService.SettingExistsAsync(storeInformationSettings, x => x.InstagramLink, storeId);
+        model.TikTokLink_OverrideForStore = await _settingService.SettingExistsAsync(storeInformationSettings, x => x.TikTokLink, storeId);
+        model.SnapchatLink_OverrideForStore = await _settingService.SettingExistsAsync(storeInformationSettings, x => x.SnapchatLink, storeId);
+        model.PinterestLink_OverrideForStore = await _settingService.SettingExistsAsync(storeInformationSettings, x => x.PinterestLink, storeId);
+        model.TumblrLink_OverrideForStore = await _settingService.SettingExistsAsync(storeInformationSettings, x => x.TumblrLink, storeId);
         model.SubjectFieldOnContactUsForm_OverrideForStore = await _settingService.SettingExistsAsync(commonSettings, x => x.SubjectFieldOnContactUsForm, storeId);
         model.UseSystemEmailForContactUsForm_OverrideForStore = await _settingService.SettingExistsAsync(commonSettings, x => x.UseSystemEmailForContactUsForm, storeId);
         model.PopupForTermsOfServiceLinks_OverrideForStore = await _settingService.SettingExistsAsync(commonSettings, x => x.PopupForTermsOfServiceLinks, storeId);
@@ -1258,6 +1270,8 @@ public partial class SettingModelFactory : ISettingModelFactory
             model.AllowCustomersToSearchWithCategoryName_OverrideForStore = await _settingService.SettingExistsAsync(catalogSettings, x => x.AllowCustomersToSearchWithCategoryName, storeId);
             model.DisplayAllPicturesOnCatalogPages_OverrideForStore = await _settingService.SettingExistsAsync(catalogSettings, x => x.DisplayAllPicturesOnCatalogPages, storeId);
             model.ProductUrlStructureTypeId_OverrideForStore = await _settingService.SettingExistsAsync(catalogSettings, x => x.ProductUrlStructureTypeId, storeId);
+            model.ShowSearchTermHistory_OverrideForStore = await _settingService.SettingExistsAsync(catalogSettings, x => x.ShowSearchTermHistory, storeId);
+            model.NumberOfSearchTermHistoryItems_OverrideForStore = await _settingService.SettingExistsAsync(catalogSettings, x => x.NumberOfSearchTermHistoryItems, storeId);
         }
 
         //prepare nested search model
@@ -1462,6 +1476,11 @@ public partial class SettingModelFactory : ISettingModelFactory
         model.PrimaryStoreCurrencyCode = (await _currencyService.GetCurrencyByIdAsync(_currencySettings.PrimaryStoreCurrencyId))?.CurrencyCode;
         model.OrderIdent = await _dataProvider.GetTableIdentAsync<Order>();
 
+        var paymentMethods = await _paymentPluginManager.LoadAllPluginsAsync(storeId: storeId);
+
+        if(paymentMethods?.Any() == true)
+            model.AvailablePaymentMethods.AddRange(paymentMethods.Select(pm => new SelectListItem(pm.PluginDescriptor.FriendlyName, pm.PluginDescriptor.SystemName)));
+
         //fill in overridden values
         if (storeId > 0)
         {
@@ -1493,6 +1512,10 @@ public partial class SettingModelFactory : ISettingModelFactory
             model.AllowCustomersCancelOrders_OverrideForStore = await _settingService.SettingExistsAsync(orderSettings, x => x.AllowCustomersCancelOrders, storeId);
             model.ShowProductThumbnailInOrderDetailsPage_OverrideForStore = await _settingService.SettingExistsAsync(orderSettings, x => x.ShowProductThumbnailInOrderDetailsPage, storeId);
             model.DeleteGiftCardUsageHistory_OverrideForStore = await _settingService.SettingExistsAsync(orderSettings, x => x.DeleteGiftCardUsageHistory, storeId);
+            model.AutoCancelEnabled_OverrideForStore = await _settingService.SettingExistsAsync(orderSettings, x => x.AutoCancelEnabled, storeId);
+            model.AutoCancelDelay_OverrideForStore = await _settingService.SettingExistsAsync(orderSettings, x => x.AutoCancelDelay, storeId);
+            model.AutoCancelIgnoredPaymentMethods_OverrideForStore = await _settingService.SettingExistsAsync(orderSettings, x => x.AutoCancelIgnoredPaymentMethods, storeId);
+            model.AutoCancelRestoreShoppingCart_OverrideForStore = await _settingService.SettingExistsAsync(orderSettings, x => x.AutoCancelRestoreShoppingCart   , storeId);
         }
 
         //prepare nested search models
