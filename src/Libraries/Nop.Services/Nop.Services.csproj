@@ -28,7 +28,7 @@
     <PackageReference Include="Svg.Skia" Version="3.0.6" />
     <PackageReference Include="System.Linq.Dynamic.Core" Version="1.6.7" />
     <PackageReference Include="Azure.Messaging.ServiceBus" Version="7.20.1" />
-    <PackageReference Include="Azure.Core" Version="1.49.1" />
+    <PackageReference Include="Azure.Core" Version="1.50.0" />
   </ItemGroup>
 
   <ItemGroup>

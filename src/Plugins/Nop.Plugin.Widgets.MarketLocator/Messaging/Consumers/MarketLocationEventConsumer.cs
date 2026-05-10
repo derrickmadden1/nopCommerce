@@ -77,12 +77,12 @@ public class MarketLocationEventConsumer :
                 {
                     if (scheduledTime.HasValue)
                     {
-                        var seq = await _publisher.ScheduleAsync(QueueName, message, scheduledTime.Value);
+                        var seq = await _publisher!.ScheduleAsync(QueueName, message, scheduledTime.Value);
                         sequenceNumbers.Add(seq);
                     }
                     else
                     {
-                        await _publisher.PublishAsync(QueueName, message);
+                        await _publisher!.PublishAsync(QueueName, message);
                     }
                 }
 
@@ -137,7 +137,7 @@ public class MarketLocationEventConsumer :
                 {
                     if (scheduledTime.HasValue)
                     {
-                        var seq = await _publisher.ScheduleAsync(QueueName, message, scheduledTime.Value);
+                        var seq = await _publisher!.ScheduleAsync(QueueName, message, scheduledTime.Value);
                         sequenceNumbers.Add(seq);
                         _logger.LogInformation(
                             "Rescheduled social post for {MarketName} — new sequence {SequenceNumber}",
@@ -146,7 +146,7 @@ public class MarketLocationEventConsumer :
                     else
                     {
                         // Market is imminent — post immediately
-                        await _publisher.PublishAsync(QueueName, message);
+                        await _publisher!.PublishAsync(QueueName, message);
                     }
                 }
 
