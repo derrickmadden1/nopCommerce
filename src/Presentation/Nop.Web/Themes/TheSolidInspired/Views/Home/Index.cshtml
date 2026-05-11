@@ -13,7 +13,7 @@
     <div class="hero-inner">
         <h1>Live Inspired</h1>
         <p>Crafted essentials for a life well lived</p>
-        <a href="/new-products" class="btn-primary-outline">Explore the Collection</a>
+        <a href="@Url.RouteUrl("NewProducts")" class="btn-primary-outline">Explore the Collection</a>
     </div>
 </section>
 
@@ -22,19 +22,11 @@
     <div class="story-inner">
         <h2>Our Philosophy</h2>
         <p>We believe in thoughtful design, sustainable materials, and products that elevate everyday living.</p>
-        <a href="/about-us" class="link-more">Discover Our Story</a>
+        <a href="@Url.RouteUrl("Topic", new { SeName = "about-us" })" class="link-more">Discover Our Story</a>
     </div>
 </section>
 
-<!-- FEATURED COLLECTION -->
-<section class="featured-collection section-container">
-    <div class="section-header">
-        <h2>Featured Collection</h2>
-    </div>
-    <div class="product-grid">
-        @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.HomepageBeforeProducts })
-    </div>
-</section>
+@await Component.InvokeAsync(typeof(HomepageProductsViewComponent))
 
 <!-- LIFESTYLE IMAGE STRIP -->
 <section class="lifestyle-strip">
