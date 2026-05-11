@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.WebUtilities;
 using Nop.Core;
 using Nop.Core.Domain.Catalog;
@@ -374,7 +374,7 @@ public partial class DiscountModelFactory : IDiscountModelFactory
 
         var lastRequirement = requirements.LastOrDefault();
 
-        return await requirements.SelectAwait(async requirement =>
+        var requirementModels = await requirements.SelectAwait(async requirement =>
         {
             //set common properties
             var requirementModel = new DiscountRequirementRuleModel
@@ -411,6 +411,8 @@ public partial class DiscountModelFactory : IDiscountModelFactory
 
             return requirementModel;
         }).ToListAsync();
+
+        return requirementModels.Where(rm => rm != null).ToList();
     }
 
     /// <summary>
