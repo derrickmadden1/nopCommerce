@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.Reflection;
 using System.Text.RegularExpressions;
 
@@ -214,7 +214,7 @@ public partial class WebAppTypeFinder : ITypeFinder
 
                         _assemblies.TryAdd(assembly.FullName, assembly);
                     }
-                    catch (BadImageFormatException ex)
+                    catch (Exception ex)
                     {
                         Trace.TraceError(ex.ToString());
                     }

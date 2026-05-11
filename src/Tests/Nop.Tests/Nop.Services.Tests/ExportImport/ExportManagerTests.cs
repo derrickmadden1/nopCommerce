@@ -1,5 +1,5 @@
-﻿using ClosedXML.Excel;
-using FluentAssertions;
+﻿using AwesomeAssertions;
+using ClosedXML.Excel;
 using Nop.Core;
 using Nop.Core.Domain.Catalog;
 using Nop.Core.Domain.Customers;
@@ -244,7 +244,7 @@ public class ExportManagerTests : ServiceTest
             "CaptureTransactionId", "CaptureTransactionResult", "SubscriptionTransactionId", "PaidDateUtc",
             "Deleted", "PickupAddress", "RedeemedRewardPointsEntryId", "DiscountUsageHistory", "GiftCardUsageHistory",
             "OrderNotes", "OrderItems", "Shipments", "OrderStatus", "PaymentStatus", "ShippingStatus",
-            "CustomerTaxDisplayType", "CustomOrderNumber", "DesiredDeliveryDateUtc"
+            "CustomerTaxDisplayType", "CustomOrderNumber", "DesiredDeliveryDateUtc", "LastPendingOrderFollowUpNumber", "LastPendingOrderFollowUpDateUtc"
         });
 
         //fields tested individually
@@ -346,7 +346,8 @@ public class ExportManagerTests : ServiceTest
             "CustomerCustomerRoleMappings", "CustomerAddressMappings", "EntityCacheKey", "VendorId",
             "DateOfBirth", "CountryId",
             "StateProvinceId", "VatNumberStatusId", "TimeZoneId",
-            "CurrencyId", "LanguageId", "TaxDisplayTypeId", "TaxDisplayType", "TaxDisplayType", "VatNumberStatusId", "MustChangePassword" };
+            "CurrencyId", "LanguageId", "TaxDisplayTypeId", "TaxDisplayType", "TaxDisplayType", "VatNumberStatusId", "MustChangePassword",
+            "LastShoppingCartUpdateDateUtc", "LastAbandonedCartFollowUpNumber", "LastAbandonedCartFollowUpDateUtc", "RegistrationFollowUpDateUtc" };
 
         if (!_customerSettings.FirstNameEnabled)
             ignore.Add("FirstName");

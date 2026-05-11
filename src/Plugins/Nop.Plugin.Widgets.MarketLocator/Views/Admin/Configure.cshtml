@@ -62,6 +62,44 @@
                     <div class="col-md-9"><nop-editor asp-for="TeaserMaxItems" /></div>
                 </div>
 
+                <div class="form-group">
+                    <div class="col-md-3"><nop-label asp-for="EnableSocialPublishing" /></div>
+                    <div class="col-md-9">
+                        @Html.CheckBoxFor(m => m.EnableSocialPublishing)
+                        <span class="hint">Automatically post new markets to Facebook via Azure Service Bus</span>
+                    </div>
+                </div>
+
+                <div class="form-group row">
+                    <div class="col-md-3">
+                        <nop-label asp-for="SocialPublishDaysBeforeMarket" />
+                    </div>
+                    <div class="col-md-9">
+                        @Html.EditorFor(m => m.SocialPublishDaysBeforeMarket)
+                        <span class="hint">How many days before a market to post on Facebook (default: 3)</span>
+                    </div>
+                </div>
+
+                <div class="form-group row">
+                    <div class="col-md-3">
+                        <nop-label asp-for="StoreUrl" />
+                    </div>
+                    <div class="col-md-9">
+                        <nop-editor asp-for="StoreUrl" />
+                        <span class="hint">The base URL of your store (e.g., https://yourstore.com/). Used for links in social posts.</span>
+                    </div>
+                </div>
+
+                <div class="form-group row">
+                    <div class="col-md-3">
+                        <nop-label asp-for="QueueName" />
+                    </div>
+                    <div class="col-md-9">
+                        <nop-editor asp-for="QueueName" />
+                        <span class="hint">The Service Bus queue name for social posts (e.g. market-social-posts).</span>
+                    </div>
+                </div>
+
                 <div class="form-group row">
                     <div class="col-md-9 offset-md-3">
                         <button type="submit" class="btn btn-primary">Save Settings</button>

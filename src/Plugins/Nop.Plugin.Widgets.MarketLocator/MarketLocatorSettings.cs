@@ -1,4 +1,4 @@
-using Nop.Core.Configuration;
+﻿using Nop.Core.Configuration;
 
 namespace Nop.Plugin.Widgets.MarketLocator;
 
@@ -16,4 +16,17 @@ public class MarketLocatorSettings : ISettings
 
     /// <summary>How many markets to show in the homepage teaser (1–5).</summary>
     public int TeaserMaxItems { get; set; } = 2;
+    
+    /// <summary>
+    /// Master switch — allows admins to disable social publishing without redeploying
+    /// </summary>
+    public bool EnableSocialPublishing { get; set; }
+
+    public string StoreUrl { get; set; } = string.Empty;
+
+    /// <summary>
+    /// How many days before the market start date to post on social media.
+    /// Default: 3
+    /// </summary>
+    public int SocialPublishDaysBeforeMarket { get; set; } = 3;
 }

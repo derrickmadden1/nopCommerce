@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <Copyright>Rose Cottage Croft</Copyright>
     <RootNamespace>Nop.Plugin.Search.AzureAI</RootNamespace>
     <AssemblyName>Nop.Plugin.Search.AzureAI</AssemblyName>
@@ -14,8 +14,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Azure.Messaging.ServiceBus" Version="7.18.2" />
-    <PackageReference Include="Azure.Search.Documents" Version="11.6.0" />
+    <PackageReference Include="Azure.Messaging.ServiceBus" Version="7.20.1" />
+    <PackageReference Include="Azure.Search.Documents" Version="11.7.0" />
   </ItemGroup>
 
   <ItemGroup>

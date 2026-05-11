@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 using Microsoft.AspNetCore.Mvc.ApplicationParts;
 using Nop.Core;
 using Nop.Core.ComponentModel;
@@ -77,7 +77,7 @@ public static partial class ApplicationPartManagerExtensions
         {
             return AssemblyName.GetAssemblyName(filePath).Version;
         }
-        catch (BadImageFormatException)
+        catch (Exception)
         {
             //ignore
         }

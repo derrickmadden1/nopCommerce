@@ -100,4 +100,16 @@ public record MarketLocatorSettingsModel : BaseNopModel
     [NopResourceDisplayName("Plugins.Widgets.MarketLocator.Settings.TeaserMaxItems")]
     [Range(1, 5)]
     public int TeaserMaxItems { get; set; } = 2;
+
+    [NopResourceDisplayName("Plugins.Widgets.MarketLocator.Settings.EnableSocialPublishing")]
+    public bool EnableSocialPublishing { get; set; }
+
+    [NopResourceDisplayName("Plugins.Widgets.MarketLocator.Settings.SocialPublishDaysBeforeMarket")]
+    public int SocialPublishDaysBeforeMarket { get; set; } = 3;
+
+    [NopResourceDisplayName("Plugins.Widgets.MarketLocator.Settings.StoreUrl")]
+    public string StoreUrl { get; set; } = string.Empty;
+
+    [NopResourceDisplayName("Plugins.Widgets.MarketLocator.Settings.QueueName")]
+    public string QueueName { get; set; } = string.Empty;
 }

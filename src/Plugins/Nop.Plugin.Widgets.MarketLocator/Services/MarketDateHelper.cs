@@ -71,4 +71,77 @@ public static class MarketDateHelper
     /// </summary>
     public static bool HasFutureDates(string pipeDates) =>
         GetFutureDates(pipeDates).Count > 0;
+
+    /// <summary>
+    /// Derives the next market start and end date/time from the UpcomingDates and Hours fields.
+    /// Returns null if no future dates are found or parsing fails.
+    /// </summary>
+    public static (DateTime? StartDate, DateTime? EndDate) GetNextMarketOccurrence(string upcomingDates, string hours)
+    {
+        var allFuture = GetAllFutureMarketOccurrences(upcomingDates, hours);
+        return allFuture.Count > 0 ? allFuture[0] : (null, null);
+    }
+
+    /// <summary>
+    /// Derives ALL future market start and end date/times from the UpcomingDates and Hours fields.
+    /// </summary>
+    public static List<(DateTime? StartDate, DateTime? EndDate)> GetAllFutureMarketOccurrences(string upcomingDates, string hours)
+    {
+        var futureDates = GetFutureDates(upcomingDates);
+        var results = new List<(DateTime? StartDate, DateTime? EndDate)>();
+
+        if (futureDates.Count == 0)
+            return results;
+
+        // Try to parse hours like "8:00 AM – 1:00 PM"
+        var parts = hours.Split(new[] { '-', '–', '—' }, StringSplitOptions.RemoveEmptyEntries)
+                         .Select(p => p.Trim())
+                         .ToList();
+
+        bool hasValidHours = false;
+        TimeSpan startTime = TimeSpan.Zero;
+        TimeSpan endTime = TimeSpan.Zero;
+
+        if (parts.Count >= 2)
+        {
+            var startTimeStr = System.Text.RegularExpressions.Regex.Replace(parts[0], "([0-9])([AP]M)", "$1 $2", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            var endTimeStr = System.Text.RegularExpressions.Regex.Replace(parts[1], "([0-9])([AP]M)", "$1 $2", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+            if (DateTime.TryParse(startTimeStr, out var st) && DateTime.TryParse(endTimeStr, out var et))
+            {
+                hasValidHours = true;
+                startTime = st.TimeOfDay;
+                endTime = et.TimeOfDay;
+            }
+        }
+
+        var today = DateTime.UtcNow.Date;
+        int year = today.Year;
+
+        foreach (var dateStr in futureDates)
+        {
+            if (TryParseDate(dateStr, year, out var nextDate))
+            {
+                // Handle year-boundary for parsed dates
+                if (nextDate.Date < today && year == today.Year && today.Month >= 11 && nextDate.Month <= 3)
+                {
+                    TryParseDate(dateStr, year + 1, out nextDate);
+                }
+
+                if (hasValidHours)
+                {
+                    var start = nextDate.Date.Add(startTime);
+                    var end = nextDate.Date.Add(endTime);
+                    if (end < start) end = end.AddDays(1);
+                    results.Add((start, end));
+                }
+                else
+                {
+                    results.Add((nextDate.Date.AddHours(9), nextDate.Date.AddHours(17)));
+                }
+            }
+        }
+
+        return results;
+    }
 }

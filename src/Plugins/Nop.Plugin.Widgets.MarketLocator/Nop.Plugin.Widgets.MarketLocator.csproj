@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <Copyright>Copyright © Your Store</Copyright>
     <RootNamespace>Nop.Plugin.Widgets.MarketLocator</RootNamespace>
     <AssemblyName>Nop.Plugin.Widgets.MarketLocator</AssemblyName>
@@ -19,6 +19,10 @@
     <ProjectReference Include="..\..\Presentation\Nop.Web.Framework\Nop.Web.Framework.csproj" />
     <ProjectReference Include="..\..\Libraries\Nop.Services\Nop.Services.csproj" />
     <ProjectReference Include="..\..\Libraries\Nop.Data\Nop.Data.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Azure.Messaging.ServiceBus" Version="7.20.1" />
   </ItemGroup>
 
   <!-- Embed plugin.json and static assets -->
@@ -43,10 +47,7 @@
     <ItemGroup>
       <PluginStaticFiles Include="wwwroot\**\*" />
     </ItemGroup>
-    <Copy
-      SourceFiles="@(PluginStaticFiles)"
-      DestinationFiles="@(PluginStaticFiles->'..\..\Presentation\Nop.Web\wwwroot\Plugins\Widgets.MarketLocator\%(RecursiveDir)%(Filename)%(Extension)')"
-      SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(PluginStaticFiles)" DestinationFiles="@(PluginStaticFiles->'..\..\Presentation\Nop.Web\wwwroot\Plugins\Widgets.MarketLocator\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
   </Target>
 
 

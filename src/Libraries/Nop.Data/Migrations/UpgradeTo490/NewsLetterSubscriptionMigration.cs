@@ -1,4 +1,4 @@
-﻿using FluentMigrator;
+using FluentMigrator;
 using Nop.Core.Domain.Messages;
 using Nop.Data.Extensions;
 using System.Data;
@@ -17,7 +17,7 @@ public class NewsLetterSubscriptionMigration : ForwardOnlyMigration
 
         // Ensure at least one type exists
         Execute.Sql("INSERT INTO [NewsLetterSubscriptionType] ([Name],TickedByDefault,DisplayOrder,LimitedToStores) VALUES ('Default Type',1,1,0)");
-                
+
         if (!Schema.Table(nameof(NewsLetterSubscription)).Column(nameof(NewsLetterSubscription.TypeId)).Exists())
         {
             // Add the column as nullable first
@@ -29,12 +29,17 @@ public class NewsLetterSubscriptionMigration : ForwardOnlyMigration
             // Set all existing rows to the default type (assuming Id=1 for the first record)
             Execute.Sql("UPDATE [NewsLetterSubscription] SET [TypeId] = (SELECT TOP 1 [Id] FROM [NewsLetterSubscriptionType] ORDER BY [Id])");
 
-            // Alter the column to be not nullable and add the foreign key
+            // Alter the column to be not nullable
             Alter.Table(nameof(NewsLetterSubscription))
                 .AlterColumn(nameof(NewsLetterSubscription.TypeId))
                 .AsInt32()
-                .NotNullable()
-                .ForeignKey<NewsLetterSubscriptionType>(onDelete: Rule.Cascade);
+                .NotNullable();
+
+            // Add the foreign key
+            Create.ForeignKey()
+                .FromTable(nameof(NewsLetterSubscription)).ForeignColumn(nameof(NewsLetterSubscription.TypeId))
+                .ToTable(nameof(NewsLetterSubscriptionType)).PrimaryColumn(nameof(NewsLetterSubscriptionType.Id))
+                .OnDelete(Rule.Cascade);
         }
 
         this.AddOrAlterColumnFor<Campaign>(t => t.NewsLetterSubscriptionTypeId).AsInt32().NotNullable().SetExistingRowsTo(0);

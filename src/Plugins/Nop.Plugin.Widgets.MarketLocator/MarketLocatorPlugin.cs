@@ -1,5 +1,4 @@
 using Nop.Core;
-using Nop.Core.Domain.Cms;
 using Nop.Core.Domain.Common;
 using Nop.Core.Domain.Orders;
 using Nop.Core.Domain.Shipping;
@@ -139,6 +138,10 @@ public class MarketLocatorPlugin : BasePlugin, IWidgetPlugin, IPickupPointProvid
             ["Plugins.Widgets.MarketLocator.Settings.DefaultLng"]   = "Default Map Centre — Longitude",
             ["Plugins.Widgets.MarketLocator.Settings.ShowTeaserWidget"] = "Show homepage teaser widget",
             ["Plugins.Widgets.MarketLocator.Settings.TeaserMaxItems"]   = "Teaser: max markets to show (1–5)",
+            ["Plugins.Widgets.MarketLocator.Settings.EnableSocialPublishing"]   = "Enable Social Publishing",
+            ["Plugins.Widgets.MarketLocator.Settings.StoreUrl"]   = "Store URL",
+            ["Plugins.Widgets.MarketLocator.Settings.SocialPublishDaysBeforeMarket"]   = "Days Before Market to Post",
+            ["Plugins.Widgets.MarketLocator.Settings.QueueName"] = "Service Bus Queue Name",
             // Pickup shipping
             ["Plugins.Shipping.MarketPickup.Name"]        = "Market Pickup",
             ["Plugins.Shipping.MarketPickup.Description"] = "Collect at one of our markets — free.",

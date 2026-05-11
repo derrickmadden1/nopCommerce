@@ -2,8 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Infrastructure;
-using Microsoft.AspNetCore.Mvc.Routing;
+using Microsoft.AspNetCore.Routing;
+using Microsoft.AspNetCore.Http;
 using Nop.Core.Domain.Orders;
 using Nop.Core.Infrastructure;
 using Nop.Plugin.Widgets.ImagePuzzle.Components;
@@ -114,11 +114,12 @@ public partial class ImagePuzzlePlugin : BasePlugin, IWidgetPlugin, IDiscountReq
 
     public string GetConfigurationUrl(int discountId, int? discountRequirementId)
     {
-        var urlHelperFactory = EngineContext.Current.Resolve<IUrlHelperFactory>();
-        var actionContextAccessor = EngineContext.Current.Resolve<IActionContextAccessor>();
-        var urlHelper = urlHelperFactory.GetUrlHelper(actionContextAccessor.ActionContext);
+        var linkGenerator = EngineContext.Current.Resolve<LinkGenerator>();
+        var httpContextAccessor = EngineContext.Current.Resolve<IHttpContextAccessor>();
 
-        return urlHelper.RouteUrl("Plugin.Widgets.ImagePuzzle.ConfigureRequirement",
+        return linkGenerator.GetPathByRouteValues(
+            httpContextAccessor.HttpContext,
+            "Plugin.Widgets.ImagePuzzle.ConfigureRequirement",
             new { discountId, discountRequirementId });
     }
 

@@ -1,11 +1,12 @@
 ﻿using FluentMigrator;
+using Nop.Core.Domain.Messages;
 using Nop.Data;
 using Nop.Data.Migrations;
 using Nop.Web.Framework.Extensions;
 
 namespace Nop.Web.Framework.Migrations.UpgradeTo500;
 
-[NopUpdateMigration("2025-10-29 00:00:00", "5.00", UpdateMigrationType.Localization)]
+[NopUpdateMigration("2026-04-14 00:00:00", "5.00", UpdateMigrationType.Localization)]
 public class LocalizationMigration : MigrationBase
 {
     /// <summary>Collect the UP migration expressions</summary>
@@ -404,7 +405,13 @@ public class LocalizationMigration : MigrationBase
 
             "Profile.LatestPosts",
             "Profile.LatestPosts.NoPosts",
-            "Profile.PersonalInfo",            
+            "Profile.PersonalInfo",
+
+            //#8131
+            "Account.Login.WrongCredentials.CustomerNotExist",
+            "Account.Login.WrongCredentials.NotRegistered",
+            "Account.PasswordRecovery.EmailHasBeenSent",
+            "Account.PasswordRecovery.EmailNotFound"
         });
 
         #endregion
@@ -438,9 +445,33 @@ public class LocalizationMigration : MigrationBase
 
             //#7989
             ["Products.ProductHasBeenUpdatedInTheWishlist.Link"] = "The product has been updated in your <a href=\"{0}\">wishlist</a>",
-            
+
             //#8021
             ["Admin.Catalog.Products.RelatedProducts.CyclicallyRelated"] = "Circular dependency is not allowed for required products (e.g. product A requires product B. And product B requires product A)",
+
+            //#7743
+            ["Admin.Promotions.Reminder.AbandonedCartEnabled"] = "Abandoned cart reminders enabled",
+            ["Admin.Promotions.Reminder.AbandonedCartEnabled.Hint"] = "Check to enable Abandoned cart reminders.",
+            ["Admin.Promotions.Reminder.FollowUp.DelayBeforeSend"] = "Delay send",
+            ["Admin.Promotions.Reminder.FollowUp.DelayBeforeSend.Hint"] = "A delay before sending the follow up.",
+            ["Admin.Promotions.Reminder.FollowUp.DelayBeforeSend.MustBeGreaterThanZero"] = "The delay must be greater than '0'.",
+            ["Admin.Promotions.Reminder.FollowUp.DelayBeforeSend.Required"] = "The delay is required.",
+            ["Admin.Promotions.Reminder.FollowUp.Enabled"] = "Follow up #{0}",
+            ["Admin.Promotions.Reminder.FollowUp.Enabled.Hint"] = "Check to enable reminder.",
+            ["Admin.Promotions.Reminder.IncompleteRegistrationEnabled"] = "Incomplete registration reminder enabled",
+            ["Admin.Promotions.Reminder.IncompleteRegistrationEnabled.Hint"] = "Check to enable incomplete registration reminders.",
+            ["Admin.Promotions.Reminder.PendingOrdersEnabled"] = "Pending orders reminders enabled",
+            ["Admin.Promotions.Reminder.PendingOrdersEnabled.Hint"] = "Check to enable pending orders reminders.",
+            ["Admin.Promotions.Reminders"] = "Reminders",
+            ["Admin.Promotions.Reminders.Warning.TaskDisabled"] = "Please remember <a href=\"{0}\" target=\"_blank\">to enable</a> the \"{1}\" scheduled task.",
+            ["Admin.Promotions.Reminders.Warning.MultiStore"] = "Abandoned cart reminders may not work as expected when using a multi-store setup.",
+            ["Admin.Promotions.Reminders.Warning.NotFound"] = "The scheduled task not found.",
+            [$"Admin.ContentManagement.MessageTemplates.Description.{MessageTemplateSystemNames.REMINDER_ABANDONED_CART_FOLLOW_UP_1_MESSAGE}"] = "This message template is used to send the follow-up #1 for a abandoned cart.",
+            [$"Admin.ContentManagement.MessageTemplates.Description.{MessageTemplateSystemNames.REMINDER_ABANDONED_CART_FOLLOW_UP_2_MESSAGE}"] = "This message template is used to send the follow-up #2 for a abandoned cart.",
+            [$"Admin.ContentManagement.MessageTemplates.Description.{MessageTemplateSystemNames.REMINDER_ABANDONED_CART_FOLLOW_UP_3_MESSAGE}"] = "This message template is used to send the follow-up #3 for a abandoned cart.",
+            [$"Admin.ContentManagement.MessageTemplates.Description.{MessageTemplateSystemNames.REMINDER_PENDING_ORDER_FOLLOW_UP_1_MESSAGE}"] = "This message template is used to send the follow-up #1 for a pending order.",
+            [$"Admin.ContentManagement.MessageTemplates.Description.{MessageTemplateSystemNames.REMINDER_PENDING_ORDER_FOLLOW_UP_2_MESSAGE}"] = "This message template is used to send the follow-up #2 for a pending order.",
+            [$"Admin.ContentManagement.MessageTemplates.Description.{MessageTemplateSystemNames.REMINDER_REGISTRATION_FOLLOW_UP_MESSAGE}"] = "This message template is used to send the follow-up #1 for a incomplete registration.",
 
             //#7906
             ["Wishlist.DuplicateName"] = "A wishlist with this name already exists.",
@@ -477,6 +508,55 @@ public class LocalizationMigration : MigrationBase
             ["Admin.System.SystemInfo.NopLatestVersion"] = "Latest nopCommerce version",
             ["Admin.System.SystemInfo.NopLatestVersion.Hint"] = "The latest nopCommerce version, available for download.",
             ["Admin.System.SystemInfo.NopLatestVersion.Text"] = "<a href='{1}' target='_blank'>{0}</a> (see the <a href='{2}' target='_blank'>release-notes</a>)",
+
+            //#8136
+            ["Footer.FollowUs.TikTok"] = "TikTok",
+            ["Footer.FollowUs.Snapchat"] = "Snapchat",
+            ["Footer.FollowUs.Pinterest"] = "Pinterest",
+            ["Footer.FollowUs.Tumblr"] = "Tumblr",
+            ["Admin.Configuration.Settings.GeneralCommon.TikTokLink"] = "TikTok URL",
+            ["Admin.Configuration.Settings.GeneralCommon.TikTokLink.Hint"] = "Specify your TikTok page URL. Leave empty if you have no such page.",
+            ["Admin.Configuration.Settings.GeneralCommon.SnapchatLink"] = "Snapchat URL",
+            ["Admin.Configuration.Settings.GeneralCommon.SnapchatLink.Hint"] = "Specify your Snapchat page URL. Leave empty if you have no such page.",
+            ["Admin.Configuration.Settings.GeneralCommon.PinterestLink"] = "Pinterest URL",
+            ["Admin.Configuration.Settings.GeneralCommon.PinterestLink.Hint"] = "Specify your Pinterest page URL. Leave empty if you have no such page.",
+            ["Admin.Configuration.Settings.GeneralCommon.TumblrLink"] = "Tumblr URL",
+            ["Admin.Configuration.Settings.GeneralCommon.TumblrLink.Hint"] = "Specify your Tumblr page URL. Leave empty if you have no such page.",
+
+            //#8131
+            ["Account.PasswordRecovery.SendEmailMessage"] = "If there is an account associated with {0}, you will receive an email with a link to reset your password.",
+
+            //#8128
+            ["Admin.Configuration.AppSettings.Data.BulkCopyWithCheckConstraints"] = "Check constraints during bulk copy operations",
+            ["Admin.Configuration.AppSettings.Data.BulkCopyWithCheckConstraints.Hint"] = "Check to validate data inserted by bulk copy operations against the check constraints defined in the target table. Uncheck to improve performance, but be aware that it can result in data that does not meet the table's integrity requirements.",
+
+			//#8117
+			["Admin.Configuration.AppSettings.Data.CloseDataContextAfterUse"] = "Close dataContext after use",
+            ["Admin.Configuration.AppSettings.Data.CloseDataContextAfterUse.Hint"] = "Check to automatically dispose the data context after each operation, which helps prevent resource leaks. Uncheck if you need to keep the data context open for multiple sequential operations.",
+
+            //#8069
+            ["Admin.Configuration.Settings.Catalog.ShowSearchTermHistory"] = "Show the term history",
+            ["Admin.Configuration.Settings.Catalog.ShowSearchTermHistory.Hint"] = "Show the search term history in the autocomplete list of the search box.",
+            ["Admin.Configuration.Settings.Catalog.NumberOfSearchTermHistoryItems"] = "Max number of term history items",
+            ["Admin.Configuration.Settings.Catalog.NumberOfSearchTermHistoryItems.Hint"] = "The maximum number of search term history items to display.",
+            ["Admin.System.Maintenance.ClearSearchHistory"] = "Clear search history",
+            ["Admin.System.Maintenance.ClearSearchHistory.Button"] = "Clear",
+            ["Admin.System.Maintenance.ClearSearchHistory.Progress"] = "Clearing...",
+            ["Admin.System.Maintenance.ClearSearchHistory.Text"] = "Delete search history data from the database.",
+            ["Admin.System.Maintenance.ClearSearchHistory.Complete"] = "Clearing search history data completed",
+            ["Admin.System.Maintenance.ClearSearchHistory.TotalDeleted"] = "{0} items were deleted",
+
+            //#8120
+            ["Admin.Configuration.Settings.Order.AutoCancelEnabled"] = "Enable auto-canceling of unpaid orders",
+            ["Admin.Configuration.Settings.Order.AutoCancelEnabled.Hint"] = "Check this option to enable automatic cancellation of unpaid orders.",
+            ["Admin.Configuration.Settings.Order.AutoCancelDelay"] = "Auto-cancel delay",
+            ["Admin.Configuration.Settings.Order.AutoCancelDelay.Hint"] = "Enter the delay (in minutes) after order placement before unpaid orders are canceled.",
+            ["Admin.Configuration.Settings.Order.AutoCancelIgnoredPaymentMethods"] = "Excluded payment methods",
+            ["Admin.Configuration.Settings.Order.AutoCancelIgnoredPaymentMethods.Hint"] = "Select payment methods excluded from automatic cancellation of unpaid orders.",
+            ["Admin.Configuration.Settings.Order.AutoCancelRestoreShoppingCart"] = "Put order back as shopping cart",
+            ["Admin.Configuration.Settings.Order.AutoCancelRestoreShoppingCart.Hint"] = "Check this option to add auto-canceled orders back to the shopping cart.",
+            ["Admin.Configuration.Settings.Order.Warning.NotFound"] = "Auto-cancel unpaid orders task not found",
+            ["Admin.Configuration.Settings.Order.Warning.TaskDisabled"] = "Please remember <a href=\"{0}\" target=\"_blank\">to enable</a> the \"{1}\" scheduled task.",
         });
 
         #endregion
