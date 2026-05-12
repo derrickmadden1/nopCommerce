@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Nop.Core.Domain.Discounts;
 using Nop.Plugin.DiscountRules.MultiBuy.Models;
 using Nop.Plugin.DiscountRules.MultiBuy.Services;
@@ -126,10 +126,12 @@ public class DiscountRulesMultiBuyController : BasePluginController
         //load the discount
         var discount = await _discountService.GetDiscountByIdAsync(model.DiscountId);
         if (discount == null)
-            return NotFound(new { Errors = new[] { "Discount could not be loaded" } });
+            return BadRequest(new { Errors = new[] { "Discount could not be loaded" } });
 
         //get the discount requirement
-        var discountRequirement = await _discountService.GetDiscountRequirementByIdAsync(model.RequirementId);
+        var discountRequirement = model.RequirementId > 0 
+            ? await _discountService.GetDiscountRequirementByIdAsync(model.RequirementId)
+            : null;
 
         //the discount requirement does not exist, so create a new one
         if (discountRequirement == null)
