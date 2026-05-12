@@ -19,5 +19,5 @@ public static class DiscountRequirementDefaults
     /// <summary>
     /// The system name of the discount requirement rule
     /// </summary>
-    public const string SYSTEM_NAME = "DiscountRequirement.MultiBuy";
+    public const string SYSTEM_NAME = "DiscountRules.MultiBuy";
 }

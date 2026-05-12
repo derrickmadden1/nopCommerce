@@ -111,8 +111,24 @@ public class DiscountRulesMultiBuyController : BasePluginController
     [CheckPermission(StandardPermission.Promotions.DISCOUNTS_CREATE_EDIT_DELETE)]
     public async Task<IActionResult> Configure(ConfigureModel model)
     {
+        //nopCommerce uses prefixes for discount requirements. 
+        //We need to ensure the model is bound correctly even if prefixes are used in the POST.
+        var prefix = string.Format(DiscountRequirementDefaults.HTML_FIELD_PREFIX, model.RequirementId);
+        if (string.IsNullOrEmpty(model.ProductIds) && Request.Form.ContainsKey($"{prefix}.ProductIds"))
+            model.ProductIds = Request.Form[$"{prefix}.ProductIds"];
+        
+        if (model.BundleSize == 0 && Request.Form.ContainsKey($"{prefix}.BundleSize"))
+            model.BundleSize = int.Parse(Request.Form[$"{prefix}.BundleSize"]);
+            
+        if (model.BundlePrice == 0 && Request.Form.ContainsKey($"{prefix}.BundlePrice"))
+            model.BundlePrice = decimal.Parse(Request.Form[$"{prefix}.BundlePrice"], System.Globalization.CultureInfo.InvariantCulture);
+
         if (!ModelState.IsValid)
-            return BadRequest(new { Errors = GetErrorsFromModelState() });
+        {
+            // If the standard binder failed due to prefixes, check if we have the data manually
+            if (model.BundleSize < 1 || model.BundlePrice <= 0)
+                return BadRequest(new { Errors = GetErrorsFromModelState() });
+        }
 
         if (model.BundleSize < 1)
             ModelState.AddModelError(nameof(model.BundleSize), "Bundle size must be at least 1.");
