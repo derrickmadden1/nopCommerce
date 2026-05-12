@@ -1344,7 +1344,7 @@ label+* {
 }
 
 .menu>.menu__item {
-  background-color: #f6f6f6;
+  /*background-color: #f6f6f6;*/
 }
 
 .menu__item:not(.menu-dropdown) {
