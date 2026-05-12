@@ -135,6 +135,19 @@ jobs:
         
         for root, dirs, files in os.walk(plugins_dir):
             if root == plugins_dir: continue # Skip the top-level Plugins folder
+            
+            # 2a. Delete 'clidriver' folders (IBM DB2 bloat)
+            for d in list(dirs):
+                if d.lower() == 'clidriver':
+                    clidriver_path = os.path.join(root, d)
+                    try:
+                        shutil.rmtree(clidriver_path)
+                        print(f'Removed clidriver bloat from: {root}')
+                        dirs.remove(d) # Don't walk into it
+                    except:
+                        pass
+
+            # 2b. Slim remaining DLLs
             for file in files:
                 if file.lower().endswith('.dll') and file.lower() in root_dlls:
                     file_path = os.path.join(root, file)
@@ -163,12 +176,21 @@ jobs:
         # 9. Package
         cd app_publish && zip -r ../nop-app.zip .
 
-        # 10. Summary
+        # 10. Summary & Quota Safeguard
         SIZE_BYTES=$(stat -c%s "../nop-app.zip")
         SIZE_MB=$(echo "scale=2; $SIZE_BYTES/1048576" | bc)
+        PUBLISH_SIZE_MB=$(du -sm . | cut -f1)
+        
         echo "------------------------------------------"
-        echo "FINAL PACKAGE SIZE: $SIZE_MB MB"
+        echo "EXTRACTED SIZE: $PUBLISH_SIZE_MB MB"
+        echo "ZIP PACKAGE SIZE: $SIZE_MB MB"
         echo "------------------------------------------"
+
+        if [ "$PUBLISH_SIZE_MB" -gt 1000 ]; then
+          echo "ERROR: Extracted size ($PUBLISH_SIZE_MB MB) exceeds 1000MB limit for D1 tier!"
+          echo "Please check for large images, logs, or redundant plugins."
+          exit 1
+        fi
 
     - name: Upload Zip
       uses: actions/upload-artifact@v4

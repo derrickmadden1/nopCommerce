@@ -13,14 +13,15 @@
             var discountId = @Model.DiscountId;
             var requirementId = @Model.RequirementId;
 
+            var prefix = "DiscountRulesMultiBuy" + requirementId + ".";
             var postData = {
                 DiscountId: discountId,
-                RequirementId: requirementId,
-                ProductIds: productIds,
-                BundleSize: bundlesize,
-                BundlePrice: bundleprice,
-                ApplyAcrossMixedProducts: applyacrossmixedproducts
+                RequirementId: requirementId
             };
+            postData[prefix + "ProductIds"] = productIds;
+            postData[prefix + "BundleSize"] = bundlesize;
+            postData[prefix + "BundlePrice"] = bundleprice;
+            postData[prefix + "ApplyAcrossMixedProducts"] = applyacrossmixedproducts;
             addAntiForgeryToken(postData);
 
             $.ajax({
