@@ -111,11 +111,14 @@ jobs:
           fi
         fi
 
-        # 6. Prune Unused Plugins (Python Janitor)
+        # 6. Prune & Slim Plugins (Python Janitor)
         python3 -c "
         import os, json, shutil
-        plugins_json = './app_publish/App_Data/plugins.json'
-        plugins_dir = './app_publish/Plugins'
+        base_dir = './app_publish'
+        plugins_json = os.path.join(base_dir, 'App_Data/plugins.json')
+        plugins_dir = os.path.join(base_dir, 'Plugins')
+        
+        # 1. Prune unused plugins
         if os.path.exists(plugins_json):
             with open(plugins_json, 'r') as f:
                 installed = [p['SystemName'] for p in json.load(f).get('InstalledPlugins', [])]
@@ -124,7 +127,22 @@ jobs:
                 path = os.path.join(plugins_dir, folder)
                 if os.path.isdir(path) and folder not in whitelist:
                     shutil.rmtree(path)
-                    print(f'Pruned: {folder}')
+                    print(f'Pruned unused plugin: {folder}')
+
+        # 2. Slim remaining plugins (remove redundant DLLs)
+        root_dlls = {f.lower() for f in os.listdir(base_dir) if f.lower().endswith('.dll')}
+        print(f'Found {len(root_dlls)} DLLs in root to check against plugins.')
+        
+        for root, dirs, files in os.walk(plugins_dir):
+            if root == plugins_dir: continue # Skip the top-level Plugins folder
+            for file in files:
+                if file.lower().endswith('.dll') and file.lower() in root_dlls:
+                    file_path = os.path.join(root, file)
+                    try:
+                        os.remove(file_path)
+                    except:
+                        pass
+        print('Plugin slimming complete.')
         "
 
         # 7. Version Inject & Clean

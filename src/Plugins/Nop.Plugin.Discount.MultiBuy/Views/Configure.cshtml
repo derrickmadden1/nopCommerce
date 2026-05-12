@@ -1,4 +1,4 @@
-﻿@model Nop.Plugin.DiscountRules.MultiBuy.Models.ConfigureModel
+@model Nop.Plugin.DiscountRules.MultiBuy.Models.ConfigureModel
 @{
     Layout = "";
 }
@@ -9,7 +9,7 @@
             var productIds = $("#@Html.IdFor(model => model.ProductIds)").val();
             var bundlesize = $("#@Html.IdFor(model => model.BundleSize)").val();
             var bundleprice = $("#@Html.IdFor(model => model.BundlePrice)").val();
-            var applyacrossmixedproducts = $("#@Html.IdFor(model => model.ApplyAcrossMixedProducts)").val();
+            var applyacrossmixedproducts = $("#@Html.IdFor(model => model.ApplyAcrossMixedProducts)").is(':checked');
             var discountId = @Model.DiscountId;
             var requirementId = @Model.RequirementId;
 
@@ -47,6 +47,13 @@
                                 errorMessages += '</br>';
                         });
                         $alertInfoEl.html(errorMessages);
+                    } else if (jqXHR.status === 400 && jqXHR.responseText) {
+                        try {
+                           var err = JSON.parse(jqXHR.responseText);
+                           $alertInfoEl.html(err.Errors.join('<br/>'));
+                        } catch(e) {
+                           $alertInfoEl.html(jqXHR.responseText);
+                        }
                     } else {
                         // display default error
                         $alertInfoEl.html('Failed to save requirement');
