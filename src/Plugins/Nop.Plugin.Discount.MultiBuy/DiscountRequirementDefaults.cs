@@ -1,4 +1,4 @@
-﻿
+
 namespace Nop.Plugin.DiscountRules.MultiBuy;
 
 /// <summary>
@@ -14,7 +14,7 @@ public static class DiscountRequirementDefaults
     /// <summary>
     /// The key of the settings to save restricted product identifiers
     /// </summary>
-    public const string SETTINGS_KEY = "DiscountRequirement.RestrictedProductIds-{0}";
+    public const string SETTINGS_KEY = "DiscountRequirement.MultiBuy-{0}";
 
     /// <summary>
     /// The system name of the discount requirement rule
