@@ -82,7 +82,7 @@ h6 {
 .header-modern {
   width: 100%;
   background: #fff;
-  z-index: 1000;
+  z-index: 100000 !important;
   transition: all 0.4s ease;
 }
 
@@ -558,6 +558,9 @@ h6 {
 .top-menu li:hover:has(ul)>a::after {
   transform: rotate(180deg);
 }
+
+
+/*********** CSS RESET **********/
 
 /* STICKY HEADER */
 .header-modern.sticky-shrink {
@@ -4001,11 +4004,202 @@ body {
 .coupon-box .coupon-code {
     display: flex !important;
     justify-content: flex-start !important;
+}
+
+.eu-cookie-bar-notification .content {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 20px !important;
+}
+
+.eu-cookie-bar-notification .text {
+    flex: 1;
+    font-size: 0.9rem;
+    color: #444;
+    line-height: 1.4;
+}
+
+.eu-cookie-bar-notification .buttons-more {
+    display: flex !important;
+    align-items: center !important;
+    gap: 15px !important;
+}
+
+.eu-cookie-bar-notification .ok-button {
+    background: var(--brand-turquoise) !important;
+    color: #fff !important;
+    padding: 10px 25px !important;
+    border-radius: 6px !important;
+    font-weight: 600 !important;
+    font-size: 0.85rem !important;
+}
+
+.eu-cookie-bar-notification .learn-more {
+    color: var(--dark-grey) !important;
+    font-size: 0.85rem !important;
+    text-decoration: underline !important;
+}
+
+/* 4. Global Spacing & Layout Polish */
+.master-column-wrapper {
+  padding-left: 40px !important;
+  padding-right: 40px !important;
+  max-width: var(--max-width);
+  margin: 0 auto;
+}
+
+.breadcrumb {
+  margin: 20px 0 40px 0 !important;
+}
+
+.breadcrumb ul {
+  padding: 0;
+  display: flex !important;
+  flex-wrap: wrap;
+  list-style: none;
+  font-size: 0.85rem;
+  color: #888;
+}
+
+.breadcrumb .delimiter {
+  margin: 0 10px;
+  color: #ccc;
+}
+
+.breadcrumb a {
+    color: #666;
+}
+
+.breadcrumb .current-item {
+    color: var(--dark-grey);
+    font-weight: 600;
+}
+
+/* Category Page Product Grid Adjustments */
+.product-grid .item-grid {
+    gap: 30px !important;
+}
+
+.product-item {
+    border: none !important;
+    transition: transform 0.3s ease;
+}
+
+.product-item:hover {
+    transform: translateY(-5px);
+}
+
+.product-item .picture img {
+    border-radius: 8px;
+    max-height: 250px !important; /* Reduced to bring content "above the fold" */
+    object-fit: cover !important;
+}
+
+.product-item .product-title {
+    font-family: var(--heading-font);
+    font-weight: 700;
+    font-size: 1.1rem !important;
+    margin: 15px 0 5px 0 !important;
+}
+
+.product-item .prices {
+    font-weight: 600;
+    color: var(--brand-turquoise);
+}
+
+@media (max-width: 768px) {
+  .master-column-wrapper {
+    padding-left: 20px !important;
+    padding-right: 20px !important;
+  }
+
+  .header-search-cart {
+    display: none !important;
+  }
+
+  .eu-cookie-bar-notification .content {
+      flex-direction: column;
+      text-align: center;
+  }
+}
+
+/* 5. Mini-Cart Refinements */
+.mini-cart-panel .totals {
+    margin-top: auto;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+}
+
+.mini-cart-panel .totals .subtotal {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--dark-grey);
+    margin-bottom: 20px;
+}
+
+.mini-cart-panel .buttons {
+    display: flex;
+    flex-direction: column;
     gap: 10px;
+}
+
+.mini-cart-panel .cart-button, 
+.mini-cart-panel .checkout-button {
+    width: 100%;
+    padding: 15px !important;
+    text-align: center;
+    font-weight: 600;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+}
+
+.mini-cart-panel .cart-button {
+    background: #f5f5f5 !important;
+    color: var(--dark-grey) !important;
+}
+
+.mini-cart-panel .checkout-button {
+    background: var(--dark-grey) !important;
+    color: #fff !important;
+}
+
+/* 6. Main Cart Page & Discount Box Refinements */
+.cart-collaterals {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.coupon-box {
+    background: transparent;
+    padding: 0;
+    border-radius: 0;
+    border: none;
+    margin-bottom: 30px;
+}
+
+.coupon-box,
+.coupon-box *,
+.coupon-box .title {
+    text-align: left !important;
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+    justify-content: flex-start !important;
+}
+
+.coupon-box .title {
+    display: block !important;
+    width: 100% !important;
+    margin-bottom: 20px !important;
 }
 
 .coupon-box .coupon-code {
     display: flex !important;
+    justify-content: flex-start !important;
     gap: 10px;
 }
 
@@ -4102,4 +4296,108 @@ body {
     .total-info {
         max-width: 100%;
     }
+}
+
+/* Out of stock styling - Refined */
+.out-of-stock,
+/* Out of stock styling - Ribbon Span Version */
+.out-of-stock {
+    position: relative !important;
+}
+
+.out-of-stock img {
+    opacity: 0.5 !important;
+    filter: grayscale(100%) !important;
+}
+
+.out-of-stock-ribbon {
+    position: absolute !important;
+    top: 15px !important;
+    right: -31px !important;
+    width: 120px !important;
+    background: #d51f28 !important;
+    color: #fff !important;
+    padding: 5px 0 !important;
+    font-size: 10px !important;
+    font-weight: bold !important;
+    text-align: center !important;
+    transform: rotate(45deg) !important;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.5) !important;
+    z-index: 9999 !important;
+    display: block !important;
+    visibility: visible !important;
+    pointer-events: none !important;
+    line-height: 1.5 !important;
+}
+
+/* --- CART TOTALS & CHECKOUT POLISH --- */
+
+.cart-footer-modern {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-top: 40px;
+    gap: 40px;
+}
+
+.discount-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    max-width: 450px;
+}
+
+.cart-totals-section {
+    flex: 0 0 350px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.cart-totals-section .total-info {
+    width: 100%;
+}
+
+.cart-totals-section table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.cart-totals-section .cart-total-right {
+    text-align: right;
+    font-weight: 700;
+}
+
+.checkout-actions {
+    width: 100%;
+}
+
+.checkout-button-modern {
+    width: 100% !important;
+    padding: 15px !important;
+    font-size: 1.1rem !important;
+    height: auto !important;
+    margin-bottom: 10px;
+}
+
+.continue-shopping-button-modern {
+    width: 100%;
+    text-align: center;
+    margin-top: 10px;
+}
+
+/* Redefined MultiBuy Badge for Cart Page */
+.discount-section .multibuy-savings-container .multibuy-savings-label {
+    margin: 5px 0 0 0 !important;
+    padding: 0 !important;
+    font-size: 0.95rem !important;
+    color: #28a745 !important;
+    text-align: left !important;
+    display: block !important;
+    font-weight: 700 !important;
+}
+
+.multibuy-savings-container {
+    width: 100%;
 }

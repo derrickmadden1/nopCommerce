@@ -27,7 +27,6 @@
         }
         <form asp-route="@NopRouteNames.General.CART" method="post" enctype="multipart/form-data" id="shopping-cart-form">
             <div class="cart-table-wrapper">
-                @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.OrderSummaryContentDeals, additionalData = Model })
                 <table class="cart-modern cart">
                     <thead>
                         <tr>
@@ -92,8 +91,13 @@
             </div>
 
             <div class="cart-footer-modern">
-                <div class="cart-collaterals">
-                    @await Html.PartialAsync("_DiscountBox", Model.DiscountBox)
+                <div class="discount-section">
+                    <div class="coupon-box">
+                        @await Html.PartialAsync("_DiscountBox", Model.DiscountBox)
+                    </div>
+                    <div class="multibuy-savings-container">
+                        @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.OrderSummaryContentDeals, additionalData = Model })
+                    </div>
                 </div>
                 
                 <div class="cart-totals-section">

@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Nop.Core;
 using Nop.Core.Domain.Orders;
 using Nop.Plugin.DiscountRules.MultiBuy.Models;
@@ -6,6 +6,7 @@ using Nop.Plugin.DiscountRules.MultiBuy.Services;
 using Nop.Services.Catalog;
 using Nop.Services.Configuration;
 using Nop.Services.Discounts;
+using Nop.Services.Localization;
 using Nop.Services.Orders;
 using Nop.Web.Framework.Components;
 using Nop.Web.Framework.Infrastructure;
@@ -47,7 +48,7 @@ namespace Nop.Plugin.DiscountRules.MultiBuy.Components
             var model = new MultiBuyWidgetModel();
 
             // 1. Product Page Banner
-            if (widgetZone.Equals(PublicWidgetZones.ProductDetailsOverviewTop) && additionalData is ProductDetailsModel productModel)
+            if (widgetZone.Equals(PublicWidgetZones.ProductDetailsOverviewTop, StringComparison.OrdinalIgnoreCase) && additionalData is ProductDetailsModel productModel)
             {
                 var allDiscounts = await _discountService.GetAllDiscountsAsync();
                 foreach (var discount in allDiscounts)
@@ -62,7 +63,7 @@ namespace Nop.Plugin.DiscountRules.MultiBuy.Components
                 }
             }
             // 2. Category/Catalog Page Product Box Badge
-            else if (widgetZone.Equals(PublicWidgetZones.ProductBoxAddinfoMiddle) && additionalData is ProductOverviewModel overviewModel)
+            else if (widgetZone.Equals(PublicWidgetZones.ProductBoxAddinfoMiddle, StringComparison.OrdinalIgnoreCase) && additionalData is ProductOverviewModel overviewModel)
             {
                 var allDiscounts = await _discountService.GetAllDiscountsAsync();
                 foreach (var discount in allDiscounts)
@@ -78,9 +79,9 @@ namespace Nop.Plugin.DiscountRules.MultiBuy.Components
                 }
             }
             // 3. Cart Page Features (Shared Data Prep)
-            else if (widgetZone.Equals(PublicWidgetZones.OrderSummaryContentDeals) ||
-                     widgetZone.Equals(PublicWidgetZones.OrderSummaryContentAfter) ||
-                     widgetZone.Equals(PublicWidgetZones.OrderSummaryContentBefore))
+            else if (widgetZone.Equals(PublicWidgetZones.OrderSummaryContentDeals, StringComparison.OrdinalIgnoreCase) ||
+                     widgetZone.Equals(PublicWidgetZones.OrderSummaryContentAfter, StringComparison.OrdinalIgnoreCase) ||
+                     widgetZone.Equals(PublicWidgetZones.OrderSummaryContentBefore, StringComparison.OrdinalIgnoreCase))
             {
                 var store = await _storeContext.GetCurrentStoreAsync();
                 var customer = await _workContext.GetCurrentCustomerAsync();
@@ -90,27 +91,29 @@ namespace Nop.Plugin.DiscountRules.MultiBuy.Components
                     return Content("");
 
                 var allDiscounts = await _discountService.GetAllDiscountsAsync();
-
-                // Feature: Total Savings (OrderSummaryContentDeals)
-                if (widgetZone.Equals(PublicWidgetZones.OrderSummaryContentDeals))
+                
+                decimal totalSavings = 0;
+                if (allDiscounts?.Any() == true)
                 {
-                    decimal totalSavings = 0;
                     foreach (var discount in allDiscounts)
                     {
                         var settings = await GetMultiBuySettingsAsync(discount.Id);
                         if (settings != null)
                         {
-                            totalSavings += await _multiBuyDiscountService.CalculateDiscountAsync(cart, settings);
+                            var mbDiscountAmount = await _multiBuyDiscountService.CalculateDiscountAsync(cart, settings);
+                            totalSavings += mbDiscountAmount;
                         }
                     }
-                    if (totalSavings > 0)
-                    {
-                        model.TotalSavings = totalSavings.ToString("C");
-                    }
+                }
+
+                if (totalSavings > 0 && widgetZone.Equals(PublicWidgetZones.OrderSummaryContentDeals, StringComparison.OrdinalIgnoreCase))
+                {
+                    model.TotalSavings = totalSavings.ToString("C");
                 }
                 
-                // Feature: Item Indicators (OrderSummaryContentAfter)
-                if (widgetZone.Equals(PublicWidgetZones.OrderSummaryContentAfter))
+                // Feature: Item Indicators (Moved to Before to ensure they render even if After is removed)
+                if (widgetZone.Equals(PublicWidgetZones.OrderSummaryContentBefore, StringComparison.OrdinalIgnoreCase) ||
+                    widgetZone.Equals(PublicWidgetZones.OrderSummaryContentAfter, StringComparison.OrdinalIgnoreCase))
                 {
                      foreach (var discount in allDiscounts)
                      {
@@ -127,7 +130,7 @@ namespace Nop.Plugin.DiscountRules.MultiBuy.Components
                                      message = $"Buy {settings.BundleSize - remainder} more for deal!";
                                  else
                                      message = "MultiBuy Applied!";
-
+ 
                                  foreach (var item in eligibleItems)
                                  {
                                      if (!model.ItemMessages.ContainsKey(item.Id))
@@ -138,8 +141,8 @@ namespace Nop.Plugin.DiscountRules.MultiBuy.Components
                      }
                 }
 
-                // Feature: Cart Nudge (OrderSummaryContentBefore) - Keep existing behavior but simplified
-                if (widgetZone.Equals(PublicWidgetZones.OrderSummaryContentBefore))
+                // Feature: Cart Nudge (OrderSummaryContentBefore)
+                if (widgetZone.Equals(PublicWidgetZones.OrderSummaryContentBefore, StringComparison.OrdinalIgnoreCase))
                 {
                     foreach (var discount in allDiscounts)
                     {
