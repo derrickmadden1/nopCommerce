@@ -10,6 +10,10 @@
 @inject MediaSettings mediaSettings
 @inject OrderSettings orderSettings
 
+@{
+    NopHtml.AppendScriptParts(ResourceLocation.Footer, "~/js/spendMore.js");
+}
+
 <div class="order-summary-content-modern">
     @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.OrderSummaryContentBefore, additionalData = Model })
     @if (Model.Items.Count > 0)
