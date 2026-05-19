@@ -1,4 +1,5 @@
 ﻿using FluentMigrator;
+using Nop.Core.Domain.Logging;
 using Nop.Core.Domain.ScheduleTasks;
 
 namespace Nop.Data.Migrations.UpgradeTo500;
@@ -31,6 +32,81 @@ public class DataMigration : Migration
                 LastEnabledUtc = DateTime.UtcNow,
                 StopOnError = false
             });
+        }
+
+        var activityLogTypeTable = _dataProvider.GetTable<ActivityLogType>();
+
+        //#1832
+        if (!activityLogTypeTable.Any(alt => string.Compare(alt.SystemKeyword, "AddNewContactFormAttribute", StringComparison.InvariantCultureIgnoreCase) == 0))
+        {
+            _dataProvider.InsertEntity(
+                new ActivityLogType
+                {
+                    SystemKeyword = "AddNewContactFormAttribute",
+                    Enabled = true,
+                    Name = "Add a new contact form attribute"
+                }
+            );
+        }
+       
+        if (!activityLogTypeTable.Any(alt => string.Compare(alt.SystemKeyword, "EditContactFormAttribute", StringComparison.InvariantCultureIgnoreCase) == 0))
+        {
+            _dataProvider.InsertEntity(
+                new ActivityLogType
+                {
+                    SystemKeyword = "EditContactFormAttribute",
+                    Enabled = true,
+                    Name = "Edit a contact form attribute"
+                }
+            );
+        }
+
+        if (!activityLogTypeTable.Any(alt => string.Compare(alt.SystemKeyword, "DeleteContactFormAttribute", StringComparison.InvariantCultureIgnoreCase) == 0))
+        {
+            _dataProvider.InsertEntity(
+                new ActivityLogType
+                {
+                    SystemKeyword = "DeleteContactFormAttribute",
+                    Enabled = true,
+                    Name = "Delete a contact form attribute"
+                }
+            );
+        }
+
+        if (!activityLogTypeTable.Any(alt => string.Compare(alt.SystemKeyword, "AddNewContactFormAttributeValue", StringComparison.InvariantCultureIgnoreCase) == 0))
+        {
+            _dataProvider.InsertEntity(
+                new ActivityLogType
+                {
+                    SystemKeyword = "AddNewContactFormAttributeValue",
+                    Enabled = true,
+                    Name = "Add a new contact form attribute value"
+                }
+            );
+        }
+
+        if (!activityLogTypeTable.Any(alt => string.Compare(alt.SystemKeyword, "EditContactFormAttributeValue", StringComparison.InvariantCultureIgnoreCase) == 0))
+        {
+            _dataProvider.InsertEntity(
+                new ActivityLogType
+                {
+                    SystemKeyword = "EditContactFormAttributeValue",
+                    Enabled = true,
+                    Name = "Edit a contact form attribute value"
+                }
+            );
+        }
+
+        if (!activityLogTypeTable.Any(alt => string.Compare(alt.SystemKeyword, "DeleteContactFormAttributeValue", StringComparison.InvariantCultureIgnoreCase) == 0))
+        {
+            _dataProvider.InsertEntity(
+                new ActivityLogType
+                {
+                    SystemKeyword = "DeleteContactFormAttributeValue",
+                    Enabled = true,
+                    Name = "Delete a contact form attribute value"
+                }
+            );
         }
     }
 

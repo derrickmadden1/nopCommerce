@@ -1,12 +1,13 @@
 ﻿using FluentMigrator;
 using Nop.Core.Domain.Catalog;
 using Nop.Core.Domain.Customers;
+using Nop.Core.Domain.Common;
 using Nop.Core.Domain.Orders;
 using Nop.Data.Extensions;
 
 namespace Nop.Data.Migrations.UpgradeTo500;
 
-[NopSchemaMigration("2026-01-13 00:00:02", "SchemaMigration for 5.00.0")]
+[NopSchemaMigration("2026-01-13 00:00:03", "SchemaMigration for 5.00.0")]
 public class SchemaMigration : ForwardOnlyMigration
 {
     /// <summary>
@@ -88,5 +89,9 @@ public class SchemaMigration : ForwardOnlyMigration
         this.AddOrAlterColumnFor<Order>(t => t.LastPendingOrderFollowUpDateUtc)
             .AsDateTime2()
             .Nullable();
+
+        //#1832
+        this.CreateTableIfNotExists<ContactFormAttribute>();
+        this.CreateTableIfNotExists<ContactFormAttributeValue>();
     }
 }

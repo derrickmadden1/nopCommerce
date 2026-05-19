@@ -503,7 +503,8 @@ public partial class MessageTokenProvider : IMessageTokenProvider
                     {
                         "%ContactUs.SenderEmail%",
                         "%ContactUs.SenderName%",
-                        "%ContactUs.Body%"
+                        "%ContactUs.Body%",
+                        "%ContactUs.CustomFields%"
                     }
                 },
 
@@ -985,6 +986,35 @@ public partial class MessageTokenProvider : IMessageTokenProvider
     #endregion
 
     #region Methods
+
+    /// <summary>
+    /// Add contact form tokens
+    /// </summary>
+    /// <param name="tokens">List of already added tokens</param>
+    /// <param name="senderEmail">Sender email</param>
+    /// <param name="senderName">Sender name</param>
+    /// <param name="body">Email body</param>
+    /// <param name="customAttributes">Custom attributes</param>
+    /// <returns>A task that represents the asynchronous operation</returns>
+    public virtual Task AddContactFormTokensAsync(IList<Token> tokens, string senderEmail, string senderName, string body, IDictionary<string, string> customAttributes)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(body);
+
+        tokens.Add(new Token("ContactUs.SenderEmail", senderEmail));
+        tokens.Add(new Token("ContactUs.SenderName", senderName));
+        tokens.Add(new Token("ContactUs.Body", body, true));
+
+        if (customAttributes?.Any() == true)
+        {
+            var fieldsHtml = new StringBuilder();
+            foreach (var (name, value) in customAttributes)
+                fieldsHtml.AppendLine($"<p><strong>{name}</strong>: {value}</p>");
+
+            tokens.Add(new Token("ContactUs.CustomFields", fieldsHtml, true));
+        }
+
+        return Task.CompletedTask;
+    }
 
     /// <summary>
     /// Add store tokens
