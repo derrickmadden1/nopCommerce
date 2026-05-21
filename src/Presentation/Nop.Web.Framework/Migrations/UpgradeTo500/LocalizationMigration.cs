@@ -530,8 +530,8 @@ public class LocalizationMigration : MigrationBase
             ["Admin.Configuration.AppSettings.Data.BulkCopyWithCheckConstraints"] = "Check constraints during bulk copy operations",
             ["Admin.Configuration.AppSettings.Data.BulkCopyWithCheckConstraints.Hint"] = "Check to validate data inserted by bulk copy operations against the check constraints defined in the target table. Uncheck to improve performance, but be aware that it can result in data that does not meet the table's integrity requirements.",
 
-			//#8117
-			["Admin.Configuration.AppSettings.Data.CloseDataContextAfterUse"] = "Close dataContext after use",
+            //#8117
+            ["Admin.Configuration.AppSettings.Data.CloseDataContextAfterUse"] = "Close dataContext after use",
             ["Admin.Configuration.AppSettings.Data.CloseDataContextAfterUse.Hint"] = "Check to automatically dispose the data context after each operation, which helps prevent resource leaks. Uncheck if you need to keep the data context open for multiple sequential operations.",
 
             //#8069
@@ -596,6 +596,40 @@ public class LocalizationMigration : MigrationBase
             ["Admin.Common.ContactFormAttributes.Values.SaveBeforeEdit"] = "You need to save the contact form attribute before you can add values for this contact form attribute page.",
             ["Admin.Common.ContactFormAttributes.Updated"] = "The attribute has been updated successfully.",
             ["ContactUs.SelectAttribute"] = "Please select {0}",
+
+            //#8161
+            [$"Admin.ContentManagement.MessageTemplates.Description.{MessageTemplateSystemNames.RETURN_REQUEST_WITHDRAWAL_LINK_MESSAGE}"] = "This message template is used to send the withdrawal request confirmation.",
+            ["Account.CustomerOrders.WithdrawItems"] = "Withdraw contract",
+            ["Account.CustomerReturnRequests.Withdrawal.Title"] = "Withdrawal #{0} - {1}",
+            ["Account.CustomerReturnRequests.Withdrawals"] = "Withdrawals",
+            ["Admin.Configuration.Settings.GeneralCommon.CaptchaShowOnWithdrawalForm"] = "Show on withdrawal form",
+            ["Admin.Configuration.Settings.GeneralCommon.CaptchaShowOnWithdrawalForm.Hint"] = "Check to show CAPTCHA on withdrawal form.",
+            ["Admin.Configuration.Settings.Order.GuestReturnRequestsAllowed"] = "Allow guests to create return requests",
+            ["Admin.Configuration.Settings.Order.GuestReturnRequestsAllowed.Hint"] = "Check to allow guests to create return requests.",
+            ["Admin.Configuration.Settings.Order.ReturnActionsEnabled"] = "Return actions enabled",
+            ["Admin.Configuration.Settings.Order.ReturnActionsEnabled.Hint"] = "Check to enable return actions.",
+            ["Admin.Configuration.Settings.Order.ReturnReasonsEnabled"] = "Return reasons enabled",
+            ["Admin.Configuration.Settings.Order.ReturnReasonsEnabled.Hint"] = "Check to enable return reasons.",
+            ["Admin.Configuration.Settings.Order.ReturnRequestSettings"] = "Return request (withdrawal button) settings",
+            ["Admin.Configuration.Settings.Order.ReturnRequestsDescription.Withdrawal"] = "The same functionality can be used to support the EU Withdrawal button (EU Directive 2023/2673).",
+            ["Admin.Configuration.Settings.Order.UseEuWithdrawalLocales"] = "Locales for EU Withdrawal",
+            ["Admin.Configuration.Settings.Order.UseEuWithdrawalLocales.Hint"] = "Check to use locales for the EU withdrawal button (Directive 2023/2673). Otherwise, locales for \"return requests\" will be used.",
+            ["Admin.Configuration.Settings.Order.WithdrawalLinkDaysValid"] = "Withdrawal link. Days valid",
+            ["Admin.Configuration.Settings.Order.WithdrawalLinkDaysValid.Hint"] = "Enter the number of days the withdrawal link remains valid. Set to 0 for no expiration.",
+            ["Literals.Nop.Core.Http.NopRouteNames.General.WithdrawalRequestForm"] = "Withdraw contract",
+            ["Order.WithdrawItems"] = "Withdraw contract",
+            ["PageTitle.ReturnItems.Withdrawal"] = "Withdraw a contract",
+            ["PageTitle.ReturnRequests.WithdrawalForm"] = "Withdraw a contract",
+            ["ReturnRequests.Withdrawal.Fields.EmailAddress"] = "Email address",
+            ["ReturnRequests.Withdrawal.Fields.OrderNumber"] = "Order number",
+            ["ReturnRequests.Withdrawal.Submit"] = "Submit withdrawal request",
+            ["ReturnRequests.Withdrawal.Submitted"] = "Your withdrawal has been submitted successfully.",
+            ["ReturnRequests.Withdrawal.Title"] = "Withdraw contract for <a href=\"{0}\">order #{1}</a>",
+            ["ReturnRequests.WithdrawalForm"] = "Find your order",
+            ["ReturnRequests.WithdrawalForm.Submit"] = "Continue",
+            ["ReturnRequests.WithdrawalForm.ConfirnationText"] = "If your details are correct, we've sent you a link to continue.",
+            ["ReturnRequests.WithdrawalForm.EmailAddress.Required"] = "The Email address is required",
+            ["ReturnRequests.WithdrawalForm.OrderNumber.Required"] = "The Order number is required",
         });
 
         #endregion

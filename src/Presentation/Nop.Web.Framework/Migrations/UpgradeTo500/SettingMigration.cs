@@ -10,6 +10,7 @@ using Nop.Core.Domain.Shipping;
 using Nop.Data;
 using Nop.Data.Migrations;
 using Nop.Web.Framework.Extensions;
+using Nop.Core.Domain.Security;
 
 namespace Nop.Web.Framework.Migrations.UpgradeTo500;
 
@@ -87,6 +88,29 @@ public class SettingMigration : MigrationBase
         this.SetSettingIfNotExists<OrderSettings, List<string>>(settings => settings.AutoCancelIgnoredPaymentMethods, []);
         this.SetSettingIfNotExists<OrderSettings, bool>(settings => settings.AutoCancelRestoreShoppingCart, false);
         this.SetSettingIfNotExists<OrderSettings, DateTime?>(settings => settings.AutoCancelIgnoreBeforeUtc, DateTime.UtcNow);
+
+        //#8161
+        this.SetSettingIfNotExists<ReturnRequestSettings, string>(settings => settings.ReturnRequestNumberMask,
+            this.GetSettingByKey($"OrderSettings.{nameof(ReturnRequestSettings.ReturnRequestNumberMask)}", "{ID}"));
+
+        this.SetSettingIfNotExists<ReturnRequestSettings, bool>(settings => settings.ReturnRequestsEnabled,
+            this.GetSettingByKey($"OrderSettings.{nameof(ReturnRequestSettings.ReturnRequestsEnabled)}", true));
+
+        this.SetSettingIfNotExists<ReturnRequestSettings, bool>(settings => settings.ReturnRequestsAllowFiles,
+            this.GetSettingByKey($"OrderSettings.{nameof(ReturnRequestSettings.ReturnRequestsAllowFiles)}", false));
+
+        this.SetSettingIfNotExists<ReturnRequestSettings, int>(settings => settings.NumberOfDaysReturnRequestAvailable,
+            this.GetSettingByKey($"OrderSettings.{nameof(ReturnRequestSettings.NumberOfDaysReturnRequestAvailable)}", 365));
+
+        this.SetSettingIfNotExists<ReturnRequestSettings, int>(settings => settings.ReturnRequestsFileMaximumSize,
+            this.GetSettingByKey($"OrderSettings.{nameof(ReturnRequestSettings.ReturnRequestsFileMaximumSize)}", 2048));
+
+        this.SetSettingIfNotExists<ReturnRequestSettings, bool>(settings => settings.UseEuWithdrawalLocales, false);
+        this.SetSettingIfNotExists<ReturnRequestSettings, bool>(settings => settings.GuestReturnRequestsAllowed, false);
+        this.SetSettingIfNotExists<ReturnRequestSettings, bool>(settings => settings.ReturnReasonsEnabled, true);
+        this.SetSettingIfNotExists<ReturnRequestSettings, bool>(settings => settings.ReturnActionsEnabled, true);
+        this.SetSettingIfNotExists<ReturnRequestSettings, int>(settings => settings.WithdrawalLinkDaysValid, 7);
+        this.SetSettingIfNotExists<CaptchaSettings, bool>(settings => settings.ShowOnWithdrawalForm, false);
     }
 
     public override void Down()
@@ -94,3 +118,4 @@ public class SettingMigration : MigrationBase
         //add the downgrade logic if necessary 
     }
 }
+    

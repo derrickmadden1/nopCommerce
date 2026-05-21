@@ -467,6 +467,16 @@ public partial interface IWorkflowMessageService
     /// </returns>
     Task<IList<int>> SendReturnRequestStatusChangedCustomerNotificationAsync(ReturnRequest returnRequest, OrderItem orderItem, Order order);
 
+    /// <summary>
+    /// Sends 'Withdrawal request confirmation' message to a customer
+    /// </summary>
+    /// <param name="order">Order</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task result contains the queued email identifier
+    /// </returns>
+    Task<IList<int>> SendWithdrawalRequestConfirmationNotificationAsync(Order order);
+    
     #endregion
 
     #region Messages

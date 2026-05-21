@@ -213,6 +213,11 @@ public static partial class MessageTemplateSystemNames
     /// </summary>
     public const string RETURN_REQUEST_STATUS_CHANGED_CUSTOMER_NOTIFICATION = "ReturnRequestStatusChanged.CustomerNotification";
 
+    /// <summary>
+    /// Represents system name of withdrawal link message
+    /// </summary>
+    public const string RETURN_REQUEST_WITHDRAWAL_LINK_MESSAGE = "ReturnRequest.WithdrawalLinkMessage";
+
     #endregion
 
     #region Misc
