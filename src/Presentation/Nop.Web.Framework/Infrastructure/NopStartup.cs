@@ -190,6 +190,7 @@ public partial class NopStartup : INopStartup
         services.AddScoped<IMessageTokenProvider, MessageTokenProvider>();
         services.AddScoped<ITokenizer, Tokenizer>();
         services.AddScoped<ISmtpBuilder, SmtpBuilder>();
+        services.AddScoped<ISmsService, SmsService>();
         services.AddScoped<IEmailSender, EmailSender>();
         services.AddScoped<ICheckoutAttributeFormatter, CheckoutAttributeFormatter>();
         services.AddScoped<IGiftCardService, GiftCardService>();
@@ -262,6 +263,7 @@ public partial class NopStartup : INopStartup
         services.AddScoped<IShippingPluginManager, ShippingPluginManager>();
         services.AddScoped<ITaxPluginManager, TaxPluginManager>();
         services.AddScoped<ISearchPluginManager, SearchPluginManager>();
+        services.AddScoped<ISmsPluginManager, SmsPluginManager>();
 
         //register all settings
         var typeFinder = Singleton<ITypeFinder>.Instance;
