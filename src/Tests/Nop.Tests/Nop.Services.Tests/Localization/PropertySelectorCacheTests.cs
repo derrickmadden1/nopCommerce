@@ -136,5 +136,9 @@ public class PropertySelectorCacheTests
         Console.WriteLine($"Allocation reduction: {plainAllocBytes / (double)Math.Max(cachedAllocBytes, 1),10:F1}x");
         Console.WriteLine($"Per-call plain:       {plainElapsedMs / iterations * 1_000_000,10:F2} ns");
         Console.WriteLine($"Per-call cached:      {cachedElapsedMs / iterations * 1_000_000,10:F2} ns");
+
+        //structural guarantee: cache hit must not allocate a DynamicMethod / DynamicResolver,
+        //so cached allocations must be far below the plain-compile baseline
+        cachedAllocBytes.Should().BeLessThan(plainAllocBytes / 2);
     }
 }
