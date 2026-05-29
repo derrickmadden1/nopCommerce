@@ -1,26 +1,52 @@
+@using Nop.Core.Domain.Orders
+@using Nop.Web.Models.Catalog
 @model ProductOverviewModel
 
-@if (!Model.ProductPrice.DisableBuyButton || !Model.ProductPrice.DisableWishlistButton)
+@{
+    //prepare AJAX links
+    var addtocartlink = "";
+    var shoppingCartTypeId = (int)ShoppingCartType.ShoppingCart;
+    var quantity = 1;
+    if (Model.ProductPrice.ForceRedirectionAfterAddingToCart)
+    {
+        addtocartlink = Url.RouteUrl(NopRouteNames.Ajax.ADD_PRODUCT_TO_CART_CATALOG, new { productId = Model.Id, shoppingCartTypeId = shoppingCartTypeId, quantity = quantity, forceredirection = Model.ProductPrice.ForceRedirectionAfterAddingToCart });
+    }
+    else
+    {
+        addtocartlink = Url.RouteUrl(NopRouteNames.Ajax.ADD_PRODUCT_TO_CART_CATALOG, new { productId = Model.Id, shoppingCartTypeId = shoppingCartTypeId, quantity = quantity });
+    }
+
+    var addtowishlistlink = Url.RouteUrl(NopRouteNames.Ajax.ADD_PRODUCT_TO_CART_CATALOG, new { productId = Model.Id, shoppingCartTypeId = (int)ShoppingCartType.Wishlist, quantity = quantity });
+    var addtocomparelink = Url.RouteUrl(NopRouteNames.Ajax.ADD_PRODUCT_TO_COMPARE, new { productId = Model.Id });
+}
+
+@if (!Model.ProductPrice.DisableBuyButton || !Model.ProductPrice.DisableWishlistButton || !Model.ProductPrice.DisableAddToCompareListButton)
 {
     <div class="buttons">
         @if (!Model.ProductPrice.DisableBuyButton)
         {
-            var addToCartLink = Url.RouteUrl(NopRouteNames.Ajax.ADD_PRODUCT_TO_CART_CATALOG, new { productId = Model.Id, shoppingCartTypeId = (int)Nop.Core.Domain.Orders.ShoppingCartType.ShoppingCart, quantity = 1 });
-            <button type="button"
-                    class="button-2 product-box-add-to-cart-button"
-                    onclick="AjaxCart.addproducttocart_catalog('@addToCartLink');return false;">
-                @T("ShoppingCart.AddToCart")
-            </button>
+            var addToCartText = T("ShoppingCart.AddToCart").Text;
+            if (Model.ProductPrice.IsRental)
+            {
+                addToCartText = T("ShoppingCart.Rent").Text;
+            }
+            if (Model.ProductPrice.AvailableForPreOrder)
+            {
+                addToCartText = T("ShoppingCart.PreOrder").Text;
+            }
+            <button type="button" class="button-2 product-box-add-to-cart-button" onclick="AjaxCart.addproducttocart_catalog('@addtocartlink');return false;">@(addToCartText)</button>
         }
-
+        
+        @if (!Model.ProductPrice.DisableAddToCompareListButton)
+        {
+            <button type="button" class="button-2 add-to-compare-list-button" title="@T("ShoppingCart.AddToCompareList")" onclick="AjaxCart.addproducttocomparelist('@addtocomparelink');return false;">@T("ShoppingCart.AddToCompareList")</button>
+        }
+        
         @if (!Model.ProductPrice.DisableWishlistButton)
         {
-            var addtowishlistlink = Url.RouteUrl(NopRouteNames.Ajax.ADD_PRODUCT_TO_CART_CATALOG, new { productId = Model.Id, shoppingCartTypeId = (int)Nop.Core.Domain.Orders.ShoppingCartType.Wishlist, quantity = 1 });
-            <button type="button"
-                    class="button-2 add-to-wishlist-button"
-                    onclick="AjaxCart.addproducttocart_catalog('@addtowishlistlink');return false;">
-                @T("ShoppingCart.AddToWishlist")
-            </button>
+            @await Html.PartialAsync("_MoveToWishlistModal", Model.ProductToWishlist)
+
+            <button type="button" class="button-2 add-to-wishlist-button" title="@T("ShoppingCart.AddToWishlist")" onclick="AjaxCart.addproducttocart_catalog('@addtowishlistlink');return false;">@T("ShoppingCart.AddToWishlist")</button>
         }
     </div>
 }
