@@ -101,10 +101,23 @@
             {
                 ratingPercent = ((Model.ReviewOverviewModel.RatingSum * 100) / Model.ReviewOverviewModel.TotalReviews) / 5;
             }
-            <div class="product-rating-box" title="@string.Format(T("Reviews.TotalReviews").Text, Model.ReviewOverviewModel.TotalReviews)">
-                <div class="rating">
-                    <div style="width: @(ratingPercent)%">
-                    </div>
+            <div class="product-rating-box product-reviews-overview-modern" style="margin-bottom: 10px;" title="@string.Format(T("Reviews.TotalReviews").Text, Model.ReviewOverviewModel.TotalReviews)">
+                <div class="rating-modern">
+                    @for (int i = 1; i <= 5; i++)
+                    {
+                        if (ratingPercent >= (i * 20))
+                        {
+                            <i class="fas fa-star filled"></i>
+                        }
+                        else if (ratingPercent >= ((i - 1) * 20 + 10))
+                        {
+                            <i class="fas fa-star-half-alt filled"></i>
+                        }
+                        else
+                        {
+                            <i class="far fa-star empty"></i>
+                        }
+                    }
                 </div>
             </div>
         }

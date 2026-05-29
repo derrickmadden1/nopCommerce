@@ -1,13 +1,21 @@
-﻿@using Nop.Web.Components
-@using Nop.Web.Models.ShoppingCart
 @model ShoppingCartModel
+@{
+    Layout = "_ColumnsOne";
 
-<div class="cart-page-modern">
-    <div class="cart-header">
-        <h1>Your Cart</h1>
+    //title
+    NopHtml.AddTitleParts(T("PageTitle.ShoppingCart").Text);
+    //page class
+    NopHtml.AppendPageCssClassParts("html-shopping-cart-page");
+}
+@if (!Model.OnePageCheckoutEnabled)
+{
+    @await Component.InvokeAsync(typeof(CheckoutProgressViewComponent), new {step = CheckoutProgressStep.Cart})
+}
+<div class="page shopping-cart-page cart-page-modern">
+    <div class="page-title cart-header">
+        <h1>@T("ShoppingCart")</h1>
     </div>
-
-    <div class="cart-body">
-        @await Component.InvokeAsync(typeof(OrderSummaryViewComponent), new { overriddenModel = Model })
+    <div class="page-body cart-body">
+        @await Component.InvokeAsync(typeof(OrderSummaryViewComponent), new { overriddenModel = Model})
     </div>
 </div>

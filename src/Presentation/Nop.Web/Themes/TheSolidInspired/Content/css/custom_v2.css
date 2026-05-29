@@ -4659,3 +4659,32 @@ body {
     }
 }
 
+
+/* Modern Product Review Overview */
+.product-reviews-overview-modern {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+.rating-modern {
+    display: flex;
+    gap: 3px;
+}
+.rating-modern i {
+    font-size: 15px;
+    color: #ffc107;
+}
+.rating-modern i.empty {
+    color: #e4e5e9;
+}
+.product-review-links {
+    font-size: 0.9rem;
+}
+.product-review-links a {
+    color: var(--brand-turquoise, #00c2c7);
+    text-decoration: none;
+}
+.product-review-links a:hover {
+    text-decoration: underline;
+}
