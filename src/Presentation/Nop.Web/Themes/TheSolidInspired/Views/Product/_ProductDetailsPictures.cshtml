@@ -8,6 +8,26 @@
 <script asp-exclude-from-bundle="true" src="~/lib_npm/magnific-popup/jquery.magnific-popup.min.js" asp-location="Footer"></script>
 
 <div class="picture-gallery">
+    <style>
+        .picture-gallery .picture {
+            width: 100%;
+            text-align: center;
+            display: flex;
+            justify-content: center;
+        }
+        .picture-gallery .picture a {
+            display: block;
+            width: 100%;
+        }
+        .picture-gallery .picture img {
+            width: 100%;
+            max-width: 100%;
+            height: auto;
+            object-fit: contain;
+            display: block;
+            margin: 0 auto;
+        }
+    </style>
     @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.ProductDetailsBeforePictures, additionalData = Model })
     <div class="picture @(isOutOfStock ? "out-of-stock" : "")">
         @if (isOutOfStock)
@@ -59,6 +79,39 @@
     </div>
     @if (Model.PictureModels.Count > 1)
     {
+        <style>
+            .picture-thumbs {
+                display: flex;
+                flex-direction: row;
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                gap: 10px;
+                margin-top: 15px;
+                padding-bottom: 10px;
+                -webkit-overflow-scrolling: touch;
+            }
+            .picture-thumbs::-webkit-scrollbar {
+                height: 6px;
+            }
+            .picture-thumbs::-webkit-scrollbar-track {
+                background: #f1f1f1; 
+                border-radius: 4px;
+            }
+            .picture-thumbs::-webkit-scrollbar-thumb {
+                background: #c1c1c1; 
+                border-radius: 4px;
+            }
+            .picture-thumbs::-webkit-scrollbar-thumb:hover {
+                background: #a8a8a8; 
+            }
+            .picture-thumbs .thumb-item {
+                flex: 0 0 auto;
+                cursor: pointer;
+            }
+            .picture-thumbs .thumb-item img {
+                display: block;
+            }
+        </style>
         <div class="picture-thumbs">
             @foreach (var picture in Model.PictureModels)
             {
