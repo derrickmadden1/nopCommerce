@@ -21,8 +21,6 @@ function closePuzzle() {
 function startPuzzle(imageSrc, size, savedTiles = null, savedEmptySlot = null) {
   gridSize = size;
   img = new Image();
-  img.src = imageSrc;
-    
   img.onload = function() {
     setupCanvas();
     if (savedTiles) {
@@ -38,6 +36,9 @@ function startPuzzle(imageSrc, size, savedTiles = null, savedEmptySlot = null) {
     document.body.classList.add('puzzle-open');
     document.documentElement.classList.add('puzzle-open');
   };
+  
+  // Set src after attaching onload to avoid race conditions with cached images
+  img.src = imageSrc;
 }
 
 function setupCanvas() {
@@ -197,7 +198,6 @@ function handleVictory() {
         }
       }
     });
-  });
 }
   function savePuzzleState(productId) {
     const state = {

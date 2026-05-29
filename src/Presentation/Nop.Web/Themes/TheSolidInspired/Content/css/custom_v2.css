@@ -636,9 +636,18 @@ h6 {
   flex: 1;
   min-height: 500px;
   /* Explicit minimum height */
-  background-size: cover;
-  background-position: center;
+  position: relative;
+  overflow: hidden;
   transition: transform 0.6s ease;
+}
+
+.strip-image img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .strip-image:hover {
@@ -1565,7 +1574,7 @@ body {
   top: 0;
   left: 0;
   width: 100%;
-  z-index: 10000;
+  z-index: 1000001 !important;
   text-align: center;
 }
 
@@ -4124,6 +4133,8 @@ body {
   }
 }
 
+}
+
 /* 5. Mini-Cart Refinements */
 .mini-cart-panel .totals {
     margin-top: auto;
@@ -4250,22 +4261,22 @@ body {
 
 /* 8. MultiBuy Labels Sitewide */
 .multibuy-badge {
-    position: absolute;
-    top: 15px;
-    right: 15px;
+    position: relative;
+    display: inline-block;
+    margin-bottom: 12px;
     background: var(--brand-turquoise) !important;
     color: #fff !important;
-    padding: 8px 16px !important;
+    padding: 6px 14px !important;
     border-radius: 50px !important;
     font-size: 0.75rem !important;
     font-weight: 800 !important;
     text-transform: uppercase;
     letter-spacing: 1px;
     z-index: 25 !important;
-    box-shadow: 0 4px 15px rgba(0,194,199,0.5) !important;
+    box-shadow: 0 4px 15px rgba(0,194,199,0.3) !important;
     border: 2px solid #fff !important;
     pointer-events: none;
-    line-height: 1;
+    line-height: 1.2;
 }
 
 .alert-success.multibuy-msg, 
@@ -4401,3 +4412,250 @@ body {
 .multibuy-savings-container {
     width: 100%;
 }
+
+/* --- PAGER STYLES --- */
+.pager {
+    margin: 30px 0;
+    text-align: center;
+    width: 100%;
+    clear: both;
+}
+
+.pager ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: inline-flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.pager li {
+    display: inline-block;
+    margin: 0;
+}
+
+.pager li span,
+.pager li a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    height: 40px;
+    padding: 0 12px;
+    border-radius: 4px;
+    background-color: #fcfbfa;
+    color: #4a6741;
+    font-weight: 600;
+    text-decoration: none;
+    border: 1px solid #ede5d3;
+    transition: all 0.2s ease-in-out;
+}
+
+.pager li a:hover {
+    background-color: #f4f8f3;
+    border-color: #4a6741;
+    color: #2b3d26;
+}
+
+.pager li.current-page span {
+    background-color: #4a6741;
+    color: #fff;
+    border-color: #4a6741;
+}
+
+.pager li.previous-page a,
+.pager li.next-page a {
+    padding: 0 20px;
+    background-color: #fff;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+}
+
+/* --- PRODUCT BOX BUTTONS (Grid/List) --- */
+.product-actions .buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 15px;
+    width: 100%;
+}
+
+.product-actions .buttons button {
+    display: inline-flex;
+    flex: 1 1 auto;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 15px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    line-height: 1.2;
+    min-height: 40px;
+    min-width: 120px;
+    text-align: center;
+}
+
+/* Primary Action: Add to Cart */
+.product-actions .buttons .product-box-add-to-cart-button {
+    background-color: #4a6741;
+    color: #ffffff;
+    border: 1px solid #4a6741;
+}
+
+.product-actions .buttons .product-box-add-to-cart-button:hover {
+    background-color: #3b5233;
+    border-color: #3b5233;
+    box-shadow: 0 4px 8px rgba(74,103,65,0.2);
+}
+
+/* Secondary Action: Add to Wishlist */
+.product-actions .buttons .add-to-wishlist-button {
+    background-color: transparent;
+    color: #4a6741;
+    border: 1px solid #4a6741;
+}
+
+.product-actions .buttons .add-to-wishlist-button:hover {
+    background-color: #4a6741;
+    color: #ffffff;
+}
+
+/* --- PRODUCT REVIEWS FORM --- */
+.write-review {
+    margin-top: 40px;
+    padding-top: 30px;
+    border-top: 1px solid #eee;
+    width: 100%;
+}
+
+.write-review .title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 20px;
+    text-transform: uppercase;
+    font-family: var(--heading-font);
+}
+
+.write-review .form-fields .inputs {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 15px;
+}
+
+.write-review .form-fields .inputs label {
+    font-weight: 600;
+    margin-bottom: 5px;
+    font-size: 0.95rem;
+}
+
+.write-review .form-fields .inputs input[type="text"],
+.write-review .form-fields .inputs textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 0.95rem;
+    max-width: 600px;
+}
+
+.write-review .form-fields .inputs textarea {
+    min-height: 120px;
+    resize: vertical;
+}
+
+/* Rating radio buttons */
+.write-review .review-rating {
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+.write-review .review-rating .name-description label {
+    font-weight: 600;
+    font-size: 0.95rem;
+    margin-bottom: 10px;
+    display: block;
+}
+
+.write-review .rating-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.write-review .rating-wrapper .label {
+    font-weight: 500;
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.write-review .rating-options {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.write-review .rating-options input[type="radio"] {
+    margin: 0;
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+    accent-color: var(--brand-turquoise);
+}
+
+/* Submit Button */
+.write-review .buttons {
+    margin-top: 20px;
+}
+
+.write-review .write-product-review-button {
+    background-color: var(--brand-turquoise);
+    color: #fff;
+    border: none;
+    padding: 12px 24px;
+    font-size: 1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.write-review .write-product-review-button:hover {
+    background-color: #00a4a8;
+    box-shadow: 0 4px 10px rgba(0, 194, 199, 0.3);
+}
+
+@media (min-width: 769px) {
+    .write-review .form-fields .inputs {
+        flex-direction: row;
+        align-items: flex-start;
+    }
+    
+    .write-review .form-fields .inputs label {
+        width: 150px;
+        flex-shrink: 0;
+        margin-bottom: 0;
+        padding-top: 10px;
+    }
+    
+    .write-review .review-rating {
+        flex-direction: row;
+        align-items: center;
+    }
+    
+    .write-review .review-rating .name-description label {
+        width: 150px;
+        flex-shrink: 0;
+        margin-bottom: 0;
+    }
+}
+
