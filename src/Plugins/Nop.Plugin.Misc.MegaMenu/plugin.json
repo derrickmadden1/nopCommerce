@@ -1,0 +1,11 @@
+﻿{
+  "Group": "Misc",
+  "FriendlyName": "Mega Menu",
+  "SystemName": "Misc.MegaMenu",
+  "Version": "1.00",
+  "SupportedVersions": [ "4.70", "4.80", "4.90", "5.00" ],
+  "Author": "Derrick",
+  "DisplayOrder": 1,
+  "FileName": "Nop.Plugin.Misc.MegaMenu.dll",
+  "Description": "A simple dynamic mega-menu for categories."
+}

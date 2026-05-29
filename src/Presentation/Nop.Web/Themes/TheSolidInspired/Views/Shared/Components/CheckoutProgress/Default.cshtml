@@ -1,0 +1,47 @@
+@model CheckoutProgressModel
+@using Nop.Web.Models.Checkout
+
+<div class="checkout-progress-modern">
+    <div class="step @(Model.CheckoutProgressStep == CheckoutProgressStep.Cart ? "active" : "completed")">
+        <div class="step-icon">
+            @if (Model.CheckoutProgressStep == CheckoutProgressStep.Cart) { <span>1</span> } else { <i class="fas fa-check"></i> }
+        </div>
+        <div class="step-label">@T("Checkout.Progress.Cart")</div>
+    </div>
+    
+    <div class="step-connector @(Model.CheckoutProgressStep != CheckoutProgressStep.Cart ? "completed" : "")"></div>
+
+    <div class="step @(Model.CheckoutProgressStep == CheckoutProgressStep.Address ? "active" : (Model.CheckoutProgressStep == CheckoutProgressStep.Cart ? "pending" : "completed"))">
+        <div class="step-icon">
+            @if (Model.CheckoutProgressStep == CheckoutProgressStep.Address) { <span>2</span> } else if (Model.CheckoutProgressStep == CheckoutProgressStep.Cart) { <span>2</span> } else { <i class="fas fa-check"></i> }
+        </div>
+        <div class="step-label">@T("Checkout.Progress.Address")</div>
+    </div>
+
+    <div class="step-connector @(Model.CheckoutProgressStep == CheckoutProgressStep.Shipping || Model.CheckoutProgressStep == CheckoutProgressStep.Payment || Model.CheckoutProgressStep == CheckoutProgressStep.Confirm || Model.CheckoutProgressStep == CheckoutProgressStep.Complete ? "completed" : "")"></div>
+
+    <div class="step @(Model.CheckoutProgressStep == CheckoutProgressStep.Shipping ? "active" : (Model.CheckoutProgressStep == CheckoutProgressStep.Cart || Model.CheckoutProgressStep == CheckoutProgressStep.Address ? "pending" : "completed"))">
+        <div class="step-icon">
+            @if (Model.CheckoutProgressStep == CheckoutProgressStep.Shipping) { <span>3</span> } else if (Model.CheckoutProgressStep == CheckoutProgressStep.Cart || Model.CheckoutProgressStep == CheckoutProgressStep.Address) { <span>3</span> } else { <i class="fas fa-check"></i> }
+        </div>
+        <div class="step-label">@T("Checkout.Progress.Shipping")</div>
+    </div>
+
+    <div class="step-connector @(Model.CheckoutProgressStep == CheckoutProgressStep.Payment || Model.CheckoutProgressStep == CheckoutProgressStep.Confirm || Model.CheckoutProgressStep == CheckoutProgressStep.Complete ? "completed" : "")"></div>
+
+    <div class="step @(Model.CheckoutProgressStep == CheckoutProgressStep.Payment ? "active" : (Model.CheckoutProgressStep == CheckoutProgressStep.Confirm || Model.CheckoutProgressStep == CheckoutProgressStep.Complete ? "completed" : "pending"))">
+        <div class="step-icon">
+            @if (Model.CheckoutProgressStep == CheckoutProgressStep.Payment) { <span>4</span> } else if (Model.CheckoutProgressStep == CheckoutProgressStep.Confirm || Model.CheckoutProgressStep == CheckoutProgressStep.Complete) { <i class="fas fa-check"></i> } else { <span>4</span> }
+        </div>
+        <div class="step-label">@T("Checkout.Progress.Payment")</div>
+    </div>
+
+    <div class="step-connector @(Model.CheckoutProgressStep == CheckoutProgressStep.Confirm || Model.CheckoutProgressStep == CheckoutProgressStep.Complete ? "completed" : "")"></div>
+
+    <div class="step @(Model.CheckoutProgressStep == CheckoutProgressStep.Confirm ? "active" : (Model.CheckoutProgressStep == CheckoutProgressStep.Complete ? "completed" : "pending"))">
+        <div class="step-icon">
+            @if (Model.CheckoutProgressStep == CheckoutProgressStep.Confirm) { <span>5</span> } else if (Model.CheckoutProgressStep == CheckoutProgressStep.Complete) { <i class="fas fa-check"></i> } else { <span>5</span> }
+        </div>
+        <div class="step-label">@T("Checkout.Progress.Confirm")</div>
+    </div>
+</div>

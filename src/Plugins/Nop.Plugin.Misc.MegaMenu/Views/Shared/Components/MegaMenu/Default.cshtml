@@ -1,0 +1,43 @@
+@model IList<Nop.Plugin.Misc.MegaMenu.Models.MegaMenuItemModel>
+
+<ul class="mega-menu-root">
+    @foreach (var category in Model)
+    {
+        <li class="mega-menu-item">
+            <a href="@Url.RouteUrl("Category", new { SeName = category.SeName })">
+                @category.Name
+            </a>
+
+            @if (category.Children.Any())
+            {
+                <div class="mega-menu-panel">
+                    <div class="mega-menu-columns">
+                        @foreach (var sub in category.Children)
+                        {
+                            <div class="mega-menu-column">
+                                <a class="mega-menu-heading"
+                                   href="@Url.RouteUrl("Category", new { SeName = sub.SeName })">
+                                    @sub.Name
+                                </a>
+
+                                @if (sub.Children.Any())
+                                {
+                                    <ul>
+                                        @foreach (var sub2 in sub.Children)
+                                        {
+                                            <li>
+                                                <a href="@Url.RouteUrl("Category", new { SeName = sub2.SeName })">
+                                                    @sub2.Name
+                                                </a>
+                                            </li>
+                                        }
+                                    </ul>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </li>
+    }
+</ul>

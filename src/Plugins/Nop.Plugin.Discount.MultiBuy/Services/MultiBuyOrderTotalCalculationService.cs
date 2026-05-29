@@ -30,10 +30,6 @@ namespace Nop.Plugin.DiscountRules.MultiBuy.Services
     /// </summary>
     public class MultiBuyOrderTotalCalculationService : OrderTotalCalculationService
     {
-        private readonly IDiscountService _discountService;
-        private readonly IShoppingCartService _shoppingCartService;
-        private readonly IStoreContext _storeContext;
-        private readonly ICustomerService _customerService;
         private readonly ISettingService _settingService;
         private readonly MultiBuyDiscountService _multiBuyDiscountService;
 
@@ -86,10 +82,6 @@ namespace Nop.Plugin.DiscountRules.MultiBuy.Services
                 shoppingCartSettings,
                 taxSettings)
         {
-            _discountService = discountService;
-            _shoppingCartService = shoppingCartService;
-            _storeContext = storeContext;
-            _customerService = customerService;
             _settingService = settingService;
             _multiBuyDiscountService = multiBuyDiscountService;
         }
@@ -101,22 +93,23 @@ namespace Nop.Plugin.DiscountRules.MultiBuy.Services
         protected virtual async Task<(decimal discountAmount, List<Nop.Core.Domain.Discounts.Discount> appliedDiscounts)>
             GetOrderSubtotalDiscountWithMultiBuyAsync(Customer customer, decimal orderSubTotalExclTax, IList<ShoppingCartItem> cart)
         {
+            Console.WriteLine($"[MultiBuy DEBUG] Entering GetOrderSubtotalDiscountWithMultiBuyAsync. Cart items: {cart?.Count ?? 0}");
             var discountAmount = decimal.Zero;
             var appliedDiscounts = new List<Nop.Core.Domain.Discounts.Discount>();
 
-            if (customer == null || orderSubTotalExclTax <= 0)
+            if (_catalogSettings.IgnoreDiscounts)
                 return (discountAmount, appliedDiscounts);
 
             var allDiscounts = await _discountService.GetAllDiscountsAsync();
+            var couponCodesToValidate = await _customerService.ParseAppliedDiscountCouponCodesAsync(customer);
+            
             var allowedDiscounts = new List<Nop.Core.Domain.Discounts.Discount>();
-
             if (allDiscounts?.Any() == true)
             {
-                var couponCodesToValidate = await _customerService.ParseAppliedDiscountCouponCodesAsync(customer);
                 foreach (var discount in allDiscounts)
                 {
-                    if (!_discountService.ContainsDiscount(allowedDiscounts, discount) &&
-                        (await _discountService.ValidateDiscountAsync(discount, customer, couponCodesToValidate)).IsValid)
+                    var validationResult = await _discountService.ValidateDiscountAsync(discount, customer, couponCodesToValidate);
+                    if (!_discountService.ContainsDiscount(allowedDiscounts, discount) && validationResult.IsValid)
                     {
                         allowedDiscounts.Add(discount);
                     }
@@ -128,7 +121,6 @@ namespace Nop.Plugin.DiscountRules.MultiBuy.Services
 
             // Collect all applicable MultiBuy discounts
             var multiBuyDiscounts = new List<(Nop.Core.Domain.Discounts.Discount discount, DiscountRequirement requirement)>();
-
             foreach (var discount in allowedDiscounts)
             {
                 var requirements = await _discountService.GetAllDiscountRequirementsAsync(discount.Id);
@@ -162,9 +154,9 @@ namespace Nop.Plugin.DiscountRules.MultiBuy.Services
                         {
                             mbSettings = Newtonsoft.Json.JsonConvert.DeserializeObject<MultiBuyRequirementSettings>(mbSettingsJson);
                         }
-                        catch
+                        catch (Exception)
                         {
-                            // legacy/corrupted data
+                            // ignore
                         }
                     }
 
@@ -193,6 +185,20 @@ namespace Nop.Plugin.DiscountRules.MultiBuy.Services
                 discountAmount = decimal.Zero;
 
             return (discountAmount, appliedDiscounts);
+        }
+
+        /// <summary>
+        /// Gets shopping cart subtotal, extended to support dynamic MultiBuy discount amounts.
+        /// </summary>
+        public override async Task<(decimal discountAmount, List<Nop.Core.Domain.Discounts.Discount> appliedDiscounts, decimal subTotalWithoutDiscount, decimal subTotalWithDiscount, SortedDictionary<decimal, decimal> taxRates)>
+            GetShoppingCartSubTotalAsync(IList<ShoppingCartItem> cart, bool includingTax)
+        {
+            var (discountAmountInclTax, discountAmountExclTax, appliedDiscounts, subTotalWithoutDiscountInclTax, subTotalWithoutDiscountExclTax, subTotalWithDiscountInclTax, subTotalWithDiscountExclTax, taxRates) =
+                await GetShoppingCartSubTotalsAsync(cart);
+
+            return includingTax
+                ? (discountAmountInclTax, appliedDiscounts, subTotalWithoutDiscountInclTax, subTotalWithDiscountInclTax, taxRates)
+                : (discountAmountExclTax, appliedDiscounts, subTotalWithoutDiscountExclTax, subTotalWithDiscountExclTax, taxRates);
         }
 
         /// <summary>
@@ -307,11 +313,17 @@ namespace Nop.Plugin.DiscountRules.MultiBuy.Services
             if (subTotalWithoutDiscountExclTax < discountAmountExclTax)
                 discountAmountExclTax = subTotalWithoutDiscountExclTax;
 
+            //calculate discount amount (incl tax)
             discountAmountInclTax = discountAmountExclTax;
+            if (discountAmountExclTax > decimal.Zero && subTotalWithoutDiscountExclTax > decimal.Zero)
+            {
+                //calculate tax for the discount amount
+                discountAmountInclTax = discountAmountExclTax * (subTotalWithoutDiscountInclTax / subTotalWithoutDiscountExclTax);
+            }
 
             //subtotal with discount (excl tax)
             subTotalWithDiscountExclTax = subTotalWithoutDiscountExclTax - discountAmountExclTax;
-            subTotalWithDiscountInclTax = subTotalWithDiscountExclTax;
+            subTotalWithDiscountInclTax = subTotalWithoutDiscountInclTax - discountAmountInclTax;
 
             //add tax for shopping items & checkout attributes
             var tempTaxRates = new Dictionary<decimal, decimal>(taxRates);

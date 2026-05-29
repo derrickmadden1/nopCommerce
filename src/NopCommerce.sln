@@ -97,6 +97,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nop.Plugin.Widgets.MarketLo
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nop.Plugin.Widgets.ImagePuzzle", "Plugins\Nop.Plugin.Widgets.ImagePuzzle\Nop.Plugin.Widgets.ImagePuzzle.csproj", "{637D6A21-F15F-42DF-8089-E6420B6EBA97}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nop.Plugin.Misc.MegaMenu", "Plugins\Nop.Plugin.Misc.MegaMenu\Nop.Plugin.Misc.MegaMenu.csproj", "{5BD3E610-82F3-4FA0-A3FB-955FEA7BAF8D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -791,6 +793,22 @@ Global
 		{637D6A21-F15F-42DF-8089-E6420B6EBA97}.Release|x64.Build.0 = Release|Any CPU
 		{637D6A21-F15F-42DF-8089-E6420B6EBA97}.Release|x86.ActiveCfg = Release|Any CPU
 		{637D6A21-F15F-42DF-8089-E6420B6EBA97}.Release|x86.Build.0 = Release|Any CPU
+		{5BD3E610-82F3-4FA0-A3FB-955FEA7BAF8D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5BD3E610-82F3-4FA0-A3FB-955FEA7BAF8D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5BD3E610-82F3-4FA0-A3FB-955FEA7BAF8D}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{5BD3E610-82F3-4FA0-A3FB-955FEA7BAF8D}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{5BD3E610-82F3-4FA0-A3FB-955FEA7BAF8D}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{5BD3E610-82F3-4FA0-A3FB-955FEA7BAF8D}.Debug|x64.Build.0 = Debug|Any CPU
+		{5BD3E610-82F3-4FA0-A3FB-955FEA7BAF8D}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{5BD3E610-82F3-4FA0-A3FB-955FEA7BAF8D}.Debug|x86.Build.0 = Debug|Any CPU
+		{5BD3E610-82F3-4FA0-A3FB-955FEA7BAF8D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5BD3E610-82F3-4FA0-A3FB-955FEA7BAF8D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5BD3E610-82F3-4FA0-A3FB-955FEA7BAF8D}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{5BD3E610-82F3-4FA0-A3FB-955FEA7BAF8D}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{5BD3E610-82F3-4FA0-A3FB-955FEA7BAF8D}.Release|x64.ActiveCfg = Release|Any CPU
+		{5BD3E610-82F3-4FA0-A3FB-955FEA7BAF8D}.Release|x64.Build.0 = Release|Any CPU
+		{5BD3E610-82F3-4FA0-A3FB-955FEA7BAF8D}.Release|x86.ActiveCfg = Release|Any CPU
+		{5BD3E610-82F3-4FA0-A3FB-955FEA7BAF8D}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

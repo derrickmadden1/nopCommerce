@@ -1,0 +1,109 @@
+@model CheckoutPaymentMethodModel
+@{
+    Layout = "_ColumnsOne";
+
+    //title
+    NopHtml.AddTitleParts(T("PageTitle.Checkout").Text);
+    //page class
+    NopHtml.AppendPageCssClassParts("html-checkout-page");
+    NopHtml.AppendPageCssClassParts("html-payment-method-page");
+}
+
+<div class="page checkout-page payment-method-page section-container">
+    @await Component.InvokeAsync("CheckoutProgress", new { step = CheckoutProgressStep.Payment })
+    
+    <div class="section-header">
+        <h1>@T("Checkout.SelectPaymentMethod")</h1>
+    </div>
+
+    <div class="page-body checkout-data">
+        <div class="payment-method-modern">
+            <form asp-route="@NopRouteNames.Standard.CHECKOUT_PAYMENT_METHOD" method="post">
+                @await Component.InvokeAsync("Widget", new { widgetZone = PublicWidgetZones.CheckoutPaymentMethodTop, additionalData = Model })
+
+                @if (Model.DisplayRewardPoints && Model.PaymentMethods.Count > 0)
+                {
+                    <div class="reward-points-section-modern">
+                        <input asp-for="UseRewardPoints"/>
+                        <label asp-for="UseRewardPoints">@string.Format(T("Checkout.UseRewardPoints").Text, Model.RewardPointsToUse, Model.RewardPointsBalance, Model.RewardPointsToUseAmount)</label>
+                        @if (Model.RewardPointsEnoughToPayForOrder)
+                        {
+                            <script asp-location="Footer">
+                                $(function() {
+                                    $("#@Html.IdFor(model => model.UseRewardPoints)").on('change', function() {
+                                        if ($(this).is(':checked')) {
+                                            $('#payment-method-grid-modern').fadeOut();
+                                        } else {
+                                            $('#payment-method-grid-modern').fadeIn();
+                                        }
+                                    });
+                                    if ($("#@Html.IdFor(model => model.UseRewardPoints)").is(':checked')) {
+                                        $('#payment-method-grid-modern').hide();
+                                    }
+                                });
+                            </script>
+                        }
+                    </div>
+                }
+
+                @if (Model.PaymentMethods.Count > 0)
+                {
+                    <div class="method-grid-modern" id="payment-method-grid-modern">
+                        @for (var i = 0; i < Model.PaymentMethods.Count; i++)
+                        {
+                            var paymentMethod = Model.PaymentMethods[i];
+                            var paymentMethodName = paymentMethod.Name;
+                            if (!string.IsNullOrEmpty(paymentMethod.Fee))
+                            {
+                                paymentMethodName = T("Checkout.SelectPaymentMethod.MethodAndFee", paymentMethodName, paymentMethod.Fee).Text;
+                            }
+                            
+                            <div class="method-card-modern payment-card @(paymentMethod.Selected ? "selected" : "")">
+                                <input id="paymentmethod_@(i)" type="radio" name="paymentmethod" value="@(paymentMethod.PaymentMethodSystemName)" checked="@paymentMethod.Selected" />
+                                <label for="paymentmethod_@(i)" class="method-content">
+                                    <div class="method-info">
+                                        @if (!string.IsNullOrEmpty(paymentMethod.LogoUrl))
+                                        {
+                                            <div class="payment-logo-modern">
+                                                <img src="@paymentMethod.LogoUrl" alt="@paymentMethodName" />
+                                            </div>
+                                        }
+                                        <div class="method-name">@paymentMethodName</div>
+                                        @if (!string.IsNullOrEmpty(paymentMethod.Description))
+                                        {
+                                            <div class="method-description">@paymentMethod.Description</div>
+                                        }
+                                    </div>
+                                    <div class="method-select-icon">
+                                        <i class="fas fa-check-circle"></i>
+                                    </div>
+                                </label>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="checkout-footer-modern">
+                        <button type="submit" name="nextstep" class="btn-primary next-step-btn">
+                            @T("Checkout.NextButton") <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                }
+                else
+                {
+                    <div class="no-payment-methods-modern">
+                        @T("Checkout.NoPaymentMethods")
+                    </div>
+                }
+
+                @await Component.InvokeAsync("Widget", new { widgetZone = PublicWidgetZones.CheckoutPaymentMethodBottom, additionalData = Model })
+            </form>
+        </div>
+
+        <div class="section order-summary">
+            <div class="section-title">
+                <h2>@T("Checkout.OrderSummary")</h2>
+            </div>
+            @await Component.InvokeAsync("OrderSummary")
+        </div>
+    </div>
+</div>

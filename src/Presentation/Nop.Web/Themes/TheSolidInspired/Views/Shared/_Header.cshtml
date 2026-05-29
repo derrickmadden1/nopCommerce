@@ -1,0 +1,336 @@
+@inherits Nop.Web.Framework.Mvc.Razor.NopRazorPage<TModel>
+@using Nop.Web.Components
+@using Nop.Web.Framework.Infrastructure
+@using Nop.Web.Framework.UI
+
+<style>
+    /* 1. Header Layout Fixes */
+    .header-modern .header-main-area {
+        max-width: var(--max-width, 1300px);
+        margin: 0 auto;
+        padding: 20px 40px;
+        position: relative;
+    }
+
+    .header-logo-row {
+        display: flex !important;
+        flex-direction: row !important;
+        justify-content: center !important;
+        align-items: center !important;
+        width: 100% !important;
+        min-height: 120px !important;
+        position: relative !important;
+    }
+
+    .header-logo {
+        text-align: center !important;
+        flex: 0 0 auto !important;
+    }
+
+    .header-logo img {
+        max-height: 180px !important;
+        width: auto !important;
+    }
+
+    .header-search-cart {
+        position: absolute !important;
+        right: 0 !important;
+        top: 50% !important;
+        transform: translateY(-50%) !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 20px !important;
+        z-index: 10 !important;
+    }
+
+    /* 2. Panels - ABSOLUTELY HIDDEN BY DEFAULT */
+    /* We use highly specific selectors to ensure they are hidden */
+    body #mini-cart-panel, 
+    body #mobile-nav-panel, 
+    body #mini-cart-overlay, 
+    body #mobile-nav-overlay {
+        display: none !important;
+        visibility: visible !important; 
+    }
+
+    body #mini-cart-panel, 
+    body #mobile-nav-panel {
+        position: fixed !important;
+        top: 0 !important;
+        height: 100vh !important;
+        background: #fff !important;
+        z-index: 100000 !important;
+        box-shadow: 0 0 50px rgba(0,0,0,0.3) !important;
+        padding: 40px !important;
+        flex-direction: column !important;
+    }
+
+    body #mini-cart-panel { right: 0 !important; width: 400px !important; }
+    body #mobile-nav-panel { left: 0 !important; width: 320px !important; }
+
+    body #mini-cart-overlay, 
+    body #mobile-nav-overlay {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        background: rgba(0,0,0,0.6) !important;
+        z-index: 99999 !important;
+    }
+
+    /* Open States */
+    body #mini-cart-panel.open, 
+    body #mobile-nav-panel.open {
+        display: flex !important;
+    }
+
+    body #mini-cart-overlay.visible, 
+    body #mobile-nav-overlay.visible {
+        display: block !important;
+    }
+
+    /* Search Box Refinement */
+    .search-box {
+        display: flex !important;
+        align-items: center !important;
+    }
+    .search-box form {
+        display: flex !important;
+    }
+    .search-box-text {
+        width: 200px !important;
+        padding: 8px !important;
+        border: 1px solid #ddd !important;
+    }
+    .search-box-button {
+        padding: 8px 15px !important;
+        background: #1b1b1b !important;
+        color: #fff !important;
+        border: none !important;
+    }
+
+    @@media (max-width: 991px) {
+        .header-search-cart {
+            position: static !important;
+            transform: none !important;
+            justify-content: center !important;
+            width: 100% !important;
+            margin-top: 20px !important;
+        }
+        .header-logo-row {
+            flex-direction: column !important;
+        }
+        #mini-cart-panel { width: 100% !important; }
+    }
+</style>
+
+@await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.HeaderBefore })
+<header class="header-modern">
+
+    <!-- Top Announcement Bar (Turquoise) -->
+    <div class="announcement-bar">
+        <span>*** Free UK Shipping On All Orders Over £40 ***</span>
+    </div>
+
+    <!-- Utility Bar (Dark) -->
+    <div class="header-utility">
+        <div class="utility-container">
+            <div class="utility-social">
+                <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                <a href="#" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+            </div>
+            <div class="utility-actions">
+                @await Component.InvokeAsync("CurrencySelector")
+                @await Component.InvokeAsync("LanguageSelector")
+                @await Component.InvokeAsync("HeaderLinks")
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Header Area -->
+    <div class="header-main-area">
+        <!-- Logo Row -->
+        <div class="header-logo-row">
+            <div class="header-logo">
+                @await Component.InvokeAsync(typeof(LogoViewComponent))
+            </div>
+            
+            <!-- Hamburger Menu Button (Mobile Only) -->
+            <button id="mobile-menu-toggle" class="mobile-menu-toggle" aria-label="Toggle navigation">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            
+            <div class="header-search-cart">
+                <div class="search-box">
+                    @await Component.InvokeAsync(typeof(SearchBoxViewComponent))
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation Row -->
+        <nav class="main-nav-row" style="display: flex; justify-content: center; align-items: center;">
+            @inject Nop.Services.Plugins.IPluginService pluginService
+
+            @{
+                var descriptor = pluginService
+                .GetPluginDescriptorBySystemNameAsync<Nop.Services.Plugins.IPlugin>("Misc.MegaMenu")
+                .Result;
+
+                var megaMenuInstalled = descriptor != null;
+            }
+
+            @if (megaMenuInstalled)
+            {
+                @await Component.InvokeAsync("MegaMenu")
+            }
+        </nav>
+    </div>
+
+</header>
+@await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.HeaderAfter })
+
+<!-- Panels moved OUTSIDE the header for isolation -->
+<div id="mini-cart-overlay" class="mini-cart-overlay" style="display: none !important;"></div>
+<div id="mini-cart-panel" class="mini-cart-panel" style="display: none !important;">
+    <div class="mini-cart-header" style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h3 style="margin:0;">Your Cart</h3>
+        <a href="javascript:void(0)" id="cart-close" onclick="closeCartPanel()" style="color: #1b1b1b; text-decoration: none; font-size: 2rem; font-weight: bold;">&times;</a>
+    </div>
+    <div id="flyout-cart">
+        @await Component.InvokeAsync("FlyoutShoppingCart")
+    </div>
+</div>
+
+<div id="mobile-nav-panel" class="mobile-nav-panel" style="display: none !important;">
+    <div class="mobile-nav-header" style="display:flex; justify-content: space-between; align-items: center;">
+        <h3>Menu</h3>
+        <a href="javascript:void(0)" id="mobile-nav-close" onclick="closeMobileNav()" style="font-size: 2rem;">&times;</a>
+    </div>
+    <nav class="mobile-nav-content" style="padding: 20px;">
+        @if (megaMenuInstalled)
+        {
+            @await Component.InvokeAsync("MegaMenu")
+        }
+    </nav>
+</div>
+<div id="mobile-nav-overlay" class="mobile-nav-overlay" style="display: none !important;"></div>
+
+<script>
+    // Logic for toggling panels
+    function openCartPanel() {
+        const panel = document.getElementById("mini-cart-panel");
+        const overlay = document.getElementById("mini-cart-overlay");
+        if (panel) {
+            panel.style.setProperty("display", "flex", "important");
+            panel.classList.add("open");
+        }
+        if (overlay) {
+            overlay.style.setProperty("display", "block", "important");
+            overlay.classList.add("visible");
+        }
+    }
+
+    function closeCartPanel() {
+        const panel = document.getElementById("mini-cart-panel");
+        const overlay = document.getElementById("mini-cart-overlay");
+        if (panel) {
+            panel.style.setProperty("display", "none", "important");
+            panel.classList.remove("open");
+        }
+        if (overlay) {
+            overlay.style.setProperty("display", "none", "important");
+            overlay.classList.remove("visible");
+        }
+    }
+
+    function openMobileNav() {
+        const panel = document.getElementById("mobile-nav-panel");
+        const overlay = document.getElementById("mobile-nav-overlay");
+        if (panel) {
+            panel.style.setProperty("display", "flex", "important");
+            panel.classList.add("open");
+        }
+        if (overlay) {
+            overlay.style.setProperty("display", "block", "important");
+            overlay.classList.add("visible");
+        }
+        document.body.style.overflow = "hidden";
+    }
+
+    function closeMobileNav() {
+        const panel = document.getElementById("mobile-nav-panel");
+        const overlay = document.getElementById("mobile-nav-overlay");
+        if (panel) {
+            panel.style.setProperty("display", "none", "important");
+            panel.classList.remove("open");
+        }
+        if (overlay) {
+            overlay.style.setProperty("display", "none", "important");
+            overlay.classList.remove("visible");
+        }
+        document.body.style.overflow = "";
+    }
+
+    // Ajax Cart Override
+    if (typeof AjaxCart !== 'undefined') {
+        var originalSuccess = AjaxCart.success_process;
+        AjaxCart.success_process = function(response) {
+            var result = originalSuccess.apply(this, arguments);
+            if (response.updateflyoutcartsectionhtml || (response.success && response.message)) {
+                 openCartPanel();
+            }
+            return result;
+        };
+    }
+
+    // Diagnostics & Event Bindings
+    document.addEventListener("DOMContentLoaded", function() {
+        // Diagnostic Log
+        const panel = document.getElementById("mini-cart-panel");
+        if (panel) {
+            console.log("DIAGNOSTIC - Mini Cart Display:", window.getComputedStyle(panel).display);
+            console.log("DIAGNOSTIC - Mini Cart Inline:", panel.getAttribute("style"));
+        }
+
+        const cartTrigger = document.getElementById("topcartlink");
+        if (cartTrigger) {
+            let cartTimeout;
+            cartTrigger.addEventListener("mouseenter", openCartPanel);
+            cartTrigger.addEventListener("mouseleave", () => {
+                cartTimeout = setTimeout(closeCartPanel, 800);
+            });
+            const panel = document.getElementById("mini-cart-panel");
+            if (panel) {
+                panel.addEventListener("mouseenter", () => clearTimeout(cartTimeout));
+                panel.addEventListener("mouseleave", () => closeCartPanel());
+            }
+        }
+
+        const menuTrigger = document.getElementById("mobile-menu-toggle");
+        if (menuTrigger) {
+            menuTrigger.addEventListener("click", openMobileNav);
+        }
+
+        const cartOverlay = document.getElementById("mini-cart-overlay");
+        if (cartOverlay) cartOverlay.addEventListener("click", closeCartPanel);
+
+        const navOverlay = document.getElementById("mobile-nav-overlay");
+        if (navOverlay) navOverlay.addEventListener("click", closeMobileNav);
+    });
+
+    // Sticky header
+    window.addEventListener("scroll", function() {
+        const header = document.querySelector(".header-modern");
+        if (header) {
+            if (window.scrollY > 50) {
+                header.classList.add("sticky-shrink");
+            } else {
+                header.classList.remove("sticky-shrink");
+            }
+        }
+    });
+</script>
