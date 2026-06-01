@@ -1,4 +1,4 @@
-using System.Data.Common;
+﻿using System.Data.Common;
 using System.Linq.Expressions;
 using System.Reflection;
 using FluentMigrator;
