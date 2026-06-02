@@ -534,7 +534,7 @@ public partial class LocalizationService : ILocalizationService
         //set default value if required
         if (!string.IsNullOrEmpty(resultStr) || !returnDefaultValue)
             return result;
-        var localizer = PropertySelectorCache.GetCompiled(keySelector);
+        var localizer = keySelector.GetCompiled();
         result = localizer(entity);
 
         return result;
