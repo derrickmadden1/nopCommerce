@@ -101,8 +101,8 @@ public partial class ArtificialIntelligenceService : IArtificialIntelligenceServ
         string textRequiredLocale, string titleRequiredLocale)
         where TEntity : BaseEntity, ILocalizedEntity, IMetaTagsSupported
     {
-        var getTitle = titleSelector.Compile();
-        var getText = textSelector.Compile();
+        var getTitle = PropertySelectorCache.GetCompiled(titleSelector);
+        var getText = PropertySelectorCache.GetCompiled(textSelector);
 
         if (languageId == 0)
             return await GetTitleAndTextAsync(entity, languageName, getTitle, getText, textRequiredLocale, titleRequiredLocale);
