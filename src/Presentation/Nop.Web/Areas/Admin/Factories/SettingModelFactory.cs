@@ -1496,7 +1496,7 @@ public partial class SettingModelFactory : ISettingModelFactory
 
         var paymentMethods = await _paymentPluginManager.LoadAllPluginsAsync(storeId: storeId);
 
-        if(paymentMethods?.Any() == true)
+        if (paymentMethods?.Any() == true)
             model.AvailablePaymentMethods.AddRange(paymentMethods.Select(pm => new SelectListItem(pm.PluginDescriptor.FriendlyName, pm.PluginDescriptor.SystemName)));
 
         //fill in overridden values
@@ -1533,7 +1533,7 @@ public partial class SettingModelFactory : ISettingModelFactory
             model.AutoCancelEnabled_OverrideForStore = await _settingService.SettingExistsAsync(orderSettings, x => x.AutoCancelEnabled, storeId);
             model.AutoCancelDelay_OverrideForStore = await _settingService.SettingExistsAsync(orderSettings, x => x.AutoCancelDelay, storeId);
             model.AutoCancelIgnoredPaymentMethods_OverrideForStore = await _settingService.SettingExistsAsync(orderSettings, x => x.AutoCancelIgnoredPaymentMethods, storeId);
-            model.AutoCancelRestoreShoppingCart_OverrideForStore = await _settingService.SettingExistsAsync(orderSettings, x => x.AutoCancelRestoreShoppingCart   , storeId);
+            model.AutoCancelRestoreShoppingCart_OverrideForStore = await _settingService.SettingExistsAsync(orderSettings, x => x.AutoCancelRestoreShoppingCart, storeId);
         }
 
         //prepare nested search models
@@ -1635,6 +1635,11 @@ public partial class SettingModelFactory : ISettingModelFactory
         model.DefaultPictureZoomEnabled_OverrideForStore = await _settingService.SettingExistsAsync(mediaSettings, x => x.DefaultPictureZoomEnabled, storeId);
         model.AllowSvgUploads_OverrideForStore = await _settingService.SettingExistsAsync(mediaSettings, x => x.AllowSvgUploads, storeId);
         model.ProductDefaultImageId_OverrideForStore = await _settingService.SettingExistsAsync(mediaSettings, x => x.ProductDefaultImageId, storeId);
+        model.Object3dCameraControlEnabled_OverrideForStore = await _settingService.SettingExistsAsync(mediaSettings, x => x.Object3dCameraControlEnabled, storeId);
+        model.Object3dZoomEnabled_OverrideForStore = await _settingService.SettingExistsAsync(mediaSettings, x => x.Object3dZoomEnabled, storeId);
+        model.Object3dAutoRotateEnabled_OverrideForStore = await _settingService.SettingExistsAsync(mediaSettings, x => x.Object3dAutoRotateEnabled, storeId);
+        model.Object3dLazyLoadingEnabled_OverrideForStore = await _settingService.SettingExistsAsync(mediaSettings, x => x.Object3dLazyLoadingEnabled, storeId);
+        model.Object3dUploadSizeLimit_OverrideForStore = await _settingService.SettingExistsAsync(mediaSettings, x => x.Object3dUploadSizeLimit, storeId);
 
         return model;
     }

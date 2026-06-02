@@ -657,6 +657,27 @@ public class LocalizationMigration : MigrationBase
             ["Account.CustomerInfo.VerifyPhoneNumber"] = "Verify phone number",
             ["Account.Fields.Phone.Status.NotVerified"] = "Phone number is not verified",
             
+            //#4279
+            ["Admin.Catalog.Products.Multimedia.Object3d"] = "3D model",
+            ["Admin.Catalog.Products.Multimedia.Object3d.Fields.FileName"] = "3D model file",
+            ["Admin.Catalog.Products.Multimedia.Object3d.Fields.FileName.Hint"] = "Upload a .glb file containing a 3D model to be displayed on the product page.",
+            ["Admin.Catalog.Products.Multimedia.Object3d.Fields.Preview"] = "Preview",
+            ["Admin.Catalog.Products.Multimedia.Object3d.Fields.Preview.Hint"] = "Upload an image to be used as the thumbnail and displayed as a poster in the viewport until the 3D object is loaded.",
+            ["Admin.Catalog.Products.Multimedia.Object3d.Fields.AltAttribute"] = "Alternative text",
+            ["Admin.Catalog.Products.Multimedia.Object3d.Fields.AltAttribute.Hint"] = "The \"alt\" attribute for the \"model-viewer\" HTML element.",
+            ["Admin.Catalog.Products.Multimedia.Object3d.Save"] = "Save",
+
+            ["Admin.Configuration.Settings.Media.BlockTitle.Product3dObject"] = "Product 3D models",
+            ["Admin.Configuration.Settings.Media.Object3dAutoRotateEnabled"] = "Auto-rotate",
+            ["Admin.Configuration.Settings.Media.Object3dAutoRotateEnabled.Hint"] = "Check this option to enable automatic rotation of product 3D models in the viewport.",
+            ["Admin.Configuration.Settings.Media.Object3dCameraControlEnabled"] = "Camera control",
+            ["Admin.Configuration.Settings.Media.Object3dCameraControlEnabled.Hint"] = "Check this option to enable camera control in the viewport.",
+            ["Admin.Configuration.Settings.Media.Object3dLazyLoadingEnabled"] = "Lazy loading",
+            ["Admin.Configuration.Settings.Media.Object3dLazyLoadingEnabled.Hint"] = "Check this option to enable lazy loading of 3D models on the product details page.",
+            ["Admin.Configuration.Settings.Media.Object3dUploadSizeLimit"] = "Upload size limit",
+            ["Admin.Configuration.Settings.Media.Object3dUploadSizeLimit.Hint"] = "The maximum allowed upload size for product 3D model (in megabytes).",
+            ["Admin.Configuration.Settings.Media.Object3dZoomEnabled"] = "Zoom",
+            ["Admin.Configuration.Settings.Media.Object3dZoomEnabled.Hint"] = "Check this option to enable zoom functionality for product 3D models.",
         });
 
         #endregion

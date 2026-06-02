@@ -1736,7 +1736,12 @@ public partial class InstallationService
             VideoIframeAllow = "fullscreen",
             VideoIframeWidth = 300,
             VideoIframeHeight = 150,
-            PicturePath = NopMediaDefaults.DefaultImagesPath
+            PicturePath = NopMediaDefaults.DefaultImagesPath,
+            Object3dCameraControlEnabled = true,
+            Object3dZoomEnabled = true,
+            Object3dAutoRotateEnabled = false,
+            Object3dLazyLoadingEnabled = true,
+            Object3dUploadSizeLimit = 20,
         });
 
         await SaveSettingAsync(dictionary, new StoreInformationSettings

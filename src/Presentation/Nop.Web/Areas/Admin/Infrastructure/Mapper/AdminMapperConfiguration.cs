@@ -550,7 +550,8 @@ public partial class AdminMapperConfiguration : Profile, IOrderedMapperProfile
             .ForMember(model => model.TierPriceSearchModel, options => options.Ignore())
             .ForMember(model => model.SelectedProductTags, options => options.Ignore())
             .ForMember(model => model.AvailableProductTags, options => options.Ignore())
-            .ForMember(model => model.FormattedPrice, options => options.Ignore());
+            .ForMember(model => model.FormattedPrice, options => options.Ignore())
+            .ForMember(model => model.Product3dObject, options => options.Ignore());
         CreateMap<ProductModel, Product>()
             .ForMember(entity => entity.ApprovedRatingSum, options => options.Ignore())
             .ForMember(entity => entity.ApprovedTotalReviews, options => options.Ignore())
@@ -709,6 +710,14 @@ public partial class AdminMapperConfiguration : Profile, IOrderedMapperProfile
             .ForMember(model => model.PrimaryStoreCurrencyCode, options => options.Ignore());
         CreateMap<TierPriceModel, TierPrice>()
             .ForMember(entity => entity.CustomerRoleId, options => options.Ignore())
+            .ForMember(entity => entity.ProductId, options => options.Ignore());
+
+        CreateMap<Product3dObject, Product3dObjectModel>()
+            .ForMember(model => model.UploadLimit, options => options.Ignore())
+            .ForMember(model => model.FileSize, options => options.Ignore())
+            .ForMember(model => model.FileUrl, options => options.Ignore())
+            .ForMember(model => model.PictureUrl, options => options.Ignore());
+        CreateMap<Product3dObjectModel, Product3dObject>()
             .ForMember(entity => entity.ProductId, options => options.Ignore());
     }
 
@@ -1151,7 +1160,12 @@ public partial class AdminMapperConfiguration : Profile, IOrderedMapperProfile
             .ForMember(model => model.ProductThumbPictureSize_OverrideForStore, options => options.Ignore())
             .ForMember(model => model.VendorThumbPictureSize_OverrideForStore, options => options.Ignore())
             .ForMember(model => model.ProductDefaultImageId_OverrideForStore, options => options.Ignore())
-            .ForMember(model => model.AllowSvgUploads_OverrideForStore, options => options.Ignore());
+            .ForMember(model => model.AllowSvgUploads_OverrideForStore, options => options.Ignore())
+            .ForMember(model => model.Object3dAutoRotateEnabled_OverrideForStore, options => options.Ignore())
+            .ForMember(model => model.Object3dCameraControlEnabled_OverrideForStore, options => options.Ignore())
+            .ForMember(model => model.Object3dLazyLoadingEnabled_OverrideForStore, options => options.Ignore())
+            .ForMember(model => model.Object3dUploadSizeLimit_OverrideForStore, options => options.Ignore())
+            .ForMember(model => model.Object3dZoomEnabled_OverrideForStore, options => options.Ignore());
         CreateMap<MediaSettingsModel, MediaSettings>()
             .ForMember(settings => settings.AutoCompleteSearchThumbPictureSize, options => options.Ignore())
             .ForMember(settings => settings.UseAbsoluteImagePath, options => options.Ignore())

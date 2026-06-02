@@ -440,14 +440,13 @@ public partial class PictureService : IPictureService
 
         var defaultImageFileName = defaultPictureType switch
         {
-            PictureType.Avatar => await _settingService.GetSettingByKeyAsync("Media.Customer.DefaultAvatarImageName", NopMediaDefaults.DefaultAvatarFileName),
-            _ => await _settingService.GetSettingByKeyAsync("Media.DefaultImageName", NopMediaDefaults.DefaultImageFileName),
+            PictureType.Avatar => NopMediaDefaults.DefaultAvatarFileName,
+            PictureType.Object3d => NopMediaDefaults.Default3dPreviewFileName,
+            _ => NopMediaDefaults.DefaultImageFileName,
         };
         var filePath = await GetPictureLocalPathAsync(defaultImageFileName);
         if (!_fileProvider.FileExists(filePath))
-        {
             return string.Empty;
-        }
 
         if (targetSize == 0)
             return await GetImagesPathUrlAsync(storeLocation) + defaultImageFileName;
@@ -1196,11 +1195,11 @@ public partial class PictureService : IPictureService
             _fileProvider.DeleteDirectory(oldPath);
         else
         {
-            foreach (var dir in directoriesToDelete.Where(_fileProvider.DirectoryExists)) 
+            foreach (var dir in directoriesToDelete.Where(_fileProvider.DirectoryExists))
                 _fileProvider.DeleteDirectory(dir);
         }
 
-        _mediaSettings.PicturePath= path;
+        _mediaSettings.PicturePath = path;
         await _settingService.SaveSettingAsync(_mediaSettings, settings => settings.PicturePath);
     }
 
