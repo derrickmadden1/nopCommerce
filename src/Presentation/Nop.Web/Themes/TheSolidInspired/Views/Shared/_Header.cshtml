@@ -29,7 +29,34 @@
 
     .header-logo img {
         max-height: 180px !important;
+        max-width: 90% !important;
         width: auto !important;
+        height: auto !important;
+        transition: all 0.4s ease !important;
+    }
+
+    @@media (max-width: 1250px) {
+        .header-logo img {
+            max-height: 120px !important;
+        }
+    }
+
+    @@media (max-width: 1024px) {
+        .header-logo img {
+            max-height: 80px !important;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .header-logo img {
+            max-height: 55px !important;
+        }
+    }
+
+    @@media (max-width: 480px) {
+        .header-logo img {
+            max-height: 50px !important;
+        }
     }
 
     .header-search-cart {
@@ -53,10 +80,11 @@
         visibility: visible !important; 
     }
 
-    body #mini-cart-panel, 
-    body #mobile-nav-panel {
+    body #mini-cart-panel {
         position: fixed !important;
         top: 0 !important;
+        right: 0 !important;
+        width: 400px !important;
         height: 100vh !important;
         background: #fff !important;
         z-index: 100000 !important;
@@ -65,8 +93,18 @@
         flex-direction: column !important;
     }
 
-    body #mini-cart-panel { right: 0 !important; width: 400px !important; }
-    body #mobile-nav-panel { left: 0 !important; width: 320px !important; }
+    body #mobile-nav-panel {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 320px !important;
+        height: 100vh !important;
+        background: #fff !important;
+        z-index: 100000 !important;
+        box-shadow: 0 0 50px rgba(0,0,0,0.3) !important;
+        padding: 0 !important; /* Premium: zero padding allows edge-to-edge content */
+        flex-direction: column !important;
+    }
 
     body #mini-cart-overlay, 
     body #mobile-nav-overlay {
@@ -172,7 +210,7 @@
         </div>
 
         <!-- Navigation Row -->
-        <nav class="main-nav-row" style="display: flex; justify-content: center; align-items: center;">
+        <nav class="main-nav-row">
             @inject Nop.Services.Plugins.IPluginService pluginService
 
             @{
@@ -206,17 +244,24 @@
 </div>
 
 <div id="mobile-nav-panel" class="mobile-nav-panel" style="display: none !important;">
-    <div class="mobile-nav-header" style="display:flex; justify-content: space-between; align-items: center;">
+    <div class="mobile-nav-header">
         <h3>Menu</h3>
-        <a href="javascript:void(0)" id="mobile-nav-close" onclick="closeMobileNav()" style="font-size: 2rem;">&times;</a>
+        <a href="javascript:void(0)" id="mobile-nav-close" onclick="closeMobileNav()"><i class="fas fa-times"></i></a>
     </div>
-    <nav class="mobile-nav-content" style="padding: 20px;">
+    <nav class="mobile-nav-content">
         @if (megaMenuInstalled)
         {
             @await Component.InvokeAsync("MegaMenu")
         }
     </nav>
-</div>
+    <div class="mobile-nav-utility">
+        @await Component.InvokeAsync("HeaderLinks")
+        <div class="mobile-utility-selectors">
+            @await Component.InvokeAsync("CurrencySelector")
+            @await Component.InvokeAsync("LanguageSelector")
+        </div>
+    </div>
+</div>>
 <div id="mobile-nav-overlay" class="mobile-nav-overlay" style="display: none !important;"></div>
 
 <script>
@@ -320,6 +365,32 @@
 
         const navOverlay = document.getElementById("mobile-nav-overlay");
         if (navOverlay) navOverlay.addEventListener("click", closeMobileNav);
+
+        // Mobile Navigation Sub-menu Toggling
+        const mobileNavPanel = document.getElementById("mobile-nav-panel");
+        if (mobileNavPanel) {
+            const menuItems = mobileNavPanel.querySelectorAll(".mega-menu-item");
+            menuItems.forEach(item => {
+                const subPanel = item.querySelector(".mega-menu-panel");
+                if (subPanel) {
+                    // Create toggle button
+                    const toggleBtn = document.createElement("button");
+                    toggleBtn.type = "button";
+                    toggleBtn.className = "mobile-menu-toggle-btn";
+                    toggleBtn.innerHTML = '<i class="fas fa-chevron-down"></i>';
+                    toggleBtn.setAttribute("aria-label", "Toggle sub-menu");
+                    
+                    // Prevent clicking the button from following the parent link
+                    toggleBtn.addEventListener("click", function(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        item.classList.toggle("expanded");
+                    });
+                    
+                    item.appendChild(toggleBtn);
+                }
+            });
+        }
     });
 
     // Sticky header
