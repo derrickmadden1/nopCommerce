@@ -5,37 +5,38 @@
 @using Nop.Core.Domain.Topics
 
 @inject IWorkContext workContext
+@inject Nop.Web.Factories.ICommonModelFactory commonModelFactory
+@{
+    var socialModel = await commonModelFactory.PrepareSocialModelAsync();
+}
 
 <footer class="footer">
     <div class="footer-container">
         <div class="footer-columns">
-            <div class="footer-column">
-                <h3>About Us</h3>
-                <ul>
-                    <li><a href="/about-us">Our Story</a></li>
-                    <li><a href="/shipping-returns">Shipping & Returns</a></li>
-                    <li><a href="/contact-us">Contact Us</a></li>
-                </ul>
-            </div>
-            <div class="footer-column">
-                <h3>Customer Service</h3>
-                <ul>
-                    <li><a href="/my-account">My Account</a></li>
-                    <li><a href="/order-history">Order History</a></li>
-                    <li><a href="/wishlist">Wishlist</a></li>
-                </ul>
-            </div>
-            <div class="footer-column">
-                <h3>Connect</h3>
-                <div class="footer-social">
-                    <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
-                    <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
-                    <a href="#" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
-                </div>
-            </div>
+            @await Component.InvokeAsync("FooterMenu")
+            
             <div class="footer-column newsletter-col">
-                <h3>Newsletter</h3>
-                <p>Stay inspired. Join our community.</p>
+                <h3>@T("Footer.FollowUs")</h3>
+                <div class="footer-social">
+                    @if (!string.IsNullOrEmpty(socialModel.FacebookLink))
+                    {
+                        <a href="@socialModel.FacebookLink" target="_blank" rel="noopener noreferrer" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                    }
+                    @if (!string.IsNullOrEmpty(socialModel.InstagramLink))
+                    {
+                        <a href="@socialModel.InstagramLink" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                    }
+                    @if (!string.IsNullOrEmpty(socialModel.XLink))
+                    {
+                        <a href="@socialModel.XLink" target="_blank" rel="noopener noreferrer" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+                    }
+                    @if (!string.IsNullOrEmpty(socialModel.YoutubeLink))
+                    {
+                        <a href="@socialModel.YoutubeLink" target="_blank" rel="noopener noreferrer" aria-label="Youtube"><i class="fab fa-youtube"></i></a>
+                    }
+                </div>
+                
+                <h3 style="margin-top: 30px; margin-bottom: 20px;">Newsletter and prize draw</h3>
                 @await Component.InvokeAsync("NewsLetterBox")
             </div>
         </div>

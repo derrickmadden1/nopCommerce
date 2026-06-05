@@ -895,10 +895,95 @@ h6 {
   color: #fff;
 }
 
+.footer-social a[aria-label="Facebook"] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  background-color: #1877F2; /* Facebook official brand blue */
+  border-radius: 50%;
+  color: #fff !important;
+  transition: opacity 0.3s ease;
+  margin-top: 5px;
+}
+
+.footer-social a[aria-label="Facebook"]:hover {
+  opacity: 0.85;
+}
+
+.footer-social a[aria-label="Facebook"] i {
+  color: #fff !important;
+  font-size: 1.3rem;
+}
+
 .newsletter-col p {
   font-size: 0.85rem;
   color: #aaa;
   margin-bottom: 20px;
+}
+
+/* Footer Newsletter Adjustments */
+.footer-column .newsletter .title {
+  display: none !important;
+}
+
+.footer-column .newsletter-email {
+  display: flex;
+  gap: 0;
+  align-items: stretch;
+  margin-top: 15px;
+  max-width: 350px;
+}
+
+.footer-column .newsletter-subscribe-text {
+  flex: 1;
+  background: #fff !important;
+  border: 1px solid #333 !important;
+  border-right: none !important;
+  padding: 12px 15px !important;
+  font-family: var(--body-font) !important;
+  font-size: 0.85rem !important;
+  color: var(--dark-grey) !important;
+  outline: none;
+}
+
+.footer-column .newsletter-subscribe-button {
+  background: var(--brand-turquoise) !important;
+  color: #fff !important;
+  border: none !important;
+  padding: 12px 20px !important;
+  font-family: var(--heading-font) !important;
+  font-weight: 700 !important;
+  font-size: 0.8rem !important;
+  text-transform: uppercase !important;
+  letter-spacing: 1px !important;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.3s ease;
+}
+
+.footer-column .newsletter-subscribe-button:hover {
+  background: #00a0a4 !important;
+}
+
+.footer-column .newsletter-validation,
+.footer-column .newsletter-result {
+  font-size: 0.75rem;
+  margin-top: 8px;
+  text-align: left;
+}
+
+.footer-column .newsletter-result {
+  color: #fff;
+}
+
+.footer-column .please-wait {
+  color: #aaa;
+}
+
+.footer-column .field-validation-error {
+  color: var(--brand-coral);
 }
 
 .footer-bottom {
