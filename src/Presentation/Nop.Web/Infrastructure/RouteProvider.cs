@@ -1,4 +1,4 @@
-﻿using Nop.Core.Http;
+using Nop.Core.Http;
 using Nop.Services.Installation;
 using Nop.Web.Framework.Mvc.Routing;
 
@@ -168,6 +168,11 @@ public partial class RouteProvider : BaseRouteProvider, IRouteProvider
         endpointRouteBuilder.MapControllerRoute(name: NopRouteNames.General.NEW_PRODUCTS,
             pattern: $"{lang}/newproducts/",
             defaults: new { controller = "Catalog", action = "NewProducts" });
+
+        //all products
+        endpointRouteBuilder.MapControllerRoute(name: NopRouteNames.General.ALL_PRODUCTS,
+            pattern: $"{lang}/allproducts/",
+            defaults: new { controller = "Catalog", action = "AllProducts" });
 
         //blog
         endpointRouteBuilder.MapControllerRoute(name: NopRouteNames.General.BLOG,
@@ -578,6 +583,10 @@ public partial class RouteProvider : BaseRouteProvider, IRouteProvider
         endpointRouteBuilder.MapControllerRoute(name: NopRouteNames.Ajax.GET_NEW_PRODUCTS,
             pattern: $"newproducts/products/",
             defaults: new { controller = "Catalog", action = "GetNewProducts" });
+
+        endpointRouteBuilder.MapControllerRoute(name: NopRouteNames.Ajax.GET_ALL_PRODUCTS,
+            pattern: $"allproducts/products/",
+            defaults: new { controller = "Catalog", action = "GetAllProducts" });
 
         //product combinations (AJAX)
         endpointRouteBuilder.MapControllerRoute(name: NopRouteNames.Ajax.GET_PRODUCT_COMBINATIONS,

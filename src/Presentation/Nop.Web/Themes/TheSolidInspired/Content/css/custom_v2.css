@@ -4720,16 +4720,23 @@ body {
     margin: 30px 0;
     text-align: center;
     width: 100%;
+    max-width: 100%;
     clear: both;
+    box-sizing: border-box;
 }
 
 .pager ul {
     list-style: none;
     padding: 0;
     margin: 0;
-    display: inline-flex;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
     gap: 8px;
     align-items: center;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .pager li {
@@ -4773,6 +4780,24 @@ body {
     text-transform: uppercase;
     font-size: 0.85rem;
     letter-spacing: 1px;
+}
+
+@media (max-width: 576px) {
+    .pager ul {
+        gap: 6px;
+    }
+    .pager li span,
+    .pager li a {
+        min-width: 32px;
+        height: 32px;
+        padding: 0 8px;
+        font-size: 12px;
+    }
+    .pager li.previous-page a,
+    .pager li.next-page a {
+        padding: 0 12px;
+        font-size: 10px;
+    }
 }
 
 /* --- PRODUCT BOX BUTTONS (Grid/List) --- */
