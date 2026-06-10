@@ -1,7 +1,7 @@
 @model Nop.Plugin.Widgets.ShoppableBanner.Models.ShoppableBannerModel
 @{
-    // Inject the CSS file for the banner
-    NopHtml.AppendCssFileParts("~/Plugins/Widgets.ShoppableBanner/Content/css/shoppable-banner.css");
+    // Inject the CSS file for the banner (with version cache-busting)
+    NopHtml.AppendCssFileParts("~/Plugins/Widgets.ShoppableBanner/Content/css/shoppable-banner.css?v=1.3");
 }
 
 <div class="shoppable-banner-container">
@@ -49,15 +49,24 @@
         </div>
 
         <div class="mobile-product-stack">
-            <h3>Featured in this room</h3>
+            <h3 class="mobile-stack-title">Featured in this room</h3>
             <div class="mobile-grid">
                 @foreach (var product in Model.Hotspots)
                 {
                     <div class="mobile-product-card">
-                        <span class="product-name">@product.ProductName</span>
-                        <button type="button" class="btn btn-action add-to-cart-mobile" data-product-id="@product.ProductId">
-                            Shop Now
-                        </button>
+                        @if (!string.IsNullOrEmpty(product.PictureUrl))
+                        {
+                            <div class="mobile-card-image">
+                                <img src="@product.PictureUrl" alt="@product.ProductName" />
+                            </div>
+                        }
+                        <div class="mobile-card-details">
+                            <span class="product-name">@product.ProductName</span>
+                            <span class="product-price">@product.Price</span>
+                            <button type="button" class="btn btn-action add-to-cart-mobile" data-product-id="@product.ProductId">
+                                Shop Now
+                            </button>
+                        </div>
                     </div>
                 }
             </div>
@@ -67,10 +76,10 @@
 </div>
 
 <dialog id="shoppable-quickview-modal" class="quickview-modal">
+    <button id="close-quickview" class="close-btn">&times;</button>
     <div class="modal-content-wrapper">
-        <button id="close-quickview" class="close-btn">&times;</button>
         <div id="quickview-content">
-            </div>
+        </div>
     </div>
 </dialog>
 

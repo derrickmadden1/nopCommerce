@@ -15,15 +15,18 @@ namespace Nop.Plugin.Widgets.ShoppableBanner.Components
         private readonly IProductService _productService;
         private readonly IPictureService _pictureService;
         private readonly ShoppableBannerSettings _settings;
+        private readonly IPriceFormatter _priceFormatter;
 
         public WidgetsShoppableBannerViewComponent(
             IProductService productService,
             IPictureService pictureService,
-            ShoppableBannerSettings settings)
+            ShoppableBannerSettings settings,
+            IPriceFormatter priceFormatter)
         {
             _productService = productService;
             _pictureService = pictureService;
             _settings = settings;
+            _priceFormatter = priceFormatter;
         }
 
         public async Task<IViewComponentResult> InvokeAsync(string widgetZone, object additionalData)
@@ -60,13 +63,17 @@ namespace Nop.Plugin.Widgets.ShoppableBanner.Components
                         }
                     }
 
+                    // Format price
+                    var formattedPrice = await _priceFormatter.FormatPriceAsync(product.Price);
+
                     model.Hotspots.Add(new HotspotModel
                     {
                         ProductId = product.Id,
                         ProductName = product.Name,
                         PositionX = hotspot.PositionX,
                         PositionY = hotspot.PositionY,
-                        PictureUrl = pictureUrl
+                        PictureUrl = pictureUrl,
+                        Price = formattedPrice
                     });
                 }
             }

@@ -23,6 +23,7 @@ namespace Nop.Plugin.Widgets.ShoppableBanner.Models
         public decimal PositionX { get; set; }
         public decimal PositionY { get; set; }
         public string PictureUrl { get; set; }
+        public string Price { get; set; }
     }
 
     public record QuickViewProductModel : BaseNopModel
