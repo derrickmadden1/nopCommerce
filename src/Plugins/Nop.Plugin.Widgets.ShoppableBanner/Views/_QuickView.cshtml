@@ -1,0 +1,39 @@
+@model Nop.Plugin.Widgets.ShoppableBanner.Models.QuickViewProductModel
+
+<div class="shoppable-quickview-container">
+    @if (!string.IsNullOrEmpty(Model.PictureUrl))
+    {
+        <div class="quickview-image-column">
+            <img src="@Model.PictureUrl" alt="@Model.Name" class="quickview-product-image" />
+        </div>
+    }
+    <div class="quickview-info-column">
+        <h3 class="quickview-product-title">@Model.Name</h3>
+        @if (!string.IsNullOrEmpty(Model.Sku))
+        {
+            <div class="quickview-product-sku">SKU: @Model.Sku</div>
+        }
+        <div class="quickview-product-price">@Model.Price</div>
+        
+        <div class="quickview-product-description">
+            @if (!string.IsNullOrEmpty(Model.ShortDescription))
+            {
+                @Html.Raw(Model.ShortDescription)
+            }
+            else if (!string.IsNullOrEmpty(Model.FullDescription))
+            {
+                @Html.Raw(Model.FullDescription)
+            }
+        </div>
+
+        <form id="product-details-form" action="/addproducttocart/details/@Model.Id/1" method="post">
+            <div class="add-to-cart-panel">
+                <input type="number" id="addtocart_@(Model.Id)_EnteredQuantity" name="addtocart_@(Model.Id).EnteredQuantity" value="1" min="1" class="qty-input" />
+                
+                <button type="button" id="add-to-cart-button-@Model.Id" class="btn btn-primary add-to-cart-btn" data-productid="@Model.Id" onclick="AjaxCart.addproducttocart_details('/addproducttocart/details/@Model.Id/1', '#product-details-form');return false;">
+                    Add to Cart
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

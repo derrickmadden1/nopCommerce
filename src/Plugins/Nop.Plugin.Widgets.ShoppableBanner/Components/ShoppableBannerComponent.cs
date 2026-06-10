@@ -1,0 +1,63 @@
+using Microsoft.AspNetCore.Mvc;
+using Nop.Web.Framework.Components;
+using Nop.Services.Catalog;
+using Nop.Services.Media;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+using Nop.Plugin.Widgets.ShoppableBanner.Models;
+
+namespace Nop.Plugin.Widgets.ShoppableBanner.Components
+{
+    [ViewComponent(Name = "WidgetsShoppableBanner")]
+    public class WidgetsShoppableBannerViewComponent : NopViewComponent
+    {
+        private readonly IProductService _productService;
+        private readonly IPictureService _pictureService;
+        private readonly ShoppableBannerSettings _settings;
+
+        public WidgetsShoppableBannerViewComponent(
+            IProductService productService,
+            IPictureService pictureService,
+            ShoppableBannerSettings settings)
+        {
+            _productService = productService;
+            _pictureService = pictureService;
+            _settings = settings;
+        }
+
+        public async Task<IViewComponentResult> InvokeAsync(string widgetZone, object additionalData)
+        {
+            var model = new ShoppableBannerModel
+            {
+                HeroTitle = _settings.HeroTitle,
+                SubText = _settings.SubText
+            };
+
+            // Get background image URL
+            var bgPicture = await _pictureService.GetPictureByIdAsync(_settings.BackgroundPictureId);
+            if (bgPicture != null)
+            {
+                model.BackgroundPictureUrl = (await _pictureService.GetPictureUrlAsync(bgPicture)).Url;
+            }
+
+            // Fetch live product data for each hotspot
+            foreach (var hotspot in _settings.Hotspots)
+            {
+                var product = await _productService.GetProductByIdAsync(hotspot.ProductId);
+                if (product != null && !product.Deleted && product.Published)
+                {
+                    model.Hotspots.Add(new HotspotModel
+                    {
+                        ProductId = product.Id,
+                        ProductName = product.Name,
+                        PositionX = hotspot.PositionX,
+                        PositionY = hotspot.PositionY,
+                        // Could also fetch price and thumbnail here
+                    });
+                }
+            }
+
+            return View("~/Plugins/Widgets.ShoppableBanner/Views/PublicInfo.cshtml", model);
+        }
+    }
+}

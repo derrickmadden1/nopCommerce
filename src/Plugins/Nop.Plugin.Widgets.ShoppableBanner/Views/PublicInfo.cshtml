@@ -1,0 +1,112 @@
+@model Nop.Plugin.Widgets.ShoppableBanner.Models.ShoppableBannerModel
+@{
+    // Inject the CSS file for the banner
+    NopHtml.AppendCssFileParts("~/Plugins/Widgets.ShoppableBanner/Content/css/shoppable-banner.css");
+}
+
+<div class="shoppable-banner-container">
+    
+    <div class="banner-desktop-wrapper">
+        <img src="@Model.BackgroundPictureUrl" alt="@Model.HeroTitle" class="banner-bg-image" />
+        
+        <div class="banner-text-overlay">
+            <h2 class="banner-title">@Model.HeroTitle</h2>
+            <p class="banner-subtitle">@Model.SubText</p>
+        </div>
+
+        @foreach (var hotspot in Model.Hotspots)
+        {
+            <div class="hotspot-marker" style="left: @(hotspot.PositionX)%; top: @(hotspot.PositionY)%;">
+                <div class="hotspot-pulse"></div>
+                <div class="hotspot-tooltip">
+                    <span class="hotspot-product-name">@hotspot.ProductName</span>
+                    <button type="button" class="btn btn-sm btn-action add-to-cart-hotspot" data-product-id="@hotspot.ProductId">
+                        View Product
+                    </button>
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="banner-mobile-wrapper">
+        <div class="mobile-hero">
+            <img src="@Model.BackgroundPictureUrl" alt="@Model.HeroTitle" />
+            <div class="mobile-text">
+                <h2>@Model.HeroTitle</h2>
+                <p>@Model.SubText</p>
+            </div>
+        </div>
+
+        <div class="mobile-product-stack">
+            <h3>Featured in this room</h3>
+            <div class="mobile-grid">
+                @foreach (var product in Model.Hotspots)
+                {
+                    <div class="mobile-product-card">
+                        <span class="product-name">@product.ProductName</span>
+                        <button type="button" class="btn btn-action add-to-cart-mobile" data-product-id="@product.ProductId">
+                            Shop Now
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<dialog id="shoppable-quickview-modal" class="quickview-modal">
+    <div class="modal-content-wrapper">
+        <button id="close-quickview" class="close-btn">&times;</button>
+        <div id="quickview-content">
+            </div>
+    </div>
+</dialog>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const modal = document.getElementById('shoppable-quickview-modal');
+        const contentContainer = document.getElementById('quickview-content');
+        const closeBtn = document.getElementById('close-quickview');
+
+        // Target both desktop hotspot buttons and mobile stack buttons
+        const actionButtons = document.querySelectorAll('.add-to-cart-hotspot, .add-to-cart-mobile');
+
+        actionButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                const productId = this.getAttribute('data-product-id');
+
+                // Show a loading state if desired
+                contentContainer.innerHTML = '<p>Loading natural goodness...</p>';
+                modal.showModal();
+
+                // Fetch the product partial view
+                fetch(`/WidgetsShoppableBannerPublic/QuickView?productId=${productId}`)
+                    .then(response => response.text())
+                    .then(html => {
+                        // Inject the HTML containing the product info and Add to Cart form
+                        contentContainer.innerHTML = html;
+                    })
+                    .catch(error => {
+                        console.error('Error fetching product details:', error);
+                        contentContainer.innerHTML = '<p>Sorry, we could not load this product right now.</p>';
+                    });
+            });
+        });
+
+        // Close modal logic
+        closeBtn.addEventListener('click', () => {
+            modal.close();
+            contentContainer.innerHTML = ''; // Clear DOM to prevent ID conflicts
+        });
+
+        // Close on outside click
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.close();
+                contentContainer.innerHTML = '';
+            }
+        });
+    });
+</script>
