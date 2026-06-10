@@ -27,10 +27,11 @@
         </div>
 
         <form id="product-details-form" action="/addproducttocart/details/@Model.Id/1" method="post">
+            <nop-antiforgery-token />
             <div class="add-to-cart-panel">
                 <input type="number" id="addtocart_@(Model.Id)_EnteredQuantity" name="addtocart_@(Model.Id).EnteredQuantity" value="1" min="1" class="qty-input" />
                 
-                <button type="button" id="add-to-cart-button-@Model.Id" class="btn btn-primary add-to-cart-btn" data-productid="@Model.Id" onclick="AjaxCart.addproducttocart_details('/addproducttocart/details/@Model.Id/1', '#product-details-form');return false;">
+                <button type="button" id="add-to-cart-button-@Model.Id" class="btn btn-primary add-to-cart-btn" data-productid="@Model.Id" onclick="addToCartQuickView('/addproducttocart/details/@Model.Id/1', '#product-details-form', '@Model.Id');return false;">
                     Add to Cart
                 </button>
             </div>

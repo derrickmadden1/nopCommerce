@@ -17,8 +17,17 @@
 
         @foreach (var hotspot in Model.Hotspots)
         {
-            <div class="hotspot-marker" style="left: @(hotspot.PositionX)%; top: @(hotspot.PositionY)%;">
-                <div class="hotspot-pulse"></div>
+            var hasImage = !string.IsNullOrEmpty(hotspot.PictureUrl);
+            <div class="hotspot-marker @(hasImage ? "has-image" : "")" style="left: @(hotspot.PositionX)%; top: @(hotspot.PositionY)%;">
+                @if (hasImage)
+                {
+                    <img src="@hotspot.PictureUrl" class="hotspot-product-thumbnail" alt="@hotspot.ProductName" />
+                    <div class="hotspot-pulse product-pulse"></div>
+                }
+                else
+                {
+                    <div class="hotspot-pulse standard-pulse"></div>
+                }
                 <div class="hotspot-tooltip">
                     <span class="hotspot-product-name">@hotspot.ProductName</span>
                     <button type="button" class="btn btn-sm btn-action add-to-cart-hotspot" data-product-id="@hotspot.ProductId">
@@ -66,6 +75,65 @@
 </dialog>
 
 <script>
+    function addToCartQuickView(url, formSelector, productId) {
+        var $form = $(formSelector);
+        var $btn = $('#add-to-cart-button-' + productId);
+        var $panel = $btn.closest('.add-to-cart-panel');
+        
+        // Clear any previous messages
+        $('.quickview-notification').remove();
+        
+        // Show loading state
+        var originalBtnText = $btn.html();
+        $btn.prop('disabled', true).html('Adding...');
+        
+        $.ajax({
+            cache: false,
+            url: url,
+            type: 'POST',
+            data: $form.serialize(),
+            success: function(response) {
+                if (response.success) {
+                    // Update header cart count
+                    if (response.updatetopcartsectionhtml && AjaxCart.topcartselector) {
+                        $(AjaxCart.topcartselector).html(response.updatetopcartsectionhtml);
+                    }
+                    if (response.updateflyoutcartsectionhtml && AjaxCart.flyoutcartselector) {
+                        $(AjaxCart.flyoutcartselector).replaceWith(response.updateflyoutcartsectionhtml);
+                    }
+                    
+                    // Show success message inside the modal
+                    var successMsg = response.message || 'Product has been added to your shopping cart';
+                    var alertHtml = '<div class="quickview-notification success-alert">' + successMsg + '</div>';
+                    $panel.after(alertHtml);
+                    
+                    // Style button as added
+                    $btn.html('Added to Basket ✓').addClass('added-success');
+                    
+                    // Re-enable/reset after a delay
+                    setTimeout(function() {
+                        $btn.prop('disabled', false).html(originalBtnText).removeClass('added-success');
+                        $('.quickview-notification.success-alert').fadeOut('slow', function() {
+                            $(this).remove();
+                        });
+                    }, 3500);
+                } else {
+                    // Show error message inside the modal
+                    var errorMsg = response.message || 'Failed to add the product.';
+                    var alertHtml = '<div class="quickview-notification error-alert">' + errorMsg + '</div>';
+                    $panel.after(alertHtml);
+                    
+                    $btn.prop('disabled', false).html(originalBtnText);
+                }
+            },
+            error: function() {
+                var alertHtml = '<div class="quickview-notification error-alert">Failed to add the product. Please try again.</div>';
+                $panel.after(alertHtml);
+                $btn.prop('disabled', false).html(originalBtnText);
+            }
+        });
+    }
+
     document.addEventListener("DOMContentLoaded", function() {
         const modal = document.getElementById('shoppable-quickview-modal');
         const contentContainer = document.getElementById('quickview-content');

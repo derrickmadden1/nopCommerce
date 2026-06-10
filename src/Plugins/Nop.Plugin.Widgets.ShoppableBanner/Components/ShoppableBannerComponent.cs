@@ -1,3 +1,4 @@
+using System.Linq;
 using Microsoft.AspNetCore.Mvc;
 using Nop.Web.Framework.Components;
 using Nop.Services.Catalog;
@@ -46,13 +47,26 @@ namespace Nop.Plugin.Widgets.ShoppableBanner.Components
                 var product = await _productService.GetProductByIdAsync(hotspot.ProductId);
                 if (product != null && !product.Deleted && product.Published)
                 {
+                    // Get product picture
+                    var productPictures = await _productService.GetProductPicturesByProductIdAsync(product.Id);
+                    var firstProductPicture = productPictures.FirstOrDefault();
+                    var pictureUrl = string.Empty;
+                    if (firstProductPicture != null)
+                    {
+                        var picture = await _pictureService.GetPictureByIdAsync(firstProductPicture.PictureId);
+                        if (picture != null)
+                        {
+                            pictureUrl = (await _pictureService.GetPictureUrlAsync(picture, 150)).Url;
+                        }
+                    }
+
                     model.Hotspots.Add(new HotspotModel
                     {
                         ProductId = product.Id,
                         ProductName = product.Name,
                         PositionX = hotspot.PositionX,
                         PositionY = hotspot.PositionY,
-                        // Could also fetch price and thumbnail here
+                        PictureUrl = pictureUrl
                     });
                 }
             }

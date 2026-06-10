@@ -78,21 +78,57 @@
     transform: translate(-50%, -50%); /* Centers the dot exactly on the X/Y coordinate */
     z-index: 10;
     cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+/* If the hotspot marker has a product image, style it larger */
+.hotspot-marker.has-image {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    /* Subtle background circle so lighter transparent product images pop */
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(2px);
+    padding: 6px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.hotspot-product-thumbnail {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    position: relative;
+    z-index: 2;
+    transition: transform 0.25s ease-in-out;
+}
+
+.hotspot-marker.has-image:hover .hotspot-product-thumbnail {
+    transform: scale(1.15);
 }
 
 /* Subtle animation to draw the eye */
 .hotspot-pulse {
+    position: absolute;
     width: 100%;
     height: 100%;
     background-color: rgba(255, 255, 255, 0.8);
     border-radius: 50%;
     box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7);
     animation: pulse 2s infinite;
+    z-index: 1;
+    top: 0;
+    left: 0;
+}
+
+.hotspot-pulse.product-pulse {
+    background-color: rgba(255, 255, 255, 0.2);
+    z-index: 1; /* behind product thumbnail (z-index: 2) */
 }
 
 @keyframes pulse {
-    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7); }
-    70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(255, 255, 255, 0); }
+    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.5); }
+    70% { transform: scale(1); box-shadow: 0 0 0 12px rgba(255, 255, 255, 0); }
     100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
 }
 
@@ -361,6 +397,34 @@
 
 .add-to-cart-btn:active {
     transform: translateY(0);
+}
+
+.add-to-cart-btn.added-success {
+    background-color: #2e5138 !important;
+    border-color: #2e5138 !important;
+    color: #fff !important;
+}
+
+.quickview-notification {
+    margin-top: 12px;
+    padding: 10px 14px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    line-height: 1.4;
+    width: 100%;
+}
+
+.quickview-notification.success-alert {
+    background-color: #eaf2eb;
+    color: #2e5138;
+    border: 1px solid #d4e5d6;
+}
+
+.quickview-notification.error-alert {
+    background-color: #fcebeb;
+    color: #a94442;
+    border: 1px solid #ebccd1;
 }
 
 @media (max-width: 576px) {
