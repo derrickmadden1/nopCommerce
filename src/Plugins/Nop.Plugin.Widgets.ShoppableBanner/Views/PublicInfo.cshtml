@@ -12,6 +12,7 @@
         <div class="banner-text-overlay">
             <h2 class="banner-title">@Model.HeroTitle</h2>
             <p class="banner-subtitle">@Model.SubText</p>
+            <a href="@Url.RouteUrl("AllProducts")" class="btn-primary-outline banner-action-btn">Explore the Collection</a>
         </div>
 
         @foreach (var hotspot in Model.Hotspots)
@@ -34,6 +35,7 @@
             <div class="mobile-text">
                 <h2>@Model.HeroTitle</h2>
                 <p>@Model.SubText</p>
+                <a href="@Url.RouteUrl("AllProducts")" class="btn-primary-outline banner-action-btn">Explore the Collection</a>
             </div>
         </div>
 

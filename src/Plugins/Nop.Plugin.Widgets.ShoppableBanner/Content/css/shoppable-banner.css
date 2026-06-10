@@ -17,6 +17,59 @@
     display: block;
 }
 
+/* Centered hero-style text overlay on top of background image */
+.banner-text-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(255, 255, 255, 0.95);
+    padding: 50px 70px;
+    text-align: center;
+    max-width: 650px;
+    width: 90%;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+    z-index: 5;
+    border-radius: 4px;
+}
+
+.banner-title {
+    font-size: 2.8rem;
+    margin-top: 0;
+    margin-bottom: 12px;
+    color: #111;
+    font-weight: 500;
+}
+
+.banner-subtitle {
+    font-size: 1.05rem;
+    color: #555;
+    margin-bottom: 24px;
+    line-height: 1.6;
+}
+
+.banner-action-btn {
+    display: inline-block;
+    padding: 12px 28px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    border: 2px solid #111;
+    color: #111 !important;
+    background: transparent;
+    text-decoration: none !important;
+    transition: all 0.25s ease;
+    border-radius: 4px;
+}
+
+.banner-action-btn:hover {
+    background: #111;
+    color: #fff !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
 /* The interactive hotspot dots */
 .hotspot-marker {
     position: absolute;
@@ -123,9 +176,41 @@
     .banner-desktop-wrapper { display: none; }
     .banner-mobile-wrapper { display: block; }
 
+    .mobile-hero {
+        position: relative;
+        text-align: center;
+    }
+
     .mobile-hero img {
         width: 100%;
         height: auto;
+        display: block;
+    }
+
+    .mobile-text {
+        padding: 35px 20px;
+        background: #fdfdfd;
+        border-bottom: 1px solid #eee;
+    }
+
+    .mobile-text h2 {
+        font-size: 1.8rem;
+        margin-top: 0;
+        margin-bottom: 10px;
+        color: #111;
+        font-weight: 500;
+    }
+
+    .mobile-text p {
+        font-size: 0.95rem;
+        color: #666;
+        margin-bottom: 20px;
+        line-height: 1.5;
+    }
+
+    .mobile-text .banner-action-btn {
+        padding: 10px 24px;
+        font-size: 0.85rem;
     }
 
     .mobile-grid {

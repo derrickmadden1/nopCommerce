@@ -1,36 +1,47 @@
 @inherits Nop.Web.Framework.Mvc.Razor.NopRazorPage<TModel>
-
 @using Nop.Web.Framework.Infrastructure
+@inject Nop.Core.IWorkContext workContext
+@inject Nop.Core.IStoreContext storeContext
+@inject Nop.Services.Cms.IWidgetPluginManager widgetPluginManager
 
 @{
     Layout = "_ColumnsOne";
+
+    var isShoppableBannerActive = await widgetPluginManager.IsPluginActiveAsync("Widgets.ShoppableBanner", 
+        await workContext.GetCurrentCustomerAsync(), 
+        (await storeContext.GetCurrentStoreAsync()).Id);
+
+    var heroTopicHtml = string.Empty;
+    if (!isShoppableBannerActive)
+    {
+        var heroTopic = await Component.InvokeAsync("TopicBlock", new { systemName = "Theme_SolidInspired_Hero" });
+        using (var writer = new System.IO.StringWriter())
+        {
+            heroTopic.WriteTo(writer, System.Text.Encodings.Web.HtmlEncoder.Default);
+            heroTopicHtml = writer.ToString();
+        }
+    }
 }
 
 @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.HomepageTop })
 
-<!-- HERO SECTION -->
-@{
-    var heroTopic = await Component.InvokeAsync("TopicBlock", new { systemName = "Theme_SolidInspired_Hero" });
-    var heroTopicHtml = string.Empty;
-    using (var writer = new System.IO.StringWriter())
+@if (!isShoppableBannerActive)
+{
+    <!-- HERO SECTION -->
+    if (!string.IsNullOrWhiteSpace(heroTopicHtml))
     {
-        heroTopic.WriteTo(writer, System.Text.Encodings.Web.HtmlEncoder.Default);
-        heroTopicHtml = writer.ToString();
+        @Html.Raw(heroTopicHtml)
     }
-}
-@if (!string.IsNullOrWhiteSpace(heroTopicHtml))
-{
-    @Html.Raw(heroTopicHtml)
-}
-else
-{
-    <section class="hero">
-        <div class="hero-inner">
-            <h1>Live Inspired</h1>
-            <p>Crafted essentials for a life well lived</p>
-            <a href="@Url.RouteUrl("AllProducts")" class="btn-primary-outline">Explore the Collection</a>
-        </div>
-    </section>
+    else
+    {
+        <section class="hero">
+            <div class="hero-inner">
+                <h1>Live Inspired</h1>
+                <p>Crafted essentials for a life well lived</p>
+                <a href="@Url.RouteUrl("AllProducts")" class="btn-primary-outline">Explore the Collection</a>
+            </div>
+        </section>
+    }
 }
 
 <!-- BRAND STORY BLOCK -->
