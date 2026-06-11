@@ -1687,7 +1687,7 @@ public partial class WorkflowMessageService : IWorkflowMessageService
         var commonTokens = new List<Token>();
         await _messageTokenProvider.AddOrderTokensAsync(commonTokens, order, languageId);
         await _messageTokenProvider.AddCustomerTokensAsync(commonTokens, returnRequest.CustomerId);
-        await _messageTokenProvider.AddReturnRequestTokensAsync(commonTokens, returnRequest, orderItem, languageId);
+        await _messageTokenProvider.AddReturnRequestTokensAsync(commonTokens, returnRequest, order, orderItem, languageId);
 
         return await messageTemplates.SelectAwait(async messageTemplate =>
         {
@@ -1739,7 +1739,7 @@ public partial class WorkflowMessageService : IWorkflowMessageService
         var commonTokens = new List<Token>();
         await _messageTokenProvider.AddOrderTokensAsync(commonTokens, order, languageId);
         await _messageTokenProvider.AddCustomerTokensAsync(commonTokens, customer);
-        await _messageTokenProvider.AddReturnRequestTokensAsync(commonTokens, returnRequest, orderItem, languageId);
+        await _messageTokenProvider.AddReturnRequestTokensAsync(commonTokens, returnRequest, order, orderItem, languageId);
 
         return await messageTemplates.SelectAwait(async messageTemplate =>
         {
@@ -1796,7 +1796,7 @@ public partial class WorkflowMessageService : IWorkflowMessageService
         var commonTokens = new List<Token>();
         await _messageTokenProvider.AddOrderTokensAsync(commonTokens, order, languageId);
         await _messageTokenProvider.AddCustomerTokensAsync(commonTokens, customer);
-        await _messageTokenProvider.AddReturnRequestTokensAsync(commonTokens, returnRequest, orderItem, languageId);
+        await _messageTokenProvider.AddReturnRequestTokensAsync(commonTokens, returnRequest, order, orderItem, languageId);
 
         return await messageTemplates.SelectAwait(async messageTemplate =>
         {
@@ -1817,6 +1817,50 @@ public partial class WorkflowMessageService : IWorkflowMessageService
             var toName = (await _customerService.IsGuestAsync(customer))
                 ? billingAddress.FirstName
                 : await _customerService.GetCustomerFullNameAsync(customer);
+
+            return await SendNotificationAsync(messageTemplate, emailAccount, languageId, tokens, toEmail, toName);
+        }).ToListAsync();
+    }
+
+    /// <summary>
+    /// Sends 'Withdrawal request confirmation' message to a customer
+    /// </summary>
+    /// <param name="order">Order</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task result contains the queued email identifier
+    /// </returns>
+    public virtual async Task<IList<int>> SendWithdrawalRequestConfirmationNotificationAsync(Order order)
+    {
+        ArgumentNullException.ThrowIfNull(order);
+
+        var store = await _storeService.GetStoreByIdAsync(order.StoreId) ?? await _storeContext.GetCurrentStoreAsync();
+        var languageId = await EnsureLanguageIsActiveAsync(order.CustomerLanguageId, store.Id);
+
+        var messageTemplates = await GetActiveMessageTemplatesAsync(MessageTemplateSystemNames.RETURN_REQUEST_WITHDRAWAL_LINK_MESSAGE, store.Id);
+        if (!messageTemplates.Any())
+            return new List<int>();
+
+        //tokens
+        var commonTokens = new List<Token>();
+        await _messageTokenProvider.AddOrderTokensAsync(commonTokens, order, languageId);
+        await _messageTokenProvider.AddReturnRequestTokensAsync(commonTokens, null, order, null, languageId);
+
+        return await messageTemplates.SelectAwait(async messageTemplate =>
+        {
+            //email account
+            var emailAccount = await GetEmailAccountOfMessageTemplateAsync(messageTemplate, languageId);
+
+            var tokens = new List<Token>(commonTokens);
+            await _messageTokenProvider.AddStoreTokensAsync(tokens, store, emailAccount, languageId);
+
+            //event notification
+            await _eventPublisher.MessageTokensAddedAsync(messageTemplate, tokens);
+
+            var billingAddress = await _addressService.GetAddressByIdAsync(order.BillingAddressId);
+
+            var toEmail = billingAddress.Email;
+            var toName = billingAddress.FirstName;
 
             return await SendNotificationAsync(messageTemplate, emailAccount, languageId, tokens, toEmail, toName);
         }).ToListAsync();

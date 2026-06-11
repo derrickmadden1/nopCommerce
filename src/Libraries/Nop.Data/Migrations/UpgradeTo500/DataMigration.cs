@@ -1,5 +1,6 @@
 ﻿using FluentMigrator;
 using Nop.Core.Domain.Logging;
+using Nop.Core.Domain.Messages;
 using Nop.Core.Domain.ScheduleTasks;
 
 namespace Nop.Data.Migrations.UpgradeTo500;
@@ -168,6 +169,20 @@ public class DataMigration : Migration
                     Name = "Import price lists"
                 }
             );
+        }
+
+        //#8161
+        if (!_dataProvider.GetTable<MessageTemplate>().Any(st => string.Compare(st.Name, MessageTemplateSystemNames.RETURN_REQUEST_WITHDRAWAL_LINK_MESSAGE, StringComparison.InvariantCultureIgnoreCase) == 0))
+        {
+            var eaGeneral = _dataProvider.GetTable<EmailAccount>().FirstOrDefault() ?? throw new Exception("Default email account cannot be loaded");
+            _dataProvider.InsertEntity(new MessageTemplate()
+            {
+                Name = MessageTemplateSystemNames.RETURN_REQUEST_WITHDRAWAL_LINK_MESSAGE,
+                Subject = "%Store.Name%. Confirm your withdrawal request.",
+                Body = $"<p>We have received your withdrawal request.{Environment.NewLine}Click the <a href=\"%ReturnRequest.WithdrawalUrl%\">link</a> to confirm the request.{Environment.NewLine}</p>{Environment.NewLine}",
+                IsActive = true,
+                EmailAccountId = eaGeneral.Id
+            });
         }
     }
 
