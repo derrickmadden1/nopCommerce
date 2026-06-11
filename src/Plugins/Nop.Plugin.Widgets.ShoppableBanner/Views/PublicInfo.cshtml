@@ -43,7 +43,7 @@
             <img src="@Model.BackgroundPictureUrl" alt="@Model.HeroTitle" />
             <div class="mobile-text">
                 <h2>@Model.HeroTitle</h2>
-                <p>@Model.SubText</p>
+                <p>@(string.IsNullOrEmpty(Model.MobileSubText) ? Model.SubText : Model.MobileSubText)</p>
                 <a href="@Url.RouteUrl("AllProducts")" class="btn-primary-outline banner-action-btn">Explore the Collection</a>
             </div>
         </div>

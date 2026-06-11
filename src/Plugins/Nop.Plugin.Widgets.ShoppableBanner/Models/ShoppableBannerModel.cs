@@ -13,6 +13,7 @@ namespace Nop.Plugin.Widgets.ShoppableBanner.Models
         public string BackgroundPictureUrl { get; set; }
         public string HeroTitle { get; set; }
         public string SubText { get; set; }
+        public string MobileSubText { get; set; }
         public IList<HotspotModel> Hotspots { get; set; }
     }
 

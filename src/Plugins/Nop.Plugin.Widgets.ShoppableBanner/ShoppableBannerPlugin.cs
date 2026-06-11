@@ -73,6 +73,7 @@ namespace Nop.Plugin.Widgets.ShoppableBanner
             {
                 HeroTitle = "Shop the Room",
                 SubText = "Hover over hotspots to explore our natural bar soaps and balms.",
+                MobileSubText = "Explore our natural bar soaps and balms.",
                 BackgroundPictureId = 0
             };
             await _settingService.SaveSettingAsync(settings);
@@ -91,6 +92,8 @@ namespace Nop.Plugin.Widgets.ShoppableBanner
                 ["Plugins.Widgets.ShoppableBanner.Fields.HeroTitle.Hint"] = "Enter the main heading text for the shoppable banner.",
                 ["Plugins.Widgets.ShoppableBanner.Fields.SubText"] = "Subtext",
                 ["Plugins.Widgets.ShoppableBanner.Fields.SubText.Hint"] = "Enter subtitle or chalkboard/promotional description text.",
+                ["Plugins.Widgets.ShoppableBanner.Fields.MobileSubText"] = "Mobile Subtext",
+                ["Plugins.Widgets.ShoppableBanner.Fields.MobileSubText.Hint"] = "Enter subtitle description text specifically for mobile devices (without 'hover over hotspots' phrasing).",
                 ["Plugins.Widgets.ShoppableBanner.Fields.BackgroundPictureId"] = "Background Image",
                 ["Plugins.Widgets.ShoppableBanner.Fields.BackgroundPictureId.Hint"] = "Upload the background image to place product hotspots onto."
             });

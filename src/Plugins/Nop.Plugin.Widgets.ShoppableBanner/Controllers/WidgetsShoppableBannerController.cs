@@ -45,6 +45,7 @@ namespace Nop.Plugin.Widgets.ShoppableBanner.Controllers
             {
                 HeroTitle = settings.HeroTitle,
                 SubText = settings.SubText,
+                MobileSubText = settings.MobileSubText,
                 BackgroundPictureId = settings.BackgroundPictureId,
                 ActiveStoreScopeConfiguration = storeScope
             };
@@ -85,6 +86,7 @@ namespace Nop.Plugin.Widgets.ShoppableBanner.Controllers
 
             settings.HeroTitle = model.HeroTitle;
             settings.SubText = model.SubText;
+            settings.MobileSubText = model.MobileSubText;
             settings.BackgroundPictureId = model.BackgroundPictureId;
 
             await _settingService.SaveSettingAsync(settings, storeScope);

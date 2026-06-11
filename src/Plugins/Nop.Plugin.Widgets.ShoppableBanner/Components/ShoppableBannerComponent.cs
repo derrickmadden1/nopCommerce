@@ -34,7 +34,8 @@ namespace Nop.Plugin.Widgets.ShoppableBanner.Components
             var model = new ShoppableBannerModel
             {
                 HeroTitle = _settings.HeroTitle,
-                SubText = _settings.SubText
+                SubText = _settings.SubText,
+                MobileSubText = _settings.MobileSubText
             };
 
             // Get background image URL

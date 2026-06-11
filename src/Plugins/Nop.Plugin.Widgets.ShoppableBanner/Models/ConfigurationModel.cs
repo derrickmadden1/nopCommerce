@@ -14,6 +14,9 @@ namespace Nop.Plugin.Widgets.ShoppableBanner.Models
         [NopResourceDisplayName("Plugins.Widgets.ShoppableBanner.Fields.SubText")]
         public string SubText { get; set; }
 
+        [NopResourceDisplayName("Plugins.Widgets.ShoppableBanner.Fields.MobileSubText")]
+        public string MobileSubText { get; set; }
+
         [UIHint("Picture")]
         [NopResourceDisplayName("Plugins.Widgets.ShoppableBanner.Fields.BackgroundPictureId")]
         public int BackgroundPictureId { get; set; }

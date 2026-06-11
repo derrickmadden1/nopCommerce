@@ -24,6 +24,9 @@ namespace Nop.Plugin.Widgets.ShoppableBanner.Models
         // The subtext or dynamic chalkboard text
         public string SubText { get; set; }
 
+        // The subtext specifically for mobile view
+        public string MobileSubText { get; set; }
+
         public string HotspotsJson
         {
             get
