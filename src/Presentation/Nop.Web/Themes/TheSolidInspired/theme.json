@@ -2,7 +2,7 @@
   "SystemName": "TheSolidInspired",
   "FriendlyName": "The Solid Inspired",
   "SupportsRtl": false,
-  "PreviewImageUrl": "preview.png",
+  "PreviewImageUrl": "~/Themes/TheSolidInspired/preview.png",
   "PreviewText": "A clean, product-focused theme inspired by The Solid Bar Company.",
   "ParentTheme": "DefaultClean"
 }
