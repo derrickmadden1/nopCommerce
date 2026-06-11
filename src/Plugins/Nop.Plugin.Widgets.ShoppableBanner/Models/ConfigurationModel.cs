@@ -22,6 +22,7 @@ namespace Nop.Plugin.Widgets.ShoppableBanner.Models
         public string BackgroundPictureUrl { get; set; }
 
         public HotspotSearchModel HotspotSearchModel { get; set; } = new HotspotSearchModel();
+        public IList<HotspotListModel> Hotspots { get; set; } = new List<HotspotListModel>();
     }
 
     public record HotspotSearchModel : BaseSearchModel

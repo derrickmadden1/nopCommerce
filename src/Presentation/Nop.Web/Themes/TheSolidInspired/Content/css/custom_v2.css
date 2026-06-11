@@ -2001,11 +2001,11 @@ body {
   font-size: 1.1rem;
   display: flex;
   justify-content: space-between;
-  padding: 15px 20px;
-  border-top: 2px solid #eee;
-  background-color: #f9f9f9;
-  margin-left: -20px;
-  margin-right: -20px;
+  padding: 20px 0;
+  border-top: 1px solid #eee;
+  background-color: transparent;
+  margin-left: 0;
+  margin-right: 0;
 }
 
 #flyout-cart .buttons {
@@ -2013,7 +2013,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding: 0 20px 20px;
+  padding: 0;
 }
 
 #flyout-cart .buttons input[type="button"],
@@ -2025,31 +2025,37 @@ body {
   font-weight: 600;
   text-transform: uppercase;
   font-size: 0.9rem;
-  letter-spacing: 0.5px;
-  transition: all 0.3s;
+  letter-spacing: 1.5px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 4px;
 }
 
 #flyout-cart .buttons .cart-button {
-  background-color: white;
-  color: var(--dark-grey);
-  border: 1px solid #ddd !important;
+  background-color: #4a5d4e !important;
+  color: #fff !important;
+  border: 2px solid #4a5d4e !important;
 }
 
 #flyout-cart .buttons .checkout-button {
-  background-color: var(--dark-grey);
-  color: #fff;
+  background-color: var(--dark-grey) !important;
+  color: #fff !important;
+  border: 2px solid var(--dark-grey) !important;
 }
 
 #flyout-cart .buttons .cart-button:hover {
-  background-color: #f5f5f5;
+  background-color: #3b4c3e !important;
+  border-color: #3b4c3e !important;
+  color: #fff !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(74, 93, 78, 0.25);
 }
 
 #flyout-cart .buttons .checkout-button:hover {
-  background-color: var(--brand-magenta);
-  /* Use theme accent */
-  color: #fff;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  background-color: #000 !important;
+  border-color: #000 !important;
+  color: #fff !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 }
 
 /* ========================================
@@ -4265,21 +4271,41 @@ body {
 .mini-cart-panel .cart-button, 
 .mini-cart-panel .checkout-button {
     width: 100%;
-    padding: 15px !important;
+    padding: 14px !important;
     text-align: center;
     font-weight: 600;
-    letter-spacing: 1px;
-    transition: all 0.3s ease;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    border-radius: 4px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .mini-cart-panel .cart-button {
-    background: #f5f5f5 !important;
-    color: var(--dark-grey) !important;
+    background: #4a5d4e !important;
+    color: #fff !important;
+    border: 2px solid #4a5d4e !important;
+}
+
+.mini-cart-panel .cart-button:hover {
+    background: #3b4c3e !important;
+    border-color: #3b4c3e !important;
+    color: #fff !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(74, 93, 78, 0.25);
 }
 
 .mini-cart-panel .checkout-button {
     background: var(--dark-grey) !important;
     color: #fff !important;
+    border: 2px solid var(--dark-grey) !important;
+}
+
+.mini-cart-panel .checkout-button:hover {
+    background: #000 !important;
+    border-color: #000 !important;
+    color: #fff !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 }
 
 /* 6. Main Cart Page & Discount Box Refinements */
@@ -4463,21 +4489,41 @@ body {
 .mini-cart-panel .cart-button, 
 .mini-cart-panel .checkout-button {
     width: 100%;
-    padding: 15px !important;
+    padding: 14px !important;
     text-align: center;
     font-weight: 600;
-    letter-spacing: 1px;
-    transition: all 0.3s ease;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    border-radius: 4px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .mini-cart-panel .cart-button {
-    background: #f5f5f5 !important;
-    color: var(--dark-grey) !important;
+    background: #4a5d4e !important;
+    color: #fff !important;
+    border: 2px solid #4a5d4e !important;
+}
+
+.mini-cart-panel .cart-button:hover {
+    background: #3b4c3e !important;
+    border-color: #3b4c3e !important;
+    color: #fff !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(74, 93, 78, 0.25);
 }
 
 .mini-cart-panel .checkout-button {
     background: var(--dark-grey) !important;
     color: #fff !important;
+    border: 2px solid var(--dark-grey) !important;
+}
+
+.mini-cart-panel .checkout-button:hover {
+    background: #000 !important;
+    border-color: #000 !important;
+    color: #fff !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 }
 
 /* 6. Main Cart Page & Discount Box Refinements */

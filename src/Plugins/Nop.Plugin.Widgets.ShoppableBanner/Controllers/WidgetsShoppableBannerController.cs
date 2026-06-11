@@ -58,6 +58,20 @@ namespace Nop.Plugin.Widgets.ShoppableBanner.Controllers
                 {
                     model.BackgroundPictureUrl = (await _pictureService.GetPictureUrlAsync(picture)).Url;
                 }
+
+                var productService = EngineContext.Current.Resolve<IProductService>();
+                foreach (var hotspot in settings.Hotspots)
+                {
+                    var product = await productService.GetProductByIdAsync(hotspot.ProductId);
+                    model.Hotspots.Add(new HotspotListModel
+                    {
+                        Id = hotspot.ProductId,
+                        ProductId = hotspot.ProductId,
+                        ProductName = product?.Name ?? "Unknown Product",
+                        PositionX = hotspot.PositionX,
+                        PositionY = hotspot.PositionY
+                    });
+                }
             }
 
             return View("~/Plugins/Widgets.ShoppableBanner/Views/Admin/Configure.cshtml", model);
@@ -156,6 +170,26 @@ namespace Nop.Plugin.Widgets.ShoppableBanner.Controllers
             }
 
             return new NullJsonResult();
+        }
+
+        // Endpoint to update a hotspot's coordinates
+        [HttpPost]
+        public async Task<IActionResult> HotspotUpdate(int productId, decimal positionX, decimal positionY)
+        {
+            var storeScope = await _storeContext.GetActiveStoreScopeConfigurationAsync();
+            var settings = await _settingService.LoadSettingAsync<ShoppableBannerSettings>(storeScope);
+
+            var hotspot = settings.Hotspots.FirstOrDefault(x => x.ProductId == productId);
+            if (hotspot == null)
+                return Json(new { success = false, message = "Hotspot not found." });
+
+            hotspot.PositionX = positionX;
+            hotspot.PositionY = positionY;
+
+            await _settingService.SaveSettingAsync(settings, storeScope);
+            await _settingService.ClearCacheAsync();
+
+            return Json(new { success = true });
         }
 
     }

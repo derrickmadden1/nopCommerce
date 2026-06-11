@@ -77,7 +77,6 @@
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
-/* The interactive hotspot dots */
 .hotspot-marker {
     position: absolute;
     width: 24px;
@@ -86,6 +85,10 @@
     z-index: 10;
     cursor: pointer;
     transition: transform 0.2s ease;
+}
+
+.hotspot-marker:hover {
+    z-index: 200; /* Bring hovered hotspot and tooltip above adjacent hotspots */
 }
 
 /* If the hotspot marker has a product image, style it larger */
@@ -108,6 +111,11 @@
     position: relative;
     z-index: 2;
     transition: transform 0.25s ease-in-out;
+    mix-blend-mode: multiply; /* Blends out white backgrounds to make them transparent */
+    background: transparent !important;
+    background-color: transparent !important;
+    border-radius: 50%; /* Crops any remaining white edge/background into a clean circle */
+    overflow: hidden;
 }
 
 .hotspot-marker.has-image:hover .hotspot-product-thumbnail {
