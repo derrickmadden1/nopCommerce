@@ -1403,26 +1403,23 @@ public partial class CustomerController : BasePublicController
     [HttpPost]
     public virtual async Task<IActionResult> RemoveExternalAssociation(int id)
     {
-        if (!await _customerService.IsRegisteredAsync(await _workContext.GetCurrentCustomerAsync()))
-            return Challenge();
+        var currentCustomer = await _workContext.GetCurrentCustomerAsync();
 
-        //ensure it's our record
+        if (!await _customerService.IsRegisteredAsync(currentCustomer))
+            return Challenge();
+        
         var ear = await _externalAuthenticationService.GetExternalAuthenticationRecordByIdAsync(id);
 
         if (ear == null)
-        {
-            return Json(new
-            {
-                redirect = Url.RouteUrl(NopRouteNames.General.CUSTOMER_INFO),
-            });
-        }
+            return Json(new { redirect = Url.RouteUrl(NopRouteNames.General.CUSTOMER_INFO) });
+
+        //ensure it's our record
+        if (ear.CustomerId != currentCustomer.Id)
+            return Challenge();
 
         await _externalAuthenticationService.DeleteExternalAuthenticationRecordAsync(ear);
 
-        return Json(new
-        {
-            redirect = Url.RouteUrl(NopRouteNames.General.CUSTOMER_INFO),
-        });
+        return Json(new { redirect = Url.RouteUrl(NopRouteNames.General.CUSTOMER_INFO) });
     }
 
     //available even when navigation is not allowed
