@@ -391,6 +391,29 @@
                 }
             });
         }
+
+        // Desktop Mega Menu boundary check to prevent displaying off screen
+        const megaMenuItems = document.querySelectorAll(".mega-menu-root > .mega-menu-item");
+        megaMenuItems.forEach(item => {
+            const panel = item.querySelector(".mega-menu-panel");
+            if (panel) {
+                item.addEventListener("mouseenter", function() {
+                    panel.style.left = "";
+                    const rect = panel.getBoundingClientRect();
+                    const viewportWidth = window.innerWidth;
+                    if (rect.right > viewportWidth) {
+                        const overflowRight = rect.right - viewportWidth;
+                        panel.style.left = `calc(50% - ${overflowRight + 20}px)`;
+                    } else if (rect.left < 0) {
+                        const overflowLeft = -rect.left;
+                        panel.style.left = `calc(50% + ${overflowLeft + 20}px)`;
+                    }
+                });
+                item.addEventListener("mouseleave", function() {
+                    panel.style.left = "";
+                });
+            }
+        });
     });
 
     // Sticky header with dynamic padding spacer to prevent layout collapse
