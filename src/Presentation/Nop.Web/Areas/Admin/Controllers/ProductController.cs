@@ -3821,7 +3821,13 @@ public partial class ProductController : BaseAdminController
     {
         //try to get a product with the specified id
         var product = await _productService.GetProductByIdAsync(model.ProductId);
+        
         if (product == null)
+            return RedirectToAction("List", "Product");
+
+        //a vendor should have access only to his products
+        var currentVendor = await _workContext.GetCurrentVendorAsync();
+        if (currentVendor != null && product.VendorId != currentVendor.Id)
             return RedirectToAction("List", "Product");
 
         var allowedAttributeIds = form.Keys.Where(key => key.Contains("attribute_value_"))
