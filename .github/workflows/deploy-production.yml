@@ -91,7 +91,8 @@ jobs:
             { "SystemName": "Search.AzureAI", "Version": "1.0.1" },
             { "SystemName": "Widgets.MarketLocator", "Version": "1.0.0" },
             { "SystemName": "Shipping.MarketPickup", "Version": "1.0.0" },
-            { "SystemName": "Widgets.ImagePuzzle", "Version": "1.00" }
+            { "SystemName": "Widgets.ImagePuzzle", "Version": "1.00" },
+            { "SystemName": "Widgets.ShoppableBanner", "Version": "1.00" }
           ],
           "PluginNamesToUninstall": [],
           "PluginNamesToDelete": [],
