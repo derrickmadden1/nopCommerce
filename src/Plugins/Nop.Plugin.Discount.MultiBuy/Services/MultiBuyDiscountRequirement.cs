@@ -66,7 +66,9 @@ namespace Nop.Plugin.DiscountRules.MultiBuy.Services
             if (request.Customer is null || request.DiscountRequirementId == 0)
                 return result;
 
-            var cart = await _shoppingCartService.GetShoppingCartAsync(request.Customer, ShoppingCartType.ShoppingCart);
+            var storeId = request.Store?.Id ?? 0;
+            var cart = await _shoppingCartService.GetShoppingCartAsync(request.Customer, ShoppingCartType.ShoppingCart, storeId: storeId);
+            
             if (cart == null || cart.Count == 0)
                 return result;
 
@@ -83,7 +85,6 @@ namespace Nop.Plugin.DiscountRules.MultiBuy.Services
             }
             catch 
             {
-                // if deserialization fails (e.g. old data format), return invalid
                 return result;
             }
 
@@ -97,8 +98,8 @@ namespace Nop.Plugin.DiscountRules.MultiBuy.Services
                     eligibleCount += item.Quantity;
             }
 
-            // valid if we have at least one full bundle worth of eligible items
             result.IsValid = eligibleCount >= requirementSettings.BundleSize;
+            
             return result;
         }
 
@@ -117,7 +118,6 @@ namespace Nop.Plugin.DiscountRules.MultiBuy.Services
                 Nop.Web.Framework.Infrastructure.PublicWidgetZones.ProductDetailsOverviewTop,
                 Nop.Web.Framework.Infrastructure.PublicWidgetZones.OrderSummaryContentBefore,
                 Nop.Web.Framework.Infrastructure.PublicWidgetZones.OrderSummaryContentDeals,
-                Nop.Web.Framework.Infrastructure.PublicWidgetZones.OrderSummaryContentAfter,
                 Nop.Web.Framework.Infrastructure.PublicWidgetZones.ProductBoxAddinfoMiddle
             });
         }

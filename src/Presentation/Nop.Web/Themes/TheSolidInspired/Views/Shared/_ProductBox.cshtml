@@ -1,0 +1,158 @@
+@using Nop.Core
+@using Nop.Core.Domain.Catalog
+@using Nop.Core.Domain.Orders
+@using Nop.Core.Domain.Tax
+@using Nop.Web.Models.Catalog
+
+@inject CatalogSettings catalogSettings
+@inject IWorkContext workContext
+@inject INopUrlHelper NopUrl
+
+@model ProductOverviewModel
+
+@{
+    var isOutOfStock = !Model.InStock || Model.ProductPrice.DisableBuyButton;
+}
+<div class="product-card @(isOutOfStock ? "out-of-stock" : "")" data-productid="@Model.Id">
+    <div class="product-image-wrapper @(isOutOfStock ? "out-of-stock" : "")">
+        @if (isOutOfStock)
+        {
+            <style>
+                .out-of-stock-ribbon {
+                    position: absolute !important;
+                    top: 30px !important;
+                    right: -40px !important;
+                    width: 160px !important;
+                    background: #d51f28 !important;
+                    color: #fff !important;
+                    padding: 5px 0 !important;
+                    font-size: 10px !important;
+                    font-weight: bold !important;
+                    text-align: center !important;
+                    transform: rotate(45deg) !important;
+                    box-shadow: 0 2px 10px rgba(0,0,0,0.5) !important;
+                    z-index: 950 !important;
+                    display: block !important;
+                    line-height: 1.5 !important;
+                    pointer-events: none !important;
+                }
+                .out-of-stock img {
+                    opacity: 0.5 !important;
+                    filter: grayscale(100%) !important;
+                }
+                .out-of-stock .puzzle-hint-badge {
+                    display: none !important;
+                }
+            </style>
+            <span class="out-of-stock-ribbon">OUT OF STOCK</span>
+        }
+        
+        @if (Model.PictureModels.Count > 1)
+        {
+            <div class="swiper" id="swiper-@Model.Id" dir="@Html.GetUIDirection(!await Html.ShouldUseRtlThemeAsync())">
+                <div class="swiper-wrapper">
+                    @foreach (var picture in Model.PictureModels)
+                    {
+                        <a class="swiper-slide" href="@(await NopUrl.RouteGenericUrlAsync<Product>(new { SeName = Model.SeName }))" title="@picture.Title">
+                            <img class="product-image" alt="@picture.AlternateText" src="@picture.ImageUrl" title="@picture.Title" />
+                        </a>
+                    }
+                </div>
+                <!-- Add Pagination -->
+                <div class="swiper-pagination"></div>
+            </div>
+
+            <script asp-location="Footer">
+                new Swiper('#swiper-@(Model.Id)', {
+                    pagination: {
+                        clickable: true,
+                        el: '.swiper-pagination',
+                    },
+                });
+            </script>
+        }
+        else
+        {
+            var picture = Model.PictureModels.FirstOrDefault();
+            <a href="@(await NopUrl.RouteGenericUrlAsync<Product>(new { SeName = Model.SeName }))" title="@picture?.Title">
+                <img class="product-image" alt="@picture?.AlternateText" src="@picture?.ImageUrl" title="@picture?.Title" />
+            </a>
+        }
+    </div>
+
+    <div class="product-info details">
+        @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.ProductBoxAddinfoBefore, additionalData = Model })
+        
+        <h3 class="product-title">
+            <a href="@(await NopUrl.RouteGenericUrlAsync<Product>(new { SeName = Model.SeName }))">@Model.Name</a>
+        </h3>
+
+        @if (catalogSettings.ShowSkuOnCatalogPages && !string.IsNullOrEmpty(Model.Sku))
+        {
+            <div class="sku">
+                @Model.Sku
+            </div>
+        }
+
+        @if (Model.ReviewOverviewModel.AllowCustomerReviews)
+        {
+            var ratingPercent = 0;
+            if (Model.ReviewOverviewModel.TotalReviews != 0)
+            {
+                ratingPercent = ((Model.ReviewOverviewModel.RatingSum * 100) / Model.ReviewOverviewModel.TotalReviews) / 5;
+            }
+            <div class="product-rating-box product-reviews-overview-modern" style="margin-bottom: 10px;" title="@string.Format(T("Reviews.TotalReviews").Text, Model.ReviewOverviewModel.TotalReviews)">
+                <div class="rating-modern">
+                    @for (int i = 1; i <= 5; i++)
+                    {
+                        if (ratingPercent >= (i * 20))
+                        {
+                            <i class="fas fa-star filled"></i>
+                        }
+                        else if (ratingPercent >= ((i - 1) * 20 + 10))
+                        {
+                            <i class="fas fa-star-half-alt filled"></i>
+                        }
+                        else
+                        {
+                            <i class="far fa-star empty"></i>
+                        }
+                    }
+                </div>
+            </div>
+        }
+
+        <div class="description" @(catalogSettings.ShowShortDescriptionOnCatalogPages ? "" : "data-short-description=none")>
+            @Html.Raw(Model.ShortDescription)
+        </div>
+
+        @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.ProductBoxAddinfoMiddle, additionalData = Model })
+
+        <div class="product-price prices">
+            @if (!string.IsNullOrEmpty(Model.ProductPrice.OldPrice))
+            {
+                <span class="price old-price">@Model.ProductPrice.OldPrice</span>
+            }
+            <span class="price actual-price">@Html.Raw(Model.ProductPrice.Price)</span>
+            @if (Model.ProductPrice.DisplayTaxShippingInfo)
+            {
+                var inclTax = await workContext.GetTaxDisplayTypeAsync() == TaxDisplayType.IncludingTax;
+                <span class="tax-shipping-info">
+                    @T(inclTax ? "Products.Price.TaxShipping.InclTax" : "Products.Price.TaxShipping.ExclTax", await NopUrl.RouteTopicUrlAsync("shippinginfo"))
+                </span>
+            }
+            @if (!string.IsNullOrEmpty(Model.ProductPrice.BasePricePAngV))
+            {
+                <div class="base-price-pangv">
+                    @Model.ProductPrice.BasePricePAngV
+                </div>
+            }
+        </div>
+
+        <div class="product-actions">
+            @await Html.PartialAsync("_ProductBoxAddToCart", Model)
+        </div>
+        
+        @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.ProductBoxAddinfoAfter, additionalData = Model })
+    </div>
+</div>

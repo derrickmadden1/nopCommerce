@@ -1,7 +1,9 @@
 @model Nop.Plugin.Widgets.ImagePuzzle.Models.PuzzleModel
 
 @* Inject the puzzle stylesheet *@
-<link rel="stylesheet" href="~/Plugins/Widgets.ImagePuzzle/Content/puzzle.css" />
+@{
+    NopHtml.AddHeadCustomParts("<link rel=\"stylesheet\" href=\"/Plugins/Widgets.ImagePuzzle/wwwroot/css/puzzle.css\" />");
+}
 @* The Modal Overlay (Hidden by default) *@
 <div id="image-puzzle-marker" style="display:none;" data-msg="ImagePuzzle Rendered"></div>
 <div id="puzzle-overlay" style="display:none;">
@@ -19,7 +21,9 @@
 </div>
 
 @* Inject the logic *@
-<script src="~/Plugins/Widgets.ImagePuzzle/Scripts/puzzle-logic.js" asp-location="Footer"></script>
+@{
+    NopHtml.AppendScriptParts(ResourceLocation.Footer, "/Plugins/Widgets.ImagePuzzle/wwwroot/js/puzzle-logic.js");
+}
 
 <script asp-location="Footer">
     var currentProductId = @Model.ProductId;
@@ -42,6 +46,9 @@
             if (r.width > 0 && r.height > 0 && !productImg) {
                 productImg = img;
             }
+        }
+        if (!productImg && allImgs.length > 0) {
+            productImg = allImgs[0]; // Fallback to first image
         }
 
         if (productImg) {

@@ -1,0 +1,13 @@
+{
+  "Group": "Widgets",
+  "FriendlyName": "Shoppable Banner",
+  "SystemName": "Widgets.ShoppableBanner",
+  "Version": "1.00",
+  "SupportedVersions": [
+    "5.00"
+  ],
+  "Author": "Rose Cottage Croft",
+  "DisplayOrder": 1,
+  "FileName": "Nop.Plugin.Widgets.ShoppableBanner.dll",
+  "Description": "Allows making homepage hero image interactive by placing hotspots over it."
+}

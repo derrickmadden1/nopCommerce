@@ -1,4 +1,4 @@
-﻿using Nop.Core.Domain.Catalog;
+using Nop.Core.Domain.Catalog;
 using Nop.Core.Domain.Vendors;
 using Nop.Web.Models.Catalog;
 
@@ -220,6 +220,18 @@ public partial interface ICatalogModelFactory
     /// The task result contains the new products model
     /// </returns>
     Task<CatalogProductsModel> PrepareNewProductsModelAsync(CatalogProductsCommand command);
+
+    /// <summary>
+    /// Prepare all products model
+    /// </summary>
+    /// <param name="command">Model to get the catalog products</param>
+    /// <param name="cid">Category identifier</param>
+    /// <param name="instock">A value indicating whether to show in-stock products only</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task result contains the catalog products model
+    /// </returns>
+    Task<CatalogProductsModel> PrepareAllProductsModelAsync(CatalogProductsCommand command, int? cid = null, bool? instock = null);
 
     #endregion
 

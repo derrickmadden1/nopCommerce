@@ -1,0 +1,351 @@
+@model Nop.Plugin.Widgets.ShoppableBanner.Models.ConfigurationModel
+@{
+    Layout = "_ConfigurePlugin";
+}
+
+<form asp-controller="WidgetsShoppableBanner" asp-action="Configure" method="post" id="shoppable-banner-form">
+    <div class="cards-group">
+        <div class="card card-default">
+            <div class="card-header">
+                General Settings
+            </div>
+            <div class="card-body">
+                <div class="form-group row">
+                    <div class="col-md-3">
+                        <nop-label asp-for="HeroTitle" />
+                    </div>
+                    <div class="col-md-9">
+                        <nop-editor asp-for="HeroTitle" />
+                        <span asp-validation-for="HeroTitle"></span>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <div class="col-md-3">
+                        <nop-label asp-for="SubText" />
+                    </div>
+                    <div class="col-md-9">
+                        <nop-editor asp-for="SubText" />
+                        <span asp-validation-for="SubText"></span>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <div class="col-md-3">
+                        <nop-label asp-for="MobileSubText" />
+                    </div>
+                    <div class="col-md-9">
+                        <nop-editor asp-for="MobileSubText" />
+                        <span asp-validation-for="MobileSubText"></span>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <div class="col-md-3">
+                        <nop-label asp-for="BackgroundPictureId" />
+                    </div>
+                    <div class="col-md-9">
+                        <nop-editor asp-for="BackgroundPictureId" />
+                        <span asp-validation-for="BackgroundPictureId"></span>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <div class="offset-md-3 col-md-9">
+                        <button type="submit" name="save" class="btn btn-primary">Save Settings</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @if (!string.IsNullOrEmpty(Model.BackgroundPictureUrl))
+        {
+<style>
+    .admin-hotspot-marker {
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        background-color: #4a5d4e;
+        border: 2px solid #fff;
+        border-radius: 50%;
+        cursor: move;
+        transform: translate(-50%, -50%);
+        z-index: 100;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        transition: transform 0.1s ease;
+    }
+    .admin-hotspot-marker:hover {
+        transform: translate(-50%, -50%) scale(1.2);
+        background-color: #3b4c3e;
+    }
+    .admin-hotspot-marker:active {
+        transform: translate(-50%, -50%) scale(1.1);
+        background-color: #2e5138;
+    }
+</style>
+
+            <div class="card card-default">
+                <div class="card-header">
+                    Manage Product Hotspots
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <p>Click on a product in the image to capture its coordinates. You can also drag the dots directly on the image to relocate them.</p>
+                            <div id="image-container" style="position: relative; display: inline-block; cursor: crosshair;">
+                                <img src="@Model.BackgroundPictureUrl" id="banner-preview" style="max-width: 100%; height: auto; border: 1px solid #ccc;" />
+                                @foreach (var hotspot in Model.Hotspots)
+                                {
+                                    <div class="admin-hotspot-marker" 
+                                         data-product-id="@hotspot.ProductId" 
+                                         data-product-name="@hotspot.ProductName"
+                                         style="left: @(hotspot.PositionX.ToString(System.Globalization.CultureInfo.InvariantCulture))%; top: @(hotspot.PositionY.ToString(System.Globalization.CultureInfo.InvariantCulture))%;"
+                                         title="@hotspot.ProductName (ID: @hotspot.ProductId)">
+                                    </div>
+                                }
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h5 class="card-title">Add Hotspot</h5>
+                                    <div class="form-group">
+                                        <label>X Position (%)</label>
+                                        <input type="text" id="add-x" class="form-control" readonly />
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Y Position (%)</label>
+                                        <input type="text" id="add-y" class="form-control" readonly />
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Product ID</label>
+                                        <input type="number" id="add-product-id" class="form-control" placeholder="e.g. 42" />
+                                    </div>
+                                    <button type="button" id="btn-add-hotspot" class="btn btn-primary mt-2">Add to Banner</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        @await Html.PartialAsync("Table", new DataTablesModel
+                        {
+                            Name = "hotspots-grid",
+                            UrlRead = new DataUrl("HotspotList", "WidgetsShoppableBanner", new Microsoft.AspNetCore.Routing.RouteValueDictionary { { "area", "Admin" } }),
+                            UrlDelete = new DataUrl("HotspotDelete", "WidgetsShoppableBanner", new Microsoft.AspNetCore.Routing.RouteValueDictionary { { "area", "Admin" } }),
+                            Length = Model.HotspotSearchModel.PageSize,
+                            LengthMenu = Model.HotspotSearchModel.AvailablePageSizes,
+                            ColumnCollection = new List<ColumnProperty>
+                            {
+                                new ColumnProperty(nameof(HotspotListModel.ProductId)) { Title = "Product ID", Width = "100" },
+                                new ColumnProperty(nameof(HotspotListModel.ProductName)) { Title = "Product Name" },
+                                new ColumnProperty(nameof(HotspotListModel.PositionX))
+                                {
+                                    Title = "X (%)",
+                                    Width = "100",
+                                    Render = new RenderCustom("renderColumnPositionX")
+                                },
+                                new ColumnProperty(nameof(HotspotListModel.PositionY))
+                                {
+                                    Title = "Y (%)",
+                                    Width = "100",
+                                    Render = new RenderCustom("renderColumnPositionY")
+                                },
+                                new ColumnProperty(nameof(HotspotListModel.Id))
+                                {
+                                    Title = "Delete",
+                                    Width = "100",
+                                    Render = new RenderButtonRemove("Delete"),
+                                    ClassName = NopColumnClassDefaults.Button
+                                }
+                            }
+                        })
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</form>
+
+<script>
+    function renderColumnPositionX(data, type, row, meta) {
+        return '<input type="number" step="0.01" min="0" max="100" class="form-control form-control-sm hotspot-edit-input" data-field="positionX" data-product-id="' + row.ProductId + '" value="' + parseFloat(data).toFixed(2) + '" style="width: 80px;" />';
+    }
+
+    function renderColumnPositionY(data, type, row, meta) {
+        return '<input type="number" step="0.01" min="0" max="100" class="form-control form-control-sm hotspot-edit-input" data-field="positionY" data-product-id="' + row.ProductId + '" value="' + parseFloat(data).toFixed(2) + '" style="width: 80px;" />';
+    }
+
+    function saveHotspotPosition(productId, x, y) {
+        var postData = {
+            productId: productId,
+            positionX: x.toFixed(2),
+            positionY: y.toFixed(2)
+        };
+        addAntiForgeryToken(postData);
+
+        $.ajax({
+            cache: false,
+            type: "POST",
+            url: "@(Url.Action("HotspotUpdate", "WidgetsShoppableBanner", new { area = "Admin" }))",
+            data: postData,
+            success: function (data) {
+                if (!data.success) {
+                    alert(data.message);
+                }
+            },
+            error: function () {
+                alert('Failed to update hotspot position.');
+            }
+        });
+    }
+
+    function bindDragEvent(marker) {
+        marker.addEventListener('mousedown', function (e) {
+            e.preventDefault();
+            e.stopPropagation(); // Prevents background image click from setting new coordinate
+
+            const container = document.getElementById('image-container');
+            const rect = container.getBoundingClientRect();
+            let hasMoved = false;
+
+            function onMouseMove(e) {
+                hasMoved = true;
+                let xPercent = ((e.clientX - rect.left) / rect.width) * 100;
+                let yPercent = ((e.clientY - rect.top) / rect.height) * 100;
+
+                if (xPercent < 0) xPercent = 0;
+                if (xPercent > 100) xPercent = 100;
+                if (yPercent < 0) yPercent = 0;
+                if (yPercent > 100) yPercent = 100;
+
+                marker.style.left = xPercent.toFixed(2) + '%';
+                marker.style.top = yPercent.toFixed(2) + '%';
+
+                // Dynamically update coordinate input boxes in the table row
+                const productId = marker.getAttribute('data-product-id');
+                const row = $(`.hotspot-edit-input[data-product-id="${productId}"]`).closest('tr');
+                row.find('[data-field="positionX"]').val(xPercent.toFixed(2));
+                row.find('[data-field="positionY"]').val(yPercent.toFixed(2));
+            }
+
+            function onMouseUp() {
+                document.removeEventListener('mousemove', onMouseMove);
+                document.removeEventListener('mouseup', onMouseUp);
+
+                if (hasMoved) {
+                    const finalX = parseFloat(marker.style.left);
+                    const finalY = parseFloat(marker.style.top);
+                    const productId = marker.getAttribute('data-product-id');
+
+                    saveHotspotPosition(productId, finalX, finalY);
+                }
+            }
+
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mouseup', onMouseUp);
+        });
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        // Bind dragging to initially rendered hotspot markers
+        const initialMarkers = document.querySelectorAll('.admin-hotspot-marker');
+        initialMarkers.forEach(marker => bindDragEvent(marker));
+
+        // Re-draw and bind drag handlers on hotspots grid refresh (add, delete, paging)
+        $('#hotspots-grid').on('draw.dt', function () {
+            $('.admin-hotspot-marker').remove();
+
+            var api = $('#hotspots-grid').DataTable();
+            var rows = api.rows().data();
+
+            rows.each(function (row) {
+                var marker = $('<div class="admin-hotspot-marker"></div>')
+                    .attr('data-product-id', row.ProductId)
+                    .attr('data-product-name', row.ProductName)
+                    .attr('title', row.ProductName + ' (ID: ' + row.ProductId + ')')
+                    .css({
+                        left: parseFloat(row.PositionX).toFixed(2) + '%',
+                        top: parseFloat(row.PositionY).toFixed(2) + '%'
+                    });
+
+                $('#image-container').append(marker);
+                bindDragEvent(marker[0]);
+            });
+        });
+
+        // Trigger coordinate saves and marker placement updates when text input elements inside the table change
+        $(document).on('change', '.hotspot-edit-input', function () {
+            const $input = $(this);
+            const productId = $input.data('product-id');
+            const field = $input.data('field');
+            const val = parseFloat($input.val());
+
+            if (isNaN(val) || val < 0 || val > 100) {
+                alert('Please enter a valid percentage between 0 and 100.');
+                return;
+            }
+
+            const row = $input.closest('tr');
+            const xVal = field === 'positionX' ? val : parseFloat(row.find('[data-field="positionX"]').val());
+            const yVal = field === 'positionY' ? val : parseFloat(row.find('[data-field="positionY"]').val());
+
+            if (isNaN(xVal) || isNaN(yVal)) return;
+
+            saveHotspotPosition(productId, xVal, yVal);
+
+            // Relocate dot on image
+            const marker = document.querySelector(`.admin-hotspot-marker[data-product-id="${productId}"]`);
+            if (marker) {
+                marker.style.left = xVal.toFixed(2) + '%';
+                marker.style.top = yVal.toFixed(2) + '%';
+            }
+        });
+
+        const img = document.getElementById('banner-preview');
+        if (img) {
+            img.addEventListener('click', function (e) {
+                const rect = img.getBoundingClientRect();
+                const xPercent = ((e.clientX - rect.left) / rect.width) * 100;
+                const yPercent = ((e.clientY - rect.top) / rect.height) * 100;
+
+                document.getElementById('add-x').value = xPercent.toFixed(2);
+                document.getElementById('add-y').value = yPercent.toFixed(2);
+            });
+        }
+
+        $('#btn-add-hotspot').on('click', function () {
+            const x = $('#add-x').val();
+            const y = $('#add-y').val();
+            const productId = $('#add-product-id').val();
+
+            if (!productId || !x || !y) {
+                alert('Please select a point on the image and enter a Product ID.');
+                return;
+            }
+
+            var postData = {
+                productId: productId,
+                positionX: x,
+                positionY: y
+            };
+
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("HotspotAdd", "WidgetsShoppableBanner", new { area = "Admin" }))",
+                data: postData,
+                success: function (data) {
+                    if (data.success) {
+                        $('#add-product-id').val(''); // Clear input
+                        updateTable('#hotspots-grid'); // Refresh the datatable
+                    } else {
+                        alert(data.message);
+                    }
+                },
+                error: function () {
+                    alert('Failed to add hotspot.');
+                }
+            });
+        });
+    });
+</script>

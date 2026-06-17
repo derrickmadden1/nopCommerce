@@ -6,8 +6,8 @@
     var lat = (decimal)ViewBag.DefaultLat;
     var lng = (decimal)ViewBag.DefaultLng;
 
-    NopHtml.AppendCssFileParts("https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css");
-    NopHtml.AppendCssFileParts("~/Plugins/Widgets.MarketLocator/wwwroot/css/market-map.css");
+    NopHtml.AddHeadCustomParts("<link rel=\"stylesheet\" href=\"https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css\" />");
+    NopHtml.AddHeadCustomParts("<link rel=\"stylesheet\" href=\"/Plugins/Widgets.MarketLocator/wwwroot/css/market-map.css\" />");
 
     NopHtml.AppendScriptParts(ResourceLocation.Footer, "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js");
     if (hasAzure)
@@ -31,10 +31,10 @@
         </script>
     ";
     NopHtml.AddInlineScriptParts(ResourceLocation.Footer, inlineConfig);
-    NopHtml.AddScriptParts(ResourceLocation.Footer, "~/Plugins/Widgets.MarketLocator/wwwroot/js/market-map.js");
+    NopHtml.AddScriptParts(ResourceLocation.Footer, "~/Plugins/Widgets.MarketLocator/wwwroot/js/market-map.js", excludeFromBundle: true);
 }
 
-<div class="market-locator-page">
+<div class="page market-locator-page">
 
     <div class="market-hero">
         <div class="market-hero__label">📍 Market Locations</div>

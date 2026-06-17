@@ -1,4 +1,4 @@
-﻿using Nop.Core.Domain.Orders;
+using Nop.Core.Domain.Orders;
 using Nop.Services.Orders;
 
 namespace Nop.Plugin.DiscountRules.MultiBuy.Services
@@ -33,6 +33,7 @@ namespace Nop.Plugin.DiscountRules.MultiBuy.Services
 
             var eligibleQty = eligibleItems.Sum(i => i.Quantity);
             var bundles = eligibleQty / settings.BundleSize;
+            Console.WriteLine($"[MultiBuy DEBUG] Eligible items: {eligibleItems.Count}, Qty: {eligibleQty}, Bundles: {bundles}");
             if (bundles <= 0)
                 return 0m;
 
@@ -53,7 +54,7 @@ namespace Nop.Plugin.DiscountRules.MultiBuy.Services
 
             var multiBuyPrice = bundles * settings.BundlePrice;
             var discount = normalPriceOfBundledUnits - multiBuyPrice;
-
+            
             return discount > 0 ? discount : 0m;
         }
     }
