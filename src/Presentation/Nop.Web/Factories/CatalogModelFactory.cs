@@ -22,6 +22,7 @@ using Nop.Services.Vendors;
 using Nop.Web.Framework.Events;
 using Nop.Web.Framework.Mvc.Routing;
 using Nop.Web.Infrastructure.Cache;
+using Nop.Data;
 using Nop.Web.Models.Catalog;
 using Nop.Web.Models.Media;
 
@@ -34,6 +35,7 @@ public partial class CatalogModelFactory : ICatalogModelFactory
     protected readonly CatalogSettings _catalogSettings;
     protected readonly CustomerSettings _customerSettings;
     protected readonly ICategoryService _categoryService;
+    protected readonly IRepository<ProductCategory> _productCategoryRepository;
     protected readonly ICategoryTemplateService _categoryTemplateService;
     protected readonly ICurrencyService _currencyService;
     protected readonly ICustomerService _customerService;
@@ -72,6 +74,7 @@ public partial class CatalogModelFactory : ICatalogModelFactory
     public CatalogModelFactory(CatalogSettings catalogSettings,
         CustomerSettings customerSettings,
         ICategoryService categoryService,
+        IRepository<ProductCategory> productCategoryRepository,
         ICategoryTemplateService categoryTemplateService,
         ICurrencyService currencyService,
         ICustomerService customerService,
@@ -105,6 +108,7 @@ public partial class CatalogModelFactory : ICatalogModelFactory
         _catalogSettings = catalogSettings;
         _customerSettings = customerSettings;
         _categoryService = categoryService;
+        _productCategoryRepository = productCategoryRepository;
         _categoryTemplateService = categoryTemplateService;
         _currencyService = currencyService;
         _customerService = customerService;
@@ -1542,6 +1546,11 @@ public partial class CatalogModelFactory : ICatalogModelFactory
 
         var currentStore = await _storeContext.GetCurrentStoreAsync();
 
+        if (!command.OrderBy.HasValue)
+        {
+            command.OrderBy = (int)ProductSortingEnum.Category;
+        }
+
         //sorting
         await PrepareSortingOptionsAsync(model, command);
         //view mode
@@ -1600,6 +1609,45 @@ public partial class CatalogModelFactory : ICatalogModelFactory
         if (instock == true)
         {
             filteredProducts = filteredProducts.Where(p => p.ManageInventoryMethodId == 0 || p.StockQuantity > 0 || p.BackorderModeId != 0);
+        }
+
+        if (command.OrderBy == (int)ProductSortingEnum.Category)
+        {
+            var allCategories = await _categoryService.GetAllCategoriesAsync(storeId: currentStore.Id);
+            var categoryPositions = allCategories
+                .Select((cat, index) => new { cat.Id, index })
+                .ToDictionary(x => x.Id, x => x.index);
+
+            var productIds = filteredProducts.Select(p => p.Id).ToArray();
+            var productCategories = await _productCategoryRepository.Table
+                .Where(pc => productIds.Contains(pc.ProductId))
+                .ToListAsync();
+
+            var productCategoriesGrouped = productCategories
+                .GroupBy(pc => pc.ProductId)
+                .ToDictionary(g => g.Key, g => g.ToList());
+
+            filteredProducts = filteredProducts.OrderBy(p =>
+            {
+                if (productCategoriesGrouped.TryGetValue(p.Id, out var mappings) && mappings.Any())
+                {
+                    var bestMapping = mappings
+                        .Select(m => new
+                        {
+                            Mapping = m,
+                            Position = categoryPositions.TryGetValue(m.CategoryId, out var pos) ? pos : int.MaxValue
+                        })
+                        .OrderBy(x => x.Position)
+                        .FirstOrDefault();
+
+                    if (bestMapping != null && bestMapping.Position != int.MaxValue)
+                    {
+                        return (CategoryPosition: bestMapping.Position, ProductDisplayOrder: bestMapping.Mapping.DisplayOrder, ProductId: p.Id);
+                    }
+                }
+
+                return (CategoryPosition: int.MaxValue, ProductDisplayOrder: int.MaxValue, ProductId: p.Id);
+            }).ToList();
         }
 
         var pagedProducts = new Nop.Core.PagedList<Product>(filteredProducts.ToList(), command.PageNumber - 1, command.PageSize);

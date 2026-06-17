@@ -1,4 +1,4 @@
-﻿namespace Nop.Core.Domain.Catalog;
+namespace Nop.Core.Domain.Catalog;
 
 /// <summary>
 /// Represents the product sorting
@@ -34,4 +34,9 @@ public enum ProductSortingEnum
     /// Product creation date
     /// </summary>
     CreatedOn = 15,
+
+    /// <summary>
+    /// Category
+    /// </summary>
+    Category = 20,
 }
