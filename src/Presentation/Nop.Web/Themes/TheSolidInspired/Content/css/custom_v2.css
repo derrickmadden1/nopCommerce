@@ -781,6 +781,21 @@ h6 {
   display: none !important;
 }
 
+.item-box .description[data-short-description],
+.product-card .description[data-short-description],
+.product-item .description[data-short-description] {
+  display: none !important;
+}
+
+.product-card .description,
+.product-item .description {
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: #666;
+  margin-top: 5px;
+  margin-bottom: 10px;
+}
+
 .product-actions {
     display: block !important;
     margin-top: 15px;
