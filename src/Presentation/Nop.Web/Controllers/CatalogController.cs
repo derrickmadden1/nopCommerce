@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Nop.Core;
 using Nop.Core.Domain.Catalog;
 using Nop.Core.Domain.FilterLevels;
@@ -381,7 +381,12 @@ public partial class CatalogController : BasePublicController
 
         foreach (var product in products)
         {
-            var productUrl = await _nopUrlHelper.RouteGenericUrlAsync(product, _webHelper.GetCurrentRequestProtocol());
+            var protocol = _webHelper.GetCurrentRequestProtocol();
+            if (string.IsNullOrWhiteSpace(protocol) || !protocol.StartsWith("http"))
+                protocol = Uri.UriSchemeHttps;
+
+            var productUrl = await _nopUrlHelper.RouteGenericUrlAsync(product, protocol);
+
             var productName = await _localizationService.GetLocalizedAsync(product, x => x.Name);
             var productDescription = await _localizationService.GetLocalizedAsync(product, x => x.ShortDescription);
             var item = new RssItem(productName, productDescription, new Uri(productUrl), $"urn:store:{store.Id}:newProducts:product:{product.Id}", product.CreatedOnUtc);
