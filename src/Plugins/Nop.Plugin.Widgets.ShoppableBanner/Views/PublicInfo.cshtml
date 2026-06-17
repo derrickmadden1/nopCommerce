@@ -49,7 +49,7 @@
         </div>
 
         <div class="mobile-product-stack">
-            <h3 class="mobile-stack-title">Featured in this room</h3>
+            <h3 class="mobile-stack-title">Featured products</h3>
             <div class="mobile-grid">
                 @foreach (var product in Model.Hotspots)
                 {
@@ -144,6 +144,40 @@
     }
 
     document.addEventListener("DOMContentLoaded", function() {
+        // Adjust hotspot tooltips to prevent them from extending outside the desktop banner container
+        const adjustTooltips = () => {
+            const wrapper = document.querySelector(".banner-desktop-wrapper");
+            if (!wrapper) return;
+            const wrapperRect = wrapper.getBoundingClientRect();
+            const tooltips = wrapper.querySelectorAll(".hotspot-tooltip");
+            
+            tooltips.forEach(tooltip => {
+                tooltip.style.left = "";
+                const rect = tooltip.getBoundingClientRect();
+                if (rect.right > wrapperRect.right) {
+                    const shiftLeft = rect.right - wrapperRect.right;
+                    tooltip.style.left = `calc(50% - ${shiftLeft + 10}px)`;
+                } else if (rect.left < wrapperRect.left) {
+                    const shiftRight = wrapperRect.left - rect.left;
+                    tooltip.style.left = `calc(50% + ${shiftRight + 10}px)`;
+                }
+            });
+        };
+
+        // Run on load and resize
+        adjustTooltips();
+        window.addEventListener("resize", adjustTooltips);
+        
+        // Also run when the background image has loaded to ensure correct measurements
+        const bgImage = document.querySelector(".banner-bg-image");
+        if (bgImage) {
+            if (bgImage.complete) {
+                adjustTooltips();
+            } else {
+                bgImage.addEventListener("load", adjustTooltips);
+            }
+        }
+
         const modal = document.getElementById('shoppable-quickview-modal');
         const contentContainer = document.getElementById('quickview-content');
         const closeBtn = document.getElementById('close-quickview');

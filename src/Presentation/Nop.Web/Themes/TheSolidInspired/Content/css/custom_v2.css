@@ -346,8 +346,19 @@ h6 {
   margin-top: 15px;
   opacity: 0;
   visibility: hidden;
-  transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+  transition: opacity 0.4s cubic-bezier(0.165, 0.84, 0.44, 1), visibility 0.4s, transform 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
   z-index: 1000;
+}
+
+/* Pseudo-element to bridge the 15px hover gap between menu link and panel */
+.mega-menu-panel::before {
+  content: '';
+  position: absolute;
+  top: -20px;
+  left: 0;
+  right: 0;
+  height: 20px;
+  background: transparent;
 }
 
 /* Show panel on hover */
