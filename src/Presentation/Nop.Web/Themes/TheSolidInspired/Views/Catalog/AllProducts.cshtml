@@ -1,0 +1,358 @@
+@model AllProductsModel
+@{
+    Layout = "_ColumnsTwo";
+
+    //title
+    NopHtml.AddTitleParts("All Products");
+    //page class
+    NopHtml.AppendPageCssClassParts("html-all-products-page");
+}
+<style>
+    .all-products-filters {
+        display: flex;
+        align-items: center;
+        gap: 24px;
+        margin-bottom: 24px;
+        padding: 16px 20px;
+        background: #fcfcfc;
+        border: 1px solid #eaeaea;
+        border-radius: 8px;
+        flex-wrap: wrap;
+    }
+    .all-products-filters .filter-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .all-products-filters label {
+        font-family: inherit;
+        font-size: 14px;
+        font-weight: 500;
+        color: #333;
+        user-select: none;
+        margin: 0;
+    }
+    .all-products-filters .dropdown-select {
+        padding: 8px 12px;
+        font-size: 14px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        background-color: #fff;
+        color: #333;
+        outline: none;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        min-width: 180px;
+    }
+    .all-products-filters .dropdown-select:focus {
+        border-color: #000;
+        box-shadow: 0 0 0 2px rgba(0,0,0,0.05);
+    }
+    .all-products-filters input[type="checkbox"] {
+        appearance: none;
+        -webkit-appearance: none;
+        width: 18px;
+        height: 18px;
+        border: 2px solid #ccc;
+        border-radius: 4px;
+        outline: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: background-color 0.2s ease, border-color 0.2s ease;
+        position: relative;
+    }
+    .all-products-filters input[type="checkbox"]:checked {
+        background-color: #000;
+        border-color: #000;
+    }
+    .all-products-filters input[type="checkbox"]:checked::after {
+        content: "";
+        display: block;
+        width: 4px;
+        height: 8px;
+        border: solid #fff;
+        border-width: 0 2px 2px 0;
+        transform: rotate(45deg);
+        position: absolute;
+        top: 2px;
+        left: 5px;
+    }
+    .all-products-filters input[type="checkbox"]:focus {
+        border-color: #000;
+        box-shadow: 0 0 0 2px rgba(0,0,0,0.05);
+    }
+    .all-products-filters .checkbox-item label {
+        cursor: pointer;
+    }
+
+    /* Segmented Navigation Control */
+    .segmented-control {
+        position: relative;
+        display: inline-flex;
+        background-color: #f0ede9;
+        border-radius: 20px;
+        padding: 2px;
+        user-select: none;
+        width: 260px;
+    }
+    .segmented-control input[type="radio"] {
+        display: none;
+    }
+    .segmented-control .segmented-label {
+        position: relative;
+        z-index: 2;
+        flex: 1;
+        text-align: center;
+        padding: 6px 0;
+        font-size: 13px;
+        font-weight: 600;
+        color: #666;
+        cursor: pointer;
+        border-radius: 18px;
+        transition: color 0.25s ease;
+        margin: 0;
+    }
+    .segmented-control input[type="radio"]:checked + .segmented-label {
+        color: #fff;
+    }
+    .segmented-slider {
+        position: absolute;
+        top: 2px;
+        bottom: 2px;
+        left: 2px;
+        width: calc(50% - 2px);
+        background-color: #4a6741;
+        border-radius: 18px;
+        z-index: 1;
+        transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .segmented-control input[value="infinite"]:checked ~ .segmented-slider {
+        transform: translateX(100%);
+    }
+
+    /* Pager responsiveness overrides */
+    .pager {
+        display: block;
+        width: 100% !important;
+        max-width: 100% !important;
+        text-align: center !important;
+        margin: 20px 0 !important;
+        clear: both !important;
+        box-sizing: border-box !important;
+    }
+    .pager ul {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        justify-content: center !important;
+        gap: 8px !important;
+        align-items: center !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        list-style: none !important;
+        box-sizing: border-box !important;
+    }
+    .pager li {
+        display: block !important;
+        margin: 0 !important;
+    }
+    .pager li span,
+    .pager li a {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        min-width: 40px !important;
+        height: 40px !important;
+        padding: 0 12px !important;
+        box-sizing: border-box !important;
+    }
+
+    @@media (max-width: 576px) {
+        .all-products-filters {
+            gap: 16px;
+            padding: 12px 16px;
+        }
+        .all-products-filters .filter-item {
+            flex-direction: column;
+            align-items: flex-start;
+            width: 100%;
+            gap: 6px;
+        }
+        .all-products-filters .checkbox-item {
+            flex-direction: row;
+            align-items: center;
+        }
+        .all-products-filters .dropdown-select {
+            width: 100%;
+            min-width: unset;
+        }
+        .segmented-control {
+            width: 100% !important;
+            max-width: 100% !important;
+        }
+
+        .pager ul {
+            gap: 6px !important;
+        }
+        .pager li span,
+        .pager li a {
+            min-width: 32px !important;
+            height: 32px !important;
+            padding: 0 8px !important;
+            font-size: 12px !important;
+        }
+        .pager li.previous-page a,
+        .pager li.next-page a {
+            padding: 0 12px !important;
+            font-size: 10px !important;
+        }
+    }
+</style>
+
+<div class="page all-products-page">
+    <div class="page-title">
+        <h1>All Products</h1>
+    </div>
+    <div class="page-body">
+        <div class="all-products-filters">
+            <div class="filter-item">
+                <label for="all-products-category">Category</label>
+                @Html.DropDownList("all-products-category", Model.AvailableCategories, new { @class = "dropdown-select" })
+            </div>
+            <div class="filter-item checkbox-item">
+                <input type="checkbox" id="all-products-instock" name="all-products-instock" checked="@(Model.InStockOnly ? "checked" : null)" />
+                <label for="all-products-instock">In Stock Only</label>
+            </div>
+            <div class="filter-item scroll-mode-item">
+                <label>Navigation</label>
+                <div class="segmented-control">
+                    <input type="radio" id="scroll-mode-paging" name="scroll-mode" value="paging" checked />
+                    <label for="scroll-mode-paging" class="segmented-label">Paging</label>
+                    
+                    <input type="radio" id="scroll-mode-infinite" name="scroll-mode" value="infinite" />
+                    <label for="scroll-mode-infinite" class="segmented-label">Infinite Scroll</label>
+                    
+                    <div class="segmented-slider"></div>
+                </div>
+            </div>
+        </div>
+
+        @await Html.PartialAsync("_CatalogSelectors", Model.CatalogProductsModel)
+        @{ 
+            var allProductsViewData = new ViewDataDictionary(ViewData);
+            allProductsViewData["fetchUrl"] = Html.Raw(Url.RouteUrl(NopRouteNames.Ajax.GET_ALL_PRODUCTS));
+        }
+        @await Html.PartialAsync("_CatalogProducts", Model.CatalogProductsModel, allProductsViewData)
+    </div>
+</div>
+
+<script asp-location="Footer">
+    $(function() {
+        var $categoryEl = $('#all-products-category');
+        var $inStockEl = $('#all-products-instock');
+        var $scrollModeRadio = $('input[name="scroll-mode"]');
+
+        var loading = false;
+        var hasMorePages = false;
+        var currentPage = 1;
+
+        $categoryEl.on('change', function () {
+            CatalogProducts.getProducts();
+        });
+
+        $inStockEl.on('change', function () {
+            CatalogProducts.getProducts();
+        });
+
+        $scrollModeRadio.on('change', function() {
+            // Re-initialize scroll handler and reset view to page 1
+            CatalogProducts.getProducts();
+        });
+
+        $(CatalogProducts).on('before', function (e) {
+            e.payload.urlBuilder
+                .addParameter('cid', $categoryEl.val())
+                .addParameter('instock', $inStockEl.is(':checked'));
+        });
+
+        $(CatalogProducts).on('loaded', function() {
+            initInfiniteScroll();
+        });
+
+        // Run on page load
+        initInfiniteScroll();
+
+        function initInfiniteScroll() {
+            $(window).off('scroll.infinite');
+            var selectedMode = $('input[name="scroll-mode"]:checked').val();
+
+            if (selectedMode !== 'infinite') {
+                $('.pager').show();
+                return;
+            }
+
+            $('.pager').hide();
+            hasMorePages = $('.pager .next-page').length > 0;
+            currentPage = 1;
+            loading = false;
+
+            $(window).on('scroll.infinite', function() {
+                if (loading || !hasMorePages) return;
+
+                // Trigger load when scrolled within 800px from the bottom
+                if ($(window).scrollTop() + $(window).height() >= $(document).height() - 800) {
+                    loadNextPage();
+                }
+            });
+        }
+
+        function loadNextPage() {
+            loading = true;
+            var nextPage = currentPage + 1;
+
+            $('.ajax-products-busy').show();
+
+            var urlBuilder = createProductsURLBuilder('@Context.Request.Path');
+            urlBuilder.addParameter('pagenumber', nextPage);
+
+            var beforePayload = { urlBuilder };
+            $(CatalogProducts).trigger({ type: "before", payload: beforePayload });
+
+            var postData = { ...beforePayload.urlBuilder.params.query };
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                url: '@ViewData["fetchUrl"]',
+                type: 'POST',
+                data: postData,
+                success: function(response) {
+                    var $responseHtml = $(response);
+                    var $newItems = $responseHtml.find('.item-box');
+
+                    if ($newItems.length > 0) {
+                        $('.products-wrapper .item-grid').append($newItems);
+                        currentPage = nextPage;
+
+                        // Check if there are more pages in new result pager
+                        hasMorePages = $responseHtml.find('.next-page').length > 0;
+
+                        // Update browser history URL
+                        CatalogProducts.setBrowserHistory(beforePayload.urlBuilder.build());
+                    } else {
+                        hasMorePages = false;
+                    }
+                },
+                error: function() {
+                    hasMorePages = false;
+                },
+                complete: function() {
+                    loading = false;
+                    $('.ajax-products-busy').hide();
+                }
+            });
+        }
+    });
+</script>

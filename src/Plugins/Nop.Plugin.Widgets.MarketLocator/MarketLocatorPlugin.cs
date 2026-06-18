@@ -1,4 +1,5 @@
 using Nop.Core;
+using Nop.Core.Domain.Cms;
 using Nop.Core.Domain.Common;
 using Nop.Core.Domain.Orders;
 using Nop.Core.Domain.Shipping;
@@ -147,6 +148,14 @@ public class MarketLocatorPlugin : BasePlugin, IWidgetPlugin, IPickupPointProvid
             ["Plugins.Shipping.MarketPickup.Description"] = "Collect at one of our markets — free.",
         });
 
+        // Auto-activate the widget
+        var widgetSettings = await _settingService.LoadSettingAsync<WidgetSettings>();
+        if (!widgetSettings.ActiveWidgetSystemNames.Contains(PluginDescriptor.SystemName))
+        {
+            widgetSettings.ActiveWidgetSystemNames.Add(PluginDescriptor.SystemName);
+            await _settingService.SaveSettingAsync(widgetSettings);
+        }
+
         await base.InstallAsync();
     }
 
@@ -155,6 +164,15 @@ public class MarketLocatorPlugin : BasePlugin, IWidgetPlugin, IPickupPointProvid
         await _settingService.DeleteSettingAsync<MarketLocatorSettings>();
         await _localizationService.DeleteLocaleResourcesAsync("Plugins.Widgets.MarketLocator");
         await _localizationService.DeleteLocaleResourcesAsync("Plugins.Shipping.MarketPickup");
+
+        // Deactivate the widget
+        var widgetSettings = await _settingService.LoadSettingAsync<WidgetSettings>();
+        if (widgetSettings.ActiveWidgetSystemNames.Contains(PluginDescriptor.SystemName))
+        {
+            widgetSettings.ActiveWidgetSystemNames.Remove(PluginDescriptor.SystemName);
+            await _settingService.SaveSettingAsync(widgetSettings);
+        }
+
         await base.UninstallAsync();
     }
 }

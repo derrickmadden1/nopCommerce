@@ -1,0 +1,106 @@
+@inherits Nop.Web.Framework.Mvc.Razor.NopRazorPage<TModel>
+@using Nop.Web.Framework.Infrastructure
+@inject Nop.Core.IWorkContext workContext
+@inject Nop.Core.IStoreContext storeContext
+@inject Nop.Services.Cms.IWidgetPluginManager widgetPluginManager
+
+@{
+    Layout = "_ColumnsOne";
+
+    var isShoppableBannerActive = await widgetPluginManager.IsPluginActiveAsync("Widgets.ShoppableBanner", 
+        await workContext.GetCurrentCustomerAsync(), 
+        (await storeContext.GetCurrentStoreAsync()).Id);
+
+    var heroTopicHtml = string.Empty;
+    if (!isShoppableBannerActive)
+    {
+        var heroTopic = await Component.InvokeAsync("TopicBlock", new { systemName = "Theme_SolidInspired_Hero" });
+        using (var writer = new System.IO.StringWriter())
+        {
+            heroTopic.WriteTo(writer, System.Text.Encodings.Web.HtmlEncoder.Default);
+            heroTopicHtml = writer.ToString();
+        }
+    }
+}
+
+@await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.HomepageTop })
+
+@if (!isShoppableBannerActive)
+{
+    <!-- HERO SECTION -->
+    if (!string.IsNullOrWhiteSpace(heroTopicHtml))
+    {
+        @Html.Raw(heroTopicHtml)
+    }
+    else
+    {
+        <section class="hero">
+            <div class="hero-inner">
+                <h1>Live Inspired</h1>
+                <p>Crafted essentials for a life well lived</p>
+                <a href="@Url.RouteUrl("AllProducts")" class="btn-primary-outline">Explore the Collection</a>
+            </div>
+        </section>
+    }
+}
+
+<!-- BRAND STORY BLOCK -->
+@{
+    var storyTopic = await Component.InvokeAsync("TopicBlock", new { systemName = "Theme_SolidInspired_BrandStory" });
+    var storyTopicHtml = string.Empty;
+    using (var writer = new System.IO.StringWriter())
+    {
+        storyTopic.WriteTo(writer, System.Text.Encodings.Web.HtmlEncoder.Default);
+        storyTopicHtml = writer.ToString();
+    }
+}
+@if (!string.IsNullOrWhiteSpace(storyTopicHtml))
+{
+    @Html.Raw(storyTopicHtml)
+}
+else
+{
+    <section class="brand-story">
+        <div class="story-inner">
+            <h2>Our Philosophy</h2>
+            <p>We believe in thoughtful design, sustainable materials, and products that elevate everyday living.</p>
+            <a href="@Url.RouteUrl("Topic", new { SeName = "about-us" })" class="link-more">Discover Our Story</a>
+        </div>
+    </section>
+}
+
+@await Component.InvokeAsync(typeof(HomepageProductsViewComponent))
+
+<!-- LIFESTYLE IMAGE STRIP -->
+@{
+    var lifestyleTopic = await Component.InvokeAsync("TopicBlock", new { systemName = "Theme_SolidInspired_LifestyleStrip" });
+    var lifestyleTopicHtml = string.Empty;
+    using (var writer = new System.IO.StringWriter())
+    {
+        lifestyleTopic.WriteTo(writer, System.Text.Encodings.Web.HtmlEncoder.Default);
+        lifestyleTopicHtml = writer.ToString();
+    }
+}
+@if (!string.IsNullOrWhiteSpace(lifestyleTopicHtml))
+{
+    @Html.Raw(lifestyleTopicHtml)
+}
+else
+{
+    <section class="lifestyle-strip">
+        <div class="strip-image img1">
+            <img src="/Themes/TheSolidInspired/Content/images/life1.jpg" alt="Lifestyle Image 1" loading="lazy" />
+        </div>
+        <div class="strip-image img2">
+            <img src="/Themes/TheSolidInspired/Content/images/life2.jpg" alt="Lifestyle Image 2" loading="lazy" />
+        </div>
+        <div class="strip-image img3">
+            <img src="/Themes/TheSolidInspired/Content/images/life3.jpg" alt="Lifestyle Image 3" loading="lazy" />
+        </div>
+    </section>
+}
+
+<!-- HOMEPAGE TEXT TOPIC -->
+@await Component.InvokeAsync("TopicBlock", new { systemName = "HomepageText" })
+
+@await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.HomepageBottom })

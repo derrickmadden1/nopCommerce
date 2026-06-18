@@ -1,4 +1,4 @@
-﻿namespace Nop.Core.Http;
+namespace Nop.Core.Http;
 
 /// <summary>
 /// Represents route names
@@ -59,6 +59,11 @@ public static partial class NopRouteNames
         /// Gets the new products route name
         /// </summary>
         public const string NEW_PRODUCTS = "NewProducts";
+
+        /// <summary>
+        /// Gets the all products route name
+        /// </summary>
+        public const string ALL_PRODUCTS = "AllProducts";
 
         /// <summary>
         /// Gets the blog route name
@@ -706,6 +711,11 @@ public static partial class NopRouteNames
         /// Gets the new products route name
         /// </summary>
         public const string GET_NEW_PRODUCTS = "GetNewProducts";
+
+        /// <summary>
+        /// Gets the all products route name
+        /// </summary>
+        public const string GET_ALL_PRODUCTS = "GetAllProducts";
 
         /// <summary>
         /// Gets the product combinations route name

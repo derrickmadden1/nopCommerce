@@ -1,0 +1,65 @@
+@model FooterModel
+
+@using Nop.Core
+@using Nop.Core.Domain.Tax
+@using Nop.Core.Domain.Topics
+
+@inject IWorkContext workContext
+@inject Nop.Web.Factories.ICommonModelFactory commonModelFactory
+@{
+    var socialModel = await commonModelFactory.PrepareSocialModelAsync();
+}
+
+<footer class="footer">
+    <div class="footer-container">
+        <div class="footer-columns">
+            @await Component.InvokeAsync("FooterMenu")
+            
+            <div class="footer-column newsletter-col">
+                <h3>@T("Footer.FollowUs")</h3>
+                <div class="footer-social">
+                    @if (!string.IsNullOrEmpty(socialModel.FacebookLink))
+                    {
+                        <a href="@socialModel.FacebookLink" target="_blank" rel="noopener noreferrer" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                    }
+                    @if (!string.IsNullOrEmpty(socialModel.InstagramLink))
+                    {
+                        <a href="@socialModel.InstagramLink" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                    }
+                    @if (!string.IsNullOrEmpty(socialModel.XLink))
+                    {
+                        <a href="@socialModel.XLink" target="_blank" rel="noopener noreferrer" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+                    }
+                    @if (!string.IsNullOrEmpty(socialModel.YoutubeLink))
+                    {
+                        <a href="@socialModel.YoutubeLink" target="_blank" rel="noopener noreferrer" aria-label="Youtube"><i class="fab fa-youtube"></i></a>
+                    }
+                </div>
+                
+                <h3 style="margin-top: 30px; margin-bottom: 20px;">Newsletter and prize draw</h3>
+                @await Component.InvokeAsync("NewsLetterBox")
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <div class="footer-info">
+                <span class="footer-disclaimer">@T("Content.CopyrightNotice", DateTime.Now.Year, Model.StoreName)</span>
+            </div>
+            
+            <div class="footer-payment-methods">
+                <i class="fab fa-cc-visa"></i>
+                <i class="fab fa-cc-mastercard"></i>
+                <i class="fab fa-cc-paypal"></i>
+                <i class="fab fa-cc-apple-pay"></i>
+            </div>
+
+            @if (!Model.HidePoweredByNopCommerce)
+            {
+                <div class="footer-powered-by">
+                    Powered by <a href="@(OfficialSite.Main)" target="_blank">nopCommerce</a>
+                </div>
+            }
+        </div>
+    </div>
+    @await Component.InvokeAsync("Widget", new { widgetZone = PublicWidgetZones.Footer, additionalData = Model })
+</footer>

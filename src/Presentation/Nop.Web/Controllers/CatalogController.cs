@@ -318,6 +318,49 @@ public partial class CatalogController : BasePublicController
         return PartialView("_ProductsInGridOrLines", model);
     }
 
+    public virtual async Task<IActionResult> AllProducts(CatalogProductsCommand command, int? cid, bool? instock)
+    {
+        var catalogProductsModel = await _catalogModelFactory.PrepareAllProductsModelAsync(command, cid, instock);
+
+        var model = new AllProductsModel
+        {
+            CatalogProductsModel = catalogProductsModel
+        };
+
+        var currentStore = await _storeContext.GetCurrentStoreAsync();
+        var allCategories = await _categoryService.GetAllCategoriesAsync(storeId: currentStore.Id);
+
+        model.AvailableCategories.Add(new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem
+        {
+            Value = "0",
+            Text = "All Categories",
+            Selected = (cid ?? 0) == 0
+        });
+
+        foreach (var category in allCategories)
+        {
+            model.AvailableCategories.Add(new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem
+            {
+                Value = category.Id.ToString(),
+                Text = await _localizationService.GetLocalizedAsync(category, x => x.Name),
+                Selected = category.Id == cid
+            });
+        }
+
+        model.SelectedCategoryId = cid;
+        model.InStockOnly = instock ?? false;
+
+        return View(model);
+    }
+
+    [HttpPost]
+    public virtual async Task<IActionResult> GetAllProducts(CatalogProductsCommand command, int? cid, bool? instock)
+    {
+        var model = await _catalogModelFactory.PrepareAllProductsModelAsync(command, cid, instock);
+
+        return PartialView("_ProductsInGridOrLines", model);
+    }
+
     [CheckLanguageSeoCode(ignore: true)]
     public virtual async Task<IActionResult> NewProductsRss()
     {
@@ -338,7 +381,12 @@ public partial class CatalogController : BasePublicController
 
         foreach (var product in products)
         {
-            var productUrl = await _nopUrlHelper.RouteGenericUrlAsync(product, _webHelper.GetCurrentRequestProtocol());
+            var protocol = _webHelper.GetCurrentRequestProtocol();
+            if (string.IsNullOrWhiteSpace(protocol) || !protocol.StartsWith("http"))
+                protocol = Uri.UriSchemeHttps;
+
+            var productUrl = await _nopUrlHelper.RouteGenericUrlAsync(product, protocol);
+
             var productName = await _localizationService.GetLocalizedAsync(product, x => x.Name);
             var productDescription = await _localizationService.GetLocalizedAsync(product, x => x.ShortDescription);
             var item = new RssItem(productName, productDescription, new Uri(productUrl), $"urn:store:{store.Id}:newProducts:product:{product.Id}", product.CreatedOnUtc);

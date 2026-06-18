@@ -1,0 +1,71 @@
+@model MiniShoppingCartModel
+
+@using Nop.Core.Domain.Catalog
+
+<div id="flyout-cart" class="flyout-cart">
+    <div class="mini-shopping-cart">
+        @if (Model.TotalProducts > 0)
+        {
+            <div class="items">
+                @for (var i = 0; i < Model.Items.Count; i++)
+                {
+                    var item = Model.Items[i];
+                    <div class="item @(i == 0 ? "first" : null)">
+                        @if (Model.ShowProductImages)
+                        {
+                            <div class="picture">
+                                <a href="@(await NopUrl.RouteGenericUrlAsync<Product>(new { SeName = item.ProductSeName }))" title="@item.Picture.Title">
+                                    <img alt="@item.Picture.AlternateText" src="@item.Picture.ImageUrl" title="@item.Picture.Title" />
+                                </a>
+                            </div>
+                        }
+                        <div class="product">
+                            <div class="name">
+                                <a href="@(await NopUrl.RouteGenericUrlAsync<Product>(new { SeName = item.ProductSeName }))">@item.ProductName</a>
+                            </div>
+                            @if (!string.IsNullOrEmpty(item.AttributeInfo))
+                            {
+                                <div class="attributes">
+                                    @Html.Raw(item.AttributeInfo)
+                                </div>
+                            }
+                            <div class="price">@T("ShoppingCart.Mini.UnitPrice"): <span>@item.UnitPrice</span></div>
+                            <div class="quantity">@T("ShoppingCart.Mini.Quantity"): <span>@item.Quantity</span></div>
+                        </div>
+                    </div>
+                }
+            </div>
+            
+            <div class="totals">
+                <span class="label">@T("ShoppingCart.Totals.SubTotal"):</span> 
+                <span class="subtotal">@Model.SubTotal</span>
+            </div>
+            
+            <div class="buttons">
+                @if (Model.DisplayShoppingCartButton)
+                {
+                    <button type="button" class="cart-button" onclick="setLocation('@(Url.RouteUrl(NopRouteNames.General.CART))')">@T("ShoppingCart.Mini.ViewCart")</button>
+                }
+                @if (Model.DisplayCheckoutButton)
+                {
+                    var checkoutUrl = "";
+                    if (Model.AnonymousCheckoutAllowed && Model.CurrentCustomerIsGuest)
+                    {
+                        checkoutUrl = Url.RouteUrl(NopRouteNames.Standard.LOGIN_CHECKOUT_AS_GUEST, new { returnUrl = Url.RouteUrl(NopRouteNames.General.CART) });
+                    }
+                    else
+                    {
+                        checkoutUrl = Url.RouteUrl(NopRouteNames.Standard.CHECKOUT);
+                    }
+                    <button type="button" class="checkout-button" onclick="setLocation('@checkoutUrl')">@T("Checkout.Button")</button>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="no-data">
+                @T("ShoppingCart.Mini.NoItems")
+            </div>
+        }
+    </div>
+</div>

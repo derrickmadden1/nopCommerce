@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Encodings.Web;
@@ -113,7 +113,7 @@ public partial class NopHtmlHelper : INopHtmlHelper
 
         var isLocal = _webHelper.CheckIsLocalUrl(src);
         var url = isLocal
-            ? src[1..].RemoveApplicationPathFromRawUrl(httpContext.Request.PathBase)
+            ? (src.StartsWith('~') ? src[1..] : src).RemoveApplicationPathFromRawUrl(httpContext.Request.PathBase)
             : src;
 
         return (url, isLocal);

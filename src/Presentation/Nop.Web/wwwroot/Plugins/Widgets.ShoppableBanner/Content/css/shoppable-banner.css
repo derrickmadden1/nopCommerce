@@ -1,0 +1,566 @@
+/* --- Global Container --- */
+.shoppable-banner-container, 
+.shoppable-banner-container *,
+.quickview-modal,
+.quickview-modal * {
+    box-sizing: border-box;
+}
+
+.shoppable-banner-container {
+    width: 100%;
+    margin-bottom: 2rem;
+}
+
+/* --- Desktop Layout --- */
+.banner-desktop-wrapper {
+    position: relative;
+    display: block; /* Hidden on mobile */
+    overflow: hidden;
+}
+
+.banner-bg-image {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+/* Centered hero-style text overlay on top of background image */
+.banner-text-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(255, 255, 255, 0.75);
+    padding: 50px 70px;
+    text-align: center;
+    max-width: 650px;
+    width: 90%;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+    z-index: 5;
+    border-radius: 4px;
+}
+
+.banner-title {
+    font-size: 2.8rem;
+    margin-top: 0;
+    margin-bottom: 12px;
+    color: #111;
+    font-weight: 500;
+}
+
+.banner-subtitle {
+    font-size: 1.05rem;
+    color: #555;
+    margin-bottom: 24px;
+    line-height: 1.6;
+}
+
+.banner-action-btn {
+    display: inline-block;
+    padding: 12px 28px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    border: 2px solid #111;
+    color: #111 !important;
+    background: transparent;
+    text-decoration: none !important;
+    transition: all 0.25s ease;
+    border-radius: 4px;
+}
+
+.banner-action-btn:hover {
+    background: #111;
+    color: #fff !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.hotspot-marker {
+    position: absolute;
+    width: 24px;
+    height: 24px;
+    transform: translate(-50%, -50%); /* Centers the dot exactly on the X/Y coordinate */
+    z-index: 10;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.hotspot-marker:hover {
+    z-index: 200; /* Bring hovered hotspot and tooltip above adjacent hotspots */
+}
+
+/* If the hotspot marker has a product image, style it larger */
+.hotspot-marker.has-image {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    /* Subtle background circle so lighter transparent product images pop */
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(2px);
+    padding: 6px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+.hotspot-product-thumbnail {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    position: relative;
+    z-index: 2;
+    transition: transform 0.25s ease-in-out;
+    mix-blend-mode: multiply; /* Blends out white backgrounds to make them transparent */
+    background: transparent !important;
+    background-color: transparent !important;
+    border-radius: 50%; /* Crops any remaining white edge/background into a clean circle */
+    overflow: hidden;
+}
+
+.hotspot-marker.has-image:hover .hotspot-product-thumbnail {
+    transform: scale(1.15);
+}
+
+/* Subtle animation to draw the eye */
+.hotspot-pulse {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.8);
+    border-radius: 50%;
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7);
+    animation: pulse 2s infinite;
+    z-index: 1;
+    top: 0;
+    left: 0;
+}
+
+.hotspot-pulse.product-pulse {
+    background-color: rgba(255, 255, 255, 0.2);
+    z-index: 1; /* behind product thumbnail (z-index: 2) */
+}
+
+@keyframes pulse {
+    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.5); }
+    70% { transform: scale(1); box-shadow: 0 0 0 12px rgba(255, 255, 255, 0); }
+    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
+}
+
+/* Tooltip with transition and grace period */
+.hotspot-tooltip {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #fff;
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+    white-space: nowrap;
+    margin-bottom: 10px;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    
+    /* Smooth transition with hover grace period */
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+/* Large transparent bridge to safely funnel cursor from hotspot dot to tooltip */
+.hotspot-tooltip::after {
+    content: "";
+    position: absolute;
+    left: -30px;
+    right: -30px;
+    bottom: -45px; /* bridges up to 40px gap and overlaps the dot */
+    height: 45px;
+    background: transparent;
+}
+
+.hotspot-marker:hover .hotspot-tooltip {
+    opacity: 1;
+    visibility: visible;
+}
+
+.hotspot-product-name {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #333;
+}
+
+.add-to-cart-hotspot {
+    padding: 6px 14px !important;
+    font-weight: 600 !important;
+    font-size: 0.8rem !important;
+    cursor: pointer !important;
+    background-color: #4a5d4e !important; /* premium dark sage green */
+    color: #fff !important;
+    border: none !important;
+    border-radius: 4px !important;
+    transition: all 0.2s ease-in-out !important;
+    box-shadow: none !important;
+    text-decoration: none !important;
+    display: inline-block !important;
+    line-height: 1.2 !important;
+}
+
+.add-to-cart-hotspot:hover {
+    background-color: #3b4c3e !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15) !important;
+    color: #fff !important;
+}
+
+/* --- Mobile Layout (Hidden on Desktop) --- */
+.banner-mobile-wrapper {
+    display: none;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+/* --- Responsive Breakpoint --- */
+@media (max-width: 768px) {
+    /* Swap which view is visible */
+    .banner-desktop-wrapper { display: none; }
+    .banner-mobile-wrapper { display: block; }
+
+    .mobile-hero {
+        position: relative;
+        text-align: center;
+    }
+
+    .mobile-hero img {
+        width: 100%;
+        height: auto;
+        display: block;
+    }
+
+    .mobile-text {
+        padding: 35px 20px;
+        background: #fdfdfd;
+        border-bottom: 1px solid #eee;
+    }
+
+    .mobile-text h2 {
+        font-size: 1.8rem;
+        margin-top: 0;
+        margin-bottom: 10px;
+        color: #111;
+        font-weight: 500;
+    }
+
+    .mobile-text p {
+        font-size: 0.95rem;
+        color: #666;
+        margin-bottom: 20px;
+        line-height: 1.5;
+    }
+
+    .mobile-text .banner-action-btn {
+        padding: 10px 24px;
+        font-size: 0.85rem;
+    }
+
+    .mobile-product-stack {
+        background-color: #fcfdfc;
+        padding: 30px 15px;
+    }
+
+    .mobile-stack-title {
+        font-size: 1.15rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        color: #111;
+        text-align: center;
+        margin-top: 0;
+        margin-bottom: 25px;
+    }
+
+    .mobile-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr; /* 2 columns */
+        gap: 15px;
+        width: 100%;
+    }
+
+    .mobile-product-card {
+        background: #fff;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+        display: flex;
+        flex-direction: column;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        min-width: 0; /* prevents horizontal expansion */
+    }
+
+    .mobile-product-card:active {
+        transform: scale(0.97);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+    }
+
+    .mobile-card-image {
+        background: #f7f9f7;
+        height: 140px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 10px;
+    }
+
+    .mobile-card-image img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+        mix-blend-mode: multiply;
+        transition: transform 0.3s ease;
+    }
+
+    .mobile-card-details {
+        padding: 12px;
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
+        justify-content: space-between;
+        align-items: center;
+        text-align: center;
+    }
+
+    .mobile-card-details .product-name {
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: #333;
+        margin-bottom: 4px;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        height: 2.4rem;
+        line-height: 1.2;
+    }
+
+    .mobile-card-details .product-price {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 10px;
+    }
+
+    .mobile-product-card button.add-to-cart-mobile {
+        width: 100% !important;
+        padding: 10px 12px !important;
+        background-color: #4a5d4e !important; /* premium dark sage green */
+        color: #fff !important;
+        border: none !important;
+        border-radius: 4px !important;
+        font-weight: 600 !important;
+        font-size: 0.85rem !important;
+        cursor: pointer !important;
+        transition: all 0.2s ease-in-out !important;
+        text-align: center !important;
+        box-shadow: none !important;
+        text-transform: none !important;
+        display: block !important;
+    }
+
+    .mobile-product-card button.add-to-cart-mobile:hover,
+    .mobile-product-card button.add-to-cart-mobile:active {
+        background-color: #3b4c3e !important;
+        color: #fff !important;
+    }
+}
+
+/* --- Quick View Modal Styles --- */
+.quickview-modal {
+    border: none;
+    border-radius: 8px;
+    padding: 0;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+    max-width: 650px;
+    width: 90%;
+    background: #fff;
+    overflow: hidden; /* Constrain content size */
+    max-height: 85vh; /* Limit vertical space to 85% of screen */
+}
+
+.quickview-modal[open] {
+    display: flex;
+    flex-direction: column;
+}
+
+.quickview-modal::backdrop {
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+}
+
+.modal-content-wrapper {
+    position: relative;
+    padding: 24px;
+    overflow-y: auto; /* Enable scrollbar */
+    flex-grow: 1;
+}
+
+.close-btn {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    border: 1px solid rgba(0, 0, 0, 0.12) !important;
+    background: #fff !important;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    font-size: 20px;
+    font-weight: bold;
+    cursor: pointer;
+    color: #333 !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease-in-out;
+    z-index: 100 !important; /* Float above the scrolling content */
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.close-btn:hover {
+    background: #f5f5f5 !important;
+    color: #000 !important;
+    transform: scale(1.08);
+}
+
+.shoppable-quickview-container {
+    display: flex;
+    gap: 24px;
+}
+
+.quickview-image-column {
+    flex: 0 0 200px;
+    max-width: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.quickview-product-image {
+    width: 100%;
+    height: auto;
+    border-radius: 6px;
+    object-fit: cover;
+}
+
+.quickview-info-column {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.quickview-product-title {
+    margin-top: 0;
+    margin-bottom: 8px;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #333;
+}
+
+.quickview-product-sku {
+    font-size: 0.85rem;
+    color: #888;
+    margin-bottom: 12px;
+}
+
+.quickview-product-price {
+    font-size: 1.25rem;
+    font-weight: bold;
+    color: #2c3e50;
+    margin-bottom: 16px;
+}
+
+.quickview-product-description {
+    font-size: 0.95rem;
+    color: #555;
+    line-height: 1.5;
+    margin-bottom: 20px;
+}
+
+.add-to-cart-panel {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.qty-input {
+    width: 60px;
+    padding: 6px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    text-align: center;
+}
+
+.add-to-cart-btn {
+    padding: 10px 24px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    background-color: #4a5d4e; /* premium dark sage green */
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    transition: all 0.2s ease-in-out;
+}
+
+.add-to-cart-btn:hover {
+    background-color: #3b4c3e;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.add-to-cart-btn:active {
+    transform: translateY(0);
+}
+
+.add-to-cart-btn.added-success {
+    background-color: #2e5138 !important;
+    border-color: #2e5138 !important;
+    color: #fff !important;
+}
+
+.quickview-notification {
+    margin-top: 12px;
+    padding: 10px 14px;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    line-height: 1.4;
+    width: 100%;
+}
+
+.quickview-notification.success-alert {
+    background-color: #eaf2eb;
+    color: #2e5138;
+    border: 1px solid #d4e5d6;
+}
+
+.quickview-notification.error-alert {
+    background-color: #fcebeb;
+    color: #a94442;
+    border: 1px solid #ebccd1;
+}
+
+@media (max-width: 576px) {
+    .shoppable-quickview-container {
+        flex-direction: column;
+        gap: 16px;
+    }
+    
+    .quickview-image-column {
+        flex: 0 0 auto;
+        max-width: 100%;
+    }
+}

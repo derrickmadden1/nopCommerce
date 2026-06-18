@@ -1,0 +1,63 @@
+@model ProductReviewOverviewModel
+@{
+    var ratingPercent = 0;
+    var noReviews = Model.TotalReviews == 0;
+    if (!noReviews)
+    {
+        ratingPercent = ((Model.RatingSum * 100) / Model.TotalReviews) / 5;
+    }
+}
+@if (Model.AllowCustomerReviews)
+{
+    <div class="product-reviews-overview product-reviews-overview-modern">
+        <div class="product-review-box">
+            <div class="rating-modern" title="@ratingPercent%">
+                @for (int i = 1; i <= 5; i++)
+                {
+                    if (ratingPercent >= (i * 20))
+                    {
+                        <i class="fas fa-star filled"></i>
+                    }
+                    else if (ratingPercent >= ((i - 1) * 20 + 10))
+                    {
+                        <i class="fas fa-star-half-alt filled"></i>
+                    }
+                    else
+                    {
+                        <i class="far fa-star empty"></i>
+                    }
+                }
+            </div>
+        </div>
+
+        @if (Model.TotalReviews > 0)
+        {
+            <div class="product-review-links">
+                <a href="#productreviews" class="review-scroll-link">@Model.TotalReviews @T("Reviews.Overview.Reviews")</a>
+            </div>
+        }
+
+        @if (Model.CanAddNewReview && Model.CanCurrentCustomerLeaveReview)
+        {
+            <div class="product-review-links add-review @(noReviews ? "product-no-reviews" : "")">
+                <a href="#addreview" class="review-scroll-link">@T(noReviews ? "Reviews.Overview.First" : "Reviews.Overview.AddNew")</a>
+            </div>
+        }
+        
+        <script asp-location="Footer">
+            document.addEventListener("DOMContentLoaded", function() {
+                const reviewLinks = document.querySelectorAll('.review-scroll-link');
+                reviewLinks.forEach(link => {
+                    link.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        const targetId = this.getAttribute('href').substring(1);
+                        const targetElement = document.getElementById(targetId);
+                        if (targetElement) {
+                            targetElement.scrollIntoView({ behavior: 'smooth' });
+                        }
+                    });
+                });
+            });
+        </script>
+    </div>
+}

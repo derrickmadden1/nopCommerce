@@ -1,4 +1,4 @@
-﻿/*
+/*
 ** nopCommerce ajax cart implementation
 */
 
@@ -176,8 +176,8 @@ var AjaxCart = {
                     displayPopupNotification(response.message, 'error', true);
                 }
                 else {
-                    //no timeout for errors
-                    displayBarNotification(response.message, 'error', 0);
+                    //set timeout for errors so they disappear
+                    displayBarNotification(response.message, 'error', 3500);
                 }
             }
             return false;

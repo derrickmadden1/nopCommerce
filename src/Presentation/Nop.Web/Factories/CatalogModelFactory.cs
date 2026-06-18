@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Newtonsoft.Json;
 using Nop.Core;
 using Nop.Core.Caching;
@@ -22,6 +22,7 @@ using Nop.Services.Vendors;
 using Nop.Web.Framework.Events;
 using Nop.Web.Framework.Mvc.Routing;
 using Nop.Web.Infrastructure.Cache;
+using Nop.Data;
 using Nop.Web.Models.Catalog;
 using Nop.Web.Models.Media;
 
@@ -34,6 +35,7 @@ public partial class CatalogModelFactory : ICatalogModelFactory
     protected readonly CatalogSettings _catalogSettings;
     protected readonly CustomerSettings _customerSettings;
     protected readonly ICategoryService _categoryService;
+    protected readonly IRepository<ProductCategory> _productCategoryRepository;
     protected readonly ICategoryTemplateService _categoryTemplateService;
     protected readonly ICurrencyService _currencyService;
     protected readonly ICustomerService _customerService;
@@ -72,6 +74,7 @@ public partial class CatalogModelFactory : ICatalogModelFactory
     public CatalogModelFactory(CatalogSettings catalogSettings,
         CustomerSettings customerSettings,
         ICategoryService categoryService,
+        IRepository<ProductCategory> productCategoryRepository,
         ICategoryTemplateService categoryTemplateService,
         ICurrencyService currencyService,
         ICustomerService customerService,
@@ -105,6 +108,7 @@ public partial class CatalogModelFactory : ICatalogModelFactory
         _catalogSettings = catalogSettings;
         _customerSettings = customerSettings;
         _categoryService = categoryService;
+        _productCategoryRepository = productCategoryRepository;
         _categoryTemplateService = categoryTemplateService;
         _currencyService = currencyService;
         _customerService = customerService;
@@ -1517,6 +1521,138 @@ public partial class CatalogModelFactory : ICatalogModelFactory
             pageSize: command.PageSize);
 
         await PrepareCatalogProductsAsync(model, products);
+
+        return model;
+    }
+
+    /// <summary>
+    /// Prepare all products model
+    /// </summary>
+    /// <param name="command">Model to get the catalog products</param>
+    /// <param name="cid">Category identifier</param>
+    /// <param name="instock">A value indicating whether to show in-stock products only</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task result contains the catalog products model
+    /// </returns>
+    public virtual async Task<CatalogProductsModel> PrepareAllProductsModelAsync(CatalogProductsCommand command, int? cid = null, bool? instock = null)
+    {
+        ArgumentNullException.ThrowIfNull(command);
+
+        var model = new CatalogProductsModel
+        {
+            UseAjaxLoading = _catalogSettings.UseAjaxCatalogProductsLoading
+        };
+
+        var currentStore = await _storeContext.GetCurrentStoreAsync();
+
+        if (!command.OrderBy.HasValue)
+        {
+            command.OrderBy = (int)ProductSortingEnum.Category;
+        }
+
+        //sorting
+        await PrepareSortingOptionsAsync(model, command);
+        //view mode
+        await PrepareViewModesAsync(model, command);
+        //page size
+        await PreparePageSizeOptionsAsync(model, command, _catalogSettings.NewProductsAllowCustomersToSelectPageSize,
+            _catalogSettings.NewProductsPageSizeOptions, _catalogSettings.NewProductsPageSize);
+
+        //category filter preparation
+        List<int> categoryIds = null;
+        if (cid > 0)
+        {
+            categoryIds = new List<int> { cid.Value };
+            categoryIds.AddRange(await _categoryService.GetChildCategoryIdsAsync(cid.Value, currentStore.Id));
+        }
+
+        //price range
+        PriceRangeModel selectedPriceRange = null;
+        if (_catalogSettings.EnablePriceRangeFiltering)
+        {
+            selectedPriceRange = await GetConvertedPriceRangeAsync(command);
+
+            PriceRangeModel availablePriceRange;
+            async Task<decimal?> getProductPriceAsync(ProductSortingEnum orderBy)
+            {
+                var products = await _productService.SearchProductsAsync(0, 1,
+                    storeId: currentStore.Id,
+                    categoryIds: categoryIds,
+                    visibleIndividuallyOnly: true,
+                    orderBy: orderBy);
+
+                return products?.FirstOrDefault()?.Price ?? 0;
+            }
+
+            availablePriceRange = new PriceRangeModel
+            {
+                From = await getProductPriceAsync(ProductSortingEnum.PriceAsc),
+                To = await getProductPriceAsync(ProductSortingEnum.PriceDesc)
+            };
+
+            model.PriceRangeFilter = await PreparePriceRangeFilterAsync(selectedPriceRange, availablePriceRange);
+        }
+
+        //products
+        var products = await _productService.SearchProductsAsync(
+            pageIndex: 0,
+            pageSize: int.MaxValue,
+            categoryIds: categoryIds,
+            priceMin: selectedPriceRange?.From,
+            priceMax: selectedPriceRange?.To,
+            storeId: currentStore.Id,
+            visibleIndividuallyOnly: true,
+            orderBy: (ProductSortingEnum)command.OrderBy);
+
+        var filteredProducts = products.AsEnumerable();
+        if (instock == true)
+        {
+            filteredProducts = filteredProducts.Where(p => p.ManageInventoryMethodId == 0 || p.StockQuantity > 0 || p.BackorderModeId != 0);
+        }
+
+        if (command.OrderBy == (int)ProductSortingEnum.Category)
+        {
+            var allCategories = await _categoryService.GetAllCategoriesAsync(storeId: currentStore.Id);
+            var categoryPositions = allCategories
+                .Select((cat, index) => new { cat.Id, index })
+                .ToDictionary(x => x.Id, x => x.index);
+
+            var productIds = filteredProducts.Select(p => p.Id).ToArray();
+            var productCategories = await _productCategoryRepository.Table
+                .Where(pc => productIds.Contains(pc.ProductId))
+                .ToListAsync();
+
+            var productCategoriesGrouped = productCategories
+                .GroupBy(pc => pc.ProductId)
+                .ToDictionary(g => g.Key, g => g.ToList());
+
+            filteredProducts = filteredProducts.OrderBy(p =>
+            {
+                if (productCategoriesGrouped.TryGetValue(p.Id, out var mappings) && mappings.Any())
+                {
+                    var bestMapping = mappings
+                        .Select(m => new
+                        {
+                            Mapping = m,
+                            Position = categoryPositions.TryGetValue(m.CategoryId, out var pos) ? pos : int.MaxValue
+                        })
+                        .OrderBy(x => x.Position)
+                        .FirstOrDefault();
+
+                    if (bestMapping != null && bestMapping.Position != int.MaxValue)
+                    {
+                        return (CategoryPosition: bestMapping.Position, ProductDisplayOrder: bestMapping.Mapping.DisplayOrder, ProductId: p.Id);
+                    }
+                }
+
+                return (CategoryPosition: int.MaxValue, ProductDisplayOrder: int.MaxValue, ProductId: p.Id);
+            }).ToList();
+        }
+
+        var pagedProducts = new Nop.Core.PagedList<Product>(filteredProducts.ToList(), command.PageNumber - 1, command.PageSize);
+        var isFiltering = selectedPriceRange?.From is not null || cid > 0 || instock == true;
+        await PrepareCatalogProductsAsync(model, pagedProducts, isFiltering);
 
         return model;
     }

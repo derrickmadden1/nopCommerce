@@ -1,0 +1,225 @@
+@model Nop.Plugin.Widgets.ShoppableBanner.Models.ShoppableBannerModel
+@{
+    // Inject the CSS file for the banner (with version cache-busting)
+    NopHtml.AppendCssFileParts("~/Plugins/Widgets.ShoppableBanner/Content/css/shoppable-banner.css?v=1.6");
+}
+
+<div class="shoppable-banner-container">
+    
+    <div class="banner-desktop-wrapper">
+        <img src="@Model.BackgroundPictureUrl" alt="@Model.HeroTitle" class="banner-bg-image" />
+        
+        <div class="banner-text-overlay">
+            <h2 class="banner-title">@Model.HeroTitle</h2>
+            <p class="banner-subtitle">@Model.SubText</p>
+            <a href="@Url.RouteUrl("AllProducts")" class="btn-primary-outline banner-action-btn">Explore the Collection</a>
+        </div>
+
+        @foreach (var hotspot in Model.Hotspots)
+        {
+            var hasImage = !string.IsNullOrEmpty(hotspot.PictureUrl);
+            <div class="hotspot-marker @(hasImage ? "has-image" : "")" style="left: @(hotspot.PositionX)%; top: @(hotspot.PositionY)%;">
+                @if (hasImage)
+                {
+                    <img src="@hotspot.PictureUrl" class="hotspot-product-thumbnail" alt="@hotspot.ProductName" />
+                    <div class="hotspot-pulse product-pulse"></div>
+                }
+                else
+                {
+                    <div class="hotspot-pulse standard-pulse"></div>
+                }
+                <div class="hotspot-tooltip">
+                    <span class="hotspot-product-name">@hotspot.ProductName</span>
+                    <button type="button" class="btn btn-sm btn-action add-to-cart-hotspot" data-product-id="@hotspot.ProductId">
+                        View Product
+                    </button>
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="banner-mobile-wrapper">
+        <div class="mobile-hero">
+            <img src="@Model.BackgroundPictureUrl" alt="@Model.HeroTitle" />
+            <div class="mobile-text">
+                <h2>@Model.HeroTitle</h2>
+                <p>@(string.IsNullOrEmpty(Model.MobileSubText) ? Model.SubText : Model.MobileSubText)</p>
+                <a href="@Url.RouteUrl("AllProducts")" class="btn-primary-outline banner-action-btn">Explore the Collection</a>
+            </div>
+        </div>
+
+        <div class="mobile-product-stack">
+            <h3 class="mobile-stack-title">Featured products</h3>
+            <div class="mobile-grid">
+                @foreach (var product in Model.Hotspots)
+                {
+                    <div class="mobile-product-card">
+                        @if (!string.IsNullOrEmpty(product.PictureUrl))
+                        {
+                            <div class="mobile-card-image">
+                                <img src="@product.PictureUrl" alt="@product.ProductName" />
+                            </div>
+                        }
+                        <div class="mobile-card-details">
+                            <span class="product-name">@product.ProductName</span>
+                            <span class="product-price">@product.Price</span>
+                            <button type="button" class="btn btn-action add-to-cart-mobile" data-product-id="@product.ProductId">
+                                Shop Now
+                            </button>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<dialog id="shoppable-quickview-modal" class="quickview-modal">
+    <button id="close-quickview" class="close-btn">&times;</button>
+    <div class="modal-content-wrapper">
+        <div id="quickview-content">
+        </div>
+    </div>
+</dialog>
+
+<script>
+    function addToCartQuickView(url, formSelector, productId) {
+        var $form = $(formSelector);
+        var $btn = $('#add-to-cart-button-' + productId);
+        var $panel = $btn.closest('.add-to-cart-panel');
+        
+        // Clear any previous messages
+        $('.quickview-notification').remove();
+        
+        // Show loading state
+        var originalBtnText = $btn.html();
+        $btn.prop('disabled', true).html('Adding...');
+        
+        $.ajax({
+            cache: false,
+            url: url,
+            type: 'POST',
+            data: $form.serialize(),
+            success: function(response) {
+                if (response.success) {
+                    // Update header cart count
+                    if (response.updatetopcartsectionhtml && AjaxCart.topcartselector) {
+                        $(AjaxCart.topcartselector).html(response.updatetopcartsectionhtml);
+                    }
+                    if (response.updateflyoutcartsectionhtml && AjaxCart.flyoutcartselector) {
+                        $(AjaxCart.flyoutcartselector).replaceWith(response.updateflyoutcartsectionhtml);
+                    }
+                    
+                    // Show success message inside the modal
+                    var successMsg = response.message || 'Product has been added to your shopping cart';
+                    var alertHtml = '<div class="quickview-notification success-alert">' + successMsg + '</div>';
+                    $panel.after(alertHtml);
+                    
+                    // Style button as added
+                    $btn.html('Added to Basket ✓').addClass('added-success');
+                    
+                    // Re-enable/reset after a delay
+                    setTimeout(function() {
+                        $btn.prop('disabled', false).html(originalBtnText).removeClass('added-success');
+                        $('.quickview-notification.success-alert').fadeOut('slow', function() {
+                            $(this).remove();
+                        });
+                    }, 3500);
+                } else {
+                    // Show error message inside the modal
+                    var errorMsg = response.message || 'Failed to add the product.';
+                    var alertHtml = '<div class="quickview-notification error-alert">' + errorMsg + '</div>';
+                    $panel.after(alertHtml);
+                    
+                    $btn.prop('disabled', false).html(originalBtnText);
+                }
+            },
+            error: function() {
+                var alertHtml = '<div class="quickview-notification error-alert">Failed to add the product. Please try again.</div>';
+                $panel.after(alertHtml);
+                $btn.prop('disabled', false).html(originalBtnText);
+            }
+        });
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        // Adjust hotspot tooltips to prevent them from extending outside the desktop banner container
+        const adjustTooltips = () => {
+            const wrapper = document.querySelector(".banner-desktop-wrapper");
+            if (!wrapper) return;
+            const wrapperRect = wrapper.getBoundingClientRect();
+            const tooltips = wrapper.querySelectorAll(".hotspot-tooltip");
+            
+            tooltips.forEach(tooltip => {
+                tooltip.style.left = "";
+                const rect = tooltip.getBoundingClientRect();
+                if (rect.right > wrapperRect.right) {
+                    const shiftLeft = rect.right - wrapperRect.right;
+                    tooltip.style.left = `calc(50% - ${shiftLeft + 10}px)`;
+                } else if (rect.left < wrapperRect.left) {
+                    const shiftRight = wrapperRect.left - rect.left;
+                    tooltip.style.left = `calc(50% + ${shiftRight + 10}px)`;
+                }
+            });
+        };
+
+        // Run on load and resize
+        adjustTooltips();
+        window.addEventListener("resize", adjustTooltips);
+        
+        // Also run when the background image has loaded to ensure correct measurements
+        const bgImage = document.querySelector(".banner-bg-image");
+        if (bgImage) {
+            if (bgImage.complete) {
+                adjustTooltips();
+            } else {
+                bgImage.addEventListener("load", adjustTooltips);
+            }
+        }
+
+        const modal = document.getElementById('shoppable-quickview-modal');
+        const contentContainer = document.getElementById('quickview-content');
+        const closeBtn = document.getElementById('close-quickview');
+
+        // Target both desktop hotspot buttons and mobile stack buttons
+        const actionButtons = document.querySelectorAll('.add-to-cart-hotspot, .add-to-cart-mobile');
+
+        actionButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                const productId = this.getAttribute('data-product-id');
+
+                // Show a loading state if desired
+                contentContainer.innerHTML = '<p>Loading natural goodness...</p>';
+                modal.showModal();
+
+                // Fetch the product partial view
+                fetch(`/WidgetsShoppableBannerPublic/QuickView?productId=${productId}`)
+                    .then(response => response.text())
+                    .then(html => {
+                        // Inject the HTML containing the product info and Add to Cart form
+                        contentContainer.innerHTML = html;
+                    })
+                    .catch(error => {
+                        console.error('Error fetching product details:', error);
+                        contentContainer.innerHTML = '<p>Sorry, we could not load this product right now.</p>';
+                    });
+            });
+        });
+
+        // Close modal logic
+        closeBtn.addEventListener('click', () => {
+            modal.close();
+            contentContainer.innerHTML = ''; // Clear DOM to prevent ID conflicts
+        });
+
+        // Close on outside click
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.close();
+                contentContainer.innerHTML = '';
+            }
+        });
+    });
+</script>

@@ -1,0 +1,92 @@
+@model CheckoutShippingMethodModel
+@{
+    Layout = "_ColumnsOne";
+
+    //title
+    NopHtml.AddTitleParts(T("PageTitle.Checkout").Text);
+    //page class
+    NopHtml.AppendPageCssClassParts("html-checkout-page");
+    NopHtml.AppendPageCssClassParts("html-shipping-method-page");
+}
+
+<div class="page checkout-page shipping-method-page section-container">
+    @await Component.InvokeAsync("CheckoutProgress", new { step = CheckoutProgressStep.Shipping })
+    
+    <div class="section-header">
+        <h1>@T("Checkout.SelectShippingMethod")</h1>
+    </div>
+
+    <div class="page-body checkout-data">
+        <div class="shipping-method-modern">
+            <form asp-route="@NopRouteNames.Standard.CHECKOUT_SHIPPING_METHOD" method="post">
+                @await Component.InvokeAsync("Widget", new { widgetZone = PublicWidgetZones.CheckoutShippingMethodTop, additionalData = Model })
+
+                @if (Model.DisplayPickupInStore && Model.PickupPointsModel.AllowPickupInStore)
+                {
+                    <div class="pickup-section-modern">
+                        @await Html.PartialAsync("_PickupPoints", Model.PickupPointsModel)
+                    </div>
+                }
+
+                @if (Model.PickupPointsModel == null || !Model.PickupPointsModel.PickupInStoreOnly)
+                {
+                    @if (!Model.Warnings.Any())
+                    {
+                        <div class="method-grid-modern">
+                            @for (var i = 0; i < Model.ShippingMethods.Count; i++)
+                            {
+                                var shippingMethod = Model.ShippingMethods[i];
+                                <div class="method-card-modern @(shippingMethod.Selected ? "selected" : "")">
+                                    <input id="shippingoption_@(i)" type="radio" name="shippingoption" value="@(shippingMethod.Name)___@(shippingMethod.ShippingRateComputationMethodSystemName)" checked="@shippingMethod.Selected" />
+                                    <label for="shippingoption_@(i)" class="method-content">
+                                        <div class="method-info">
+                                            <div class="method-name">@shippingMethod.Name</div>
+                                            @if (!string.IsNullOrEmpty(shippingMethod.Description))
+                                            {
+                                                <div class="method-description">@Html.Raw(shippingMethod.Description)</div>
+                                            }
+                                        </div>
+                                        <div class="method-price">@shippingMethod.Fee</div>
+                                    </label>
+                                </div>
+                            }
+                        </div>
+
+                        if (Model.NotifyCustomerAboutShippingFromMultipleLocations)
+                        {
+                            <div class="multiple-locations">
+                                @T("Checkout.ShippingMethod.ShippingFromMultipleLocations")
+                            </div>
+                        }
+
+                        <div class="checkout-footer-modern">
+                            <button type="submit" name="nextstep" class="btn-primary next-step-btn">
+                                @T("Checkout.NextButton") <i class="fas fa-arrow-right"></i>
+                            </button>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="message-error">
+                            <ul>
+                                @foreach (var warning in Model.Warnings)
+                                {
+                                    <li>@warning</li>
+                                }
+                            </ul>
+                        </div>
+                    }
+                }
+
+                @await Component.InvokeAsync("Widget", new { widgetZone = PublicWidgetZones.CheckoutShippingMethodBottom, additionalData = Model })
+            </form>
+        </div>
+
+        <div class="section order-summary">
+            <div class="section-title">
+                <h2>@T("Checkout.OrderSummary")</h2>
+            </div>
+            @await Component.InvokeAsync("OrderSummary")
+        </div>
+    </div>
+</div>

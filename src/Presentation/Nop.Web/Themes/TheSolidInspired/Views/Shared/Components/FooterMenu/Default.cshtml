@@ -1,0 +1,23 @@
+@model List<MenuModel>
+
+@foreach (var menu in Model)
+{
+    <div class="footer-column">
+        <h3>@menu.Name</h3>
+        <ul>
+            @foreach (var menuItem in menu.Items)
+            {
+                <li>
+                    @if (!string.IsNullOrEmpty(menuItem.Url))
+                    {
+                        <a href="@menuItem.Url">@menuItem.Title</a>
+                    }
+                    else
+                    {
+                        @menuItem.Title
+                    }
+                </li>
+            }
+        </ul>
+    </div>
+}
