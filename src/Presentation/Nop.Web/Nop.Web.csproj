@@ -1,8 +1,6 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+<Project Sdk="Microsoft.NET.Sdk.Web">
   
-  <PropertyGroup>
-    <EnableDefaultContentItems>false</EnableDefaultContentItems>
-  </PropertyGroup>
+
 
   <PropertyGroup>
     <Copyright>Copyright © Nop Solutions, Ltd</Copyright>
@@ -37,7 +35,12 @@
     <None Include="App_Data\Installation\SampleData.json" CopyToPublishDirectory="PreserveNewest" />
     <Content Update="App_Data\DataProtectionKeys\*.xml" CopyToPublishDirectory="Never" />
     
-    <None Include="Plugins\**" CopyToPublishDirectory="PreserveNewest" Exclude="Plugins\**\runtimes\**;Plugins\**\ref\**;Plugins\**\*.pdb" />
+    <Compile Remove="Plugins\**;Themes\**" />
+    <Content Remove="Plugins\**;Themes\**" />
+    <EmbeddedResource Remove="Plugins\**;Themes\**" />
+    <None Remove="Plugins\**;Themes\**" />
+
+    <None Include="Plugins\**" CopyToPublishDirectory="PreserveNewest" Exclude="Plugins\**\runtimes\**;Plugins\**\ref\**;Plugins\**\refs\**;Plugins\**\*.pdb" />
 
     <Content Include="Themes\**\*.*">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
