@@ -1151,8 +1151,6 @@ public partial class MessageTokenProvider : IMessageTokenProvider
         var orderUrl = await RouteUrlAsync(order.StoreId, NopRouteNames.Standard.ORDER_DETAILS, new { orderId = order.Id });
         tokens.Add(new Token("Order.OrderURLForCustomer", orderUrl, true));
 
-        tokens.Add(new Token("RecurringPayment.NextRecurringPaymentDelay", _orderSettings.NextRecurringPaymentNotificationDays.ToString()));
-
         //event notification
         await _eventPublisher.EntityTokensAddedAsync(order, tokens);
     }
@@ -1240,6 +1238,8 @@ public partial class MessageTokenProvider : IMessageTokenProvider
             recurringPayment.LastPaymentFailed && _paymentSettings.CancelRecurringPaymentsAfterFailedPayment));
         if (await _orderService.GetOrderByIdAsync(recurringPayment.InitialOrderId) is Order order)
             tokens.Add(new Token("RecurringPayment.RecurringPaymentType", (await _paymentService.GetRecurringPaymentTypeAsync(order.PaymentMethodSystemName)).ToString()));
+
+        tokens.Add(new Token("RecurringPayment.NextRecurringPaymentDelay", _orderSettings.NextRecurringPaymentNotificationDays.ToString()));
 
         //event notification
         await _eventPublisher.EntityTokensAddedAsync(recurringPayment, tokens);
