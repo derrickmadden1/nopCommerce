@@ -223,6 +223,7 @@ jobs:
         
         # Verbose errors for staging only
         az webapp config appsettings set --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --slot staging --settings ASPNETCORE_ENVIRONMENT="Development" ASPNETCORE_DETAILEDERRORS=true
+        az webapp log config --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --slot staging --application-logging filesystem --detailed-error-messages true --failed-request-tracing true
 
     - name: Pause Better Stack Monitoring
       run: |
@@ -254,6 +255,15 @@ jobs:
     - name: Dump staging slot logs on failure
       if: failure()
       run: |
+        echo "=== Listing LogFiles directory ==="
+        curl -s "https://${{ secrets.AZURE_WEBAPP_NAME }}-staging.scm.azurewebsites.net/api/vfs/LogFiles/" -u "${{ secrets.AZURE_DEPLOY_USER }}:${{ secrets.AZURE_DEPLOY_PASSWORD }}" || true
+
+        echo "=== Dumping DetailedErrors ==="
+        curl -s "https://${{ secrets.AZURE_WEBAPP_NAME }}-staging.scm.azurewebsites.net/api/vfs/LogFiles/DetailedErrors/" -u "${{ secrets.AZURE_DEPLOY_USER }}:${{ secrets.AZURE_DEPLOY_PASSWORD }}" || true
+
+        echo "=== Dumping Failed Request Logs ==="
+        curl -s "https://${{ secrets.AZURE_WEBAPP_NAME }}-staging.scm.azurewebsites.net/api/vfs/LogFiles/FailedReqLogFiles/" -u "${{ secrets.AZURE_DEPLOY_USER }}:${{ secrets.AZURE_DEPLOY_PASSWORD }}" || true
+        
         echo "=== Fetching dotnet logs ==="
         curl -s "https://${{ secrets.AZURE_WEBAPP_NAME }}-staging.scm.azurewebsites.net/api/vfs/LogFiles/dotnet/" -u "${{ secrets.AZURE_DEPLOY_USER }}:${{ secrets.AZURE_DEPLOY_PASSWORD }}" || true
 
