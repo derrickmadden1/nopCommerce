@@ -222,7 +222,7 @@ jobs:
         sleep 30
         
         # Verbose errors for staging only
-        az webapp config appsettings set --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --slot staging --settings ASPNETCORE_ENVIRONMENT="Development"
+        az webapp config appsettings set --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --slot staging --settings ASPNETCORE_ENVIRONMENT="Development" ASPNETCORE_DETAILEDERRORS=true
 
     - name: Pause Better Stack Monitoring
       run: |
@@ -250,6 +250,18 @@ jobs:
           echo "$RESPONSE" | head -c 2000
           exit 1
         fi
+
+    - name: Dump staging slot logs on failure
+      if: failure()
+      run: |
+        echo "=== Fetching dotnet logs ==="
+        curl -s "https://${{ secrets.AZURE_WEBAPP_NAME }}-staging.scm.azurewebsites.net/api/vfs/LogFiles/dotnet/" -u "${{ secrets.AZURE_DEPLOY_USER }}:${{ secrets.AZURE_DEPLOY_PASSWORD }}" || true
+
+        echo "=== Fetching eventlog.xml ==="
+        curl -s "https://${{ secrets.AZURE_WEBAPP_NAME }}-staging.scm.azurewebsites.net/api/vfs/LogFiles/eventlog.xml" -u "${{ secrets.AZURE_DEPLOY_USER }}:${{ secrets.AZURE_DEPLOY_PASSWORD }}" || true
+
+        echo "=== Fetching application logs ==="
+        curl -s "https://${{ secrets.AZURE_WEBAPP_NAME }}-staging.scm.azurewebsites.net/api/vfs/LogFiles/application/" -u "${{ secrets.AZURE_DEPLOY_USER }}:${{ secrets.AZURE_DEPLOY_PASSWORD }}" || true
 
     - name: Swap and Cleanup
       if: always()
