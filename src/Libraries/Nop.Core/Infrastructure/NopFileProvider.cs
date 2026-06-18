@@ -1,4 +1,4 @@
-﻿using System.Runtime.Versioning;
+using System.Runtime.Versioning;
 using System.Security.AccessControl;
 using System.Text;
 using Microsoft.AspNetCore.Hosting;
@@ -20,9 +20,13 @@ public partial class NopFileProvider : PhysicalFileProvider, INopFileProvider
     public NopFileProvider(IWebHostEnvironment webHostEnvironment)
         : base(File.Exists(webHostEnvironment.ContentRootPath) ? Path.GetDirectoryName(webHostEnvironment.ContentRootPath)! : webHostEnvironment.ContentRootPath)
     {
-        WebRootPath = File.Exists(webHostEnvironment.WebRootPath)
-            ? Path.GetDirectoryName(webHostEnvironment.WebRootPath)
-            : webHostEnvironment.WebRootPath;
+        var webRootPath = webHostEnvironment.WebRootPath;
+        if (string.IsNullOrEmpty(webRootPath))
+            webRootPath = Path.Combine(webHostEnvironment.ContentRootPath, "wwwroot");
+
+        WebRootPath = File.Exists(webRootPath)
+            ? Path.GetDirectoryName(webRootPath)
+            : webRootPath;
     }
 
     #endregion
@@ -261,7 +265,7 @@ public partial class NopFileProvider : PhysicalFileProvider, INopFileProvider
     {
         var allPaths = new List<string>();
 
-        if (paths.Any() && !paths[0].Contains(WebRootPath, StringComparison.InvariantCulture))
+        if (paths.Any() && !string.IsNullOrEmpty(WebRootPath) && !paths[0].Contains(WebRootPath, StringComparison.InvariantCulture))
             allPaths.Add(WebRootPath);
 
         allPaths.AddRange(paths);
@@ -482,7 +486,9 @@ public partial class NopFileProvider : PhysicalFileProvider, INopFileProvider
         if (!IsDirectory(path) && FileExists(path))
             path = new FileInfo(path).DirectoryName;
 
-        path = path?.Replace(WebRootPath, string.Empty).Replace('\\', '/').Trim('/').TrimStart('~', '/');
+        if (!string.IsNullOrEmpty(WebRootPath))
+            path = path?.Replace(WebRootPath, string.Empty);
+        path = path?.Replace('\\', '/').Trim('/').TrimStart('~', '/');
 
         return $"~/{path ?? string.Empty}";
     }
