@@ -217,7 +217,7 @@ jobs:
     - name: Ensure Production Slot Uses .NET 10
       run: |
         echo "Setting production runtime to .NET 10 (safe, no immediate restart)..."
-        az webapp config set --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --net-framework-version "v10.0"
+        az webapp config set --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --windows-fx-version "DOTNET|10.0"
 
     - name: Prepare Infrastructure
       run: |
@@ -225,7 +225,7 @@ jobs:
         az webapp deployment slot create --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --slot staging --configuration-source ${{ secrets.AZURE_WEBAPP_NAME }}
         
         # Set correct .NET runtime for staging slot
-        az webapp config set --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --slot staging --net-framework-version "v10.0"
+        az webapp config set --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --slot staging --windows-fx-version "DOTNET|10.0"
         echo "Waiting 30s for slot SCM site to initialize..."
         sleep 30
         
