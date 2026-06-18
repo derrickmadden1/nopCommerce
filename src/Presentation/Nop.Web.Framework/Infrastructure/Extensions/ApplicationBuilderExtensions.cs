@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using System.Net;
 using System.Runtime.ExceptionServices;
 using iTextSharp.text;
@@ -246,17 +246,23 @@ public static class ApplicationBuilderExtensions
         var fileProvider = EngineContext.Current.Resolve<INopFileProvider>();
         var webHostEnvironment = EngineContext.Current.Resolve<IWebHostEnvironment>();
 
+        var pluginsPath = fileProvider.MapPath(@"Plugins");
+        fileProvider.CreateDirectory(pluginsPath);
+
+        var themesPath = fileProvider.MapPath(@"Themes");
+        fileProvider.CreateDirectory(themesPath);
+
         application.UseWebOptimizer(webHostEnvironment,
         [
             new FileProviderOptions
             {
                 RequestPath = new PathString("/Plugins"),
-                FileProvider = new PhysicalFileProvider(fileProvider.MapPath(@"Plugins"))
+                FileProvider = new PhysicalFileProvider(pluginsPath)
             },
             new FileProviderOptions
             {
                 RequestPath = new PathString("/Themes"),
-                FileProvider = new PhysicalFileProvider(fileProvider.MapPath(@"Themes"))
+                FileProvider = new PhysicalFileProvider(themesPath)
             }
         ]);
     }
@@ -277,9 +283,11 @@ public static class ApplicationBuilderExtensions
         }
 
         //add handling if sitemaps 
+        var sitemapsPath = fileProvider.GetAbsolutePath(NopSeoDefaults.SitemapXmlDirectory);
+        fileProvider.CreateDirectory(sitemapsPath);
         application.UseStaticFiles(new StaticFileOptions
         {
-            FileProvider = new PhysicalFileProvider(fileProvider.GetAbsolutePath(NopSeoDefaults.SitemapXmlDirectory)),
+            FileProvider = new PhysicalFileProvider(sitemapsPath),
             RequestPath = new PathString($"/{NopSeoDefaults.SitemapXmlDirectory}"),
             OnPrepareResponse = context =>
             {
@@ -297,25 +305,31 @@ public static class ApplicationBuilderExtensions
         application.UseStaticFiles(new StaticFileOptions { OnPrepareResponse = staticFileResponse });
 
         //images
+        var imagesPath = fileProvider.GetLocalImagesPath(EngineContext.Current.Resolve<MediaSettings>());
+        fileProvider.CreateDirectory(imagesPath);
         application.UseStaticFiles(new StaticFileOptions
         {
-            FileProvider = new PhysicalFileProvider(fileProvider.GetLocalImagesPath(EngineContext.Current.Resolve<MediaSettings>())),
+            FileProvider = new PhysicalFileProvider(imagesPath),
             RequestPath = new PathString("/images"),
             OnPrepareResponse = staticFileResponse
         });
 
         //themes static files
+        var themesPath = fileProvider.MapPath("Themes");
+        fileProvider.CreateDirectory(themesPath);
         application.UseStaticFiles(new StaticFileOptions
         {
-            FileProvider = new PhysicalFileProvider(fileProvider.MapPath("Themes")),
+            FileProvider = new PhysicalFileProvider(themesPath),
             RequestPath = new PathString("/Themes"),
             OnPrepareResponse = staticFileResponse
         });
 
         //plugins static files
+        var pluginsPath = fileProvider.MapPath("Plugins");
+        fileProvider.CreateDirectory(pluginsPath);
         application.UseStaticFiles(new StaticFileOptions
         {
-            FileProvider = new PhysicalFileProvider(fileProvider.MapPath("Plugins")),
+            FileProvider = new PhysicalFileProvider(pluginsPath),
             RequestPath = new PathString("/Plugins"),
             OnPrepareResponse = staticFileResponse
         });
@@ -326,9 +340,11 @@ public static class ApplicationBuilderExtensions
             Mappings = { [".bak"] = MimeTypes.ApplicationOctetStream }
         };
 
+        var backupsPath = fileProvider.GetAbsolutePath(NopCommonDefaults.DbBackupsPath);
+        fileProvider.CreateDirectory(backupsPath);
         application.UseStaticFiles(new StaticFileOptions
         {
-            FileProvider = new PhysicalFileProvider(fileProvider.GetAbsolutePath(NopCommonDefaults.DbBackupsPath)),
+            FileProvider = new PhysicalFileProvider(backupsPath),
             RequestPath = new PathString("/db_backups"),
             ContentTypeProvider = provider,
             OnPrepareResponse = context =>
@@ -346,18 +362,22 @@ public static class ApplicationBuilderExtensions
         //add support for webmanifest files
         provider.Mappings[".webmanifest"] = MimeTypes.ApplicationManifestJson;
 
+        var iconsPath = fileProvider.GetAbsolutePath("icons");
+        fileProvider.CreateDirectory(iconsPath);
         application.UseStaticFiles(new StaticFileOptions
         {
-            FileProvider = new PhysicalFileProvider(fileProvider.GetAbsolutePath("icons")),
+            FileProvider = new PhysicalFileProvider(iconsPath),
             RequestPath = "/icons",
             ContentTypeProvider = provider
         });
 
         if (appSettings.Get<CommonConfig>().ServeUnknownFileTypes)
         {
+            var wellKnownPath = fileProvider.GetAbsolutePath(".well-known");
+            fileProvider.CreateDirectory(wellKnownPath);
             application.UseStaticFiles(new StaticFileOptions
             {
-                FileProvider = new PhysicalFileProvider(fileProvider.GetAbsolutePath(".well-known")),
+                FileProvider = new PhysicalFileProvider(wellKnownPath),
                 RequestPath = new PathString("/.well-known"),
                 ServeUnknownFileTypes = true,
             });
