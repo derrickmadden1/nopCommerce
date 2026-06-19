@@ -27,13 +27,24 @@ public partial class MarketLocatorController : Controller
 
     /// <summary>GET /market-locations — renders the full-page map.</summary>
     [HttpGet, Route("market-locations")]
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index(int? id)
     {
         var settings = await _settingService.LoadSettingAsync<MarketLocatorSettings>();
         ViewBag.AzureMapsKey = settings.AzureMapsKey;
         ViewBag.DefaultZoom  = settings.DefaultZoom;
         ViewBag.DefaultLat   = settings.DefaultLatitude;
         ViewBag.DefaultLng   = settings.DefaultLongitude;
+        ViewBag.SelectedId   = id;
+
+        if (id.HasValue)
+        {
+            var location = await _locationService.GetByIdAsync(id.Value);
+            if (location != null && location.Published)
+            {
+                ViewBag.SelectedMarket = location;
+            }
+        }
+
         return View("~/Plugins/Widgets.MarketLocator/Views/MarketLocator/Index.cshtml");
     }
 
