@@ -238,9 +238,12 @@ public class MarketLocationEventConsumer :
 
         foreach (var (startDate, endDate) in occurrences)
         {
+            var scheduledTime = CalculateScheduledTime(startDate);
+            var messageChangeType = scheduledTime.HasValue ? "Created" : changeType;
+
             var message = new MarketEventMessage
             {
-                ChangeType = changeType,
+                ChangeType = messageChangeType,
                 MarketName = market.Name,
                 Location = market.Address,
                 StartDate = startDate,
@@ -249,7 +252,6 @@ public class MarketLocationEventConsumer :
                 MapUrl = $"{_settings.StoreUrl.TrimEnd('/')}/market-locations?id={market.Id}"
             };
 
-            var scheduledTime = CalculateScheduledTime(startDate);
             results.Add((message, scheduledTime));
         }
 
