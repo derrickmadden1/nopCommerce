@@ -132,6 +132,10 @@ function initMarketMap() {
             renderCards(data);
             wireFilters();
             
+            if (cfg.selectedId) {
+                selectMarket(+cfg.selectedId);
+            }
+
             // Force Leaflet to recalculate its viewport in case the 
             // container size changed after initialization causing a grey background
             setTimeout(() => map.invalidateSize(), 200);

@@ -6,6 +6,32 @@
     var lat = (decimal)ViewBag.DefaultLat;
     var lng = (decimal)ViewBag.DefaultLng;
 
+    if (ViewBag.SelectedMarket != null)
+    {
+        var market = (Nop.Plugin.Widgets.MarketLocator.Domain.MarketLocation)ViewBag.SelectedMarket;
+        NopHtml.AddTitleParts(market.Name);
+        var descriptionText = $"📍 {market.Address}. Join us at the {market.Name}! Dates: {market.UpcomingDates} · Hours: {market.Hours}";
+        NopHtml.AddMetaDescriptionParts(descriptionText);
+
+        var ogUrl = $"{Context.Request.Scheme}://{Context.Request.Host}{Context.Request.Path}{Context.Request.QueryString}";
+        NopHtml.AddHeadCustomParts($"<meta property=\"og:title\" content=\"{System.Net.WebUtility.HtmlEncode(market.Name)}\" />");
+        NopHtml.AddHeadCustomParts($"<meta property=\"og:description\" content=\"{System.Net.WebUtility.HtmlEncode(descriptionText)}\" />");
+        NopHtml.AddHeadCustomParts($"<meta property=\"og:url\" content=\"{System.Net.WebUtility.HtmlEncode(ogUrl)}\" />");
+        NopHtml.AddHeadCustomParts("<meta property=\"og:type\" content=\"website\" />");
+
+        if (hasAzure)
+        {
+            var latStr = market.Latitude.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            var lngStr = market.Longitude.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            var staticMapUrl = $"https://atlas.microsoft.com/map/static/png?api-version=1.0&layer=basic&style=main&zoom=15&center={lngStr},{latStr}&width=1200&height=630&pins=default||{lngStr}%20{latStr}&subscription-key={azureKey}";
+
+            NopHtml.AddHeadCustomParts($"<meta property=\"og:image\" content=\"{System.Net.WebUtility.HtmlEncode(staticMapUrl)}\" />");
+            NopHtml.AddHeadCustomParts("<meta property=\"og:image:width\" content=\"1200\" />");
+            NopHtml.AddHeadCustomParts("<meta property=\"og:image:height\" content=\"630\" />");
+            NopHtml.AddHeadCustomParts("<meta name=\"twitter:card\" content=\"summary_large_image\" />");
+        }
+    }
+
     NopHtml.AddHeadCustomParts("<link rel=\"stylesheet\" href=\"https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css\" />");
     NopHtml.AddHeadCustomParts("<link rel=\"stylesheet\" href=\"/Plugins/Widgets.MarketLocator/wwwroot/css/market-map.css\" />");
 
@@ -15,6 +41,7 @@
         NopHtml.AppendScriptParts(ResourceLocation.Footer, "https://atlas.microsoft.com/sdk/javascript/mapcontrol/2/atlas.min.js");
     }
 
+    var selectedIdValue = ViewBag.SelectedId != null ? ViewBag.SelectedId.ToString() : "null";
     var useAzure = hasAzure ? "true" : "false";
     var inlineConfig = $@"
         <script>
@@ -24,7 +51,8 @@
             azureKey: '{azureKey}',
             defaultLat: {lat.ToString(System.Globalization.CultureInfo.InvariantCulture)},
             defaultLng: {lng.ToString(System.Globalization.CultureInfo.InvariantCulture)},
-            defaultZoom: {zoom}
+            defaultZoom: {zoom},
+            selectedId: {selectedIdValue}
         }};
         console.log('MarketLocator: Config injected.');
         document.getElementById('market-count').textContent = 'Config injected, waiting for script...';
