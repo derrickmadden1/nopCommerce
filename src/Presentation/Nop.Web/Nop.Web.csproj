@@ -51,7 +51,6 @@
     <Content Include="Logs\**" CopyToPublishDirectory="PreserveNewest" />
     <Compile Remove="Themes\TheSolidInspired\Views\Catalog\ProductsInLines.cshtml.cs" />
     <Content Remove="Themes\TheSolidInspired\Views\Shared\_AddToCart.cshtml" />
-    <Content Remove="Themes\TheSolidInspired\Views\Shared\_Header.cshtml" />
     <None Remove="Plugins\Uploaded\placeholder.txt" />
     <Content Include="Plugins\Uploaded\placeholder.txt">
       <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
