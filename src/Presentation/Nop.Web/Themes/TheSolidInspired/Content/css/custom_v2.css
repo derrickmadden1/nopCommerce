@@ -4270,6 +4270,7 @@ body {
       flex-direction: column;
       text-align: center;
   }
+}
 
 /* 5. Mini-Cart Refinements */
 .mini-cart-panel .totals {
