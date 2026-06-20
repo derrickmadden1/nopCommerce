@@ -1,0 +1,110 @@
+﻿@model FeedGoogleShoppingModel
+
+<div class="card-body">
+    <div class="card card-default">
+        <div class="card-body">
+            @T("Plugins.Feed.GoogleShopping.OverrideInstructions")
+
+            @await Html.PartialAsync("Table", new DataTablesModel
+            {
+                Name = "products-grid",
+                UrlRead = new DataUrl("GoogleProductList", "FeedGoogleShopping", null),
+                Length = Model.GoogleProductSearchModel.PageSize,
+                LengthMenu = Model.GoogleProductSearchModel.AvailablePageSizes,
+                ColumnCollection = new List<ColumnProperty>
+                {
+                    new ColumnProperty(nameof(GoogleProductModel.ProductName))
+                    {
+                        Title = T("Plugins.Feed.GoogleShopping.Products.ProductName").Text,
+                        Width = "300"
+                    },
+                    new ColumnProperty(nameof(GoogleProductModel.GoogleCategory))
+                    {
+                        Title = T("Plugins.Feed.GoogleShopping.Products.GoogleCategory").Text,
+                        Width = "100"
+                    },
+                    new ColumnProperty(nameof(GoogleProductModel.Gender))
+                    {
+                        Title = T("Plugins.Feed.GoogleShopping.Products.Gender").Text,
+                        Width = "50"
+                    },
+                    new ColumnProperty(nameof(GoogleProductModel.AgeGroup))
+                    {
+                        Title = T("Plugins.Feed.GoogleShopping.Products.AgeGroup").Text,
+                        Width = "50"
+                    },
+                    new ColumnProperty(nameof(GoogleProductModel.Color))
+                    {
+                        Title = T("Plugins.Feed.GoogleShopping.Products.Color").Text,
+                        Width = "70"
+                    },
+                    new ColumnProperty(nameof(GoogleProductModel.GoogleSize))
+                    {
+                        Title = T("Plugins.Feed.GoogleShopping.Products.Size").Text,
+                        Width = "50"
+                    },
+                    new ColumnProperty(nameof(GoogleProductModel.CustomGoods))
+                    {
+                        Title = T("Plugins.Feed.GoogleShopping.Products.CustomGoods").Text,
+                        Width = "50",
+                        Render = new RenderBoolean(),
+                        ClassName = NopColumnClassDefaults.CenterAll
+                    },
+                    //new ColumnProperty(nameof(GoogleProductModel.GoogleCategory))
+                    //{
+                    //    Title = T("Plugins.Feed.GoogleShopping.Products.GoogleCategory").Text,
+                    //    Render = new RenderCustom("renderColumnData")
+                    //},
+                    new ColumnProperty(nameof(GoogleProductModel.ProductId))
+                    {
+                        Title = T("Admin.Common.Edit").Text,
+                        Width = "50",
+                        ClassName = NopColumnClassDefaults.Button,
+                        Render = new RenderCustom("renderColumnEdit")
+                    }
+                }
+            })
+
+            <script>
+                function renderColumnEdit(data, type, row, meta) {
+                    return '<button onclick=\"javascript:OpenWindow(\'@Url.Content("~/Admin/FeedGoogleShopping/Edit/")' + data + '?btnId=btnRefresh&formId=google-shopping-form\', 800, 460, true); return false;\" class="btn btn-default"><i class="fa fa-pencil"></i>@T("Admin.Common.Edit")</button>';
+                }
+
+                @*function renderColumnData(data, type, row, meta) {
+                    var googleCategory = (row.GoogleCategory !== null) ? row.GoogleCategory : '';
+                    var gender = (row.Gender !== null) ? row.Gender : '';
+                    var ageGroup = (row.AgeGroup !== null) ? row.AgeGroup : '';
+                    var color = (row.Color !== null) ? row.Color : '';
+                    var googleSize = (row.GoogleSize !== null) ? row.GoogleSize : '';
+
+                    return '<div class="google-info">' +
+                        '<dl>' +
+                            '<dt>@T("Plugins.Feed.GoogleShopping.Products.GoogleCategory"):</dt><dd>' + googleCategory + '</dd>' +
+                            '<dt>@T("Plugins.Feed.GoogleShopping.Products.Gender"):</dt><dd>' + gender + '</dd>' +
+                            '<dt>@T("Plugins.Feed.GoogleShopping.Products.AgeGroup"):</dt><dd>' + ageGroup + '</dd>' +
+                            '<dt>@T("Plugins.Feed.GoogleShopping.Products.Color"):</dt><dd>' + color + '</dd>' +
+                            '<dt>@T("Plugins.Feed.GoogleShopping.Products.Size"):</dt><dd>' + googleSize + '</dd>' +
+                            '<dt>@T("Plugins.Feed.GoogleShopping.Products.CustomGoods"):</dt><dd>' + row.CustomGoods + '</dd>' +
+                        '</dl>' +
+                    '</div>';
+                }*@
+            </script>
+
+            <div class="card-footer">
+                <input type="submit" id="btnRefresh" class="btn btn-default" style="display: none" />
+            </div>
+
+            <script>
+                $(function () {
+                    $('#btnRefresh').click(function () {
+                        //refresh grid
+                        updateTable('#products-grid');
+
+                        //return false to don't reload a page
+                        return false;
+                    });
+                });
+            </script>
+        </div>
+    </div>
+</div>
