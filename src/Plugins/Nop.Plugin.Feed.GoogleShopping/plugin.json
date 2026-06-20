@@ -1,7 +1,7 @@
 ﻿{
   "Group": "Promotion feeds",
   "FriendlyName": "Google Shopping (formely Google Product Search)",
-  "SystemName": "PromotionFeed.GoogleShopping",
+  "SystemName": "Feed.GoogleShopping",
   "Version": "5.00.0",
   "SupportedVersions": [ "5.00" ],
   "Author": "nopCommerce team",
