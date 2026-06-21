@@ -1,4 +1,4 @@
-﻿using System.Data.SqlTypes;
+using System.Data.SqlTypes;
 using Nop.Core;
 using Nop.Core.Caching;
 using Nop.Core.Domain.Catalog;
@@ -1123,7 +1123,7 @@ public partial class ProductService : IProductService
         if (providerResults.Any() && orderBy == ProductSortingEnum.Position && !showHidden)
         {
             var sortedProducts = from p in productsQuery
-                                 join pr in providerResults.Select((id, ind) => new { ind, id }) on p.Id equals pr.id into orderSeq
+                                 join pr in providerResults.Select((id, ind) => new { ind, id }).AsQueryable() on p.Id equals pr.id into orderSeq
                                  from os in orderSeq.DefaultIfEmpty()
                                  orderby os == null ? int.MaxValue : os.ind
                                  select p;
