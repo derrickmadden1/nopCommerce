@@ -32,7 +32,6 @@ public class GoogleShoppingService : BasePlugin, IMiscPlugin
 
     private readonly CurrencySettings _currencySettings;
     private readonly GoogleShoppingSettings _googleShoppingSettings;
-    private readonly IActionContextAccessor _actionContextAccessor;
     private readonly ICategoryService _categoryService;
     private readonly ICurrencyService _currencyService;
     private readonly IGoogleService _googleService;
@@ -47,7 +46,6 @@ public class GoogleShoppingService : BasePlugin, IMiscPlugin
     private readonly ISettingService _settingService;
     private readonly IStoreContext _storeContext;
     private readonly ITaxService _taxService;
-    private readonly IUrlHelperFactory _urlHelperFactory;
     private readonly IUrlRecordService _urlRecordService;
     private readonly IWebHelper _webHelper;
     private readonly IWebHostEnvironment _webHostEnvironment;
@@ -62,7 +60,6 @@ public class GoogleShoppingService : BasePlugin, IMiscPlugin
     public GoogleShoppingService(
         CurrencySettings currencySettings,
         GoogleShoppingSettings googleShoppingSettings,
-        IActionContextAccessor actionContextAccessor,
         ICategoryService categoryService,
         ICurrencyService currencyService,
         IGoogleService googleService,
@@ -77,7 +74,6 @@ public class GoogleShoppingService : BasePlugin, IMiscPlugin
         ISettingService settingService,
         IStoreContext storeContext,
         ITaxService taxService,
-        IUrlHelperFactory urlHelperFactory,
         IUrlRecordService urlRecordService,
         IWebHelper webHelper,
         IWebHostEnvironment webHostEnvironment,
@@ -86,7 +82,6 @@ public class GoogleShoppingService : BasePlugin, IMiscPlugin
         INopUrlHelper nopUrlHelper
         )
     {
-        _actionContextAccessor = actionContextAccessor;
         _categoryService = categoryService;
         _currencyService = currencyService;
         _currencySettings = currencySettings;
@@ -104,7 +99,6 @@ public class GoogleShoppingService : BasePlugin, IMiscPlugin
         _settingService = settingService;
         _storeContext = storeContext;
         _taxService = taxService;
-        _urlHelperFactory = urlHelperFactory;
         _urlRecordService = urlRecordService;
         _webHelper = webHelper;
         _webHostEnvironment = webHostEnvironment;
@@ -170,14 +164,7 @@ public class GoogleShoppingService : BasePlugin, IMiscPlugin
         return currency;
     }
 
-    /// <summary>
-    /// Get UrlHelper
-    /// </summary>
-    /// <returns>UrlHelper</returns>
-    protected virtual IUrlHelper GetUrlHelper()
-    {
-        return _urlHelperFactory.GetUrlHelper(_actionContextAccessor.ActionContext);
-    }
+
 
     /// <summary>
     /// Get HTTP protocol

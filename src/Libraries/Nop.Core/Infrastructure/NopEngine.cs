@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+using System.Reflection;
 using AutoMapper;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -203,7 +203,7 @@ public partial class NopEngine : IEngine
                 //try to resolve constructor parameters
                 var parameters = constructor.GetParameters().Select(parameter =>
                 {
-                    var service = Resolve(parameter.ParameterType) ?? throw new NopException("Unknown dependency");
+                    var service = Resolve(parameter.ParameterType) ?? throw new NopException($"Unknown dependency: {parameter.ParameterType.Name}");
                     return service;
                 });
 
