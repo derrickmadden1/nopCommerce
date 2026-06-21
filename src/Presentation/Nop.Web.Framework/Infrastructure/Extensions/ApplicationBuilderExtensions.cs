@@ -304,6 +304,16 @@ public static class ApplicationBuilderExtensions
         //common static files
         application.UseStaticFiles(new StaticFileOptions { OnPrepareResponse = staticFileResponse });
 
+        //files static files
+        var filesPath = fileProvider.GetAbsolutePath("files");
+        fileProvider.CreateDirectory(filesPath);
+        application.UseStaticFiles(new StaticFileOptions
+        {
+            FileProvider = new PhysicalFileProvider(filesPath),
+            RequestPath = new PathString("/files"),
+            OnPrepareResponse = staticFileResponse
+        });
+
         //images
         var imagesPath = fileProvider.GetLocalImagesPath(EngineContext.Current.Resolve<MediaSettings>());
         fileProvider.CreateDirectory(imagesPath);

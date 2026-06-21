@@ -217,7 +217,7 @@ public class FeedGoogleShoppingController : BasePluginController
         try
         {
             //plugin
-            var pluginDescriptor = await _pluginService.GetPluginDescriptorBySystemNameAsync<IPlugin>("PromotionFeed.GoogleShopping");
+            var pluginDescriptor = await _pluginService.GetPluginDescriptorBySystemNameAsync<IPlugin>("Feed.GoogleShopping");
             if (pluginDescriptor == null || pluginDescriptor.Instance<IPlugin>() is not GoogleShoppingService plugin)
                 throw new Exception(await _localizationService.GetResourceAsync("Plugins.Feed.GoogleShopping.ExceptionLoadPlugin"));
 

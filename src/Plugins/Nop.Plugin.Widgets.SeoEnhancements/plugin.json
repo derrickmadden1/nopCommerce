@@ -1,0 +1,11 @@
+{
+  "Group": "SEO",
+  "FriendlyName": "SEO Enhancements",
+  "SystemName": "Widgets.SeoEnhancements",
+  "Version": "1.00",
+  "SupportedVersions": [ "5.00" ],
+  "Author": "Derrick Madden",
+  "DisplayOrder": 1,
+  "FileName": "Nop.Plugin.Widgets.SeoEnhancements.dll",
+  "Description": "Injects JSON-LD structured data (Product, BreadcrumbList, Organization, FAQPage), manages FAQ entries per product/category, and generates optimised meta descriptions to improve AI Overview and rich result eligibility."
+}
