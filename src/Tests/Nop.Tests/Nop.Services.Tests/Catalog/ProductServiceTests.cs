@@ -1,5 +1,7 @@
-﻿using AwesomeAssertions;
+using System.Linq;
+using AwesomeAssertions;
 using Nop.Core.Domain.Catalog;
+using Nop.Data;
 using Nop.Services.Catalog;
 using NUnit.Framework;
 
@@ -363,6 +365,21 @@ public class ProductServiceTests : ServiceTest
         _productService.GetRentalPeriods(product, new DateTime(2014, 3, 5), new DateTime(2015, 3, 7)).Should().Be(1);
         //more than two year
         _productService.GetRentalPeriods(product, new DateTime(2014, 3, 5), new DateTime(2016, 3, 7)).Should().Be(2);
+    }
+
+    [Test]
+    public async Task SearchProducts_SortingByPosition_ShouldNotThrowException()
+    {
+        var productsQuery = GetService<IRepository<Product>>().Table;
+        var providerResults = new List<int> { 1, 2, 3 };
+
+        var sortedProducts = from p in productsQuery
+                             join pr in providerResults.Select((id, ind) => new { ind, id }).AsQueryable() on p.Id equals pr.id into orderSeq
+                             from os in orderSeq.DefaultIfEmpty()
+                             orderby os == null ? int.MaxValue : os.ind
+                             select p;
+
+        await sortedProducts.ToPagedListAsync(0, 10);
     }
 
     #endregion
