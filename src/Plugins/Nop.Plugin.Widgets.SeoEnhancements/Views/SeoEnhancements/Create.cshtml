@@ -1,0 +1,94 @@
+@model Nop.Plugin.Widgets.SeoEnhancements.Models.FaqItemModel
+
+@{
+    Layout = "_AdminLayout";
+    ViewBag.Title = "Add FAQ Item";
+    NopHtml.SetActiveMenuItemSystemName("Widgets.SeoEnhancements");
+}
+
+<div class="content-header clearfix">
+    <h1 class="float-left">Add FAQ Item</h1>
+    <div class="float-right">
+        <a href="@Url.Action("Configure")" class="btn btn-info">
+            <i class="fas fa-arrow-left"></i>
+            @T("Plugins.Widgets.SeoEnhancements.FAQ.BackToList")
+        </a>
+    </div>
+</div>
+
+<section class="content">
+    <div class="container-fluid">
+        <div class="card card-default">
+            <div class="card-body">
+                <form asp-controller="SeoEnhancements" asp-action="Create" method="post">
+                    <div asp-validation-summary="All" class="text-danger"></div>
+
+                    <div class="form-group row">
+                        <div class="col-md-3">
+                            <nop-label asp-for="EntityTypeId" />
+                        </div>
+                        <div class="col-md-9">
+                            <select asp-for="EntityTypeId" asp-items="ViewBag.EntityTypes" class="form-control"></select>
+                            <span asp-validation-for="EntityTypeId" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <div class="col-md-3">
+                            <label>Product / Category ID</label>
+                        </div>
+                        <div class="col-md-9">
+                            <input asp-for="EntityId" class="form-control" type="number" min="1" />
+                            <small class="text-muted">Enter the numeric ID of the product or category from the nopCommerce admin.</small>
+                            <span asp-validation-for="EntityId" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <div class="col-md-3">
+                            <nop-label asp-for="Question" />
+                        </div>
+                        <div class="col-md-9">
+                            <input asp-for="Question" class="form-control" />
+                            <span asp-validation-for="Question" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <div class="col-md-3">
+                            <nop-label asp-for="Answer" />
+                        </div>
+                        <div class="col-md-9">
+                            <nop-editor asp-for="Answer" />
+                            <span asp-validation-for="Answer" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <div class="col-md-3">
+                            <nop-label asp-for="DisplayOrder" />
+                        </div>
+                        <div class="col-md-9">
+                            <input asp-for="DisplayOrder" class="form-control" type="number" />
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <div class="col-md-3">
+                            <nop-label asp-for="Published" />
+                        </div>
+                        <div class="col-md-9">
+                            <input asp-for="Published" type="checkbox" />
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <div class="col-md-9 offset-md-3">
+                            <button type="submit" class="btn btn-primary">Save</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>

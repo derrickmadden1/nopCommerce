@@ -1,0 +1,7 @@
+@model IList<string>
+@* Outputs one <script type="application/ld+json"> block per schema object.
+   Injected into head_html_tag widget zone. *@
+@foreach (var schema in Model)
+{
+    <script type="application/ld+json">@Html.Raw(schema)</script>
+}

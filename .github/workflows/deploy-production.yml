@@ -94,7 +94,8 @@ jobs:
             { "SystemName": "Widgets.ImagePuzzle", "Version": "1.00" },
             { "SystemName": "Widgets.ShoppableBanner", "Version": "1.00" },
             { "SystemName": "Misc.MegaMenu", "Version": "1.00"},
-            { "SystemName": "Feed.GoogleShopping", "Version": "5.00.0"}
+            { "SystemName": "Feed.GoogleShopping", "Version": "5.00.0"},
+            { "SystemName": "Widgets.SeoEnhancements","Version": "1.00"}
           ],
           "PluginNamesToUninstall": [],
           "PluginNamesToDelete": [],
