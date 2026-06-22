@@ -1,0 +1,76 @@
+@model Nop.Plugin.Widgets.SeoEnhancements.Models.SeoEnhancementsConfigModel
+
+@{
+    Layout = "_AdminLayout";
+    ViewBag.Title = "SEO Enhancements – Settings";
+    NopHtml.SetActiveMenuItemSystemName("Widgets.SeoEnhancements");
+}
+
+<div class="content-header clearfix">
+    <h1 class="float-left">SEO Enhancements – Azure OpenAI Settings</h1>
+    <div class="float-right">
+        <a href="@Url.Action("Configure")" class="btn btn-info">
+            <i class="fas fa-arrow-left"></i>
+            Back to FAQ list
+        </a>
+    </div>
+</div>
+
+<section class="content">
+    <div class="container-fluid">
+        <div class="card card-default">
+            <div class="card-body">
+                <p class="text-muted">
+                    Used by the "Generate FAQs with AI" button. Uses the same Azure OpenAI resource pattern
+                    as your product cheat sheet generation — point this at the same or a separate deployment.
+                </p>
+
+                <form asp-controller="SeoEnhancements" asp-action="Settings" method="post">
+                    <div asp-validation-summary="All" class="text-danger"></div>
+
+                    <div class="form-group row">
+                        <div class="col-md-3"><nop-label asp-for="AzureOpenAiEndpoint" /></div>
+                        <div class="col-md-9">
+                            <input asp-for="AzureOpenAiEndpoint" class="form-control" placeholder="https://your-resource.openai.azure.com/" />
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <div class="col-md-3"><nop-label asp-for="AzureOpenAiApiKey" /></div>
+                        <div class="col-md-9">
+                            <input asp-for="AzureOpenAiApiKey" class="form-control" type="password" autocomplete="new-password" />
+                            <small class="text-muted">Stored in your settings table. Consider Azure Key Vault if your fork supports it.</small>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <div class="col-md-3"><nop-label asp-for="AzureOpenAiDeploymentName" /></div>
+                        <div class="col-md-9">
+                            <input asp-for="AzureOpenAiDeploymentName" class="form-control" placeholder="e.g. gpt-4o-faq" />
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <div class="col-md-3"><nop-label asp-for="AzureOpenAiApiVersion" /></div>
+                        <div class="col-md-9">
+                            <input asp-for="AzureOpenAiApiVersion" class="form-control" />
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <div class="col-md-3"><nop-label asp-for="FaqPairsToGenerate" /></div>
+                        <div class="col-md-9">
+                            <input asp-for="FaqPairsToGenerate" class="form-control" type="number" min="1" max="10" />
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <div class="col-md-9 offset-md-3">
+                            <button type="submit" class="btn btn-primary">Save</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
