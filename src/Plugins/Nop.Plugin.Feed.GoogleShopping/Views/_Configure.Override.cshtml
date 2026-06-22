@@ -1,4 +1,4 @@
-﻿@model FeedGoogleShoppingModel
+@model FeedGoogleShoppingModel
 
 <div class="card-body">
     <div class="card card-default">
@@ -46,6 +46,13 @@
                     new ColumnProperty(nameof(GoogleProductModel.CustomGoods))
                     {
                         Title = T("Plugins.Feed.GoogleShopping.Products.CustomGoods").Text,
+                        Width = "50",
+                        Render = new RenderBoolean(),
+                        ClassName = NopColumnClassDefaults.CenterAll
+                    },
+                    new ColumnProperty(nameof(GoogleProductModel.UseShortDescription))
+                    {
+                        Title = T("Plugins.Feed.GoogleShopping.Products.UseShortDescription").Text,
                         Width = "50",
                         Render = new RenderBoolean(),
                         ClassName = NopColumnClassDefaults.CenterAll

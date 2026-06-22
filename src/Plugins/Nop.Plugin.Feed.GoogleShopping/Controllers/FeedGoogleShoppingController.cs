@@ -273,6 +273,7 @@ public class FeedGoogleShoppingController : BasePluginController
                     gModel.Color = googleProduct.Color;
                     gModel.GoogleSize = googleProduct.Size;
                     gModel.CustomGoods = googleProduct.CustomGoods;
+                    gModel.UseShortDescription = googleProduct.UseShortDescription;
                 }
                 return gModel;
             });
@@ -303,7 +304,8 @@ public class FeedGoogleShoppingController : BasePluginController
             CustomGoods = googleProduct.CustomGoods,
             Gender = googleProduct.Gender,
             GoogleSize = googleProduct.Size,
-            GoogleCategory = googleProduct.Taxonomy
+            GoogleCategory = googleProduct.Taxonomy,
+            UseShortDescription = googleProduct.UseShortDescription
         };
 
         return View("~/Plugins/Feed.GoogleShopping/Views/Edit.cshtml", model);
@@ -323,6 +325,7 @@ public class FeedGoogleShoppingController : BasePluginController
             googleProduct.Color = model.Color;
             googleProduct.Size = model.GoogleSize;
             googleProduct.CustomGoods = model.CustomGoods;
+            googleProduct.UseShortDescription = model.UseShortDescription;
             await _googleService.UpdateGoogleProductRecordAsync(googleProduct);
         }
         else
@@ -336,7 +339,8 @@ public class FeedGoogleShoppingController : BasePluginController
                 AgeGroup = model.AgeGroup,
                 Color = model.Color,
                 Size = model.GoogleSize,
-                CustomGoods = model.CustomGoods
+                CustomGoods = model.CustomGoods,
+                UseShortDescription = model.UseShortDescription
             };
             await _googleService.InsertGoogleProductRecordAsync(googleProduct);
         }

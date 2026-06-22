@@ -265,6 +265,8 @@ public class GoogleShoppingService : BasePlugin, IMiscPlugin
 
             foreach (var product in productsToProcess)
             {
+                var googleProduct = allGoogleProducts.FirstOrDefault(x => x.ProductId == product.Id);
+
                 writer.WriteStartElement("item");
 
                 #region Basic Product Information
@@ -283,9 +285,19 @@ public class GoogleShoppingService : BasePlugin, IMiscPlugin
 
                 //description [description] - Description of the item
                 writer.WriteStartElement("description");
-                var description = await _localizationService.GetLocalizedAsync(product, x => x.FullDescription, languageId);
-                if (string.IsNullOrEmpty(description))
+                string description;
+                if (googleProduct != null && googleProduct.UseShortDescription)
+                {
                     description = await _localizationService.GetLocalizedAsync(product, x => x.ShortDescription, languageId);
+                    if (string.IsNullOrEmpty(description))
+                        description = await _localizationService.GetLocalizedAsync(product, x => x.FullDescription, languageId);
+                }
+                else
+                {
+                    description = await _localizationService.GetLocalizedAsync(product, x => x.FullDescription, languageId);
+                    if (string.IsNullOrEmpty(description))
+                        description = await _localizationService.GetLocalizedAsync(product, x => x.ShortDescription, languageId);
+                }
                 if (string.IsNullOrEmpty(description))
                     description = await _localizationService.GetLocalizedAsync(product, x => x.Name, languageId); //description is required
                                                                                                                   //resolving character encoding issues in your data feed
@@ -297,7 +309,6 @@ public class GoogleShoppingService : BasePlugin, IMiscPlugin
                 //the category of the product according to Google’s product taxonomy. http://www.google.com/support/merchants/bin/answer.py?answer=160081
                 var googleProductCategory = "";
                 //var googleProduct = _googleService.GetByProductId(product.Id);
-                var googleProduct = allGoogleProducts.FirstOrDefault(x => x.ProductId == product.Id);
                 if (googleProduct != null)
                     googleProductCategory = googleProduct.Taxonomy;
                 if (string.IsNullOrEmpty(googleProductCategory))
@@ -609,6 +620,8 @@ public class GoogleShoppingService : BasePlugin, IMiscPlugin
             ["Plugins.Feed.GoogleShopping.Products.Size.Hint"] = "Product size.",
             ["Plugins.Feed.GoogleShopping.Products.CustomGoods"] = "Custom goods",
             ["Plugins.Feed.GoogleShopping.Products.CustomGoods.Hint"] = "Custom goods (no identifier exists).",
+            ["Plugins.Feed.GoogleShopping.Products.UseShortDescription"] = "Use short description",
+            ["Plugins.Feed.GoogleShopping.Products.UseShortDescription.Hint"] = "Check to use the product's short description instead of the full description in the feed.",
             ["Plugins.Feed.GoogleShopping.SuccessResult"] = "Google Shopping feed has been successfully generated.",
             ["Plugins.Feed.GoogleShopping.StaticFilePath"] = "Generated file path (static)",
             ["Plugins.Feed.GoogleShopping.StaticFilePath.Hint"] = "A file path of the generated file. It's static for your store and can be shared with the Google Shopping service."
