@@ -10,6 +10,8 @@
     <!-- Copy plugin output to nopCommerce plugins folder on build -->
     <OutputPath>..\..\Presentation\Nop.Web\Plugins\Widgets.SeoEnhancements\</OutputPath>
     <OutDir>$(OutputPath)</OutDir>
+    <!-- Copy NuGet references locally for dynamic loading -->
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
 
   <ItemGroup>
@@ -45,6 +47,11 @@
       <PluginStaticFiles Include="wwwroot\**\*" />
     </ItemGroup>
     <Copy SourceFiles="@(PluginStaticFiles)" DestinationFiles="@(PluginStaticFiles->'..\..\Presentation\Nop.Web\wwwroot\Plugins\Widgets.SeoEnhancements\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+  </Target>
+
+  <!-- This target executes after "Build" target to clear redundant assemblies -->
+  <Target Name="NopTarget" AfterTargets="Build">
+    <MSBuild Projects="@(ClearPluginAssemblies)" Properties="PluginPath=$(OutDir)" Targets="NopClear" />
   </Target>
 
 </Project>

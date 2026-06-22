@@ -1,4 +1,4 @@
-﻿@model GoogleProductModel
+@model GoogleProductModel
 
 <div asp-validation-summary="All"></div>
 <input asp-for="ProductId" type="hidden" />
@@ -67,6 +67,15 @@
                 <div class="col-sm-9">
                     <nop-editor asp-for="CustomGoods" />
                     <span asp-validation-for="CustomGoods"></span>
+                </div>
+            </div>
+            <div class="form-group row">
+                <div class="col-sm-3">
+                    <nop-label asp-for="UseShortDescription" />
+                </div>
+                <div class="col-sm-9">
+                    <nop-editor asp-for="UseShortDescription" />
+                    <span asp-validation-for="UseShortDescription"></span>
                 </div>
             </div>
         </div>

@@ -1,4 +1,4 @@
-﻿using Nop.Web.Framework.Models;
+using Nop.Web.Framework.Models;
 using Nop.Web.Framework.Mvc.ModelBinding;
 
 namespace Nop.Plugin.Feed.GoogleShopping.Models;
@@ -36,6 +36,9 @@ public record GoogleProductModel : BaseNopEntityModel
 
     [NopResourceDisplayName("Plugins.Feed.GoogleShopping.Products.CustomGoods")]
     public bool CustomGoods { get; set; }
+
+    [NopResourceDisplayName("Plugins.Feed.GoogleShopping.Products.UseShortDescription")]
+    public bool UseShortDescription { get; set; }
 
     public GoogleProductSearchModel GoogleProductListSearchModel { get; set; }
 }
