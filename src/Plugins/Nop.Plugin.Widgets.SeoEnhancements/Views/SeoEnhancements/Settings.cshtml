@@ -36,10 +36,31 @@
                     </div>
 
                     <div class="form-group row">
+                        <div class="col-md-3"><nop-label asp-for="UseAzureKeyVault" /></div>
+                        <div class="col-md-9">
+                            <input asp-for="UseAzureKeyVault" type="checkbox" class="form-check-input" style="margin-left: 0; position: relative; margin-top: 6px;" />
+                        </div>
+                    </div>
+
+                    <div class="form-group row" id="pnlApiKey">
                         <div class="col-md-3"><nop-label asp-for="AzureOpenAiApiKey" /></div>
                         <div class="col-md-9">
                             <input asp-for="AzureOpenAiApiKey" class="form-control" type="password" autocomplete="new-password" />
-                            <small class="text-muted">Stored in your settings table. Consider Azure Key Vault if your fork supports it.</small>
+                            <small class="text-muted">Stored in your settings table.</small>
+                        </div>
+                    </div>
+
+                    <div class="form-group row" id="pnlKeyVaultUrl">
+                        <div class="col-md-3"><nop-label asp-for="AzureKeyVaultUrl" /></div>
+                        <div class="col-md-9">
+                            <input asp-for="AzureKeyVaultUrl" class="form-control" placeholder="https://your-vault.vault.azure.net/" />
+                        </div>
+                    </div>
+
+                    <div class="form-group row" id="pnlKeyVaultSecretName">
+                        <div class="col-md-3"><nop-label asp-for="AzureKeyVaultSecretName" /></div>
+                        <div class="col-md-9">
+                            <input asp-for="AzureKeyVaultSecretName" class="form-control" placeholder="e.g. AzureOpenAiApiKey" />
                         </div>
                     </div>
 
@@ -74,3 +95,22 @@
         </div>
     </div>
 </section>
+
+<script>
+    $(document).ready(function () {
+        $("#UseAzureKeyVault").click(toggleKeyVault);
+        toggleKeyVault();
+    });
+
+    function toggleKeyVault() {
+        if ($('#UseAzureKeyVault').is(':checked')) {
+            $('#pnlApiKey').hide();
+            $('#pnlKeyVaultUrl').show();
+            $('#pnlKeyVaultSecretName').show();
+        } else {
+            $('#pnlApiKey').show();
+            $('#pnlKeyVaultUrl').hide();
+            $('#pnlKeyVaultSecretName').hide();
+        }
+    }
+</script>

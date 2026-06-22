@@ -1,6 +1,8 @@
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using Azure.Identity;
+using Azure.Security.KeyVault.Secrets;
 using Nop.Core.Domain.Catalog;
 using Nop.Plugin.Widgets.SeoEnhancements.Domain;
 using Nop.Services.Logging;
@@ -48,20 +50,42 @@ public class FaqGenerationService : IFaqGenerationService
 
     private async Task<IList<GeneratedFaqPair>> GenerateAsync(string context, string entityKind, int pairCount)
     {
-        if (string.IsNullOrWhiteSpace(_settings.AzureOpenAiEndpoint) ||
-            string.IsNullOrWhiteSpace(_settings.AzureOpenAiApiKey) ||
-            string.IsNullOrWhiteSpace(_settings.AzureOpenAiDeploymentName))
+        var endpoint = _settings.AzureOpenAiEndpoint?.TrimEnd('/');
+        var deployment = _settings.AzureOpenAiDeploymentName;
+        var useKeyVault = _settings.UseAzureKeyVault;
+        var apiKey = _settings.AzureOpenAiApiKey;
+
+        if (string.IsNullOrWhiteSpace(endpoint) || string.IsNullOrWhiteSpace(deployment))
         {
-            await _logger.WarningAsync("SeoEnhancements: Azure OpenAI settings are not configured. Skipping FAQ generation.");
+            await _logger.WarningAsync("SeoEnhancements: Azure OpenAI Endpoint or Deployment Name is not configured. Skipping FAQ generation.");
+            return new List<GeneratedFaqPair>();
+        }
+
+        if (useKeyVault)
+        {
+            if (string.IsNullOrWhiteSpace(_settings.AzureKeyVaultUrl) || string.IsNullOrWhiteSpace(_settings.AzureKeyVaultSecretName))
+            {
+                await _logger.WarningAsync("SeoEnhancements: Azure Key Vault is enabled but URL or Secret Name is not configured. Skipping FAQ generation.");
+                return new List<GeneratedFaqPair>();
+            }
+        }
+        else if (string.IsNullOrWhiteSpace(apiKey))
+        {
+            await _logger.WarningAsync("SeoEnhancements: Azure OpenAI API Key is not configured. Skipping FAQ generation.");
             return new List<GeneratedFaqPair>();
         }
 
         try
         {
-            var client = _httpClientFactory.CreateClient(ClientName);
+            if (useKeyVault)
+            {
+                var secretClient = new SecretClient(new Uri(_settings.AzureKeyVaultUrl), new DefaultAzureCredential());
+                var secretResponse = await secretClient.GetSecretAsync(_settings.AzureKeyVaultSecretName);
+                apiKey = secretResponse.Value.Value;
+            }
 
-            var endpoint = _settings.AzureOpenAiEndpoint.TrimEnd('/');
-            var url = $"{endpoint}/openai/deployments/{_settings.AzureOpenAiDeploymentName}/chat/completions?api-version={_settings.AzureOpenAiApiVersion}";
+            var client = _httpClientFactory.CreateClient(ClientName);
+            var url = $"{endpoint}/openai/deployments/{deployment}/chat/completions?api-version={_settings.AzureOpenAiApiVersion}";
 
             var systemPrompt =
                 "You are an ecommerce copywriter generating FAQ content for a UK farm/cottage retail website. " +
@@ -87,7 +111,7 @@ public class FaqGenerationService : IFaqGenerationService
             };
 
             using var request = new HttpRequestMessage(HttpMethod.Post, url);
-            request.Headers.Add("api-key", _settings.AzureOpenAiApiKey);
+            request.Headers.Add("api-key", apiKey);
             request.Content = new StringContent(
                 JsonSerializer.Serialize(requestBody),
                 Encoding.UTF8,

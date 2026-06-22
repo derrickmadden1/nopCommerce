@@ -22,6 +22,15 @@ public record SeoEnhancementsConfigModel : BaseNopModel
     [NopResourceDisplayName("FAQ pairs to generate per request")]
     [Range(1, 10)]
     public int FaqPairsToGenerate { get; set; } = 5;
+
+    [NopResourceDisplayName("Use Azure Key Vault")]
+    public bool UseAzureKeyVault { get; set; }
+
+    [NopResourceDisplayName("Azure Key Vault URL")]
+    public string AzureKeyVaultUrl { get; set; } = string.Empty;
+
+    [NopResourceDisplayName("Azure Key Vault Secret Name")]
+    public string AzureKeyVaultSecretName { get; set; } = string.Empty;
 }
 
 /// <summary>One generated pair shown in the review screen, with an Include checkbox.</summary>
