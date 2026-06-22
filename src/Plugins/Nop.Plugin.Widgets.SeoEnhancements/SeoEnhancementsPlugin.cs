@@ -1,9 +1,10 @@
 using Nop.Core;
+using Nop.Plugin.Widgets.SeoEnhancements.Domain;
 using Nop.Services.Cms;
 using Nop.Services.Configuration;
+using Nop.Services.Helpers;
 using Nop.Services.Localization;
 using Nop.Services.Plugins;
-using Nop.Services.Helpers;
 using Nop.Web.Framework.Infrastructure;
 
 namespace Nop.Plugin.Widgets.SeoEnhancements;
@@ -61,6 +62,12 @@ public class SeoEnhancementsPlugin : BasePlugin, IWidgetPlugin
 
     public override async Task InstallAsync()
     {
+        await _settingService.SaveSettingAsync(new SeoEnhancementsSettings
+        {
+            AzureOpenAiApiVersion = "2024-08-01-preview",
+            FaqPairsToGenerate = 5
+        });
+
         await _localizationService.AddOrUpdateLocaleResourceAsync(new Dictionary<string, string>
         {
             ["Plugins.Widgets.SeoEnhancements.Configure"] = "SEO Enhancements",
@@ -78,6 +85,7 @@ public class SeoEnhancementsPlugin : BasePlugin, IWidgetPlugin
 
     public override async Task UninstallAsync()
     {
+        await _settingService.DeleteSettingAsync<SeoEnhancementsSettings>();
         await _localizationService.DeleteLocaleResourcesAsync("Plugins.Widgets.SeoEnhancements");
         await base.UninstallAsync();
     }

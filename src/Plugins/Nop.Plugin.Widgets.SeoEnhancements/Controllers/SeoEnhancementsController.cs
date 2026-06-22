@@ -4,7 +4,8 @@ using Nop.Plugin.Widgets.SeoEnhancements.Domain;
 using Nop.Plugin.Widgets.SeoEnhancements.Models;
 using Nop.Plugin.Widgets.SeoEnhancements.Services;
 using Nop.Services.Catalog;
-using Nop.Services.Localization;
+using Nop.Services.Configuration;
+using Nop.Services.Messages;
 using Nop.Services.Security;
 using Nop.Web.Framework;
 using Nop.Web.Framework.Controllers;
@@ -18,23 +19,32 @@ namespace Nop.Plugin.Widgets.SeoEnhancements.Controllers;
 public class SeoEnhancementsController : BasePluginController
 {
     private readonly IFaqService _faqService;
+    private readonly IFaqGenerationService _faqGenerationService;
     private readonly IPermissionService _permissionService;
     private readonly IProductService _productService;
     private readonly ICategoryService _categoryService;
-    private readonly ILocalizationService _localizationService;
+    private readonly ISettingService _settingService;
+    private readonly SeoEnhancementsSettings _settings;
+    private readonly INotificationService _notificationService;
 
     public SeoEnhancementsController(
         IFaqService faqService,
+        IFaqGenerationService faqGenerationService,
         IPermissionService permissionService,
         IProductService productService,
         ICategoryService categoryService,
-        ILocalizationService localizationService)
+        ISettingService settingService,
+        SeoEnhancementsSettings settings,
+        INotificationService notificationService)
     {
         _faqService = faqService;
+        _faqGenerationService = faqGenerationService;
         _permissionService = permissionService;
         _productService = productService;
         _categoryService = categoryService;
-        _localizationService = localizationService;
+        _settingService = settingService;
+        _settings = settings;
+        _notificationService = notificationService;
     }
 
     // -------------------------------------------------------------------------
@@ -45,19 +55,6 @@ public class SeoEnhancementsController : BasePluginController
     {
         if (!await _permissionService.AuthorizeAsync(StandardPermission.Configuration.MANAGE_PLUGINS))
             return AccessDeniedView();
-
-        // Ensure plugin localization resources are added/updated in the database
-        await _localizationService.AddOrUpdateLocaleResourceAsync(new Dictionary<string, string>
-        {
-            ["Plugins.Widgets.SeoEnhancements.Configure"] = "SEO Enhancements",
-            ["Plugins.Widgets.SeoEnhancements.FAQ.Question"] = "Question",
-            ["Plugins.Widgets.SeoEnhancements.FAQ.Answer"] = "Answer",
-            ["Plugins.Widgets.SeoEnhancements.FAQ.DisplayOrder"] = "Display Order",
-            ["Plugins.Widgets.SeoEnhancements.FAQ.Published"] = "Published",
-            ["Plugins.Widgets.SeoEnhancements.FAQ.AddNew"] = "Add FAQ",
-            ["Plugins.Widgets.SeoEnhancements.FAQ.Edit"] = "Edit FAQ",
-            ["Plugins.Widgets.SeoEnhancements.FAQ.BackToList"] = "Back to FAQ list",
-        });
 
         var searchModel = new FaqItemSearchModel();
         searchModel.SetGridPageSize();
@@ -210,6 +207,131 @@ public class SeoEnhancementsController : BasePluginController
             await _faqService.DeleteFaqItemAsync(item);
 
         return RedirectToAction(nameof(Configure));
+    }
+
+    // -------------------------------------------------------------------------
+    // AI generation — review screen
+    // -------------------------------------------------------------------------
+
+    /// <summary>
+    /// Called via the "Generate FAQs with AI" button on a product/category.
+    /// Calls Azure OpenAI, then shows a review screen where each pair can be
+    /// included/excluded and edited before saving.
+    /// </summary>
+    [HttpPost]
+    public async Task<IActionResult> Generate(FaqGenerateRequestModel request)
+    {
+        if (!await _permissionService.AuthorizeAsync(StandardPermission.Configuration.MANAGE_PLUGINS))
+            return AccessDeniedView();
+
+        var reviewModel = new FaqGenerateReviewModel
+        {
+            EntityTypeId = request.EntityTypeId,
+            EntityId = request.EntityId
+        };
+
+        IList<GeneratedFaqPair> generated;
+
+        if (request.EntityTypeId == (int)SeoFaqEntityType.Product)
+        {
+            var product = await _productService.GetProductByIdAsync(request.EntityId);
+            if (product == null)
+            {
+                _notificationService.ErrorNotification("Product not found.");
+                return RedirectToAction(nameof(Configure));
+            }
+            reviewModel.EntityName = product.Name;
+            generated = await _faqGenerationService.GenerateForProductAsync(product, _settings.FaqPairsToGenerate);
+        }
+        else
+        {
+            var category = await _categoryService.GetCategoryByIdAsync(request.EntityId);
+            if (category == null)
+            {
+                _notificationService.ErrorNotification("Category not found.");
+                return RedirectToAction(nameof(Configure));
+            }
+            reviewModel.EntityName = category.Name;
+            generated = await _faqGenerationService.GenerateForCategoryAsync(category, _settings.FaqPairsToGenerate);
+        }
+
+        if (!generated.Any())
+        {
+            _notificationService.ErrorNotification("No FAQs were generated. Check your Azure OpenAI settings and the admin log for details.");
+            return RedirectToAction(nameof(Configure));
+        }
+
+        reviewModel.Candidates = generated
+            .Select(g => new GeneratedFaqReviewItem { Question = g.Question, Answer = g.Answer, Include = true })
+            .ToList();
+
+        return View("~/Plugins/Widgets.SeoEnhancements/Views/SeoEnhancements/Review.cshtml", reviewModel);
+    }
+
+    /// <summary>
+    /// Saves the FAQ pairs the admin kept checked on the review screen.
+    /// </summary>
+    [HttpPost]
+    public async Task<IActionResult> SaveGenerated(FaqGenerateReviewModel model)
+    {
+        if (!await _permissionService.AuthorizeAsync(StandardPermission.Configuration.MANAGE_PLUGINS))
+            return AccessDeniedView();
+
+        var displayOrder = 0;
+        foreach (var candidate in model.Candidates.Where(c => c.Include))
+        {
+            await _faqService.InsertFaqItemAsync(new SeoFaqItem
+            {
+                EntityTypeId = model.EntityTypeId,
+                EntityId = model.EntityId,
+                Question = candidate.Question,
+                Answer = candidate.Answer,
+                DisplayOrder = displayOrder++,
+                Published = true
+            });
+        }
+
+        _notificationService.SuccessNotification($"{displayOrder} FAQ item(s) saved.");
+        return RedirectToAction(nameof(Configure));
+    }
+
+    // -------------------------------------------------------------------------
+    // Settings (Azure OpenAI configuration)
+    // -------------------------------------------------------------------------
+
+    public async Task<IActionResult> Settings()
+    {
+        if (!await _permissionService.AuthorizeAsync(StandardPermission.Configuration.MANAGE_PLUGINS))
+            return AccessDeniedView();
+
+        var model = new SeoEnhancementsConfigModel
+        {
+            AzureOpenAiEndpoint = _settings.AzureOpenAiEndpoint,
+            AzureOpenAiApiKey = _settings.AzureOpenAiApiKey,
+            AzureOpenAiDeploymentName = _settings.AzureOpenAiDeploymentName,
+            AzureOpenAiApiVersion = _settings.AzureOpenAiApiVersion,
+            FaqPairsToGenerate = _settings.FaqPairsToGenerate
+        };
+
+        return View("~/Plugins/Widgets.SeoEnhancements/Views/SeoEnhancements/Settings.cshtml", model);
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> Settings(SeoEnhancementsConfigModel model)
+    {
+        if (!await _permissionService.AuthorizeAsync(StandardPermission.Configuration.MANAGE_PLUGINS))
+            return AccessDeniedView();
+
+        _settings.AzureOpenAiEndpoint = model.AzureOpenAiEndpoint;
+        _settings.AzureOpenAiApiKey = model.AzureOpenAiApiKey;
+        _settings.AzureOpenAiDeploymentName = model.AzureOpenAiDeploymentName;
+        _settings.AzureOpenAiApiVersion = model.AzureOpenAiApiVersion;
+        _settings.FaqPairsToGenerate = model.FaqPairsToGenerate;
+
+        await _settingService.SaveSettingAsync(_settings);
+
+        _notificationService.SuccessNotification("Settings saved.");
+        return RedirectToAction(nameof(Settings));
     }
 
     // -------------------------------------------------------------------------

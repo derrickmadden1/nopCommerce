@@ -1,3 +1,4 @@
+using System.Net.Http.Headers;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,6 +14,15 @@ public class NopStartup : INopStartup
     {
         services.AddScoped<IFaqService, FaqService>();
         services.AddScoped<ISchemaService, SchemaService>();
+        services.AddScoped<IFaqGenerationService, FaqGenerationService>();
+
+        // Named HttpClient for Azure OpenAI calls — generous timeout since
+        // generating 5 FAQ pairs can take several seconds.
+        services.AddHttpClient("SeoEnhancements.AzureOpenAi", client =>
+        {
+            client.Timeout = TimeSpan.FromSeconds(60);
+            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        });
 
         // Decorate INopHtmlHelper with our SEO-enhanced version
         services.AddScoped<INopHtmlHelper, SeoEnhancedNopHtmlHelper>();
@@ -25,3 +35,4 @@ public class NopStartup : INopStartup
 
     public int Order => 3001; // Run after core registrations
 }
+

@@ -18,7 +18,28 @@
 
 <section class="content">
     <div class="container-fluid">
-        <div class="card card-default">
+
+        <div class="card card-default mb-3">
+            <div class="card-body">
+                <h5>Generate with AI</h5>
+                <p class="text-muted">
+                    Enter the entity type and ID below, then generate draft FAQs via Azure OpenAI.
+                    You'll review and edit each pair before anything is saved.
+                </p>
+                <form asp-controller="SeoEnhancements" asp-action="Generate" method="post" class="form-inline">
+                    <select name="EntityTypeId" class="form-control mr-2">
+                        <option value="1">Product</option>
+                        <option value="2">Category</option>
+                    </select>
+                    <input name="EntityId" type="number" min="1" class="form-control mr-2" placeholder="Entity ID" style="width: 140px;" required />
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-magic"></i> Generate FAQs with AI
+                    </button>
+                    <a href="@Url.Action("Settings")" class="ml-2 text-muted small">Configure Azure OpenAI</a>
+                </form>
+            </div>
+        </div>
+
             <div class="card-body">
                 <form asp-controller="SeoEnhancements" asp-action="Create" method="post">
                     <div asp-validation-summary="All" class="text-danger"></div>
