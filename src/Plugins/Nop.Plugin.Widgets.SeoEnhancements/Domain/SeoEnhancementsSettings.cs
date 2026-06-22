@@ -16,4 +16,10 @@ public class SeoEnhancementsSettings : ISettings
     public string AzureOpenAiApiVersion { get; set; } = "2024-08-01-preview";
 
     public int FaqPairsToGenerate { get; set; } = 5;
+
+    public bool UseAzureKeyVault { get; set; } = false;
+
+    public string AzureKeyVaultUrl { get; set; } = string.Empty;
+
+    public string AzureKeyVaultSecretName { get; set; } = string.Empty;
 }

@@ -310,7 +310,10 @@ public class SeoEnhancementsController : BasePluginController
             AzureOpenAiApiKey = _settings.AzureOpenAiApiKey,
             AzureOpenAiDeploymentName = _settings.AzureOpenAiDeploymentName,
             AzureOpenAiApiVersion = _settings.AzureOpenAiApiVersion,
-            FaqPairsToGenerate = _settings.FaqPairsToGenerate
+            FaqPairsToGenerate = _settings.FaqPairsToGenerate,
+            UseAzureKeyVault = _settings.UseAzureKeyVault,
+            AzureKeyVaultUrl = _settings.AzureKeyVaultUrl,
+            AzureKeyVaultSecretName = _settings.AzureKeyVaultSecretName
         };
 
         return View("~/Plugins/Widgets.SeoEnhancements/Views/SeoEnhancements/Settings.cshtml", model);
@@ -327,6 +330,9 @@ public class SeoEnhancementsController : BasePluginController
         _settings.AzureOpenAiDeploymentName = model.AzureOpenAiDeploymentName;
         _settings.AzureOpenAiApiVersion = model.AzureOpenAiApiVersion;
         _settings.FaqPairsToGenerate = model.FaqPairsToGenerate;
+        _settings.UseAzureKeyVault = model.UseAzureKeyVault;
+        _settings.AzureKeyVaultUrl = model.AzureKeyVaultUrl;
+        _settings.AzureKeyVaultSecretName = model.AzureKeyVaultSecretName;
 
         await _settingService.SaveSettingAsync(_settings);
 
