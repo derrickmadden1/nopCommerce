@@ -30,16 +30,16 @@ public class SeoEnhancementsPlugin : BasePlugin, IWidgetPlugin
     /// <summary>
     /// Widget zones this plugin injects into.
     /// - head_html_tag: JSON-LD schema scripts on product/category pages
-    /// - productdetails_top: FAQ accordion on product pages
-    /// - categorydetails_top: FAQ accordion on category pages
+    /// - productdetails_bottom: FAQ accordion on product pages
+    /// - categorydetails_bottom: FAQ accordion on category pages
     /// </summary>
     public Task<IList<string>> GetWidgetZonesAsync()
     {
         return Task.FromResult<IList<string>>(new List<string>
         {
             PublicWidgetZones.HeadHtmlTag,
-            PublicWidgetZones.ProductDetailsTop,
-            "categorydetails_top"  // nopCommerce 4.80+ standard zone
+            PublicWidgetZones.ProductDetailsBottom,
+            "categorydetails_bottom"
         });
     }
 
@@ -47,9 +47,9 @@ public class SeoEnhancementsPlugin : BasePlugin, IWidgetPlugin
     {
         if (widgetZone.Equals(PublicWidgetZones.HeadHtmlTag, StringComparison.InvariantCultureIgnoreCase))
             return typeof(Components.SeoSchemaViewComponent);
-        if (widgetZone.Equals(PublicWidgetZones.ProductDetailsTop, StringComparison.InvariantCultureIgnoreCase))
+        if (widgetZone.Equals(PublicWidgetZones.ProductDetailsBottom, StringComparison.InvariantCultureIgnoreCase))
             return typeof(Components.SeoFaqViewComponent);
-        if (widgetZone.Equals("categorydetails_top", StringComparison.InvariantCultureIgnoreCase))
+        if (widgetZone.Equals("categorydetails_bottom", StringComparison.InvariantCultureIgnoreCase))
             return typeof(Components.SeoFaqViewComponent);
 
         return null;
