@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Nop.Core;
 using Nop.Core.Domain.Blogs;
@@ -215,7 +215,7 @@ public partial class NopUrlHelper : INopUrlHelper
                 routeName: routeName,
                 values: values,
                 scheme: protocol,
-                host: new HostString(host),
+                host: string.IsNullOrEmpty(host) ? null : new HostString(host),
                 fragment: new FragmentString(fragment)) ?? string.Empty;
         }
 
