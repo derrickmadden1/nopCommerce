@@ -84,8 +84,7 @@ public class SeoEnhancementsController : BasePluginController
         }
         else
         {
-            // Load all — gather products and categories FAQ items
-            // (For small stores this is fine; extend with a GetAllAsync if needed)
+            allItems = (await _faqService.GetAllFaqItemsAsync(publishedOnly: false)).ToList();
         }
 
         var pagedItems = allItems

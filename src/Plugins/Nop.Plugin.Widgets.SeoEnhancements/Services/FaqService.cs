@@ -25,6 +25,18 @@ public class FaqService : IFaqService
         );
     }
 
+    public async Task<IList<SeoFaqItem>> GetAllFaqItemsAsync(bool publishedOnly = false)
+    {
+        var query = _faqItemRepository.Table;
+
+        if (publishedOnly)
+            query = query.Where(f => f.Published);
+
+        return await Task.FromResult(
+            query.OrderBy(f => f.EntityTypeId).ThenBy(f => f.EntityId).ThenBy(f => f.DisplayOrder).ToList()
+        );
+    }
+
     public async Task<SeoFaqItem?> GetFaqItemByIdAsync(int id)
     {
         return await _faqItemRepository.GetByIdAsync(id);
