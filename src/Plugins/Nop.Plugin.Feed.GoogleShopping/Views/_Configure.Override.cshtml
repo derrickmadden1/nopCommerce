@@ -5,12 +5,61 @@
         <div class="card-body">
             @T("Plugins.Feed.GoogleShopping.OverrideInstructions")
 
+            <div class="card card-default card-search" style="margin-top: 15px;">
+                <div class="card-body">
+                    <div class="search-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group row">
+                                    <div class="col-md-4">
+                                        <nop-label asp-for="GoogleProductSearchModel.SearchProductName" />
+                                    </div>
+                                    <div class="col-md-8">
+                                        <nop-editor asp-for="GoogleProductSearchModel.SearchProductName" />
+                                    </div>
+                                </div>
+                                <div class="form-group row">
+                                    <div class="col-md-4">
+                                        <nop-label asp-for="GoogleProductSearchModel.SearchCategoryId" />
+                                    </div>
+                                    <div class="col-md-8">
+                                        <nop-select asp-for="GoogleProductSearchModel.SearchCategoryId" asp-items="Model.GoogleProductSearchModel.AvailableCategories" />
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group row">
+                                    <div class="col-md-4">
+                                        <nop-label asp-for="GoogleProductSearchModel.SearchPublishedId" />
+                                    </div>
+                                    <div class="col-md-8">
+                                        <nop-select asp-for="GoogleProductSearchModel.SearchPublishedId" asp-items="Model.GoogleProductSearchModel.AvailablePublishedOptions" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="text-center col-12">
+                                <button type="button" id="search-products" class="btn btn-primary btn-search"><i class="fas fa-magnifying-glass"></i>@T("Admin.Common.Search")</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             @await Html.PartialAsync("Table", new DataTablesModel
             {
                 Name = "products-grid",
                 UrlRead = new DataUrl("GoogleProductList", "FeedGoogleShopping", null),
+                SearchButtonId = "search-products",
                 Length = Model.GoogleProductSearchModel.PageSize,
                 LengthMenu = Model.GoogleProductSearchModel.AvailablePageSizes,
+                Filters = new List<FilterParameter>
+                {
+                    new FilterParameter(nameof(Model.GoogleProductSearchModel.SearchProductName), nameof(Model.GoogleProductSearchModel)),
+                    new FilterParameter(nameof(Model.GoogleProductSearchModel.SearchCategoryId), nameof(Model.GoogleProductSearchModel)),
+                    new FilterParameter(nameof(Model.GoogleProductSearchModel.SearchPublishedId), nameof(Model.GoogleProductSearchModel))
+                },
                 ColumnCollection = new List<ColumnProperty>
                 {
                     new ColumnProperty(nameof(GoogleProductModel.ProductName))
