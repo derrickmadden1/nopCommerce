@@ -51,8 +51,7 @@ public class SchemaService : ISchemaService
 
     public async Task<string> BuildProductSchemaAsync(Product product)
     {
-        var store = await _storeContext.GetCurrentStoreAsync();
-        var storeUrl = store.Url.TrimEnd('/');
+        var storeUrl = _webHelper.GetStoreLocation().TrimEnd('/');
         var slug = await _urlRecordService.GetSeNameAsync(product);
         var productUrl = $"{storeUrl}/{slug}";
 
@@ -99,8 +98,7 @@ public class SchemaService : ISchemaService
 
     public async Task<string> BuildCategoryBreadcrumbSchemaAsync(Category category)
     {
-        var store = await _storeContext.GetCurrentStoreAsync();
-        var storeUrl = store.Url.TrimEnd('/');
+        var storeUrl = _webHelper.GetStoreLocation().TrimEnd('/');
 
         var breadcrumbs = await BuildCategoryBreadcrumbsAsync(category, storeUrl);
 
@@ -141,7 +139,7 @@ public class SchemaService : ISchemaService
     public async Task<string> BuildOrganizationSchemaAsync()
     {
         var store = await _storeContext.GetCurrentStoreAsync();
-        var storeUrl = store.Url.TrimEnd('/');
+        var storeUrl = _webHelper.GetStoreLocation().TrimEnd('/');
 
         var schema = new Dictionary<string, object?>
         {
