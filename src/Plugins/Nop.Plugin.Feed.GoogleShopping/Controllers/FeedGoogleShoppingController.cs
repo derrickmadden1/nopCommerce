@@ -18,6 +18,7 @@ using Nop.Services.Messages;
 using Nop.Services.Plugins;
 using Nop.Services.Security;
 using Nop.Services.Stores;
+using Nop.Web.Areas.Admin.Factories;
 using Nop.Web.Framework;
 using Nop.Web.Framework.Controllers;
 using Nop.Web.Framework.Models.Extensions;
@@ -31,6 +32,7 @@ public class FeedGoogleShoppingController : BasePluginController
 {
     #region Fields
 
+    private readonly IBaseAdminModelFactory _baseAdminModelFactory;
     private readonly ICurrencyService _currencyService;
     private readonly IGenericAttributeService _genericAttributeService;
     private readonly IGoogleService _googleService;
@@ -51,7 +53,8 @@ public class FeedGoogleShoppingController : BasePluginController
 
     #region Ctor
 
-    public FeedGoogleShoppingController(ICurrencyService currencyService,
+    public FeedGoogleShoppingController(IBaseAdminModelFactory baseAdminModelFactory,
+        ICurrencyService currencyService,
         IGenericAttributeService genericAttributeService,
         IGoogleService googleService,
         ILocalizationService localizationService,
@@ -67,6 +70,7 @@ public class FeedGoogleShoppingController : BasePluginController
         IWebHostEnvironment webHostEnvironment,
         IWorkContext workContext)
     {
+        _baseAdminModelFactory = baseAdminModelFactory;
         _currencyService = currencyService;
         _genericAttributeService = genericAttributeService;
         _googleService = googleService;
@@ -119,6 +123,39 @@ public class FeedGoogleShoppingController : BasePluginController
 
         //prepare nested search models
         model.GoogleProductSearchModel.SetGridPageSize();
+
+        //load saved search criteria
+        var savedCriteriaStr = await _genericAttributeService.GetAttributeAsync<string>(currentCustomer, "Admin.GoogleProductSearchCriteria");
+        if (!string.IsNullOrEmpty(savedCriteriaStr))
+        {
+            var savedCriteria = Newtonsoft.Json.JsonConvert.DeserializeObject<GoogleProductSearchModel>(savedCriteriaStr);
+            if (savedCriteria != null)
+            {
+                model.GoogleProductSearchModel.SearchProductName = savedCriteria.SearchProductName;
+                model.GoogleProductSearchModel.SearchCategoryId = savedCriteria.SearchCategoryId;
+                model.GoogleProductSearchModel.SearchPublishedId = savedCriteria.SearchPublishedId;
+            }
+        }
+
+        //prepare available categories
+        await _baseAdminModelFactory.PrepareCategoriesAsync(model.GoogleProductSearchModel.AvailableCategories);
+
+        //prepare available published options
+        model.GoogleProductSearchModel.AvailablePublishedOptions.Add(new SelectListItem
+        {
+            Value = "0",
+            Text = await _localizationService.GetResourceAsync("Admin.Catalog.Products.List.SearchPublished.All")
+        });
+        model.GoogleProductSearchModel.AvailablePublishedOptions.Add(new SelectListItem
+        {
+            Value = "1",
+            Text = await _localizationService.GetResourceAsync("Admin.Catalog.Products.List.SearchPublished.PublishedOnly")
+        });
+        model.GoogleProductSearchModel.AvailablePublishedOptions.Add(new SelectListItem
+        {
+            Value = "2",
+            Text = await _localizationService.GetResourceAsync("Admin.Catalog.Products.List.SearchPublished.UnpublishedOnly")
+        });
 
         //file paths
         foreach (var store in await _storeService.GetAllStoresAsync())
@@ -247,12 +284,22 @@ public class FeedGoogleShoppingController : BasePluginController
     [CheckPermission(StandardPermission.Configuration.MANAGE_PLUGINS)]
     public async Task<IActionResult> GoogleProductList(GoogleProductSearchModel searchModel)
     {
+        //save search criteria
+        var customer = await _workContext.GetCurrentCustomerAsync();
+        await _genericAttributeService.SaveAttributeAsync(customer, "Admin.GoogleProductSearchCriteria", Newtonsoft.Json.JsonConvert.SerializeObject(searchModel));
+
         var storeId = await _storeContext.GetActiveStoreScopeConfigurationAsync();
+        var overridePublished = searchModel.SearchPublishedId == 0 ? null : (bool?)(searchModel.SearchPublishedId == 1);
+        var categoryIds = new List<int> { searchModel.SearchCategoryId };
+
         var products = await _productService.SearchProductsAsync(
+            showHidden: true,
             storeId: storeId,
+            categoryIds: categoryIds,
+            keywords: searchModel.SearchProductName,
             pageIndex: searchModel.Page - 1,
             pageSize: searchModel.PageSize,
-            showHidden: true);
+            overridePublished: overridePublished);
 
         //prepare list model
         var model = await new GoogleProductListModel().PrepareToGridAsync(searchModel, products, () =>
