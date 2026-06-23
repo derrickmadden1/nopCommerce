@@ -34,9 +34,8 @@
                     {
                         <div class="card mb-3" style="border-left: 4px solid #4a7c59;">
                             <div class="card-body">
-                                <input asp-for="Candidates[i].Include" type="hidden" value="false" />
                                 <div class="form-check mb-2">
-                                    <input asp-for="Candidates[i].Include" class="form-check-input" type="checkbox" value="true" checked="@Model.Candidates[i].Include" />
+                                    <input asp-for="Candidates[i].Include" class="form-check-input" />
                                     <label class="form-check-label font-weight-bold">Include this FAQ</label>
                                 </div>
 
