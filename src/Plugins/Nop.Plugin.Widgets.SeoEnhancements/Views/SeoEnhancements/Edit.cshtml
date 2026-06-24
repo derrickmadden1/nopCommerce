@@ -84,12 +84,11 @@
                     <div class="form-group row">
                         <div class="col-md-9 offset-md-3">
                             <button type="submit" class="btn btn-primary">Save</button>
-                            <a href="@Url.Action("Delete", new { id = Model.Id })"
-                               class="btn btn-danger"
-                               onclick="return confirm('Delete this FAQ item?')">Delete</a>
+                            <span id="faqitem-delete" class="btn btn-danger">Delete</span>
                         </div>
                     </div>
                 </form>
+                <nop-delete-confirmation asp-model-id="@Model.Id" asp-button-id="faqitem-delete" asp-action="Delete" />
             </div>
         </div>
     </div>
