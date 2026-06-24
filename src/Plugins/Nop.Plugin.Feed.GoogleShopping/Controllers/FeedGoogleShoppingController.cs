@@ -107,6 +107,13 @@ public class FeedGoogleShoppingController : BasePluginController
         model.PassShippingInfoDimensions = googleShoppingSettings.PassShippingInfoDimensions;
         model.PricesConsiderPromotions = googleShoppingSettings.PricesConsiderPromotions;
 
+        // Azure Blob Storage settings
+        model.UseAzureBlobStorage = googleShoppingSettings.UseAzureBlobStorage;
+        model.AzureBlobConnectionString = googleShoppingSettings.AzureBlobConnectionString;
+        model.AzureBlobContainerName = googleShoppingSettings.AzureBlobContainerName;
+        model.AzureBlobEndPoint = googleShoppingSettings.AzureBlobEndPoint;
+        model.AzureBlobAppendContainerName = googleShoppingSettings.AzureBlobAppendContainerName;
+
         //currencies
         model.CurrencyId = googleShoppingSettings.CurrencyId;
         foreach (var c in await _currencyService.GetAllCurrenciesAsync())
@@ -160,13 +167,26 @@ public class FeedGoogleShoppingController : BasePluginController
         //file paths
         foreach (var store in await _storeService.GetAllStoresAsync())
         {
-            var localFilePath = _nopFileProvider.Combine(_webHostEnvironment.WebRootPath, "files", "exportimport", store.Id + "-" + googleShoppingSettings.StaticFileName);
-            if (_nopFileProvider.FileExists(localFilePath))
+            if (googleShoppingSettings.UseAzureBlobStorage)
+            {
+                // Always serve the dynamic endpoint URL that points Google to the correct location
+                var dynamicUrl = $"{_webHelper.GetStoreLocation(false)}googleshopping/feed?storeId={store.Id}";
                 model.GeneratedFiles.Add(new GeneratedFileModel
                 {
                     StoreName = store.Name,
-                    FileUrl = $"{_webHelper.GetStoreLocation(false)}files/exportimport/{store.Id}-{googleShoppingSettings.StaticFileName}"
+                    FileUrl = dynamicUrl
                 });
+            }
+            else
+            {
+                var localFilePath = _nopFileProvider.Combine(_webHostEnvironment.WebRootPath, "files", "exportimport", store.Id + "-" + googleShoppingSettings.StaticFileName);
+                if (_nopFileProvider.FileExists(localFilePath))
+                    model.GeneratedFiles.Add(new GeneratedFileModel
+                    {
+                        StoreName = store.Name,
+                        FileUrl = $"{_webHelper.GetStoreLocation(false)}files/exportimport/{store.Id}-{googleShoppingSettings.StaticFileName}"
+                    });
+            }
         }
 
         model.ActiveStoreScopeConfiguration = storeScope;
@@ -178,6 +198,13 @@ public class FeedGoogleShoppingController : BasePluginController
             model.PassShippingInfoWeight_OverrideForStore = await _settingService.SettingExistsAsync(googleShoppingSettings, x => x.PassShippingInfoWeight, storeScope);
             model.PricesConsiderPromotions_OverrideForStore = await _settingService.SettingExistsAsync(googleShoppingSettings, x => x.PricesConsiderPromotions, storeScope);
             model.ProductPictureSize_OverrideForStore = await _settingService.SettingExistsAsync(googleShoppingSettings, x => x.ProductPictureSize, storeScope);
+            
+            // Azure Blob overrides
+            model.UseAzureBlobStorage_OverrideForStore = await _settingService.SettingExistsAsync(googleShoppingSettings, x => x.UseAzureBlobStorage, storeScope);
+            model.AzureBlobConnectionString_OverrideForStore = await _settingService.SettingExistsAsync(googleShoppingSettings, x => x.AzureBlobConnectionString, storeScope);
+            model.AzureBlobContainerName_OverrideForStore = await _settingService.SettingExistsAsync(googleShoppingSettings, x => x.AzureBlobContainerName, storeScope);
+            model.AzureBlobEndPoint_OverrideForStore = await _settingService.SettingExistsAsync(googleShoppingSettings, x => x.AzureBlobEndPoint, storeScope);
+            model.AzureBlobAppendContainerName_OverrideForStore = await _settingService.SettingExistsAsync(googleShoppingSettings, x => x.AzureBlobAppendContainerName, storeScope);
         }
     }
 
@@ -221,6 +248,13 @@ public class FeedGoogleShoppingController : BasePluginController
         googleShoppingSettings.CurrencyId = model.CurrencyId;
         googleShoppingSettings.DefaultGoogleCategory = model.DefaultGoogleCategory;
 
+        // Azure Blob Storage settings
+        googleShoppingSettings.UseAzureBlobStorage = model.UseAzureBlobStorage;
+        googleShoppingSettings.AzureBlobConnectionString = model.AzureBlobConnectionString;
+        googleShoppingSettings.AzureBlobContainerName = model.AzureBlobContainerName;
+        googleShoppingSettings.AzureBlobEndPoint = model.AzureBlobEndPoint;
+        googleShoppingSettings.AzureBlobAppendContainerName = model.AzureBlobAppendContainerName;
+
         //_settingService.SaveSetting(_googleShoppingSettings);
 
         /* We do not clear cache after each setting update.
@@ -232,6 +266,13 @@ public class FeedGoogleShoppingController : BasePluginController
         await _settingService.SaveSettingOverridablePerStoreAsync(googleShoppingSettings, x => x.PassShippingInfoWeight, model.PassShippingInfoWeight_OverrideForStore, storeScope, false);
         await _settingService.SaveSettingOverridablePerStoreAsync(googleShoppingSettings, x => x.PricesConsiderPromotions, model.PricesConsiderPromotions_OverrideForStore, storeScope, false);
         await _settingService.SaveSettingOverridablePerStoreAsync(googleShoppingSettings, x => x.ProductPictureSize, model.ProductPictureSize_OverrideForStore, storeScope, false);
+
+        // Azure Blob Storage overrides
+        await _settingService.SaveSettingOverridablePerStoreAsync(googleShoppingSettings, x => x.UseAzureBlobStorage, model.UseAzureBlobStorage_OverrideForStore, storeScope, false);
+        await _settingService.SaveSettingOverridablePerStoreAsync(googleShoppingSettings, x => x.AzureBlobConnectionString, model.AzureBlobConnectionString_OverrideForStore, storeScope, false);
+        await _settingService.SaveSettingOverridablePerStoreAsync(googleShoppingSettings, x => x.AzureBlobContainerName, model.AzureBlobContainerName_OverrideForStore, storeScope, false);
+        await _settingService.SaveSettingOverridablePerStoreAsync(googleShoppingSettings, x => x.AzureBlobEndPoint, model.AzureBlobEndPoint_OverrideForStore, storeScope, false);
+        await _settingService.SaveSettingOverridablePerStoreAsync(googleShoppingSettings, x => x.AzureBlobAppendContainerName, model.AzureBlobAppendContainerName_OverrideForStore, storeScope, false);
 
         //now clear settings cache
         await _settingService.ClearCacheAsync();

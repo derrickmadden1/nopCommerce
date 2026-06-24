@@ -16,10 +16,12 @@ using Nop.Services.Helpers;
 using Nop.Services.Localization;
 using Nop.Services.Media;
 using Nop.Services.Plugins;
+using Nop.Services.ScheduleTasks;
 using Nop.Services.Seo;
 using Nop.Services.Tax;
 using Nop.Web.Framework.Mvc.Routing;
 using System.Globalization;
+using System.IO;
 using System.Net;
 using System.Text;
 using System.Xml;
@@ -52,6 +54,7 @@ public class GoogleShoppingService : BasePlugin, IMiscPlugin
     private readonly IWorkContext _workContext;
     private readonly MeasureSettings _measureSettings;
     private readonly INopUrlHelper _nopUrlHelper;
+    private readonly IScheduleTaskService _scheduleTaskService;
 
     #endregion
 
@@ -79,7 +82,8 @@ public class GoogleShoppingService : BasePlugin, IMiscPlugin
         IWebHostEnvironment webHostEnvironment,
         IWorkContext workContext,
         MeasureSettings measureSettings,
-        INopUrlHelper nopUrlHelper
+        INopUrlHelper nopUrlHelper,
+        IScheduleTaskService scheduleTaskService
         )
     {
         _categoryService = categoryService;
@@ -103,6 +107,7 @@ public class GoogleShoppingService : BasePlugin, IMiscPlugin
         _webHelper = webHelper;
         _webHostEnvironment = webHostEnvironment;
         _workContext = workContext;
+        _scheduleTaskService = scheduleTaskService;
         _nopUrlHelper = nopUrlHelper;
     }
 
@@ -565,7 +570,7 @@ public class GoogleShoppingService : BasePlugin, IMiscPlugin
         writer.WriteEndDocument();
     }
 
-    // <summary>
+    /// <summary>
     /// Install the plugin
     /// </summary>
     /// <returns>A task that represents the asynchronous operation</returns>
@@ -579,7 +584,12 @@ public class GoogleShoppingService : BasePlugin, IMiscPlugin
             PassShippingInfoWeight = false,
             PassShippingInfoDimensions = false,
             StaticFileName = $"googleshopping_{CommonHelper.GenerateRandomDigitCode(10)}.xml",
-            ExpirationNumberOfDays = 28
+            ExpirationNumberOfDays = 28,
+            UseAzureBlobStorage = false,
+            AzureBlobConnectionString = string.Empty,
+            AzureBlobContainerName = string.Empty,
+            AzureBlobEndPoint = string.Empty,
+            AzureBlobAppendContainerName = true
         };
         await _settingService.SaveSettingAsync(settings);
 
@@ -624,8 +634,32 @@ public class GoogleShoppingService : BasePlugin, IMiscPlugin
             ["Plugins.Feed.GoogleShopping.Products.UseShortDescription.Hint"] = "Check to use the product's short description instead of the full description in the feed.",
             ["Plugins.Feed.GoogleShopping.SuccessResult"] = "Google Shopping feed has been successfully generated.",
             ["Plugins.Feed.GoogleShopping.StaticFilePath"] = "Generated file path (static)",
-            ["Plugins.Feed.GoogleShopping.StaticFilePath.Hint"] = "A file path of the generated file. It's static for your store and can be shared with the Google Shopping service."
+            ["Plugins.Feed.GoogleShopping.StaticFilePath.Hint"] = "A file path of the generated file. It's static for your store and can be shared with the Google Shopping service.",
+            
+            // Azure Blob resources
+            ["Plugins.Feed.GoogleShopping.UseAzureBlobStorage"] = "Use Azure Blob Storage",
+            ["Plugins.Feed.GoogleShopping.UseAzureBlobStorage.Hint"] = "Check if you want to store the generated Google Shopping feed XML file in Azure Blob Storage.",
+            ["Plugins.Feed.GoogleShopping.AzureBlobConnectionString"] = "Azure Connection String",
+            ["Plugins.Feed.GoogleShopping.AzureBlobConnectionString.Hint"] = "Specify the connection string for Azure Blob Storage.",
+            ["Plugins.Feed.GoogleShopping.AzureBlobContainerName"] = "Azure Container Name",
+            ["Plugins.Feed.GoogleShopping.AzureBlobContainerName.Hint"] = "Specify the container name for Azure Blob Storage.",
+            ["Plugins.Feed.GoogleShopping.AzureBlobEndPoint"] = "Azure Endpoint URL",
+            ["Plugins.Feed.GoogleShopping.AzureBlobEndPoint.Hint"] = "Specify the custom endpoint/CDN URL for Azure Blob Storage (optional).",
+            ["Plugins.Feed.GoogleShopping.AzureBlobAppendContainerName"] = "Append Container Name to URL",
+            ["Plugins.Feed.GoogleShopping.AzureBlobAppendContainerName.Hint"] = "Check if you want the container name to be appended to the custom endpoint URL."
         });
+
+        //register scheduled task
+        if (await _scheduleTaskService.GetTaskByTypeAsync("Nop.Plugin.Feed.GoogleShopping.Services.GoogleShoppingFeedGenerateTask, Nop.Plugin.Feed.GoogleShopping") is null)
+        {
+            await _scheduleTaskService.InsertTaskAsync(new Nop.Core.Domain.ScheduleTasks.ScheduleTask
+            {
+                Name = "Google Shopping Feed Generation",
+                Type = "Nop.Plugin.Feed.GoogleShopping.Services.GoogleShoppingFeedGenerateTask, Nop.Plugin.Feed.GoogleShopping",
+                Seconds = 86400,
+                Enabled = true
+            });
+        }
 
         await base.InstallAsync();
     }
@@ -642,6 +676,11 @@ public class GoogleShoppingService : BasePlugin, IMiscPlugin
         //locales
         await _localizationService.DeleteLocaleResourcesAsync("Plugins.Feed.GoogleShopping");
 
+        //delete scheduled task
+        var scheduleTask = await _scheduleTaskService.GetTaskByTypeAsync("Nop.Plugin.Feed.GoogleShopping.Services.GoogleShoppingFeedGenerateTask, Nop.Plugin.Feed.GoogleShopping");
+        if (scheduleTask is not null)
+            await _scheduleTaskService.DeleteTaskAsync(scheduleTask);
+
         await base.UninstallAsync();
     }
 
@@ -654,9 +693,37 @@ public class GoogleShoppingService : BasePlugin, IMiscPlugin
     {
         ArgumentNullException.ThrowIfNull(store);
 
-        var filePath = _nopFileProvider.Combine(_webHostEnvironment.WebRootPath, "files", "exportimport", store.Id + "-" + _googleShoppingSettings.StaticFileName);
-        using var fs = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite);
-        await GenerateFeedAsync(fs, store);
+        var googleShoppingSettings = await _settingService.LoadSettingAsync<GoogleShoppingSettings>(store.Id);
+
+        if (googleShoppingSettings.UseAzureBlobStorage)
+        {
+            if (string.IsNullOrEmpty(googleShoppingSettings.AzureBlobConnectionString) ||
+                string.IsNullOrEmpty(googleShoppingSettings.AzureBlobContainerName))
+            {
+                throw new Exception("Azure Blob Storage is not fully configured for Google Shopping.");
+            }
+
+            var fileName = $"{store.Id}-{googleShoppingSettings.StaticFileName}";
+            var blobServiceClient = new Azure.Storage.Blobs.BlobServiceClient(googleShoppingSettings.AzureBlobConnectionString);
+            var containerClient = blobServiceClient.GetBlobContainerClient(googleShoppingSettings.AzureBlobContainerName);
+
+            // Create container if it doesn't exist
+            await containerClient.CreateIfNotExistsAsync(Azure.Storage.Blobs.Models.PublicAccessType.Blob);
+
+            var blobClient = containerClient.GetBlobClient(fileName);
+
+            using var ms = new MemoryStream();
+            await GenerateFeedAsync(ms, store);
+            ms.Position = 0;
+
+            await blobClient.UploadAsync(ms, overwrite: true);
+        }
+        else
+        {
+            var filePath = _nopFileProvider.Combine(_webHostEnvironment.WebRootPath, "files", "exportimport", store.Id + "-" + googleShoppingSettings.StaticFileName);
+            using var fs = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite);
+            await GenerateFeedAsync(fs, store);
+        }
     }
 
     #endregion
