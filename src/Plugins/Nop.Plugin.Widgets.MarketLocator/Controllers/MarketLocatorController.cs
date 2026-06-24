@@ -70,6 +70,11 @@ public partial class MarketLocatorController : Controller
 
         var ics      = _icsBuilder.BuildForLocation(location, _webHelper.GetStoreLocation());
         var fileName = $"{SanitiseFileName(location.Name)}-market-dates.ics";
+
+        Response.Headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
+        Response.Headers["Pragma"] = "no-cache";
+        Response.Headers["Expires"] = "0";
+
         return File(System.Text.Encoding.UTF8.GetBytes(ics), "text/calendar; charset=utf-8", fileName);
     }
 
@@ -83,7 +88,12 @@ public partial class MarketLocatorController : Controller
     {
         var locations = await _locationService.GetAllAsync(showUnpublished: false);
         var ics       = _icsBuilder.BuildForAll(locations, _webHelper.GetStoreLocation());
+        
+        Response.Headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
+        Response.Headers["Pragma"] = "no-cache";
+        Response.Headers["Expires"] = "0";
         Response.Headers["Content-Disposition"] = "inline; filename=\"market-locations.ics\"";
+
         return Content(ics, "text/calendar; charset=utf-8");
     }
 

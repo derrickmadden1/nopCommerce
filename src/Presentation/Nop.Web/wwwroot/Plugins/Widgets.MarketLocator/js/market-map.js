@@ -102,6 +102,7 @@ function initMarketMap() {
             ? ` <em>+${m.Dates.length - 1} more</em>` : '';
         const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(m.Address)}`;
         const icsUrl = `/market-locations/ics/${m.Id}`;
+        const webcalUrl = `webcal://${window.location.host}${icsUrl}`;
 
         return `<div class="ml-popup">
             <span class="ml-popup__badge ${badge}">${label}</span>
@@ -112,8 +113,9 @@ function initMarketMap() {
                 <span>📍 ${m.Address}</span>
             </div>
             <div class="ml-popup__actions">
-                <a href="${icsUrl}" class="ml-btn ml-btn--primary">Add to Calendar</a>
-                <a href="${mapsUrl}" target="_blank" class="ml-btn ml-btn--secondary">Get Directions</a>
+                <a href="${icsUrl}" class="ml-btn ml-btn--primary" title="Download calendar file">Download ICS</a>
+                <a href="${webcalUrl}" class="ml-btn ml-btn--primary" title="Subscribe to live feed">Subscribe</a>
+                <a href="${mapsUrl}" target="_blank" class="ml-btn ml-btn--secondary">Directions</a>
             </div>
         </div>`;
     }
