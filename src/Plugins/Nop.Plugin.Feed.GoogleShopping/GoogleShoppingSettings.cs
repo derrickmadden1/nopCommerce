@@ -1,4 +1,4 @@
-﻿using Nop.Core.Configuration;
+using Nop.Core.Configuration;
 
 namespace Nop.Plugin.Feed.GoogleShopping;
 
@@ -43,4 +43,29 @@ public class GoogleShoppingSettings : ISettings
     /// Number of days for expiration date
     /// </summary>
     public int ExpirationNumberOfDays { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether we should use Azure Blob Storage for storing the feed
+    /// </summary>
+    public bool UseAzureBlobStorage { get; set; }
+
+    /// <summary>
+    /// Gets or sets the Azure Blob Storage connection string
+    /// </summary>
+    public string AzureBlobConnectionString { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the Azure Blob Storage container name
+    /// </summary>
+    public string AzureBlobContainerName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the Azure Blob Storage endpoint
+    /// </summary>
+    public string AzureBlobEndPoint { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the container name should be appended to the endpoint
+    /// </summary>
+    public bool AzureBlobAppendContainerName { get; set; }
 }

@@ -1,4 +1,4 @@
-﻿@model FeedGoogleShoppingModel
+@model FeedGoogleShoppingModel
 
 <div class="card-body">
     @await Component.InvokeAsync(typeof(StoreScopeConfigurationViewComponent))
@@ -65,6 +65,63 @@
                     <span asp-validation-for="DefaultGoogleCategory"></span>
                 </div>
             </div>
+            
+            <hr />
+            <h4>Azure Blob Storage Settings</h4>
+            <p class="text-muted">Configure Azure Blob Storage to store the Google Shopping feed XML file persistently across site updates.</p>
+
+            <div class="form-group row">
+                <div class="col-md-3">
+                    <nop-override-store-checkbox asp-for="UseAzureBlobStorage_OverrideForStore" asp-input="UseAzureBlobStorage" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                    <nop-label asp-for="UseAzureBlobStorage" />
+                </div>
+                <div class="col-md-9">
+                    <nop-editor asp-for="UseAzureBlobStorage" />
+                    <span asp-validation-for="UseAzureBlobStorage"></span>
+                </div>
+            </div>
+            <div class="form-group row">
+                <div class="col-md-3">
+                    <nop-override-store-checkbox asp-for="AzureBlobConnectionString_OverrideForStore" asp-input="AzureBlobConnectionString" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                    <nop-label asp-for="AzureBlobConnectionString" />
+                </div>
+                <div class="col-md-9">
+                    <nop-editor asp-for="AzureBlobConnectionString" />
+                    <span asp-validation-for="AzureBlobConnectionString"></span>
+                </div>
+            </div>
+            <div class="form-group row">
+                <div class="col-md-3">
+                    <nop-override-store-checkbox asp-for="AzureBlobContainerName_OverrideForStore" asp-input="AzureBlobContainerName" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                    <nop-label asp-for="AzureBlobContainerName" />
+                </div>
+                <div class="col-md-9">
+                    <nop-editor asp-for="AzureBlobContainerName" />
+                    <span asp-validation-for="AzureBlobContainerName"></span>
+                </div>
+            </div>
+            <div class="form-group row">
+                <div class="col-md-3">
+                    <nop-override-store-checkbox asp-for="AzureBlobEndPoint_OverrideForStore" asp-input="AzureBlobEndPoint" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                    <nop-label asp-for="AzureBlobEndPoint" />
+                </div>
+                <div class="col-md-9">
+                    <nop-editor asp-for="AzureBlobEndPoint" />
+                    <span asp-validation-for="AzureBlobEndPoint"></span>
+                </div>
+            </div>
+            <div class="form-group row">
+                <div class="col-md-3">
+                    <nop-override-store-checkbox asp-for="AzureBlobAppendContainerName_OverrideForStore" asp-input="AzureBlobAppendContainerName" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                    <nop-label asp-for="AzureBlobAppendContainerName" />
+                </div>
+                <div class="col-md-9">
+                    <nop-editor asp-for="AzureBlobAppendContainerName" />
+                    <span asp-validation-for="AzureBlobAppendContainerName"></span>
+                </div>
+            </div>
+            <hr />
+
             @if (Model.GeneratedFiles.Count > 0)
             {
                 <div class="form-group row">

@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Nop.Web.Framework.Mvc.ModelBinding;
 
 namespace Nop.Plugin.Feed.GoogleShopping.Models;
@@ -40,6 +40,26 @@ public record FeedGoogleShoppingModel
     [NopResourceDisplayName("Plugins.Feed.GoogleShopping.PricesConsiderPromotions")]
     public bool PricesConsiderPromotions { get; set; }
     public bool PricesConsiderPromotions_OverrideForStore { get; set; }
+
+    [NopResourceDisplayName("Plugins.Feed.GoogleShopping.UseAzureBlobStorage")]
+    public bool UseAzureBlobStorage { get; set; }
+    public bool UseAzureBlobStorage_OverrideForStore { get; set; }
+
+    [NopResourceDisplayName("Plugins.Feed.GoogleShopping.AzureBlobConnectionString")]
+    public string AzureBlobConnectionString { get; set; } = string.Empty;
+    public bool AzureBlobConnectionString_OverrideForStore { get; set; }
+
+    [NopResourceDisplayName("Plugins.Feed.GoogleShopping.AzureBlobContainerName")]
+    public string AzureBlobContainerName { get; set; } = string.Empty;
+    public bool AzureBlobContainerName_OverrideForStore { get; set; }
+
+    [NopResourceDisplayName("Plugins.Feed.GoogleShopping.AzureBlobEndPoint")]
+    public string AzureBlobEndPoint { get; set; } = string.Empty;
+    public bool AzureBlobEndPoint_OverrideForStore { get; set; }
+
+    [NopResourceDisplayName("Plugins.Feed.GoogleShopping.AzureBlobAppendContainerName")]
+    public bool AzureBlobAppendContainerName { get; set; }
+    public bool AzureBlobAppendContainerName_OverrideForStore { get; set; }
 
     [NopResourceDisplayName("Plugins.Feed.GoogleShopping.StaticFilePath")]
     public IList<GeneratedFileModel> GeneratedFiles { get; set; }
