@@ -20,53 +20,108 @@
 
 <section class="content">
     <div class="container-fluid">
-        <div class="card card-default">
-            <div class="card-body">
-                <p class="text-muted">
-                    Manage FAQ entries that appear as accordions on product and category pages,
-                    and are injected as <code>FAQPage</code> JSON-LD into the page head for Google AI Overview eligibility.
-                </p>
+        <div class="form-horizontal">
+            <div class="cards-group">
+                <div class="card card-default card-search">
+                    <div class="card-body">
+                        <div class="search-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group row">
+                                        <div class="col-md-4">
+                                            <nop-label asp-for="SearchKeywords" />
+                                        </div>
+                                        <div class="col-md-8">
+                                            <nop-editor asp-for="SearchKeywords" />
+                                        </div>
+                                    </div>
+                                    <div class="form-group row">
+                                        <div class="col-md-4">
+                                            <nop-label asp-for="SearchCategoryId" />
+                                        </div>
+                                        <div class="col-md-8">
+                                            <nop-select asp-for="SearchCategoryId" asp-items="Model.AvailableCategories" />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group row">
+                                        <div class="col-md-4">
+                                            <nop-label asp-for="SearchPublishedId" />
+                                        </div>
+                                        <div class="col-md-8">
+                                            <nop-select asp-for="SearchPublishedId" asp-items="Model.AvailablePublishedOptions" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group row">
+                                <div class="text-center col-12">
+                                    <button type="button" id="search-faqs" class="btn btn-primary btn-search">
+                                        <i class="fas fa-search"></i>
+                                        @T("Admin.Common.Search")
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-                @await Html.PartialAsync("Table", new DataTablesModel
-                {
-                    Name = "faq-grid",
-                    UrlRead = new DataUrl("FaqList", "SeoEnhancements", null),
-                    SearchButtonId = "search-faqs",
-                    Length = Model.PageSize,
-                    LengthMenu = Model.AvailablePageSizes,
-                    ColumnCollection = new List<ColumnProperty>
-                    {
-                        new ColumnProperty(nameof(Nop.Plugin.Widgets.SeoEnhancements.Models.FaqItemModel.EntityTypeName))
+                <div class="card card-default">
+                    <div class="card-body">
+                        <p class="text-muted">
+                            Manage FAQ entries that appear as accordions on product and category pages,
+                            and are injected as <code>FAQPage</code> JSON-LD into the page head for Google AI Overview eligibility.
+                        </p>
+
+                        @await Html.PartialAsync("Table", new DataTablesModel
                         {
-                            Title = "Type", Width = "80"
-                        },
-                        new ColumnProperty(nameof(Nop.Plugin.Widgets.SeoEnhancements.Models.FaqItemModel.EntityName))
-                        {
-                            Title = "Product / Category"
-                        },
-                        new ColumnProperty(nameof(Nop.Plugin.Widgets.SeoEnhancements.Models.FaqItemModel.Question))
-                        {
-                            Title = "Question"
-                        },
-                        new ColumnProperty(nameof(Nop.Plugin.Widgets.SeoEnhancements.Models.FaqItemModel.DisplayOrder))
-                        {
-                            Title = "Order", Width = "60"
-                        },
-                        new ColumnProperty(nameof(Nop.Plugin.Widgets.SeoEnhancements.Models.FaqItemModel.Published))
-                        {
-                            Title = "Published", Width = "80",
-                            ClassName = NopColumnClassDefaults.CenterAll,
-                            Render = new RenderBoolean()
-                        },
-                        new ColumnProperty(nameof(Nop.Plugin.Widgets.SeoEnhancements.Models.FaqItemModel.Id))
-                        {
-                            Title = "Actions",
-                            Width = "100",
-                            ClassName = NopColumnClassDefaults.Button,
-                            Render = new RenderButtonEdit(new DataUrl("~/Admin/SeoEnhancements/Edit"))
-                        }
-                    }
-                })
+                            Name = "faq-grid",
+                            UrlRead = new DataUrl("FaqList", "SeoEnhancements", null),
+                            SearchButtonId = "search-faqs",
+                            Length = Model.PageSize,
+                            LengthMenu = Model.AvailablePageSizes,
+                            Filters = new List<FilterParameter>
+                            {
+                                new FilterParameter(nameof(Model.SearchKeywords)),
+                                new FilterParameter(nameof(Model.SearchCategoryId)),
+                                new FilterParameter(nameof(Model.SearchPublishedId))
+                            },
+                            ColumnCollection = new List<ColumnProperty>
+                            {
+                                new ColumnProperty(nameof(Nop.Plugin.Widgets.SeoEnhancements.Models.FaqItemModel.EntityTypeName))
+                                {
+                                    Title = "Type", Width = "80"
+                                },
+                                new ColumnProperty(nameof(Nop.Plugin.Widgets.SeoEnhancements.Models.FaqItemModel.EntityName))
+                                {
+                                    Title = "Product / Category"
+                                },
+                                new ColumnProperty(nameof(Nop.Plugin.Widgets.SeoEnhancements.Models.FaqItemModel.Question))
+                                {
+                                    Title = "Question"
+                                },
+                                new ColumnProperty(nameof(Nop.Plugin.Widgets.SeoEnhancements.Models.FaqItemModel.DisplayOrder))
+                                {
+                                    Title = "Order", Width = "60"
+                                },
+                                new ColumnProperty(nameof(Nop.Plugin.Widgets.SeoEnhancements.Models.FaqItemModel.Published))
+                                {
+                                    Title = "Published", Width = "80",
+                                    ClassName = NopColumnClassDefaults.CenterAll,
+                                    Render = new RenderBoolean()
+                                },
+                                new ColumnProperty(nameof(Nop.Plugin.Widgets.SeoEnhancements.Models.FaqItemModel.Id))
+                                {
+                                    Title = "Actions",
+                                    Width = "100",
+                                    ClassName = NopColumnClassDefaults.Button,
+                                    Render = new RenderButtonEdit(new DataUrl("~/Admin/SeoEnhancements/Edit"))
+                                }
+                            }
+                        })
+                    </div>
+                </div>
             </div>
         </div>
     </div>
