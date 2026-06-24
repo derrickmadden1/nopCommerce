@@ -1,12 +1,15 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Nop.Core;
 using Nop.Plugin.Widgets.SeoEnhancements.Domain;
 using Nop.Plugin.Widgets.SeoEnhancements.Models;
 using Nop.Plugin.Widgets.SeoEnhancements.Services;
 using Nop.Services.Catalog;
+using Nop.Services.Common;
 using Nop.Services.Configuration;
 using Nop.Services.Messages;
 using Nop.Services.Security;
+using Nop.Web.Areas.Admin.Factories;
 using Nop.Web.Framework;
 using Nop.Web.Framework.Controllers;
 using Nop.Web.Framework.Mvc.Filters;
@@ -18,6 +21,9 @@ namespace Nop.Plugin.Widgets.SeoEnhancements.Controllers;
 [AutoValidateAntiforgeryToken]
 public class SeoEnhancementsController : BasePluginController
 {
+    private readonly IBaseAdminModelFactory _baseAdminModelFactory;
+    private readonly IGenericAttributeService _genericAttributeService;
+    private readonly IWorkContext _workContext;
     private readonly IFaqService _faqService;
     private readonly IFaqGenerationService _faqGenerationService;
     private readonly IPermissionService _permissionService;
@@ -28,6 +34,9 @@ public class SeoEnhancementsController : BasePluginController
     private readonly INotificationService _notificationService;
 
     public SeoEnhancementsController(
+        IBaseAdminModelFactory baseAdminModelFactory,
+        IGenericAttributeService genericAttributeService,
+        IWorkContext workContext,
         IFaqService faqService,
         IFaqGenerationService faqGenerationService,
         IPermissionService permissionService,
@@ -37,6 +46,9 @@ public class SeoEnhancementsController : BasePluginController
         SeoEnhancementsSettings settings,
         INotificationService notificationService)
     {
+        _baseAdminModelFactory = baseAdminModelFactory;
+        _genericAttributeService = genericAttributeService;
+        _workContext = workContext;
         _faqService = faqService;
         _faqGenerationService = faqGenerationService;
         _permissionService = permissionService;
@@ -59,6 +71,41 @@ public class SeoEnhancementsController : BasePluginController
         var searchModel = new FaqItemSearchModel();
         searchModel.SetGridPageSize();
 
+        //load saved search criteria
+        var currentCustomer = await _workContext.GetCurrentCustomerAsync();
+        var savedCriteriaStr = await _genericAttributeService.GetAttributeAsync<string>(currentCustomer, "Admin.FaqSearchCriteria");
+        if (!string.IsNullOrEmpty(savedCriteriaStr))
+        {
+            var savedCriteria = Newtonsoft.Json.JsonConvert.DeserializeObject<FaqItemSearchModel>(savedCriteriaStr);
+            if (savedCriteria != null)
+            {
+                searchModel.SearchKeywords = savedCriteria.SearchKeywords;
+                searchModel.SearchCategoryId = savedCriteria.SearchCategoryId;
+                searchModel.SearchPublishedId = savedCriteria.SearchPublishedId;
+            }
+        }
+
+        //prepare available categories
+        await _baseAdminModelFactory.PrepareCategoriesAsync(searchModel.AvailableCategories);
+
+        //prepare "published" filter options
+        var localizationService = Nop.Core.Infrastructure.EngineContext.Current.Resolve<Nop.Services.Localization.ILocalizationService>();
+        searchModel.AvailablePublishedOptions.Add(new SelectListItem
+        {
+            Value = "0",
+            Text = await localizationService.GetResourceAsync("Admin.Catalog.Products.List.SearchPublished.All")
+        });
+        searchModel.AvailablePublishedOptions.Add(new SelectListItem
+        {
+            Value = "1",
+            Text = await localizationService.GetResourceAsync("Admin.Catalog.Products.List.SearchPublished.PublishedOnly")
+        });
+        searchModel.AvailablePublishedOptions.Add(new SelectListItem
+        {
+            Value = "2",
+            Text = await localizationService.GetResourceAsync("Admin.Catalog.Products.List.SearchPublished.UnpublishedOnly")
+        });
+
         return View("~/Plugins/Widgets.SeoEnhancements/Views/SeoEnhancements/Configure.cshtml", searchModel);
     }
 
@@ -72,19 +119,69 @@ public class SeoEnhancementsController : BasePluginController
         if (!await _permissionService.AuthorizeAsync(StandardPermission.Configuration.MANAGE_PLUGINS))
             return await AccessDeniedJsonAsync();
 
-        // Fetch all and page in memory (counts will be small per store)
-        var allItems = new List<SeoFaqItem>();
+        //save search criteria
+        var customer = await _workContext.GetCurrentCustomerAsync();
+        await _genericAttributeService.SaveAttributeAsync(customer, "Admin.FaqSearchCriteria", Newtonsoft.Json.JsonConvert.SerializeObject(searchModel));
 
-        if (searchModel.EntityTypeId.HasValue && searchModel.EntityId.HasValue)
+        // Fetch all
+        var allItems = (await _faqService.GetAllFaqItemsAsync(publishedOnly: false)).ToList();
+
+        // Apply filters
+        // 1. Published filter
+        if (searchModel.SearchPublishedId == 1)
         {
-            allItems = (await _faqService.GetFaqItemsAsync(
-                (SeoFaqEntityType)searchModel.EntityTypeId.Value,
-                searchModel.EntityId.Value,
-                publishedOnly: false)).ToList();
+            allItems = allItems.Where(x => x.Published).ToList();
         }
-        else
+        else if (searchModel.SearchPublishedId == 2)
         {
-            allItems = (await _faqService.GetAllFaqItemsAsync(publishedOnly: false)).ToList();
+            allItems = allItems.Where(x => !x.Published).ToList();
+        }
+
+        // 2. Category filter
+        if (searchModel.SearchCategoryId > 0)
+        {
+            // prefetch all product mappings for the category
+            var productCategories = await _categoryService.GetProductCategoriesByCategoryIdAsync(searchModel.SearchCategoryId, showHidden: true);
+            var productIdsInCategory = new System.Collections.Generic.HashSet<int>(productCategories.Select(pc => pc.ProductId));
+
+            allItems = allItems.Where(item =>
+                (item.EntityTypeId == (int)SeoFaqEntityType.Category && item.EntityId == searchModel.SearchCategoryId) ||
+                (item.EntityTypeId == (int)SeoFaqEntityType.Product && productIdsInCategory.Contains(item.EntityId))
+            ).ToList();
+        }
+
+        // 3. Keywords filter
+        if (!string.IsNullOrWhiteSpace(searchModel.SearchKeywords))
+        {
+            var filteredItems = new List<SeoFaqItem>();
+            foreach (var item in allItems)
+            {
+                if (item.Question.Contains(searchModel.SearchKeywords, StringComparison.InvariantCultureIgnoreCase) ||
+                    item.Answer.Contains(searchModel.SearchKeywords, StringComparison.InvariantCultureIgnoreCase))
+                {
+                    filteredItems.Add(item);
+                    continue;
+                }
+
+                // Check entity name
+                string entityName = "";
+                if (item.EntityTypeId == (int)SeoFaqEntityType.Product)
+                {
+                    var product = await _productService.GetProductByIdAsync(item.EntityId);
+                    entityName = product?.Name ?? "";
+                }
+                else if (item.EntityTypeId == (int)SeoFaqEntityType.Category)
+                {
+                    var category = await _categoryService.GetCategoryByIdAsync(item.EntityId);
+                    entityName = category?.Name ?? "";
+                }
+
+                if (!string.IsNullOrEmpty(entityName) && entityName.Contains(searchModel.SearchKeywords, StringComparison.InvariantCultureIgnoreCase))
+                {
+                    filteredItems.Add(item);
+                }
+            }
+            allItems = filteredItems;
         }
 
         var pagedItems = allItems
