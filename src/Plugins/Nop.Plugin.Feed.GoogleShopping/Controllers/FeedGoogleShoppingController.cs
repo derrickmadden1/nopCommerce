@@ -217,6 +217,8 @@ public class FeedGoogleShoppingController : BasePluginController
     [CheckPermission(StandardPermission.Configuration.MANAGE_PLUGINS)]
     public async Task<IActionResult> Configure()
     {
+        await EnsureResourcesExistAsync();
+
         var model = new FeedGoogleShoppingModel();
         await PrepareModelAsync(model);
 
@@ -436,6 +438,23 @@ public class FeedGoogleShoppingController : BasePluginController
         ViewBag.RefreshPage = true;
 
         return View("~/Plugins/Feed.GoogleShopping/Views/Edit.cshtml", model);
+    }
+
+    private async Task EnsureResourcesExistAsync()
+    {
+        await _localizationService.AddOrUpdateLocaleResourceAsync(new Dictionary<string, string>
+        {
+            ["Plugins.Feed.GoogleShopping.UseAzureBlobStorage"] = "Use Azure Blob Storage",
+            ["Plugins.Feed.GoogleShopping.UseAzureBlobStorage.Hint"] = "Check if you want to store the generated Google Shopping feed XML file in Azure Blob Storage.",
+            ["Plugins.Feed.GoogleShopping.AzureBlobConnectionString"] = "Azure Connection String",
+            ["Plugins.Feed.GoogleShopping.AzureBlobConnectionString.Hint"] = "Specify the connection string for Azure Blob Storage.",
+            ["Plugins.Feed.GoogleShopping.AzureBlobContainerName"] = "Azure Container Name",
+            ["Plugins.Feed.GoogleShopping.AzureBlobContainerName.Hint"] = "Specify the container name for Azure Blob Storage.",
+            ["Plugins.Feed.GoogleShopping.AzureBlobEndPoint"] = "Azure Endpoint URL",
+            ["Plugins.Feed.GoogleShopping.AzureBlobEndPoint.Hint"] = "Specify the custom endpoint/CDN URL for Azure Blob Storage (optional).",
+            ["Plugins.Feed.GoogleShopping.AzureBlobAppendContainerName"] = "Append Container Name to URL",
+            ["Plugins.Feed.GoogleShopping.AzureBlobAppendContainerName.Hint"] = "Check if you want the container name to be appended to the custom endpoint URL."
+        });
     }
 
     #endregion
