@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 using Nop.Core;
 using Nop.Plugin.Widgets.MarketLocator.Domain;
 using Nop.Services.Helpers;
@@ -100,6 +100,24 @@ public class IcsBuilder : IIcsBuilder
         sb.AppendLine($"X-WR-CALNAME:{Escape(calName)}");
         sb.AppendLine($"X-WR-TIMEZONE:{tzId}");
         sb.AppendLine("X-PUBLISHED-TTL:PT1H");
+
+        sb.AppendLine("BEGIN:VTIMEZONE");
+        sb.AppendLine("TZID:Europe/London");
+        sb.AppendLine("BEGIN:DAYLIGHT");
+        sb.AppendLine("TZOFFSETFROM:+0000");
+        sb.AppendLine("TZOFFSETTO:+0100");
+        sb.AppendLine("TZNAME:BST");
+        sb.AppendLine("DTSTART:19700329T010000");
+        sb.AppendLine("RRULE:FREQ=YEARLY;BYMONTH=3;BYDAY=-1SU");
+        sb.AppendLine("END:DAYLIGHT");
+        sb.AppendLine("BEGIN:STANDARD");
+        sb.AppendLine("TZOFFSETFROM:+0100");
+        sb.AppendLine("TZOFFSETTO:+0000");
+        sb.AppendLine("TZNAME:GMT");
+        sb.AppendLine("DTSTART:19701025T020000");
+        sb.AppendLine("RRULE:FREQ=YEARLY;BYMONTH=10;BYDAY=-1SU");
+        sb.AppendLine("END:STANDARD");
+        sb.AppendLine("END:VTIMEZONE");
 
         foreach (var ev in events)
             sb.AppendLine(ev);
