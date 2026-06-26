@@ -275,6 +275,7 @@ public static class ApplicationBuilderExtensions
     {
         var fileProvider = EngineContext.Current.Resolve<INopFileProvider>();
         var appSettings = EngineContext.Current.Resolve<AppSettings>();
+        var mediaSettings = EngineContext.Current.Resolve<MediaSettings>();
 
         void staticFileResponse(StaticFileResponseContext context)
         {
@@ -381,6 +382,15 @@ public static class ApplicationBuilderExtensions
             ContentTypeProvider = provider
         });
 
+        //add support for 3D objects (GLB files)
+        provider.Mappings[".glb"] = MimeTypes.ModelGlb;
+        application.UseStaticFiles(new StaticFileOptions
+        {
+            FileProvider = new PhysicalFileProvider(fileProvider.Combine(fileProvider.GetLocalImagesPath(mediaSettings), NopMediaDefaults.Default3dObjectsDirectoryName)),
+            RequestPath = new PathString($"/images/3d"),
+            ContentTypeProvider = provider
+        });
+
         if (appSettings.Get<CommonConfig>().ServeUnknownFileTypes)
         {
             var wellKnownPath = fileProvider.GetAbsolutePath(".well-known");
@@ -431,7 +441,7 @@ public static class ApplicationBuilderExtensions
         if (!DataSettingsManager.IsDatabaseInstalled())
             return;
 
-        application.UseMiddleware<AuthenticationMiddleware>();
+        application.UseAuthentication();
     }
 
     /// <summary>
