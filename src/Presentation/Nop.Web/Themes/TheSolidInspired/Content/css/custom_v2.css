@@ -865,6 +865,17 @@ h6 {
   font-size: 1.1rem;
 }
 
+.prices .old-price,
+.old-product-price,
+.non-discounted-price {
+  text-decoration: line-through;
+  color: #999 !important;
+  font-weight: 400 !important;
+  font-size: 0.9rem !important;
+  margin-inline-end: 8px;
+}
+
+
 /* --- SIDEBAR & REDUNDANCY --- */
 .side-2,
 .menu-container,
