@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -16,6 +16,7 @@ using Nop.Services.Configuration;
 using Nop.Services.Customers;
 using Nop.Services.Directory;
 using Nop.Services.Discounts;
+using Nop.Services.PriceLists;
 using Nop.Core.Infrastructure;
 
 namespace Nop.Plugin.Widgets.ImagePuzzle.Services;
@@ -36,13 +37,14 @@ public partial class PuzzlePriceCalculationService : PriceCalculationService
         ICustomerService customerService,
         IDiscountService discountService,
         IManufacturerService manufacturerService,
+        IPriceListService priceListService,
         IProductAttributeParser productAttributeParser,
         IProductService productService,
         IStaticCacheManager staticCacheManager,
         IGenericAttributeService genericAttributeService,
         ISettingService settingService,
         IPuzzleService puzzleService)
-        : base(catalogSettings, currencySettings, categoryService, currencyService, customerService, discountService, manufacturerService, productAttributeParser, productService, staticCacheManager)
+        : base(catalogSettings, currencySettings, categoryService, currencyService, customerService, discountService, manufacturerService, priceListService, productAttributeParser, productService, staticCacheManager)
     {
         _genericAttributeService = genericAttributeService;
         _settingService = settingService;

@@ -1,4 +1,4 @@
-﻿using System.Linq.Expressions;
+using System.Linq.Expressions;
 using System.Transactions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Net.Http.Headers;
