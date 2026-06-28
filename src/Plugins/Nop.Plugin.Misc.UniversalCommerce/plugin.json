@@ -1,0 +1,11 @@
+{
+  "Group": "Misc",
+  "FriendlyName": "Google Agentic Commerce Integration",
+  "SystemName": "Misc.UniversalCommerce",
+  "Version": "1.00",
+  "SupportedVersions": [ "5.00" ],
+  "Author": "Derrick Madden",
+  "DisplayOrder": 1,
+  "FileName": "Nop.Plugin.Misc.UniversalCommerce.dll",
+  "Description": "Adds agentic shopping capability."
+}
