@@ -1,0 +1,11 @@
+<Project>
+  <Target Name="SetPrivateFalseOnNopReferences" BeforeTargets="AssignProjectConfiguration">
+    <ItemGroup>
+      <ProjectReference Update="@(ProjectReference)" Condition="$([System.String]::Copy('%(Identity)').Contains('Nop.Web.csproj'))" Private="false" />
+      <ProjectReference Update="@(ProjectReference)" Condition="$([System.String]::Copy('%(Identity)').Contains('Nop.Web.Framework.csproj'))" Private="false" />
+      <ProjectReference Update="@(ProjectReference)" Condition="$([System.String]::Copy('%(Identity)').Contains('Nop.Core.csproj'))" Private="false" />
+      <ProjectReference Update="@(ProjectReference)" Condition="$([System.String]::Copy('%(Identity)').Contains('Nop.Services.csproj'))" Private="false" />
+      <ProjectReference Update="@(ProjectReference)" Condition="$([System.String]::Copy('%(Identity)').Contains('Nop.Data.csproj'))" Private="false" />
+    </ItemGroup>
+  </Target>
+</Project>
