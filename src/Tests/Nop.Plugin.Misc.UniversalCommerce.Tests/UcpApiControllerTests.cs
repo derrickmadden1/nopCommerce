@@ -90,16 +90,16 @@ namespace Nop.Plugin.Misc.UniversalCommerce.Tests
 
             // Assert
             Assert.NotNull(result);
-            dynamic data = result.Value;
+            dynamic data = result!.Value!;
             
             // Validate availability
-            Assert.True((bool)data.GetType().GetProperty("available").GetValue(data, null));
+            Assert.True((bool)data.GetType().GetProperty("available")!.GetValue(data, null)!);
             
             // Validate shipping option
-            var shippingOptions = data.GetType().GetProperty("shipping_options").GetValue(data, null);
-            var firstOption = (shippingOptions as Array).GetValue(0);
-            decimal cost = (decimal)firstOption.GetType().GetProperty("cost").GetValue(firstOption, null);
-            string id = (string)firstOption.GetType().GetProperty("id").GetValue(firstOption, null);
+            var shippingOptions = data.GetType().GetProperty("shipping_options")!.GetValue(data, null)!;
+            var firstOption = (shippingOptions as Array)!.GetValue(0)!;
+            decimal cost = (decimal)firstOption.GetType().GetProperty("cost")!.GetValue(firstOption, null)!;
+            string id = (string)firstOption.GetType().GetProperty("id")!.GetValue(firstOption, null)!;
             
             Assert.Equal(0.00m, cost);
             Assert.Equal("free_shipping", id);
@@ -127,12 +127,12 @@ namespace Nop.Plugin.Misc.UniversalCommerce.Tests
 
             // Assert
             Assert.NotNull(result);
-            dynamic data = result.Value;
+            dynamic data = result!.Value!;
             
-            var shippingOptions = data.GetType().GetProperty("shipping_options").GetValue(data, null);
-            var firstOption = (shippingOptions as Array).GetValue(0);
-            decimal cost = (decimal)firstOption.GetType().GetProperty("cost").GetValue(firstOption, null);
-            string id = (string)firstOption.GetType().GetProperty("id").GetValue(firstOption, null);
+            var shippingOptions = data.GetType().GetProperty("shipping_options")!.GetValue(data, null)!;
+            var firstOption = (shippingOptions as Array)!.GetValue(0)!;
+            decimal cost = (decimal)firstOption.GetType().GetProperty("cost")!.GetValue(firstOption, null)!;
+            string id = (string)firstOption.GetType().GetProperty("id")!.GetValue(firstOption, null)!;
             
             Assert.Equal(3.85m, cost);
             Assert.Equal("standard_shipping", id);
@@ -143,7 +143,7 @@ namespace Nop.Plugin.Misc.UniversalCommerce.Tests
         {
             // Arrange
             var sku = "TEST-3";
-            var request = new Nop.Plugin.Misc.UniversalCommerce.Controllers.Ap2CheckoutRequest(sku, 1, "test@test.com", null, new Nop.Plugin.Misc.UniversalCommerce.Controllers.Ap2Addr("John", "Doe", "123 Main St", "London", "W1", "GB"));
+            var request = new Nop.Plugin.Misc.UniversalCommerce.Controllers.Ap2CheckoutRequest(sku, 1, "test@test.com", null!,  new Nop.Plugin.Misc.UniversalCommerce.Controllers.Ap2Addr("John", "Doe", "123 Main St", "London", "W1", "GB"));
             var product = new Product { Sku = sku };
             
             _productServiceMock.Setup(x => x.GetProductBySkuAsync(sku)).ReturnsAsync(product);
@@ -153,8 +153,8 @@ namespace Nop.Plugin.Misc.UniversalCommerce.Tests
 
             // Assert
             Assert.NotNull(result);
-            dynamic data = result.Value;
-            Assert.Equal("AP2 token required.", (string)data.GetType().GetProperty("error").GetValue(data, null));
+            dynamic data = result!.Value!;
+            Assert.Equal("AP2 token required.", (string)data.GetType().GetProperty("error")!.GetValue(data, null)!);
         }
 
         [Fact]
@@ -189,10 +189,10 @@ namespace Nop.Plugin.Misc.UniversalCommerce.Tests
 
             // Assert
             Assert.NotNull(result);
-            dynamic data = result.Value;
-            Assert.True((bool)data.GetType().GetProperty("success").GetValue(data, null));
-            Assert.Equal(1234, (int)data.GetType().GetProperty("order_id").GetValue(data, null));
-            Assert.Equal(13.85m, (decimal)data.GetType().GetProperty("charged").GetValue(data, null));
+            dynamic data = result!.Value!;
+            Assert.True((bool)data.GetType().GetProperty("success")!.GetValue(data, null)!);
+            Assert.Equal(1234, (int)data.GetType().GetProperty("order_id")!.GetValue(data, null)!);
+            Assert.Equal(13.85m, (decimal)data.GetType().GetProperty("charged")!.GetValue(data, null)!);
             
             // Verify AddToCart was called
             _shoppingCartServiceMock.Verify(x => x.AddToCartAsync(customer, product, ShoppingCartType.ShoppingCart, It.IsAny<int>(), It.IsAny<string>(), It.IsAny<decimal>(), It.IsAny<DateTime?>(), It.IsAny<DateTime?>(), request.Quantity, true), Times.Once);
@@ -207,9 +207,9 @@ namespace Nop.Plugin.Misc.UniversalCommerce.Tests
             _productServiceMock.Setup(x => x.GetProductBySkuAsync(sku)).ReturnsAsync(product);
 
             var result = await _controller.CheckInventory(request) as JsonResult;
-            dynamic data = result.Value;
+            dynamic data = result!.Value!;
             
-            Assert.True((bool)data.GetType().GetProperty("available").GetValue(data, null));
+            Assert.True((bool)data.GetType().GetProperty("available")!.GetValue(data, null)!);
         }
 
         [Fact]
@@ -222,9 +222,9 @@ namespace Nop.Plugin.Misc.UniversalCommerce.Tests
             _productServiceMock.Setup(x => x.GetProductBySkuAsync(sku)).ReturnsAsync(product);
 
             var result = await _controller.CheckInventory(request) as JsonResult;
-            dynamic data = result.Value;
+            dynamic data = result!.Value!;
             
-            Assert.False((bool)data.GetType().GetProperty("available").GetValue(data, null));
+            Assert.False((bool)data.GetType().GetProperty("available")!.GetValue(data, null)!);
         }
 
         [Fact]
@@ -237,9 +237,9 @@ namespace Nop.Plugin.Misc.UniversalCommerce.Tests
             _productServiceMock.Setup(x => x.GetProductBySkuAsync(sku)).ReturnsAsync(product);
 
             var result = await _controller.CheckInventory(request) as JsonResult;
-            dynamic data = result.Value;
+            dynamic data = result!.Value!;
             
-            Assert.False((bool)data.GetType().GetProperty("available").GetValue(data, null));
+            Assert.False((bool)data.GetType().GetProperty("available")!.GetValue(data, null)!);
         }
 
         [Fact]
@@ -252,9 +252,9 @@ namespace Nop.Plugin.Misc.UniversalCommerce.Tests
             _productServiceMock.Setup(x => x.GetProductBySkuAsync(sku)).ReturnsAsync(product);
 
             var result = await _controller.CheckInventory(request) as JsonResult;
-            dynamic data = result.Value;
+            dynamic data = result!.Value!;
             
-            Assert.True((bool)data.GetType().GetProperty("available").GetValue(data, null));
+            Assert.True((bool)data.GetType().GetProperty("available")!.GetValue(data, null)!);
         }
         [Fact]
         public void GetManifest_ReturnsNotFound_WhenDisabled()
@@ -264,8 +264,8 @@ namespace Nop.Plugin.Misc.UniversalCommerce.Tests
             var result = _controller.GetManifest() as NotFoundObjectResult;
 
             Assert.NotNull(result);
-            dynamic data = result.Value;
-            Assert.Equal("Agentic Commerce endpoints are currently disabled.", (string)data.GetType().GetProperty("error").GetValue(data, null));
+            dynamic data = result!.Value!;
+            Assert.Equal("Agentic Commerce endpoints are currently disabled.", (string)data.GetType().GetProperty("error")!.GetValue(data, null)!);
         }
 
         [Fact]
@@ -278,11 +278,11 @@ namespace Nop.Plugin.Misc.UniversalCommerce.Tests
             var result = _controller.GetManifest() as JsonResult;
 
             Assert.NotNull(result);
-            dynamic data = result.Value;
-            Assert.Equal("1.0", (string)data.GetType().GetProperty("ucp_version").GetValue(data, null));
+            dynamic data = result!.Value!;
+            Assert.Equal("1.0", (string)data.GetType().GetProperty("ucp_version")!.GetValue(data, null)!);
             
-            var capabilities = data.GetType().GetProperty("capabilities").GetValue(data, null);
-            Assert.True((bool)capabilities.GetType().GetProperty("agent_checkout").GetValue(capabilities, null));
+            var capabilities = data.GetType().GetProperty("capabilities")!.GetValue(data, null)!;
+            Assert.True((bool)capabilities.GetType().GetProperty("agent_checkout")!.GetValue(capabilities, null)!);
             
             Assert.Equal("*", _controller.Response.Headers["Access-Control-Allow-Origin"]);
             Assert.Equal("public, max-age=86400", _controller.Response.Headers["Cache-Control"]);
@@ -303,26 +303,26 @@ namespace Nop.Plugin.Misc.UniversalCommerce.Tests
         public async Task CheckInventory_ReturnsNotFound_WhenSkuDoesNotExist()
         {
             var request = new UcpInventoryRequest { Sku = "INVALID", Quantity = 1 };
-            _productServiceMock.Setup(x => x.GetProductBySkuAsync("INVALID")).ReturnsAsync((Product)null);
+            _productServiceMock.Setup(x => x.GetProductBySkuAsync("INVALID")).ReturnsAsync((Product)null!);
 
             var result = await _controller.CheckInventory(request) as NotFoundObjectResult;
 
             Assert.NotNull(result);
-            dynamic data = result.Value;
-            Assert.Equal("SKU not found.", (string)data.GetType().GetProperty("error").GetValue(data, null));
+            dynamic data = result!.Value!;
+            Assert.Equal("SKU not found.", (string)data.GetType().GetProperty("error")!.GetValue(data, null)!);
         }
 
         [Fact]
         public async Task AgentCheckout_ReturnsNotFound_WhenSkuDoesNotExist()
         {
             var request = new Nop.Plugin.Misc.UniversalCommerce.Controllers.Ap2CheckoutRequest("INVALID", 1, "test@test.com", "TOKEN", new Nop.Plugin.Misc.UniversalCommerce.Controllers.Ap2Addr("A", "B", "C", "D", "E", "F"));
-            _productServiceMock.Setup(x => x.GetProductBySkuAsync("INVALID")).ReturnsAsync((Product)null);
+            _productServiceMock.Setup(x => x.GetProductBySkuAsync("INVALID")).ReturnsAsync((Product)null!);
 
             var result = await _controller.AgentCheckout(request) as NotFoundObjectResult;
 
             Assert.NotNull(result);
-            dynamic data = result.Value;
-            Assert.Equal("SKU invalid.", (string)data.GetType().GetProperty("error").GetValue(data, null));
+            dynamic data = result!.Value!;
+            Assert.Equal("SKU invalid.", (string)data.GetType().GetProperty("error")!.GetValue(data, null)!);
         }
 
         [Fact]
@@ -335,7 +335,7 @@ namespace Nop.Plugin.Misc.UniversalCommerce.Tests
             var country = new Country { Id = 1, TwoLetterIsoCode = "GB" };
 
             _productServiceMock.Setup(x => x.GetProductBySkuAsync(sku)).ReturnsAsync(product);
-            _customerServiceMock.Setup(x => x.GetCustomerByEmailAsync("guest@test.com")).ReturnsAsync((Customer)null);
+            _customerServiceMock.Setup(x => x.GetCustomerByEmailAsync("guest@test.com")).ReturnsAsync((Customer)null!);
             _customerServiceMock.Setup(x => x.InsertGuestCustomerAsync()).ReturnsAsync(guestCustomer);
             _countryServiceMock.Setup(x => x.GetCountryByTwoLetterIsoCodeAsync("GB")).ReturnsAsync(country);
 
@@ -367,8 +367,10 @@ namespace Nop.Plugin.Misc.UniversalCommerce.Tests
             var result = await _controller.AgentCheckout(request) as BadRequestObjectResult;
 
             Assert.NotNull(result);
-            dynamic data = result.Value;
-            Assert.Equal("Order failed.", (string)data.GetType().GetProperty("error").GetValue(data, null));
+            dynamic data = result!.Value!;
+            Assert.Equal("Order failed.", (string)data.GetType().GetProperty("error")!.GetValue(data, null)!);
         }
     }
 }
+
+
