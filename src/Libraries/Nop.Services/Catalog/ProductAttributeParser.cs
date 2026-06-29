@@ -903,15 +903,17 @@ public partial class ProductAttributeParser : IProductAttributeParser
 
         var customerEnteredPriceConverted = decimal.Zero;
         if (product.CustomerEntersPrice)
+        {
             foreach (var formKey in form.Keys)
             {
                 if (formKey.Equals($"addtocart_{product.Id}.CustomerEnteredPrice", StringComparison.InvariantCultureIgnoreCase))
                 {
-                    if (decimal.TryParse(form[formKey], out var customerEnteredPrice))
+                    if (decimal.TryParse(form[formKey], NumberStyles.Any, CultureInfo.InvariantCulture, out var customerEnteredPrice))
                         customerEnteredPriceConverted = await _currencyService.ConvertToPrimaryStoreCurrencyAsync(customerEnteredPrice, await _workContext.GetWorkingCurrencyAsync());
                     break;
                 }
             }
+        }
 
         return customerEnteredPriceConverted;
     }
