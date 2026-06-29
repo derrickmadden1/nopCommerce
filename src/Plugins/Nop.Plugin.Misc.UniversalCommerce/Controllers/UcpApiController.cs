@@ -95,6 +95,9 @@ namespace Nop.Plugin.Misc.UniversalCommerce.Controllers
         [Route("api/ucp/inventory")]
         public async Task<IActionResult> CheckInventory([FromBody] UcpInventoryRequest request)
         {
+            if (request == null || string.IsNullOrWhiteSpace(request.Sku))
+                return BadRequest(new { error = "Invalid request or missing SKU." });
+
             var product = await _productService.GetProductBySkuAsync(request.Sku);
             if (product == null)
                 return NotFound(new { error = "SKU not found." });

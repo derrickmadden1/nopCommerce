@@ -7,7 +7,7 @@ using Nop.Web.Framework.Extensions;
 
 namespace Nop.Plugin.Feed.GoogleShopping.Data;
 
-[NopMigration("2026-06-22 20:53:00", "Feed.GoogleShopping 1.10. Add UseShortDescription column", MigrationProcessType.Update)]
+[NopMigration("2026-06-29 12:00:00", "Feed.GoogleShopping 1.10. Add UseShortDescription column", MigrationProcessType.Update)]
 public class AddUseShortDescriptionMigration : MigrationBase
 {
     #region Methods
