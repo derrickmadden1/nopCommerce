@@ -1150,60 +1150,6 @@ public partial class OrderController : BaseAdminController
     }
 
     [HttpPost, ActionName("Edit")]
-    [FormValueRequired("btnSaveCC")]
-    [CheckPermission(StandardPermission.Orders.ORDERS_CREATE_EDIT_DELETE)]
-    public virtual async Task<IActionResult> EditCreditCardInfo(int id, OrderModel model)
-    {
-        //try to get an order with the specified id
-        var order = await _orderService.GetOrderByIdAsync(id);
-        if (order == null)
-            return RedirectToAction("List");
-
-        //a vendor does not have access to this functionality
-        if (await _workContext.GetCurrentVendorAsync() != null)
-            return RedirectToAction("Edit", new { id = order.Id });
-
-        try
-        {
-            if (order.AllowStoringCreditCardNumber)
-            {
-                var cardType = model.CardType;
-                var cardName = model.CardName;
-                var cardNumber = model.CardNumber;
-                var cardCvv2 = model.CardCvv2;
-                var cardExpirationMonth = model.CardExpirationMonth;
-                var cardExpirationYear = model.CardExpirationYear;
-
-                order.CardType = _encryptionService.EncryptText(cardType);
-                order.CardName = _encryptionService.EncryptText(cardName);
-                order.CardNumber = _encryptionService.EncryptText(cardNumber);
-                order.MaskedCreditCardNumber = _encryptionService.EncryptText(_paymentService.GetMaskedCreditCardNumber(cardNumber));
-                order.CardCvv2 = _encryptionService.EncryptText(cardCvv2);
-                order.CardExpirationMonth = _encryptionService.EncryptText(cardExpirationMonth);
-                order.CardExpirationYear = _encryptionService.EncryptText(cardExpirationYear);
-                await _orderService.UpdateOrderAsync(order);
-            }
-
-            //add a note
-            await _orderService.InsertOrderNoteAsync(new OrderNote
-            {
-                OrderId = order.Id,
-                Note = "Credit card info has been edited",
-                DisplayToCustomer = false,
-                CreatedOnUtc = DateTime.UtcNow
-            });
-
-            await LogEditOrderAsync(order.Id);
-        }
-        catch (Exception exc)
-        {
-            await _notificationService.ErrorNotificationAsync(exc);
-        }
-
-        return RedirectToAction("Edit", new { id = order.Id });
-    }
-
-    [HttpPost, ActionName("Edit")]
     [FormValueRequired("btnSaveOrderTotals")]
     [CheckPermission(StandardPermission.Orders.ORDERS_CREATE_EDIT_DELETE)]
     public virtual async Task<IActionResult> EditOrderTotals(int id, OrderModel model)
