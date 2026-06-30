@@ -185,6 +185,7 @@ public partial class CommonController : BasePublicController
     public virtual IActionResult PageNotFound()
     {
         Response.StatusCode = 404;
+        Response.Headers["Vary"] = "Accept";
 
         var acceptHeader = Request.Headers.Accept.ToString();
         if (acceptHeader.Contains("application/json") && !acceptHeader.Contains("text/html"))
