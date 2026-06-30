@@ -10,6 +10,7 @@ public partial class HomeController : BasePublicController
     [SaveLastContinueShoppingPage]
     public virtual IActionResult Index()
     {
+        Response.Headers["Vary"] = "Accept";
         var acceptHeaders = Request.GetTypedHeaders().Accept?.OrderByDescending(x => x.Quality ?? 1.0).ToList();
         if (acceptHeaders != null && acceptHeaders.Count > 0)
         {
