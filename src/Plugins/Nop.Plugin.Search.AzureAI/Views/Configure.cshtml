@@ -1,25 +1,15 @@
 @model Nop.Plugin.Search.AzureAI.Models.ConfigurationModel
 
 @{
-    Layout = "_AdminLayout";
-    ViewBag.Title = "Azure AI Search Configuration";
+    Layout = "_ConfigurePlugin";
 }
 
-<div class="content-header clearfix">
-    <h1 class="float-left">
-        Azure AI Search
-        <small>Configuration</small>
-    </h1>
-</div>
+@await Component.InvokeAsync("StoreScopeConfiguration")
 
-<section class="content">
-    <div class="container-fluid">
-        <div class="form-horizontal">
-            <div class="cards-group">
-
-                <div class="card card-default">
-                    <div class="card-body">
-                        <form asp-controller="AzureAISearch" asp-action="Configure" method="post">
+<form asp-controller="AzureAISearch" asp-action="Configure" method="post">
+    <div class="cards-group">
+        <div class="card card-default">
+            <div class="card-body">
 
                             <div class="form-group row">
                                 <div class="col-md-3">
@@ -102,11 +92,7 @@
                                 </div>
                             </div>
 
-                        </form>
-                    </div>
-                </div>
-
             </div>
         </div>
     </div>
-</section>
+</form>

@@ -5,7 +5,13 @@
 }
 
 <div class="content-header clearfix">
-    <h1 class="float-left">Market Locator Settings</h1>
+    <h1 class="float-left">
+        Market Locator Settings
+        <small>
+            <i class="fas fa-arrow-circle-left"></i>
+            <a asp-action="List" asp-controller="Widget">@T("Admin.ContentManagement.Widgets.BackToList")</a>
+        </small>
+    </h1>
     <div class="float-right">
         <a asp-action="List" class="btn btn-info">
             <i class="fas fa-map-marker-alt"></i> Manage Locations

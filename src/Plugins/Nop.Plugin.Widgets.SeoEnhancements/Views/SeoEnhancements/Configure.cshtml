@@ -9,6 +9,10 @@
 <div class="content-header clearfix">
     <h1 class="float-left">
         SEO Enhancements
+        <small>
+            <i class="fas fa-arrow-circle-left"></i>
+            <a asp-action="List" asp-controller="Widget">@T("Admin.ContentManagement.Widgets.BackToList")</a>
+        </small>
     </h1>
     <div class="float-right">
         <a href="@Url.Action("Create")" class="btn btn-primary">
