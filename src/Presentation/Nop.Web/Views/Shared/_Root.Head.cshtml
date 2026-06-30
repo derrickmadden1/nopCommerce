@@ -92,7 +92,14 @@
     @NopHtml.GenerateCssFiles()
 
     @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.HeadHtmlTag })
-    @NopHtml.GenerateCanonicalUrls()
+    @if (Context.Request.Path.Value == "/" || string.IsNullOrEmpty(Context.Request.Path.Value))
+    {
+        <link rel="canonical" href="https://www.rosecottagecroft.co.uk/">
+    }
+    else
+    {
+        @NopHtml.GenerateCanonicalUrls()
+    }
     @await Component.InvokeAsync(typeof(BlogRssHeaderLinkViewComponent))
     @*Insert favicon and app icons head code*@
     @await Component.InvokeAsync(typeof(FaviconViewComponent))
