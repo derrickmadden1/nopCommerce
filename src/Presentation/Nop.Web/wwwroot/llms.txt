@@ -1,0 +1,27 @@
+# www.rosecottagecroft.co.uk
+
+> Rose Cottage Croft is an online store. Use these endpoints to browse products or get information about the shop.
+
+## Endpoints
+
+- `GET /` — Homepage. Contains categories, featured products, and site navigation.
+- `GET /search?q={query}` — Search the store for products matching the query.
+- `GET /contactus` — Contact information and form.
+
+## Authentication
+
+No authentication is required to browse the store catalog.
+
+## Examples
+
+Search for a product:
+
+```bash
+curl https://www.rosecottagecroft.co.uk/search?q=widget
+```
+
+View contact page:
+
+```bash
+curl https://www.rosecottagecroft.co.uk/contactus
+```
