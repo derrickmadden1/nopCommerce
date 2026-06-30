@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Primitives;
 using Nop.Core;
@@ -184,6 +184,14 @@ public partial class CommonController : BasePublicController
 
     public virtual IActionResult PageNotFound()
     {
+        Response.StatusCode = 404;
+
+        var acceptHeader = Request.Headers.Accept.ToString();
+        if (acceptHeader.Contains("application/json") && !acceptHeader.Contains("text/html"))
+        {
+            return Json(new { error = "not_found", path = Request.Path });
+        }
+
         return View();
     }
 
