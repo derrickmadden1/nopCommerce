@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap');
+﻿@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap');
 
 :root {
   --brand-turquoise: #00C2C7;
@@ -3152,7 +3152,10 @@ body {
   display: none;
   font-size: 1.05rem;
   line-height: 1.8;
-  max-width: 800px;
+  max-width: 100%;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  word-break: break-word;
 }
 
 .tab-pane.active {
@@ -5309,3 +5312,4 @@ body {
   display: none !important;
 }
 
+.tab-pane img { max-width: 100%; height: auto; }
