@@ -34,7 +34,7 @@
     { id: 'valentines',    name: "Valentine's Day",      start: '02-07', end: '02-14', enabled: true,  intensity: 2, priority: 10 },
     { id: 'stpatricks',    name: "St Patrick's Day",     start: '03-10', end: '03-17', enabled: true,  intensity: 2, priority: 10 },
     { id: 'easter',        name: 'Easter',               start: '03-24', end: '04-06', enabled: true,  intensity: 2, priority: 10 },
-    { id: 'independence',  name: 'Independence Day',     start: '07-01', end: '07-07', enabled: true,  intensity: 3, priority: 10 },
+    { id: 'independence',  name: 'Independence Day',     start: '07-01', end: '07-07', enabled: false,  intensity: 3, priority: 10 },
     { id: 'halloween',     name: 'Halloween',            start: '10-15', end: '10-31', enabled: true,  intensity: 2, priority: 10 },
     { id: 'christmas',     name: 'Christmas',            start: '12-01', end: '01-05', enabled: true,  intensity: 3, priority: 20 },
     { id: 'newyear',       name: "New Year",             start: '12-29', end: '01-02', enabled: true,  intensity: 3, priority: 30 },
