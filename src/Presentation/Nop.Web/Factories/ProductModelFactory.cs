@@ -789,13 +789,29 @@ public partial class ProductModelFactory : IProductModelFactory
     {
         ArgumentNullException.ThrowIfNull(product);
 
+        //custom wishlists
+        var currentCustomer = await _workContext.GetCurrentCustomerAsync();
+        var currentWishlists = await _customWishlistService.GetAllCustomWishlistsAsync(currentCustomer.Id);
+
+        return PrepareProductToWishlistModel(product, currentWishlists);
+    }
+
+    /// <summary>
+    /// Prepare the product to wishlist model from an already-loaded set of the customer's wishlists.
+    /// Callers that render many products in one request (e.g. catalog listings) should load the
+    /// wishlists once and reuse them here, rather than querying once per product.
+    /// </summary>
+    /// <param name="product">Product</param>
+    /// <param name="currentWishlists">The current customer's custom wishlists</param>
+    /// <returns>The product add to wishlist model</returns>
+    protected virtual ProductToWishlistModel PrepareProductToWishlistModel(Product product, IList<CustomWishlist> currentWishlists)
+    {
+        ArgumentNullException.ThrowIfNull(product);
+
         var model = new ProductToWishlistModel
         {
             ProductId = product.Id
         };
-        //custom wishlists
-        var currentCustomer = await _workContext.GetCurrentCustomerAsync();
-        var currentWishlists = await _customWishlistService.GetAllCustomWishlistsAsync(currentCustomer.Id);
         foreach (var wishlist in currentWishlists)
         {
             var customWishlistModel = new CustomWishlistModel
@@ -1382,6 +1398,11 @@ public partial class ProductModelFactory : IProductModelFactory
         ArgumentNullException.ThrowIfNull(products);
 
         var models = new List<ProductOverviewModel>();
+
+        //load the current customer's wishlists once; the list is the same for every product on the page
+        var currentCustomer = await _workContext.GetCurrentCustomerAsync();
+        var currentWishlists = await _customWishlistService.GetAllCustomWishlistsAsync(currentCustomer.Id);
+
         foreach (var product in products)
         {
             var model = new ProductOverviewModel
@@ -1414,7 +1435,7 @@ public partial class ProductModelFactory : IProductModelFactory
             model.ReviewOverviewModel = await PrepareProductReviewOverviewModelAsync(product);
 
             //custom wishlist items
-            model.ProductToWishlist = await PrepareProductToWishlistModelAsync(product);
+            model.ProductToWishlist = PrepareProductToWishlistModel(product, currentWishlists);
 
             models.Add(model);
         }
