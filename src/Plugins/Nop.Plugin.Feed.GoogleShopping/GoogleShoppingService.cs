@@ -347,6 +347,13 @@ public class GoogleShoppingService : BasePlugin, IMiscPlugin
                 var productUrl = await _nopUrlHelper.RouteGenericUrlAsync<Product>(product, protocol: await GetHttpProtocolAsync());
                 writer.WriteElementString("link", productUrl);
 
+                if (googleShoppingSettings.PassCheckoutLinkTemplate)
+                {
+                    var storeUrl = _webHelper.GetStoreLocation(store.SslEnabled);
+                    var checkoutLink = $"{storeUrl}google-checkout-link?productId={product.Id}";
+                    writer.WriteElementString("g", "checkout_link_template", googleBaseNamespace, checkoutLink);
+                }
+
                 //image link [image_link] - URL of an image of the item
                 //additional images [additional_image_link]
                 //up to 10 pictures
@@ -583,6 +590,7 @@ public class GoogleShoppingService : BasePlugin, IMiscPlugin
             ProductPictureSize = 125,
             PassShippingInfoWeight = false,
             PassShippingInfoDimensions = false,
+            PassCheckoutLinkTemplate = false,
             StaticFileName = $"googleshopping_{CommonHelper.GenerateRandomDigitCode(10)}.xml",
             ExpirationNumberOfDays = 28,
             UseAzureBlobStorage = false,
@@ -646,7 +654,9 @@ public class GoogleShoppingService : BasePlugin, IMiscPlugin
             ["Plugins.Feed.GoogleShopping.AzureBlobEndPoint"] = "Azure Endpoint URL",
             ["Plugins.Feed.GoogleShopping.AzureBlobEndPoint.Hint"] = "Specify the custom endpoint/CDN URL for Azure Blob Storage (optional).",
             ["Plugins.Feed.GoogleShopping.AzureBlobAppendContainerName"] = "Append Container Name to URL",
-            ["Plugins.Feed.GoogleShopping.AzureBlobAppendContainerName.Hint"] = "Check if you want the container name to be appended to the custom endpoint URL."
+            ["Plugins.Feed.GoogleShopping.AzureBlobAppendContainerName.Hint"] = "Check if you want the container name to be appended to the custom endpoint URL.",
+            ["Plugins.Feed.GoogleShopping.PassCheckoutLinkTemplate"] = "Pass checkout link template",
+            ["Plugins.Feed.GoogleShopping.PassCheckoutLinkTemplate.Hint"] = "Check if you want to include the checkout_link_template attribute in the generated XML file, which allows Google Shopping to send customers directly to checkout."
         });
 
         //register scheduled task

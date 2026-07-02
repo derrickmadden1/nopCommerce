@@ -61,6 +61,10 @@ public record FeedGoogleShoppingModel
     public bool AzureBlobAppendContainerName { get; set; }
     public bool AzureBlobAppendContainerName_OverrideForStore { get; set; }
 
+    [NopResourceDisplayName("Plugins.Feed.GoogleShopping.PassCheckoutLinkTemplate")]
+    public bool PassCheckoutLinkTemplate { get; set; }
+    public bool PassCheckoutLinkTemplate_OverrideForStore { get; set; }
+
     [NopResourceDisplayName("Plugins.Feed.GoogleShopping.StaticFilePath")]
     public IList<GeneratedFileModel> GeneratedFiles { get; set; }
 
