@@ -1,3 +1,4 @@
+#pragma warning disable CS8618
 using Nop.Web.Framework.Models;
 using Nop.Web.Framework.Mvc.ModelBinding;
 

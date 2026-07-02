@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text;
@@ -63,7 +63,7 @@ namespace Nop.Plugin.Misc.UniversalCommerce.Services
                         continue;
 
                     var keyValue = keyNode.GetProperty("keyValue").GetString();
-                    var publicKeyBytes = Convert.FromBase64String(keyValue);
+                    var publicKeyBytes = Convert.FromBase64String(keyValue!);
 
                     using var ecdsa = ECDsa.Create();
                     ecdsa.ImportSubjectPublicKeyInfo(publicKeyBytes, out _);

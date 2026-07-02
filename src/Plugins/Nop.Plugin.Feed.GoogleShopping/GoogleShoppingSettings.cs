@@ -68,4 +68,9 @@ public class GoogleShoppingSettings : ISettings
     /// Gets or sets a value indicating whether the container name should be appended to the endpoint
     /// </summary>
     public bool AzureBlobAppendContainerName { get; set; }
+
+    /// <summary>
+    /// A value indicating whether we should pass the checkout link template
+    /// </summary>
+    public bool PassCheckoutLinkTemplate { get; set; }
 }

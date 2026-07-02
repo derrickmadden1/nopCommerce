@@ -166,7 +166,7 @@ public partial class PuzzlePriceCalculationService : PriceCalculationService
             //System.IO.File.AppendAllText(logPath, logEntry);
             return finalDiscounts;
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             //logEntry += $" [ERROR] {ex.Message}\n";
             //System.IO.File.AppendAllText(logPath, logEntry);

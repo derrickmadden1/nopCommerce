@@ -112,7 +112,9 @@ public class FeedGoogleShoppingController : BasePluginController
         model.AzureBlobConnectionString = googleShoppingSettings.AzureBlobConnectionString;
         model.AzureBlobContainerName = googleShoppingSettings.AzureBlobContainerName;
         model.AzureBlobEndPoint = googleShoppingSettings.AzureBlobEndPoint;
+        model.AzureBlobEndPoint = googleShoppingSettings.AzureBlobEndPoint;
         model.AzureBlobAppendContainerName = googleShoppingSettings.AzureBlobAppendContainerName;
+        model.PassCheckoutLinkTemplate = googleShoppingSettings.PassCheckoutLinkTemplate;
 
         //currencies
         model.CurrencyId = googleShoppingSettings.CurrencyId;
@@ -204,7 +206,9 @@ public class FeedGoogleShoppingController : BasePluginController
             model.AzureBlobConnectionString_OverrideForStore = await _settingService.SettingExistsAsync(googleShoppingSettings, x => x.AzureBlobConnectionString, storeScope);
             model.AzureBlobContainerName_OverrideForStore = await _settingService.SettingExistsAsync(googleShoppingSettings, x => x.AzureBlobContainerName, storeScope);
             model.AzureBlobEndPoint_OverrideForStore = await _settingService.SettingExistsAsync(googleShoppingSettings, x => x.AzureBlobEndPoint, storeScope);
+            model.AzureBlobEndPoint_OverrideForStore = await _settingService.SettingExistsAsync(googleShoppingSettings, x => x.AzureBlobEndPoint, storeScope);
             model.AzureBlobAppendContainerName_OverrideForStore = await _settingService.SettingExistsAsync(googleShoppingSettings, x => x.AzureBlobAppendContainerName, storeScope);
+            model.PassCheckoutLinkTemplate_OverrideForStore = await _settingService.SettingExistsAsync(googleShoppingSettings, x => x.PassCheckoutLinkTemplate, storeScope);
         }
     }
 
@@ -255,7 +259,10 @@ public class FeedGoogleShoppingController : BasePluginController
         googleShoppingSettings.AzureBlobConnectionString = model.AzureBlobConnectionString;
         googleShoppingSettings.AzureBlobContainerName = model.AzureBlobContainerName;
         googleShoppingSettings.AzureBlobEndPoint = model.AzureBlobEndPoint;
+        googleShoppingSettings.AzureBlobContainerName = model.AzureBlobContainerName;
+        googleShoppingSettings.AzureBlobEndPoint = model.AzureBlobEndPoint;
         googleShoppingSettings.AzureBlobAppendContainerName = model.AzureBlobAppendContainerName;
+        googleShoppingSettings.PassCheckoutLinkTemplate = model.PassCheckoutLinkTemplate;
 
         //_settingService.SaveSetting(_googleShoppingSettings);
 
@@ -274,7 +281,10 @@ public class FeedGoogleShoppingController : BasePluginController
         await _settingService.SaveSettingOverridablePerStoreAsync(googleShoppingSettings, x => x.AzureBlobConnectionString, model.AzureBlobConnectionString_OverrideForStore, storeScope, false);
         await _settingService.SaveSettingOverridablePerStoreAsync(googleShoppingSettings, x => x.AzureBlobContainerName, model.AzureBlobContainerName_OverrideForStore, storeScope, false);
         await _settingService.SaveSettingOverridablePerStoreAsync(googleShoppingSettings, x => x.AzureBlobEndPoint, model.AzureBlobEndPoint_OverrideForStore, storeScope, false);
+        await _settingService.SaveSettingOverridablePerStoreAsync(googleShoppingSettings, x => x.AzureBlobContainerName, model.AzureBlobContainerName_OverrideForStore, storeScope, false);
+        await _settingService.SaveSettingOverridablePerStoreAsync(googleShoppingSettings, x => x.AzureBlobEndPoint, model.AzureBlobEndPoint_OverrideForStore, storeScope, false);
         await _settingService.SaveSettingOverridablePerStoreAsync(googleShoppingSettings, x => x.AzureBlobAppendContainerName, model.AzureBlobAppendContainerName_OverrideForStore, storeScope, false);
+        await _settingService.SaveSettingOverridablePerStoreAsync(googleShoppingSettings, x => x.PassCheckoutLinkTemplate, model.PassCheckoutLinkTemplate_OverrideForStore, storeScope, false);
 
         //now clear settings cache
         await _settingService.ClearCacheAsync();

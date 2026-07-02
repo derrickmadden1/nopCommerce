@@ -142,7 +142,7 @@ namespace Nop.Plugin.Misc.UniversalCommerce
 
         public Type GetPublicViewComponent()
         {
-            return null; // Headless integration, no UI rendered
+            return null!; // Headless integration, no UI rendered
         }
 
         #endregion
