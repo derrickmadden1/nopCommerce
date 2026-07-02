@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+#pragma warning disable CS8618
+using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
 namespace Nop.Plugin.Misc.UniversalCommerce.Models

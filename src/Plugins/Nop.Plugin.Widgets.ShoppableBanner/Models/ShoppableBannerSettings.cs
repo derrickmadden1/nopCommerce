@@ -1,3 +1,4 @@
+#pragma warning disable CS8618
 using Nop.Core.Configuration;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;

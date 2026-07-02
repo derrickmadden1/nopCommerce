@@ -1,0 +1,58 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Copyright>Derrick Madden</Copyright>
+    <RootNamespace>Nop.Plugin.Marketing.WinbackEmail</RootNamespace>
+    <AssemblyName>Nop.Plugin.Marketing.WinbackEmail</AssemblyName>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Copy plugin output to nopCommerce plugins folder on build -->
+    <OutputPath>..\..\Presentation\Nop.Web\Plugins\Marketing.WinbackEmail\</OutputPath>
+    <OutDir>$(OutputPath)</OutDir>
+    <!-- Copy NuGet references locally for dynamic loading -->
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Azure.AI.OpenAI" Version="1.0.0-beta.17" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Hybrid" Version="10.7.0" />
+    <ProjectReference Include="..\..\Presentation\Nop.Web.Framework\Nop.Web.Framework.csproj" />
+    <ProjectReference Include="..\..\Presentation\Nop.Web\Nop.Web.csproj" />
+    <ProjectReference Include="..\..\Libraries\Nop.Services\Nop.Services.csproj" />
+    <ProjectReference Include="..\..\Libraries\Nop.Data\Nop.Data.csproj" />
+    <ProjectReference Include="..\..\Libraries\Nop.Core\Nop.Core.csproj" />
+    <ClearPluginAssemblies Include="$(MSBuildProjectDirectory)\..\..\Build\ClearPluginAssemblies.proj" />
+  </ItemGroup>
+
+  <!-- Embed plugin.json and static assets -->
+  <ItemGroup>
+    <None Update="plugin.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="wwwroot\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <Content Include="Views\**\*.cshtml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <!--
+    Also copy wwwroot into Nop.Web/wwwroot/Plugins/Marketing.WinbackEmail/ at build time.
+    nopCommerce serves plugin static files from there, not from the plugin bin folder.
+    Without this, CSS/JS 404 even though the plugin loads fine.
+  -->
+  <Target Name="CopyPluginStaticFiles" AfterTargets="Build">
+    <ItemGroup>
+      <PluginStaticFiles Include="wwwroot\**\*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(PluginStaticFiles)" DestinationFiles="@(PluginStaticFiles->'..\..\Presentation\Nop.Web\wwwroot\Plugins\Marketing.WinbackEmail\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+  </Target>
+
+  <!-- This target executes after "Build" target to clear redundant assemblies -->
+  <Target Name="NopTarget" AfterTargets="Build">
+    <MSBuild Projects="@(ClearPluginAssemblies)" Properties="PluginPath=$(OutDir)" Targets="NopClear" />
+  </Target>
+
+</Project>
