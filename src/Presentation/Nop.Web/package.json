@@ -5,6 +5,7 @@
   "type": "module",
   "devDependencies": {
     "del": "^7.0.0",
+    "eslint": "^10.6.0",
     "gulp": "^4.0.2",
     "gulp-filter": "^7.0.0",
     "gulp-rename": "^1.4.0",
