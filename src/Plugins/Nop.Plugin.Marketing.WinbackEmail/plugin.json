@@ -1,0 +1,11 @@
+{
+  "Group": "Marketing",
+  "FriendlyName": "AI Winback Email",
+  "SystemName": "Marketing.WinbackEmail",
+  "Version": "1.0.0",
+  "SupportedVersions": [ "5.00" ],
+  "Author": "Derrick Madden",
+  "DisplayOrder": 1,
+  "FileName": "Nop.Plugin.Marketing.WinbackEmail.dll",
+  "Description": "Sends AI-personalised winback email sequences to lapsed customers using Azure OpenAI."
+}

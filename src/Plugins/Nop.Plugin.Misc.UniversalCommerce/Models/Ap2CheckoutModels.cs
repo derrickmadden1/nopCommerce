@@ -1,4 +1,5 @@
-﻿public class Ap2CheckoutRequest
+#pragma warning disable CS8618
+public class Ap2CheckoutRequest
 {
     public string Sku { get; set; }
     public int Quantity { get; set; }

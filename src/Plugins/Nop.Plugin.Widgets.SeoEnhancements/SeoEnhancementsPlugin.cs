@@ -52,7 +52,7 @@ public class SeoEnhancementsPlugin : BasePlugin, IWidgetPlugin
         if (widgetZone.Equals("categorydetails_bottom", StringComparison.InvariantCultureIgnoreCase))
             return typeof(Components.SeoFaqViewComponent);
 
-        return null;
+        return null!;
     }
 
     public override string GetConfigurationPageUrl()
