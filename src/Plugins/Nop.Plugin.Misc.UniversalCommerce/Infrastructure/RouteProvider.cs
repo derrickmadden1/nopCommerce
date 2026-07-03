@@ -15,13 +15,18 @@ namespace Nop.Plugin.Misc.UniversalCommerce.Infrastructure
                 defaults: new { controller = "UcpApi", action = "GetManifest" });
 
             endpointRouteBuilder.MapControllerRoute(
-                name: "Plugin.Misc.UniversalCommerce.Catalog",
-                pattern: "api/ucp/catalog",
-                defaults: new { controller = "UcpApi", action = "GetCatalog" });
+                name: "Plugin.Misc.UniversalCommerce.CatalogSearchPost",
+                pattern: "api/ucp/v1/catalog/search",
+                defaults: new { controller = "UcpApi", action = "CatalogSearch" });
+
+            endpointRouteBuilder.MapControllerRoute(
+                name: "Plugin.Misc.UniversalCommerce.ProductsGet",
+                pattern: "api/ucp/v1/products",
+                defaults: new { controller = "UcpApi", action = "ProductsGet" });
 
             endpointRouteBuilder.MapControllerRoute(
                 name: "Plugin.Misc.UniversalCommerce.Checkout",
-                pattern: "api/ucp/checkout",
+                pattern: "api/ucp/v1/checkout",
                 defaults: new { controller = "UcpApi", action = "AgentCheckout" });
         }
 
