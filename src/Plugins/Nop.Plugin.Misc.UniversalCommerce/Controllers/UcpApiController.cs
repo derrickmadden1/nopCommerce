@@ -21,6 +21,7 @@ using Microsoft.AspNetCore.RateLimiting;
 namespace Nop.Plugin.Misc.UniversalCommerce.Controllers
 {
     [EnableRateLimiting("UcpAgentPolicy")] // Enforces limits across all endpoint routes inside this controller
+    [IgnoreAntiforgeryToken] // Required because external API callers will not have a valid CSRF token
     public class UcpApiController : BasePluginController
     {
         private readonly IProductService _productService;
@@ -186,9 +187,26 @@ namespace Nop.Plugin.Misc.UniversalCommerce.Controllers
             });
         }
 
+        public class UcpCatalogSearchRequest
+        {
+            public string Query { get; set; }
+        }
+
+        [HttpPost]
+        [Route("api/ucp/v1/catalog/search")]
+        public async Task<IActionResult> CatalogSearch([FromBody] UcpCatalogSearchRequest request, [FromQuery] int pageIndex = 0, [FromQuery] int pageSize = 50)
+        {
+            return await GetCatalogInternal(pageIndex, pageSize, request?.Query);
+        }
+
         [HttpGet]
-        [Route("api/ucp/catalog")]
-        public async Task<IActionResult> GetCatalog([FromQuery] int pageIndex = 0, [FromQuery] int pageSize = 50)
+        [Route("api/ucp/v1/products")]
+        public async Task<IActionResult> ProductsGet([FromQuery] string search = null, [FromQuery] int pageIndex = 0, [FromQuery] int pageSize = 50)
+        {
+            return await GetCatalogInternal(pageIndex, pageSize, search);
+        }
+
+        private async Task<IActionResult> GetCatalogInternal(int pageIndex, int pageSize, string keywords)
         {
             // Enforce maximum safe boundaries on bulk size demands
             if (pageSize > 250)
@@ -202,6 +220,7 @@ namespace Nop.Plugin.Misc.UniversalCommerce.Controllers
             var productsPage = await _productService.SearchProductsAsync(
                 pageIndex: pageIndex,
                 pageSize: pageSize,
+                keywords: keywords,
                 storeId: currentStore.Id,
                 visibleIndividuallyOnly: true,
                 overridePublished: true // Passing true ensures it enforces the 'Published = true' filter internally
