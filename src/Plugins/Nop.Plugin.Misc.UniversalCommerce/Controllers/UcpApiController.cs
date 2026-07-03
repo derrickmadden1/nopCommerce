@@ -65,22 +65,83 @@ namespace Nop.Plugin.Misc.UniversalCommerce.Controllers
                 return NotFound(new { error = "Agentic Commerce endpoints are currently disabled." });
             }
 
-            // Construct the standardized schema payload expected by crawling agents
-            var manifest = new
+            var manifest = new Dictionary<string, object>
             {
-                ucp_version = _ucpSettings.ProtocolVersion,
-                capabilities = new
+                ["ucp"] = new Dictionary<string, object>
                 {
-                    product_discovery = true,
-                    realtime_inventory = true,
-                    agent_checkout = _ucpSettings.AllowAutonomousCheckout
+                    ["version"] = "2026-04-08",
+                    ["services"] = new Dictionary<string, object>
+                    {
+                        ["dev.ucp.shopping"] = new[]
+                        {
+                            new Dictionary<string, object>
+                            {
+                                ["version"] = "2026-04-08",
+                                ["spec"] = "https://ucp.dev/specification/shopping/",
+                                ["transport"] = "rest",
+                                ["endpoint"] = "https://rosecottagecroft.co.uk/api/ucp/v1",
+                                ["schema"] = "https://rosecottagecroft.co.uk/api/ucp/openapi.json"
+                            }
+                        }
+                    },
+                    ["capabilities"] = new Dictionary<string, object>
+                    {
+                        ["dev.ucp.shopping.checkout"] = new[]
+                        {
+                            new Dictionary<string, object>
+                            {
+                                ["version"] = "2026-04-08",
+                                ["spec"] = "https://ucp.dev/specification/shopping/checkout/",
+                                ["schema"] = "https://ucp.dev/schemas/shopping/checkout.json"
+                            }
+                        },
+                        ["dev.ucp.shopping.catalog_search"] = new[]
+                        {
+                            new Dictionary<string, object>
+                            {
+                                ["version"] = "2026-04-08",
+                                ["spec"] = "https://ucp.dev/specification/shopping/catalog_search/",
+                                ["schema"] = "https://ucp.dev/schemas/shopping/catalog_search.json"
+                            }
+                        },
+                        ["dev.ucp.shopping.cart"] = new[]
+                        {
+                            new Dictionary<string, object>
+                            {
+                                ["version"] = "2026-04-08",
+                                ["spec"] = "https://ucp.dev/specification/shopping/cart/",
+                                ["schema"] = "https://ucp.dev/schemas/shopping/cart.json"
+                            }
+                        }
+                    },
+                    ["payment_handlers"] = new Dictionary<string, object>
+                    {
+                        ["com.example.processor"] = new[]
+                        {
+                            new Dictionary<string, object>
+                            {
+                                ["id"] = "processor-1",
+                                ["version"] = "2026-04-08",
+                                ["spec"] = "https://example.com/ucp/handler",
+                                ["schema"] = "https://example.com/ucp/handler/schema.json",
+                                ["config"] = new Dictionary<string, object>
+                                {
+                                    ["merchant_id"] = "example-merchant-id"
+                                }
+                            }
+                        }
+                    }
                 },
-                endpoints = new
+                ["signing_keys"] = new[]
                 {
-                    catalog_discovery = "/api/ucp/catalog",
-                    inventory_check = "/api/ucp/inventory",
-                    cart_management = "/api/ucp/cart",
-                    payment_handshake = "/api/ucp/checkout"
+                    new Dictionary<string, object>
+                    {
+                        ["kid"] = "key-1",
+                        ["kty"] = "EC",
+                        ["crv"] = "P-256",
+                        ["x"] = "example-x-coordinate",
+                        ["y"] = "example-y-coordinate"
+                    }
                 }
             };
 
