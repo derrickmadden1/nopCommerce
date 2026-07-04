@@ -5313,3 +5313,14 @@ body {
 }
 
 .tab-pane img { max-width: 100%; height: auto; }
+
+/* Mobile Cart Fix */
+@media (max-width: 980px) {
+  .order-summary-content table.cart thead { display: none; }
+  .order-summary-content table.cart, .order-summary-content table.cart tbody, .order-summary-content table.cart tr, .order-summary-content table.cart td { display: block; width: 100%; }
+  .order-summary-content table.cart tr { margin-bottom: 20px; border: 1px solid #eee; border-radius: 8px; overflow: hidden; padding-bottom: 15px; }
+  .order-summary-content table.cart td { text-align: center; padding: 10px !important; border: none !important; }
+  .order-summary-content table.cart .product-picture { width: 100% !important; padding: 15px !important; }
+  .order-summary-content table.cart .product-picture img { width: auto; max-width: 120px; }
+  .order-summary-content table.cart td label.td-title { display: inline-block; font-weight: bold; margin-right: 10px; }
+}
