@@ -96,7 +96,9 @@ jobs:
             { "SystemName": "Misc.MegaMenu", "Version": "1.00"},
             { "SystemName": "Feed.GoogleShopping", "Version": "5.00.2"},
             { "SystemName": "Widgets.SeoEnhancements","Version": "1.00"},
-            { "SystemName": "Misc.UniversalCommerce","Version": "1.00"}
+            { "SystemName": "Misc.UniversalCommerce","Version": "1.00"},
+            { "SystemName": "Marketing.WinbackEmail","Version": "1.0.0"},
+            { "SystemName": "Widgets.GoogleTagManager","Version": "1.00"}
           ],
           "PluginNamesToUninstall": [],
           "PluginNamesToDelete": [],
