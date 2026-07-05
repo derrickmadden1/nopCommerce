@@ -19,7 +19,13 @@ namespace Nop.Plugin.Widgets.GoogleTagManager.Components
             if (string.IsNullOrEmpty(_googleTagManagerSettings.TrackingId))
                 return Content("");
 
-            return View("~/Plugins/Widgets.GoogleTagManager/Views/PublicInfo.cshtml", new { TrackingId = _googleTagManagerSettings.TrackingId, WidgetZone = widgetZone });
+            var model = new Nop.Plugin.Widgets.GoogleTagManager.Models.PublicInfoModel
+            {
+                TrackingId = _googleTagManagerSettings.TrackingId,
+                WidgetZone = widgetZone
+            };
+
+            return View("~/Plugins/Widgets.GoogleTagManager/Views/PublicInfo.cshtml", model);
         }
     }
 }
