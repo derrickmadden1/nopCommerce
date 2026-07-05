@@ -1,47 +1,90 @@
-@model Nop.Plugin.Misc.UniversalCommerce.Models.ConfigurationModel
+@model ConfigurationModel
 @{
     Layout = "_ConfigurePlugin";
 }
 
-<form asp-controller="UcpAdmin" asp-action="Configure" method="post">
+<form asp-controller="WinbackEmail" asp-action="Configure" method="post">
     <div class="cards-group">
         <div class="card card-default">
-            <div class="card-header">General Rules</div>
+            <div class="card-header">General Settings</div>
             <div class="card-body">
                 <div class="form-group row">
                     <div class="col-md-3"><nop-label asp-for="Enabled" /></div>
                     <div class="col-md-9"><nop-editor asp-for="Enabled" /></div>
                 </div>
                 <div class="form-group row">
-                    <div class="col-md-3"><nop-label asp-for="ProtocolVersion" /></div>
-                    <div class="col-md-9"><nop-editor asp-for="ProtocolVersion" /></div>
+                    <div class="col-md-3"><nop-label asp-for="StoreName" /></div>
+                    <div class="col-md-9"><nop-editor asp-for="StoreName" /></div>
                 </div>
                 <div class="form-group row">
-                    <div class="col-md-3"><nop-label asp-for="AllowAutonomousCheckout" /></div>
-                    <div class="col-md-9"><nop-editor asp-for="AllowAutonomousCheckout" /></div>
+                    <div class="col-md-3"><nop-label asp-for="FromEmail" /></div>
+                    <div class="col-md-9"><nop-editor asp-for="FromEmail" /></div>
+                </div>
+                <div class="form-group row">
+                    <div class="col-md-3"><nop-label asp-for="FromName" /></div>
+                    <div class="col-md-9"><nop-editor asp-for="FromName" /></div>
                 </div>
             </div>
         </div>
 
         <div class="card card-default">
-            <div class="card-header">Agent Rate Limiting Thresholds</div>
+            <div class="card-header">Azure OpenAI Settings</div>
             <div class="card-body">
                 <div class="form-group row">
-                    <div class="col-md-3"><nop-label asp-for="PermitLimit" /></div>
-                    <div class="col-md-9"><nop-editor asp-for="PermitLimit" /></div>
+                    <div class="col-md-3"><nop-label asp-for="AzureOpenAIEndpoint" /></div>
+                    <div class="col-md-9"><nop-editor asp-for="AzureOpenAIEndpoint" /></div>
                 </div>
                 <div class="form-group row">
-                    <div class="col-md-3"><nop-label asp-for="WindowInSeconds" /></div>
-                    <div class="col-md-9"><nop-editor asp-for="WindowInSeconds" /></div>
+                    <div class="col-md-3"><nop-label asp-for="AzureOpenAIApiKey" /></div>
+                    <div class="col-md-9"><nop-editor asp-for="AzureOpenAIApiKey" /></div>
                 </div>
                 <div class="form-group row">
-                    <div class="col-md-3"><nop-label asp-for="QueueLimit" /></div>
-                    <div class="col-md-9"><nop-editor asp-for="QueueLimit" /></div>
+                    <div class="col-md-3"><nop-label asp-for="DeploymentName" /></div>
+                    <div class="col-md-9"><nop-editor asp-for="DeploymentName" /></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card card-default">
+            <div class="card-header">Email Schedules</div>
+            <div class="card-body">
+                <div class="form-group row">
+                    <div class="col-md-3"><nop-label asp-for="Email1DaysLapsed" /></div>
+                    <div class="col-md-9"><nop-editor asp-for="Email1DaysLapsed" /></div>
+                </div>
+                <div class="form-group row">
+                    <div class="col-md-3"><nop-label asp-for="Email2DaysLapsed" /></div>
+                    <div class="col-md-9"><nop-editor asp-for="Email2DaysLapsed" /></div>
+                </div>
+                <div class="form-group row">
+                    <div class="col-md-3"><nop-label asp-for="Email3DaysLapsed" /></div>
+                    <div class="col-md-9"><nop-editor asp-for="Email3DaysLapsed" /></div>
+                </div>
+                <div class="form-group row">
+                    <div class="col-md-3"><nop-label asp-for="Email3DiscountCode" /></div>
+                    <div class="col-md-9"><nop-editor asp-for="Email3DiscountCode" /></div>
                 </div>
                 <div class="form-group row">
                     <div class="col-md-9 offset-md-3">
                         <button type="submit" name="save" class="btn btn-primary">
                             <i class="far fa-save"></i> Save Changes
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+<form asp-controller="WinbackEmail" asp-action="RunNow" method="post" style="margin-top: 20px;">
+    <div class="cards-group">
+        <div class="card card-default">
+            <div class="card-header">Manual Execution</div>
+            <div class="card-body">
+                <div class="form-group row">
+                    <div class="col-md-9 offset-md-3">
+                        <button type="submit" name="run-now" class="btn btn-info">
+                            <i class="fas fa-play"></i> Run Winback Task Now
                         </button>
                     </div>
                 </div>
