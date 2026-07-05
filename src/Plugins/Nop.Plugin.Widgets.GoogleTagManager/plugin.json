@@ -1,0 +1,11 @@
+{
+  "Group": "Widgets",
+  "FriendlyName": "Google Tag Manager",
+  "SystemName": "Widgets.GoogleTagManager",
+  "Version": "1.00",
+  "SupportedVersions": [ "4.70" ],
+  "Author": "nopCommerce team",
+  "DisplayOrder": 1,
+  "FileName": "Nop.Plugin.Widgets.GoogleTagManager.dll",
+  "Description": "This plugin allows you to integrate Google Tag Manager into your site."
+}
