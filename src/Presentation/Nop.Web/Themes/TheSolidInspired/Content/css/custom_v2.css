@@ -1078,6 +1078,13 @@ h6 {
   font-weight: 600;
 }
 
+.footer-powered-by-add-text {
+  font-size: 0.75rem;
+  color: #666;
+  position: relative;
+  left: -4%;
+}
+
 @media (max-width: 992px) {
   .footer-columns {
     grid-template-columns: repeat(2, 1fr);
