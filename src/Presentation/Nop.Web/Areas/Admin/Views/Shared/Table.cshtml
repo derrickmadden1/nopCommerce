@@ -1,7 +1,21 @@
 ﻿@model DataTablesModel
-
+@inject INopFileProvider fileProvider
 @functions
 {
+    string GetDefaultCulture()
+    {
+        var localePattern = NopCommonDefaults.LocalePatternPath;
+
+        var cultureToUse = NopCommonDefaults.DefaultLocalePattern; //Default regionalisation to use
+
+        if (fileProvider.DirectoryExists(fileProvider.Combine(fileProvider.WebRootPath, string.Format(localePattern, CultureInfo.CurrentCulture.Name))))
+            cultureToUse = CultureInfo.CurrentCulture.Name;
+        else if (fileProvider.DirectoryExists(fileProvider.Combine(fileProvider.WebRootPath, string.Format(localePattern, CultureInfo.CurrentCulture.TwoLetterISOLanguageName))))
+            cultureToUse = CultureInfo.CurrentCulture.TwoLetterISOLanguageName;
+
+        return cultureToUse;
+    }
+
     string GetUrl(DataUrl dataUrl)
     {
         return !string.IsNullOrEmpty(dataUrl?.ActionName) && !string.IsNullOrEmpty(dataUrl.ControllerName)
@@ -283,7 +297,7 @@
                             }).formatToParts(value)
                                 .map(({ type, value: vpart }) => //for some locales dotnet accepts latin digits, but still requires localized signs and separators
                                 {
-                                    var parser = Globalize("@CultureInfo.CurrentUICulture.Name.ToLowerInvariant()").numberParser();
+                                    var parser = Globalize("@GetDefaultCulture()").numberParser();
 
                                     if (type == "integer")
                                         return parser(vpart);
