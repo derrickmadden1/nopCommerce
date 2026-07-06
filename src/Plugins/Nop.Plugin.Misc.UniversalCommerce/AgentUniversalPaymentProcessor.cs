@@ -55,7 +55,7 @@ namespace Nop.Plugin.Misc.UniversalCommerce
 
         public Task<bool> HidePaymentMethodAsync(IList<ShoppingCartItem> cart)
         {
-            return Task.FromResult(false);
+            return Task.FromResult(true);
         }
 
         public Task<decimal> GetAdditionalHandlingFeeAsync(IList<ShoppingCartItem> cart)
