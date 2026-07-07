@@ -1,4 +1,4 @@
-﻿using Nop.Core;
+using Nop.Core;
 using Nop.Core.Domain.ScheduleTasks;
 using Nop.Plugin.Marketing.WinbackEmail.Tasks;
 using Nop.Services.Configuration;
@@ -6,6 +6,7 @@ using Nop.Services.Helpers;
 using Nop.Services.Localization;
 using Nop.Services.Plugins;
 using Nop.Services.ScheduleTasks;
+using System.Collections.Generic;
 
 namespace Nop.Plugin.Marketing.WinbackEmail;
 
@@ -14,15 +15,18 @@ public class WinbackEmailPlugin : BasePlugin
     private readonly ISettingService _settingService;
     private readonly IScheduleTaskService _scheduleTaskService;
     private readonly IWebHelper _webHelper;
+    private readonly ILocalizationService _localizationService;
 
     public WinbackEmailPlugin(
         ISettingService settingService,
         IScheduleTaskService scheduleTaskService,
-        IWebHelper webHelper)
+        IWebHelper webHelper,
+        ILocalizationService localizationService)
     {
         _settingService = settingService;
         _scheduleTaskService = scheduleTaskService;
         _webHelper = webHelper;
+        _localizationService = localizationService;
     }
 
     public override string GetConfigurationPageUrl()
@@ -55,6 +59,21 @@ public class WinbackEmailPlugin : BasePlugin
             });
         }
 
+        await _localizationService.AddOrUpdateLocaleResourceAsync(new Dictionary<string, string>
+        {
+            ["Plugins.Marketing.WinbackEmail.Enabled"] = "Enable winback emails",
+            ["Plugins.Marketing.WinbackEmail.StoreName"] = "Store Name",
+            ["Plugins.Marketing.WinbackEmail.AzureOpenAIEndpoint"] = "Azure OpenAI Endpoint",
+            ["Plugins.Marketing.WinbackEmail.AzureOpenAIApiKey"] = "Azure OpenAI API Key",
+            ["Plugins.Marketing.WinbackEmail.DeploymentName"] = "Azure OpenAI Deployment Name",
+            ["Plugins.Marketing.WinbackEmail.FromEmail"] = "From Email Address",
+            ["Plugins.Marketing.WinbackEmail.FromName"] = "From Name",
+            ["Plugins.Marketing.WinbackEmail.Email1DaysLapsed"] = "Days lapsed for Email 1",
+            ["Plugins.Marketing.WinbackEmail.Email2DaysLapsed"] = "Days lapsed for Email 2",
+            ["Plugins.Marketing.WinbackEmail.Email3DaysLapsed"] = "Days lapsed for Email 3",
+            ["Plugins.Marketing.WinbackEmail.Email3DiscountCode"] = "Discount Code for Email 3"
+        });
+
         await base.InstallAsync();
     }
 
@@ -67,6 +86,8 @@ public class WinbackEmailPlugin : BasePlugin
 
         if (task != null)
             await _scheduleTaskService.DeleteTaskAsync(task);
+
+        await _localizationService.DeleteLocaleResourcesAsync("Plugins.Marketing.WinbackEmail");
 
         await base.UninstallAsync();
     }
