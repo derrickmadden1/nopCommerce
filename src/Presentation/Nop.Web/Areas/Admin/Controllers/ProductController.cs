@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Globalization;
+using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Primitives;
 using Newtonsoft.Json;
@@ -872,7 +873,7 @@ public partial class ProductController : BaseAdminController
             {
                 setData(productId, data =>
                 {
-                    data.Price = decimal.Parse(item.Value);
+                    data.Price = decimal.Parse(item.Value, NumberStyles.Any, CultureInfo.InvariantCulture);
                 });
             }
 
@@ -880,7 +881,7 @@ public partial class ProductController : BaseAdminController
             {
                 setData(productId, data =>
                 {
-                    data.OldPrice = decimal.Parse(item.Value);
+                    data.OldPrice = decimal.Parse(item.Value, NumberStyles.Any, CultureInfo.InvariantCulture);
                 });
             }
 
