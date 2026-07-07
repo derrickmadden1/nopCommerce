@@ -1,0 +1,24 @@
+@model Nop.Plugin.Widgets.AiRecommendations.Models.RecommendationModel
+
+@if (Model.Products.Any())
+{
+    <div class="ai-recommendations personalised">
+        <h3 class="recommendations-title">@Model.Title</h3>
+        <div class="recommendations-grid">
+            @foreach (var product in Model.Products)
+            {
+                <div class="recommendation-item">
+                    <a href="@Url.RouteUrl("Product", new { SeName = product.SeName })">
+                        <div class="recommendation-picture">
+                            <img src="@product.PictureUrl" alt="@product.Name" loading="lazy" />
+                        </div>
+                        <div class="recommendation-info">
+                            <div class="recommendation-name">@product.Name</div>
+                            <div class="recommendation-price">@product.Price</div>
+                        </div>
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+}

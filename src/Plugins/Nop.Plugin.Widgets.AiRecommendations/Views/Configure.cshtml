@@ -1,0 +1,111 @@
+@model Nop.Plugin.Widgets.AiRecommendations.Models.ConfigurationModel
+
+@{
+    Layout = "_ConfigurePlugin";
+}
+
+<div class="cards-group">
+    <div class="card card-default">
+                    <div class="card-body">
+                        <form asp-controller="AiRecommendations" asp-action="Configure" method="post">
+
+                            <h4>General</h4>
+
+                            <div class="form-group row">
+                                <div class="col-md-3"><nop-label asp-for="Enabled" /></div>
+                                <div class="col-md-9">
+                                    <nop-editor asp-for="Enabled" />
+                                    <p class="text-muted">Enable to show AI recommendations on your storefront.</p>
+                                </div>
+                            </div>
+
+                            <div class="form-group row">
+                                <div class="col-md-3"><nop-label asp-for="RecommendationCount" /></div>
+                                <div class="col-md-9">
+                                    <nop-editor asp-for="RecommendationCount" />
+                                    <p class="text-muted">Number of products to show per recommendations widget.</p>
+                                </div>
+                            </div>
+
+                            <div class="form-group row">
+                                <div class="col-md-3"><nop-label asp-for="MinSimilarityScore" /></div>
+                                <div class="col-md-9">
+                                    <nop-editor asp-for="MinSimilarityScore" />
+                                    <p class="text-muted">Minimum cosine similarity to include a product (0.0–1.0). Lower = more results but less relevant. Start at 0.75.</p>
+                                </div>
+                            </div>
+
+                            <h4>Display</h4>
+
+                            <div class="form-group row">
+                                <div class="col-md-3"><nop-label asp-for="ShowOnProductPage" /></div>
+                                <div class="col-md-9">
+                                    <nop-editor asp-for="ShowOnProductPage" />
+                                    <p class="text-muted">Show "You might also like" on product pages.</p>
+                                </div>
+                            </div>
+
+                            <div class="form-group row">
+                                <div class="col-md-3"><nop-label asp-for="ShowOnHomepage" /></div>
+                                <div class="col-md-9">
+                                    <nop-editor asp-for="ShowOnHomepage" />
+                                    <p class="text-muted">Show "Recommended for you" on the homepage.</p>
+                                </div>
+                            </div>
+
+                            <div class="form-group row">
+                                <div class="col-md-3"><nop-label asp-for="ShowOnCart" /></div>
+                                <div class="col-md-9">
+                                    <nop-editor asp-for="ShowOnCart" />
+                                    <p class="text-muted">Show "Complete your order" on the cart page.</p>
+                                </div>
+                            </div>
+
+                            <h4>Azure OpenAI</h4>
+
+                            <div class="form-group row">
+                                <div class="col-md-3"><nop-label asp-for="AzureOpenAIEndpoint" /></div>
+                                <div class="col-md-9"><nop-editor asp-for="AzureOpenAIEndpoint" /></div>
+                            </div>
+
+                            <div class="form-group row">
+                                <div class="col-md-3"><nop-label asp-for="AzureOpenAIApiKey" /></div>
+                                <div class="col-md-9">
+                                    <nop-editor asp-for="AzureOpenAIApiKey" html-attributes="@(new { type = "password", autocomplete = "off" })" />
+                                </div>
+                            </div>
+
+                            <div class="form-group row">
+                                <div class="col-md-3"><nop-label asp-for="EmbeddingDeploymentName" /></div>
+                                <div class="col-md-9">
+                                    <nop-editor asp-for="EmbeddingDeploymentName" />
+                                    <p class="text-muted">Your Azure OpenAI embedding model deployment name.</p>
+                                </div>
+                            </div>
+
+                            <div class="form-group row">
+                                <div class="col-md-9 offset-md-3">
+                                    <button type="submit" class="btn btn-primary">Save</button>
+                                </div>
+                            </div>
+
+                        </form>
+
+                        <hr />
+
+                        <form asp-controller="AiRecommendations" asp-action="GenerateEmbeddings" method="post">
+                            <div class="form-group row">
+                                <div class="col-md-9 offset-md-3">
+                                    <button type="submit" class="btn btn-secondary">Generate Embeddings Now</button>
+                                    <p class="text-muted mt-2">
+                                        Generates embeddings for all products. Only re-processes products
+                                        whose content has changed. Run this after saving your settings,
+                                        then enable the nightly scheduled task.
+                                    </p>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+</div>
