@@ -1,4 +1,4 @@
-﻿using MimeKit;
+using MimeKit;
 using MimeKit.Text;
 using Nop.Core.Domain.Media;
 using Nop.Core.Domain.Messages;
@@ -163,7 +163,11 @@ public partial class EmailSender : IEmailSender
 
         var multipart = new Multipart("mixed")
         {
-            new TextPart(TextFormat.Html) { Text = body }
+            new TextPart(TextFormat.Html) 
+            { 
+                Text = body,
+                ContentTransferEncoding = ContentEncoding.Base64
+            }
         };
 
         //create the file attachment for this email message
