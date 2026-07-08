@@ -31,4 +31,13 @@ public record ConfigurationModel : BaseNopModel
 
     [NopResourceDisplayName("Plugins.Widgets.AiRecommendations.ShowOnCart")]
     public bool ShowOnCart { get; set; } = true;
+
+    [NopResourceDisplayName("Plugins.Widgets.AiRecommendations.UseAzureKeyVault")]
+    public bool UseAzureKeyVault { get; set; }
+
+    [NopResourceDisplayName("Plugins.Widgets.AiRecommendations.AzureKeyVaultUrl")]
+    public string AzureKeyVaultUrl { get; set; } = string.Empty;
+
+    [NopResourceDisplayName("Plugins.Widgets.AiRecommendations.AzureKeyVaultSecretName")]
+    public string AzureKeyVaultSecretName { get; set; } = string.Empty;
 }

@@ -45,4 +45,10 @@ public class AiRecommendationsSettings : ISettings
     /// Minimum cosine similarity score to include a recommendation (0.0 - 1.0)
     /// </summary>
     public double MinSimilarityScore { get; set; } = 0.75;
+
+    public bool UseAzureKeyVault { get; set; } = false;
+
+    public string AzureKeyVaultUrl { get; set; } = string.Empty;
+
+    public string AzureKeyVaultSecretName { get; set; } = string.Empty;
 }

@@ -67,7 +67,10 @@ public class AiRecommendationsPlugin : BasePlugin, IWidgetPlugin
             MinSimilarityScore = 0.75,
             ShowOnHomepage = true,
             ShowOnProductPage = true,
-            ShowOnCart = true
+            ShowOnCart = true,
+            UseAzureKeyVault = false,
+            AzureKeyVaultUrl = string.Empty,
+            AzureKeyVaultSecretName = string.Empty
         });
 
         var task = await _scheduleTaskService.GetTaskByTypeAsync(
@@ -95,7 +98,10 @@ public class AiRecommendationsPlugin : BasePlugin, IWidgetPlugin
             ["Plugins.Widgets.AiRecommendations.ShowOnCart"] = "Show on cart page",
             ["Plugins.Widgets.AiRecommendations.AzureOpenAIEndpoint"] = "Azure OpenAI Endpoint",
             ["Plugins.Widgets.AiRecommendations.AzureOpenAIApiKey"] = "Azure OpenAI API Key",
-            ["Plugins.Widgets.AiRecommendations.EmbeddingDeploymentName"] = "Embedding deployment name"
+            ["Plugins.Widgets.AiRecommendations.EmbeddingDeploymentName"] = "Embedding deployment name",
+            ["Plugins.Widgets.AiRecommendations.UseAzureKeyVault"] = "Use Azure Key Vault",
+            ["Plugins.Widgets.AiRecommendations.AzureKeyVaultUrl"] = "Azure Key Vault URL",
+            ["Plugins.Widgets.AiRecommendations.AzureKeyVaultSecretName"] = "Azure Key Vault Secret Name"
         });
 
         await base.InstallAsync();

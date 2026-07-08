@@ -3,6 +3,8 @@ using System.Text;
 using System.Text.Json;
 using Azure;
 using Azure.AI.OpenAI;
+using Azure.Identity;
+using Azure.Security.KeyVault.Secrets;
 using Microsoft.Extensions.Logging;
 using Nop.Data;
 using Nop.Plugin.Widgets.AiRecommendations.Data;
@@ -43,7 +45,7 @@ public class EmbeddingService
             overridePublished: true
         );
 
-        var client = GetOpenAIClient();
+        var client = await GetOpenAIClientAsync();
         var processed = 0;
         var skipped = 0;
 
@@ -176,6 +178,22 @@ public class EmbeddingService
         return Convert.ToHexString(bytes).ToLowerInvariant();
     }
 
-    private OpenAIClient GetOpenAIClient() =>
-        new(new Uri(_settings.AzureOpenAIEndpoint), new AzureKeyCredential(_settings.AzureOpenAIApiKey));
+    private async Task<OpenAIClient> GetOpenAIClientAsync()
+    {
+        var apiKey = _settings.AzureOpenAIApiKey;
+
+        if (_settings.UseAzureKeyVault)
+        {
+            if (string.IsNullOrWhiteSpace(_settings.AzureKeyVaultUrl) || string.IsNullOrWhiteSpace(_settings.AzureKeyVaultSecretName))
+            {
+                throw new Exception("Azure Key Vault is enabled but URL or Secret Name is not configured.");
+            }
+
+            var secretClient = new SecretClient(new Uri(_settings.AzureKeyVaultUrl), new DefaultAzureCredential());
+            var secretResponse = await secretClient.GetSecretAsync(_settings.AzureKeyVaultSecretName);
+            apiKey = secretResponse.Value.Value;
+        }
+
+        return new OpenAIClient(new Uri(_settings.AzureOpenAIEndpoint), new AzureKeyCredential(apiKey));
+    }
 }
