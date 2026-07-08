@@ -184,9 +184,9 @@
                                         else
                                         {
                                             <div class="product-quantity">
-                                                <div class="quantity up" id="quantity-up-@(item.Id)"></div>
-                                                <input name="itemquantity@(item.Id)" id="itemquantity@(item.Id)" type="text" value="@(item.Quantity)" class="qty-input" aria-label="@T("ShoppingCart.Quantity")" onchange="$('#updatecart').trigger('click');" />
                                                 <div class="quantity down" id="quantity-down-@(item.Id)"></div>
+                                                <input name="itemquantity@(item.Id)" id="itemquantity@(item.Id)" type="text" value="@(item.Quantity)" class="qty-input" aria-label="@T("ShoppingCart.Quantity")" onchange="$('#updatecart').trigger('click');" />
+                                                <div class="quantity up" id="quantity-up-@(item.Id)"></div>
                                             </div>
                                             <script asp-location="Footer">
                                                 $(function() {

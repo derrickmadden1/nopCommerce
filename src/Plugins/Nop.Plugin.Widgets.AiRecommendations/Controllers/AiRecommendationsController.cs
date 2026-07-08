@@ -44,7 +44,10 @@ public class AiRecommendationsController : BasePluginController
             MinSimilarityScore = _settings.MinSimilarityScore,
             ShowOnHomepage = _settings.ShowOnHomepage,
             ShowOnProductPage = _settings.ShowOnProductPage,
-            ShowOnCart = _settings.ShowOnCart
+            ShowOnCart = _settings.ShowOnCart,
+            UseAzureKeyVault = _settings.UseAzureKeyVault,
+            AzureKeyVaultUrl = _settings.AzureKeyVaultUrl,
+            AzureKeyVaultSecretName = _settings.AzureKeyVaultSecretName
         };
 
         return View("~/Plugins/Widgets.AiRecommendations/Views/Configure.cshtml", model);
@@ -57,14 +60,17 @@ public class AiRecommendationsController : BasePluginController
             return View("~/Plugins/Widgets.AiRecommendations/Views/Configure.cshtml", model);
 
         _settings.Enabled = model.Enabled;
-        _settings.AzureOpenAIEndpoint = model.AzureOpenAIEndpoint.Trim();
-        _settings.AzureOpenAIApiKey = model.AzureOpenAIApiKey.Trim();
-        _settings.EmbeddingDeploymentName = model.EmbeddingDeploymentName.Trim();
+        _settings.AzureOpenAIEndpoint = model.AzureOpenAIEndpoint?.Trim() ?? string.Empty;
+        _settings.AzureOpenAIApiKey = model.AzureOpenAIApiKey?.Trim() ?? string.Empty;
+        _settings.EmbeddingDeploymentName = model.EmbeddingDeploymentName?.Trim() ?? string.Empty;
         _settings.RecommendationCount = model.RecommendationCount;
         _settings.MinSimilarityScore = model.MinSimilarityScore;
         _settings.ShowOnHomepage = model.ShowOnHomepage;
         _settings.ShowOnProductPage = model.ShowOnProductPage;
         _settings.ShowOnCart = model.ShowOnCart;
+        _settings.UseAzureKeyVault = model.UseAzureKeyVault;
+        _settings.AzureKeyVaultUrl = model.AzureKeyVaultUrl?.Trim() ?? string.Empty;
+        _settings.AzureKeyVaultSecretName = model.AzureKeyVaultSecretName?.Trim() ?? string.Empty;
 
         await _settingService.SaveSettingAsync(_settings);
         _notificationService.SuccessNotification("AI Recommendations settings saved.");
