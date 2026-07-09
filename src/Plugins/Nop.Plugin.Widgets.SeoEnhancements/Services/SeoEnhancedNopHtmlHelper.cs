@@ -14,6 +14,7 @@ using Nop.Services.Localization;
 using Nop.Services.Seo;
 using Nop.Web.Framework.UI;
 using Nop.Web.Framework.WebOptimizer;
+using Nop.Core.Infrastructure;
 using System;
 
 namespace Nop.Plugin.Widgets.SeoEnhancements.Services;
@@ -29,6 +30,7 @@ public class SeoEnhancedNopHtmlHelper : NopHtmlHelper
         IHtmlHelper htmlHelper,
         IHttpContextAccessor httpContextAccessor,
         INopAssetHelper bundleHelper,
+        INopFileProvider fileProvider,
         Lazy<ILocalizationService> localizationService,
         IStoreContext storeContext,
         IWebHelper webHelper,
@@ -36,7 +38,7 @@ public class SeoEnhancedNopHtmlHelper : NopHtmlHelper
         SeoSettings seoSettings,
         IProductService productService,
         ICategoryService categoryService)
-        : base(appSettings, htmlEncoder, htmlHelper, httpContextAccessor, bundleHelper, localizationService, storeContext, webHelper, webHostEnvironment, seoSettings)
+        : base(appSettings, htmlEncoder, htmlHelper, httpContextAccessor, bundleHelper, fileProvider, localizationService, storeContext, webHelper, webHostEnvironment, seoSettings)
     {
         _productService = productService;
         _categoryService = categoryService;
