@@ -5,10 +5,10 @@ using Azure;
 using Azure.AI.OpenAI;
 using Azure.Identity;
 using Azure.Security.KeyVault.Secrets;
-using Microsoft.Extensions.Logging;
 using Nop.Data;
 using Nop.Plugin.Widgets.AiRecommendations.Data;
 using Nop.Services.Catalog;
+using Nop.Services.Logging;
 
 namespace Nop.Plugin.Widgets.AiRecommendations.Services;
 
@@ -18,14 +18,14 @@ public class EmbeddingService
     private readonly IRepository<ProductEmbeddingRecord> _embeddingRepository;
     private readonly IProductService _productService;
     private readonly ICategoryService _categoryService;
-    private readonly ILogger<EmbeddingService> _logger;
+    private readonly ILogger _logger;
 
     public EmbeddingService(
         AiRecommendationsSettings settings,
         IRepository<ProductEmbeddingRecord> embeddingRepository,
         IProductService productService,
         ICategoryService categoryService,
-        ILogger<EmbeddingService> logger)
+        ILogger logger)
     {
         _settings = settings;
         _embeddingRepository = embeddingRepository;
@@ -75,12 +75,11 @@ public class EmbeddingService
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to generate embedding for product {ProductId}", product.Id);
+                await _logger.ErrorAsync($"Failed to generate embedding for product {product.Id}", ex);
             }
         }
 
-        _logger.LogInformation("Embedding generation complete. Processed: {Processed}, Skipped (unchanged): {Skipped}",
-            processed, skipped);
+        await _logger.InformationAsync($"Embedding generation complete. Processed: {processed}, Skipped (unchanged): {skipped}");
     }
 
     /// <summary>
@@ -122,7 +121,7 @@ public class EmbeddingService
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Azure OpenAI embedding call failed");
+            await _logger.ErrorAsync("Azure OpenAI embedding call failed", ex);
             return null;
         }
     }
