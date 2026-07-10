@@ -39,9 +39,11 @@ public class SimilarProductsViewComponent : NopViewComponent
         if (!_settings.Enabled || !_settings.ShowOnProductPage)
             return Content(string.Empty);
 
-        // additionalData contains the current product ID when invoked from a product page
-        if (additionalData is not int productId)
+        // additionalData contains the ProductDetailsModel when invoked from a product page
+        if (additionalData is not Nop.Web.Models.Catalog.ProductDetailsModel productModel)
             return Content(string.Empty);
+
+        var productId = productModel.Id;
 
         var products = await _recommendationService.GetSimilarProductsAsync(productId);
         if (!products.Any())

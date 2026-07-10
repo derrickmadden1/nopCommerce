@@ -56,8 +56,10 @@ public class PersonalisedRecommendationsViewComponent : NopViewComponent
 
         // Cart page — exclude products already in cart
         List<int>? excludeIds = null;
-        if (isCart && additionalData is IList<int> cartProductIds)
-            excludeIds = cartProductIds.ToList();
+        if (isCart && additionalData is Nop.Web.Models.ShoppingCart.ShoppingCartModel cartModel)
+        {
+            excludeIds = cartModel.Items.Select(x => x.ProductId).Distinct().ToList();
+        }
 
         IList<Nop.Core.Domain.Catalog.Product> products;
 
