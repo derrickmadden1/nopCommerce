@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.WebUtilities;
@@ -2412,11 +2412,11 @@ public class PayPalCommerceServiceManager
                 LastName = details.ShippingAddress is not null && !details.IsPickup
                     ? details.ShippingAddress.LastName
                     : details.Customer.LastName,
-                AddressLines = [shipping.Address?.AddressLine1, shipping.Address?.AddressLine2],
-                City = shipping.Address?.AdminArea2,
-                State = shipping.Address?.AdminArea1,
-                Country = shipping.Address?.CountryCode,
-                PostalCode = shipping.Address?.PostalCode,
+                AddressLines = [shipping?.Address?.AddressLine1, shipping?.Address?.AddressLine2],
+                City = shipping?.Address?.AdminArea2,
+                State = shipping?.Address?.AdminArea1,
+                Country = shipping?.Address?.CountryCode,
+                PostalCode = shipping?.Address?.PostalCode,
                 PickupInStore = details.IsPickup
             };
 
