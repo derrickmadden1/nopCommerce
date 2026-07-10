@@ -43,7 +43,7 @@ public class AiRecommendationsPlugin : BasePlugin, IWidgetPlugin
             PublicWidgetZones.HomepageBottom,
 
             // Cart — complete your order
-            PublicWidgetZones.OrderSummaryContentBefore
+            PublicWidgetZones.OrderSummaryContentAfter
         });
     }
 

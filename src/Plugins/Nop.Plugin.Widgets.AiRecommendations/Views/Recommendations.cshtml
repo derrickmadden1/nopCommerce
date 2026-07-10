@@ -17,6 +17,14 @@
                             <div class="recommendation-price">@product.Price</div>
                         </div>
                     </a>
+                    <div class="recommendation-actions product-actions" style="margin-top: 10px; text-align: center;">
+                        <div class="buttons" style="display: flex; justify-content: center; width: 100%;">
+                            @{
+                                var addtocartlink = Url.RouteUrl("AddProductToCart-Catalog", new { productId = product.Id, shoppingCartTypeId = 1, quantity = 1 });
+                            }
+                            <button type="button" class="button-2 product-box-add-to-cart-button" onclick="AjaxCart.addproducttocart_catalog('@addtocartlink');return false;" style="width: 100%;">Add to cart</button>
+                        </div>
+                    </div>
                 </div>
             }
         </div>
