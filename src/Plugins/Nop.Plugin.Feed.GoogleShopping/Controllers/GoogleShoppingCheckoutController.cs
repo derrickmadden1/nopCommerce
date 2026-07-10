@@ -65,6 +65,6 @@ public class GoogleShoppingCheckoutController : BasePluginController
             return Redirect(redirectUrl);
         }
 
-        return RedirectToRoute("Checkout");
+        return RedirectToRoute("ShoppingCart");
     }
 }
