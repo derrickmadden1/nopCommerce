@@ -40,7 +40,7 @@ public class AiRecommendationsPlugin : BasePlugin, IWidgetPlugin
             PublicWidgetZones.ProductDetailsBottom,
 
             // Homepage — personalised recommendations
-            PublicWidgetZones.HomepageBeforeProducts,
+            PublicWidgetZones.HomepageBottom,
 
             // Cart — complete your order
             PublicWidgetZones.OrderSummaryContentBefore
