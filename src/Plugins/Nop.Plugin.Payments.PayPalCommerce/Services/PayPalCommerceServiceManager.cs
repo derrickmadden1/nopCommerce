@@ -659,7 +659,7 @@ public class PayPalCommerceServiceManager
             PostalCode = CommonHelper.EnsureMaximumLength(shippingAddress.ZipPostalCode, 60)
         } : null;
 
-        if (address is null)
+        if (address is null || string.IsNullOrEmpty(address.CountryCode))
             return null;
 
         var shipping = new Shipping
@@ -828,11 +828,12 @@ public class PayPalCommerceServiceManager
         (string Id, string Type) selectedOption)
     {
         //change shipping address when customer selects another one
-        if (!string.IsNullOrEmpty(selectedAddress.City) && !string.IsNullOrEmpty(selectedAddress.State) &&
-            !string.IsNullOrEmpty(selectedAddress.Country) && !string.IsNullOrEmpty(selectedAddress.PostalCode))
+        if (!string.IsNullOrEmpty(selectedAddress.Country))
         {
             var country = await _countryService.GetCountryByTwoLetterIsoCodeAsync(selectedAddress.Country);
-            var state = await _stateProvinceService.GetStateProvinceByAbbreviationAsync(selectedAddress.State, country?.Id);
+            var state = !string.IsNullOrEmpty(selectedAddress.State) 
+                ? await _stateProvinceService.GetStateProvinceByAbbreviationAsync(selectedAddress.State, country?.Id)
+                : null;
             var newShippingAddress = await PrepareCustomerAddressAsync(details.Customer, new()
             {
                 Email = email ?? details.Customer.Email,
@@ -2092,10 +2093,11 @@ public class PayPalCommerceServiceManager
                 if (billingAddress.Id != customer.BillingAddressId)
                     customer.BillingAddressId = billingAddress.Id;
 
+                var shippingOption = await _genericAttributeService.GetAttributeAsync<NopShippingOption>(customer,
+                    NopCustomerDefaults.SelectedShippingOptionAttribute, store.Id);
+
                 if (await _shoppingCartService.ShoppingCartRequiresShippingAsync(cart) &&
-                    await _genericAttributeService.GetAttributeAsync<NopShippingOption>(customer,
-                        NopCustomerDefaults.SelectedShippingOptionAttribute, store.Id) is NopShippingOption shippingOption &&
-                    !shippingOption.IsPickupInStore &&
+                    (shippingOption is null || !shippingOption.IsPickupInStore) &&
                     order.PurchaseUnits.FirstOrDefault()?.Shipping is Shipping shipping &&
                     shipping.Address is Address shippingAddress)
                 {
