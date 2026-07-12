@@ -1,4 +1,4 @@
-﻿@model OrderConfirmModel
+@model OrderConfirmModel
 @inject INopUrlHelper NopUrl
 
 @{
@@ -73,8 +73,8 @@
                             }
                         </div>
                     }
-                    <div class="buttons">
-                        <button type="submit" name="nextstep" class="button-1 confirm-order-next-step-button">@T("Checkout.ConfirmButton")</button>
+                    <div style="margin-top: 20px; text-align: left;">
+                        <button type="submit" name="nextstep" class="btn-primary confirm-order-btn-modern confirm-order-next-step-button">@T("Checkout.ConfirmButton") <i class="fas fa-check"></i></button>
                     </div>
                     <script asp-location="Footer">
                         $('#confirm-order-form').on('submit', function () {

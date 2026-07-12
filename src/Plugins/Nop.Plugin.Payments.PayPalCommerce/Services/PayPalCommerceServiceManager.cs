@@ -380,7 +380,7 @@ public class PayPalCommerceServiceManager
             //Locale = null, //PayPal auto detects this
             BrandName = CommonHelper.EnsureMaximumLength(details.Store.Name, 127),
             LandingPage = settings.LandingPage.ToString().ToUpper(),
-            UserAction = details.Placement == ButtonPlacement.PaymentMethod && settings.SkipOrderConfirmPage
+            UserAction = settings.SkipOrderConfirmPage
                 ? UserActionType.PAY_NOW.ToString().ToUpper()
                 : UserActionType.CONTINUE.ToString().ToUpper(),
             CancelUrl = details.Placement switch
@@ -1285,7 +1285,7 @@ public class PayPalCommerceServiceManager
                 ClientId = settings.ClientId,
                 Currency = currencyCode.ToUpper(),
                 Intent = settings.PaymentType.ToString().ToLower(),
-                Commit = placement == ButtonPlacement.PaymentMethod && settings.SkipOrderConfirmPage,
+                Commit = settings.SkipOrderConfirmPage,
                 Components = string.Join(',', components),
                 EnableFunding = settings.EnabledFunding,
                 DisableFunding = settings.DisabledFunding,
@@ -2121,7 +2121,7 @@ public class PayPalCommerceServiceManager
                 await _customerService.UpdateCustomerAsync(customer);
             }
 
-            return (order, false);
+            return (order, settings.SkipOrderConfirmPage);
         });
     }
 
