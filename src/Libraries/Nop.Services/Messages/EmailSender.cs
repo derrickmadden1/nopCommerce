@@ -161,13 +161,15 @@ public partial class EmailSender : IEmailSender
                 message.Headers.Add(header.Key, header.Value);
         }
 
+        var textPart = new TextPart(TextFormat.Html) 
+        { 
+            ContentTransferEncoding = ContentEncoding.Base64
+        };
+        textPart.SetText(System.Text.Encoding.UTF8, body);
+
         var multipart = new Multipart("mixed")
         {
-            new TextPart(TextFormat.Html) 
-            { 
-                Text = body,
-                ContentTransferEncoding = ContentEncoding.Base64
-            }
+            textPart
         };
 
         //create the file attachment for this email message
