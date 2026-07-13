@@ -1,0 +1,282 @@
+@model Nop.Plugin.Widgets.AiChatbot.AiChatbotSettings
+
+<style>
+    :root {
+        --chat-colour: @Model.BubbleColour;
+    }
+
+    #ai-chat-bubble {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        z-index: 9999;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        font-size: 14px;
+    }
+
+    #ai-chat-toggle {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: var(--chat-colour);
+        border: none;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: auto;
+        transition: transform 0.2s;
+    }
+
+    #ai-chat-toggle:hover { transform: scale(1.05); }
+
+    #ai-chat-toggle svg { fill: white; width: 24px; height: 24px; }
+
+    #ai-chat-panel {
+        display: none;
+        position: absolute;
+        bottom: 68px;
+        right: 0;
+        width: 340px;
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+        overflow: hidden;
+        flex-direction: column;
+    }
+
+    #ai-chat-panel.open { display: flex; }
+
+    #ai-chat-header {
+        background: var(--chat-colour);
+        color: white;
+        padding: 14px 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    #ai-chat-header span { font-weight: 600; font-size: 15px; }
+
+    #ai-chat-close {
+        background: none;
+        border: none;
+        color: white;
+        cursor: pointer;
+        font-size: 20px;
+        line-height: 1;
+        padding: 0;
+        opacity: 0.8;
+    }
+
+    #ai-chat-close:hover { opacity: 1; }
+
+    #ai-chat-messages {
+        padding: 16px;
+        height: 320px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        background: #f8f9fa;
+    }
+
+    .ai-msg {
+        max-width: 82%;
+        padding: 10px 13px;
+        border-radius: 12px;
+        line-height: 1.45;
+        word-break: break-word;
+    }
+
+    .ai-msg.bot {
+        background: white;
+        border: 1px solid #e5e7eb;
+        align-self: flex-start;
+        border-bottom-left-radius: 4px;
+    }
+
+    .ai-msg.user {
+        background: var(--chat-colour);
+        color: white;
+        align-self: flex-end;
+        border-bottom-right-radius: 4px;
+    }
+
+    .ai-msg.typing {
+        background: white;
+        border: 1px solid #e5e7eb;
+        align-self: flex-start;
+        border-bottom-left-radius: 4px;
+        color: #9ca3af;
+        font-style: italic;
+    }
+
+    #ai-chat-input-row {
+        display: flex;
+        padding: 12px;
+        gap: 8px;
+        border-top: 1px solid #e5e7eb;
+        background: white;
+    }
+
+    #ai-chat-input {
+        flex: 1;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        padding: 8px 12px;
+        font-size: 14px;
+        outline: none;
+        resize: none;
+        height: 38px;
+        line-height: 1.4;
+    }
+
+    #ai-chat-input:focus { border-color: var(--chat-colour); }
+
+    #ai-chat-send {
+        background: var(--chat-colour);
+        border: none;
+        border-radius: 8px;
+        color: white;
+        cursor: pointer;
+        padding: 0 14px;
+        font-size: 18px;
+        transition: opacity 0.2s;
+    }
+
+    #ai-chat-send:hover { opacity: 0.88; }
+    #ai-chat-send:disabled { opacity: 0.4; cursor: not-allowed; }
+</style>
+
+<div id="ai-chat-bubble">
+    <div id="ai-chat-panel" role="dialog" aria-label="Chat with @Model.BotName">
+        <div id="ai-chat-header">
+            <span>@Model.BotName</span>
+            <button id="ai-chat-close" aria-label="Close chat">&#x2715;</button>
+        </div>
+        <div id="ai-chat-messages" aria-live="polite"></div>
+        <div id="ai-chat-input-row">
+            <input id="ai-chat-input" type="text" placeholder="Ask me anything..."
+                   maxlength="500" autocomplete="off" aria-label="Chat message" />
+            <button id="ai-chat-send" aria-label="Send message">&#x27A4;</button>
+        </div>
+    </div>
+
+    <button id="ai-chat-toggle" aria-label="Open chat">
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/>
+        </svg>
+    </button>
+</div>
+
+<script>
+(function () {
+    const botName = '@Html.Raw(Model.BotName)';
+    const welcomeMessage = '@Html.Raw(Model.WelcomeMessage)';
+    const chatEndpoint = '/AiChatbot/Chat';
+
+    const panel = document.getElementById('ai-chat-panel');
+    const toggle = document.getElementById('ai-chat-toggle');
+    const closeBtn = document.getElementById('ai-chat-close');
+    const messages = document.getElementById('ai-chat-messages');
+    const input = document.getElementById('ai-chat-input');
+    const sendBtn = document.getElementById('ai-chat-send');
+
+    let history = [];
+    let isOpen = false;
+    let initialised = false;
+
+    function openChat() {
+        isOpen = true;
+        panel.classList.add('open');
+        input.focus();
+
+        if (!initialised) {
+            initialised = true;
+            appendMessage(welcomeMessage, 'bot');
+        }
+    }
+
+    function closeChat() {
+        isOpen = false;
+        panel.classList.remove('open');
+    }
+
+    toggle.addEventListener('click', () => isOpen ? closeChat() : openChat());
+    closeBtn.addEventListener('click', closeChat);
+
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+
+    sendBtn.addEventListener('click', sendMessage);
+
+    function appendMessage(text, role) {
+        const div = document.createElement('div');
+        div.className = `ai-msg ${role}`;
+        div.textContent = text;
+        messages.appendChild(div);
+        messages.scrollTop = messages.scrollHeight;
+        return div;
+    }
+
+    function showTyping() {
+        const div = document.createElement('div');
+        div.className = 'ai-msg typing';
+        div.id = 'ai-typing';
+        div.textContent = botName + ' is typing...';
+        messages.appendChild(div);
+        messages.scrollTop = messages.scrollHeight;
+    }
+
+    function removeTyping() {
+        const el = document.getElementById('ai-typing');
+        if (el) el.remove();
+    }
+
+    async function sendMessage() {
+        const text = input.value.trim();
+        if (!text || sendBtn.disabled) return;
+
+        input.value = '';
+        sendBtn.disabled = true;
+
+        appendMessage(text, 'user');
+        showTyping();
+
+        try {
+            const response = await fetch(chatEndpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: text, history: history })
+            });
+
+            const data = await response.json();
+            removeTyping();
+
+            const reply = data.success ? data.response : (data.error || 'Sorry, something went wrong.');
+            appendMessage(reply, 'bot');
+
+            if (data.success) {
+                history.push({ role: 'user', content: text });
+                history.push({ role: 'assistant', content: reply });
+
+                // Keep history bounded
+                if (history.length > @Model.MaxConversationTurns * 2)
+                    history = history.slice(-@Model.MaxConversationTurns * 2);
+            }
+        } catch (err) {
+            removeTyping();
+            appendMessage('Sorry, I could not connect. Please try again.', 'bot');
+        } finally {
+            sendBtn.disabled = false;
+            input.focus();
+        }
+    }
+})();
+</script>
