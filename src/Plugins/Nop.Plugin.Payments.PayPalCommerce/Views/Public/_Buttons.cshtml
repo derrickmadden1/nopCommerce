@@ -1,4 +1,4 @@
-﻿@model PaymentInfoModel
+@model PaymentInfoModel
 
 @{
     //container names
@@ -629,13 +629,16 @@
                 data: postData,
                 success: function (data, textStatus, jqXHR) {
                     if (data.error) {
-                        actions.reject(data.errors.ADDRESS_ERROR);
+                        return actions.reject(data.errors.ADDRESS_ERROR);
                     }
+                    return actions.resolve();
                 },
                 error: function (jqXHR, textStatus, errorThrown) {
-                    actions.reject(data.errors.ADDRESS_ERROR);
+                    return actions.reject(data.errors.ADDRESS_ERROR);
                 }
             });
+        } else {
+            return actions.resolve();
         }
     }
 
@@ -660,13 +663,16 @@
                 data: postData,
                 success: function (data, textStatus, jqXHR) {
                     if (data.error) {
-                        actions.reject(data.errors.METHOD_UNAVAILABLE);
+                        return actions.reject(data.errors.METHOD_UNAVAILABLE);
                     }
+                    return actions.resolve();
                 },
                 error: function (jqXHR, textStatus, errorThrown) {
-                    actions.reject(data.errors.METHOD_UNAVAILABLE);
+                    return actions.reject(data.errors.METHOD_UNAVAILABLE);
                 }
             });
+        } else {
+            return actions.resolve();
         }
     }
 

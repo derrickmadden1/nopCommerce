@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 using Nop.Plugin.Payments.PayPalCommerce.Services.Api.Models.PaymentSources;
 
 namespace Nop.Plugin.Payments.PayPalCommerce.Services.Api.Models;
@@ -39,6 +39,12 @@ public class PaymentSource
     /// </summary>
     [JsonProperty(PropertyName = "applepay")]
     public ApplePay ApplePay { get; set; }
+
+    /// <summary>
+    /// Gets or sets the Google Pay info.
+    /// </summary>
+    [JsonProperty(PropertyName = "google_pay")]
+    public GooglePay GooglePay { get; set; }
 
     /// <summary>
     /// Gets the instruction to vault the payment source based on the specified strategy.

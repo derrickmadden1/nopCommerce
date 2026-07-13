@@ -805,8 +805,8 @@ public class PayPalCommerceServiceManager
         //sort options
         shippingOptions = (_shippingSettings.ShippingSorting switch
         {
-            ShippingSortingEnum.ShippingCost => shippingOptions.OrderBy(option => option.Rate),
-            _ => shippingOptions.OrderBy(option => option.DisplayOrder)
+            ShippingSortingEnum.ShippingCost => shippingOptions.OrderBy(option => option.IsPickupInStore).ThenBy(option => option.Rate),
+            _ => shippingOptions.OrderBy(option => option.IsPickupInStore).ThenBy(option => option.DisplayOrder)
         }).ToList();
 
         return (shippingOptions, pickupPoints);
@@ -840,7 +840,8 @@ public class PayPalCommerceServiceManager
                 City = selectedAddress.City,
                 StateProvinceId = state?.Id,
                 CountryId = country?.Id,
-                ZipPostalCode = selectedAddress.PostalCode
+                ZipPostalCode = selectedAddress.PostalCode,
+                Address1 = "Not Provided Yet" // Dummy address to satisfy real-time shipping providers during partial address callbacks
             });
             if (newShippingAddress.Id != details.Customer.ShippingAddressId)
             {
@@ -2072,6 +2073,16 @@ public class PayPalCommerceServiceManager
             if (placement == ButtonPlacement.PaymentMethod)
                 return (order, settings.SkipOrderConfirmPage);
 
+            var fallbackEmail = order.Payer?.EmailAddress 
+                ?? order.PaymentSource?.GooglePay?.EmailAddress 
+                ?? order.PaymentSource?.ApplePay?.EmailAddress 
+                ?? customer.Email;
+
+            if (string.IsNullOrEmpty(fallbackEmail) || !CommonHelper.IsValidEmail(fallbackEmail))
+            {
+                fallbackEmail = $"guest_{Guid.NewGuid():N}@noemail.com";
+            }
+
             //or update billing details and redirect customer to the confirmation page
             if (order.Payer is not null)
             {
@@ -2080,8 +2091,8 @@ public class PayPalCommerceServiceManager
                     .GetStateProvinceByAbbreviationAsync(order.Payer.Address?.AdminArea1, billingCountry?.Id);
                 var billingAddress = await PrepareCustomerAddressAsync(customer, new()
                 {
-                    Email = order.Payer.EmailAddress ?? customer.Email,
-                    FirstName = order.Payer.Name?.GivenName ?? customer.FirstName,
+                    Email = fallbackEmail,
+                    FirstName = order.Payer.Name?.GivenName ?? order.PaymentSource?.GooglePay?.Name ?? order.PaymentSource?.ApplePay?.Name ?? customer.FirstName,
                     LastName = order.Payer.Name?.Surname ?? customer.LastName,
                     Address1 = order.Payer.Address?.AddressLine1,
                     Address2 = order.Payer.Address?.AddressLine2,
@@ -2092,34 +2103,52 @@ public class PayPalCommerceServiceManager
                 });
                 if (billingAddress.Id != customer.BillingAddressId)
                     customer.BillingAddressId = billingAddress.Id;
-
-                var shippingOption = await _genericAttributeService.GetAttributeAsync<NopShippingOption>(customer,
-                    NopCustomerDefaults.SelectedShippingOptionAttribute, store.Id);
-
-                if (await _shoppingCartService.ShoppingCartRequiresShippingAsync(cart) &&
-                    (shippingOption is null || !shippingOption.IsPickupInStore) &&
-                    order.PurchaseUnits.FirstOrDefault()?.Shipping is Shipping shipping &&
-                    shipping.Address is Address shippingAddress)
-                {
-                    var shippingCountry = await _countryService.GetCountryByTwoLetterIsoCodeAsync(shippingAddress.CountryCode);
-                    var shippingState = await _stateProvinceService
-                        .GetStateProvinceByAbbreviationAsync(shippingAddress.AdminArea1, shippingCountry?.Id);
-                    var newShippingAddress = await PrepareCustomerAddressAsync(customer, new()
-                    {
-                        Email = order.Payer.EmailAddress ?? customer.Email,
-                        Address1 = shippingAddress.AddressLine1,
-                        Address2 = shippingAddress.AddressLine2,
-                        City = shippingAddress.AdminArea2,
-                        ZipPostalCode = shippingAddress.PostalCode,
-                        StateProvinceId = shippingState?.Id,
-                        CountryId = shippingCountry?.Id
-                    });
-                    if (newShippingAddress.Id != customer.ShippingAddressId)
-                        customer.ShippingAddressId = newShippingAddress.Id;
-                }
-
-                await _customerService.UpdateCustomerAsync(customer);
             }
+
+            var shippingOption = await _genericAttributeService.GetAttributeAsync<NopShippingOption>(customer,
+                NopCustomerDefaults.SelectedShippingOptionAttribute, store.Id);
+
+            if (await _shoppingCartService.ShoppingCartRequiresShippingAsync(cart) &&
+                (shippingOption is null || !shippingOption.IsPickupInStore) &&
+                order.PurchaseUnits.FirstOrDefault()?.Shipping is Shipping shipping &&
+                shipping.Address is Address shippingAddress)
+            {
+                var shippingCountry = await _countryService.GetCountryByTwoLetterIsoCodeAsync(shippingAddress.CountryCode);
+                var shippingState = await _stateProvinceService
+                    .GetStateProvinceByAbbreviationAsync(shippingAddress.AdminArea1, shippingCountry?.Id);
+                var newShippingAddress = await PrepareCustomerAddressAsync(customer, new()
+                {
+                    Email = fallbackEmail,
+                    FirstName = order.Payer?.Name?.GivenName ?? order.PaymentSource?.GooglePay?.Name ?? order.PaymentSource?.ApplePay?.Name ?? customer.FirstName,
+                    LastName = order.Payer?.Name?.Surname ?? customer.LastName,
+                    Address1 = shippingAddress.AddressLine1,
+                    Address2 = shippingAddress.AddressLine2,
+                    City = shippingAddress.AdminArea2,
+                    ZipPostalCode = shippingAddress.PostalCode,
+                    StateProvinceId = shippingState?.Id,
+                    CountryId = shippingCountry?.Id
+                });
+                if (newShippingAddress.Id != customer.ShippingAddressId)
+                    customer.ShippingAddressId = newShippingAddress.Id;
+            }
+
+            if (customer.ShippingAddressId is not null)
+            {
+                var currentBilling = await _customerService.GetCustomerBillingAddressAsync(customer);
+                if (currentBilling is null || string.IsNullOrEmpty(currentBilling.Email) || !CommonHelper.IsValidEmail(currentBilling.Email))
+                {
+                    customer.BillingAddressId = customer.ShippingAddressId;
+                }
+            }
+
+            var finalBilling = await _customerService.GetCustomerBillingAddressAsync(customer);
+            if (finalBilling is not null && (string.IsNullOrEmpty(finalBilling.Email) || !CommonHelper.IsValidEmail(finalBilling.Email)))
+            {
+                finalBilling.Email = fallbackEmail;
+                await _addressService.UpdateAddressAsync(finalBilling);
+            }
+
+            await _customerService.UpdateCustomerAsync(customer);
 
             return (order, settings.SkipOrderConfirmPage);
         });
