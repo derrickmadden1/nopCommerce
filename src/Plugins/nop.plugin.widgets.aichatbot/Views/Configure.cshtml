@@ -6,7 +6,13 @@
 }
 
 <div class="content-header clearfix">
-    <h1 class="float-left">AI Chatbot</h1>
+    <h1 class="float-left">
+        AI Chatbot
+        <small>
+            <i class="fas fa-arrow-circle-left"></i>
+            <a asp-action="List" asp-controller="Plugin">@T("Admin.Configuration.Plugins.Misc.BackToList")</a>
+        </small>
+    </h1>
 </div>
 
 <section class="content">

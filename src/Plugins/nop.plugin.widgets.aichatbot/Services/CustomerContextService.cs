@@ -4,6 +4,7 @@ using Nop.Plugin.Widgets.AiChatbot.Models;
 using Nop.Services.Catalog;
 using Nop.Services.Customers;
 using Nop.Services.Orders;
+using Nop.Services.Shipping;
 
 namespace Nop.Plugin.Widgets.AiChatbot.Services;
 
@@ -16,17 +17,20 @@ public class CustomerContextService
     private readonly ICustomerService _customerService;
     private readonly IOrderService _orderService;
     private readonly IProductService _productService;
+    private readonly IShipmentService _shipmentService;
 
     public CustomerContextService(
         IWorkContext workContext,
         ICustomerService customerService,
         IOrderService orderService,
-        IProductService productService)
+        IProductService productService,
+        IShipmentService shipmentService)
     {
         _workContext = workContext;
         _customerService = customerService;
         _orderService = orderService;
         _productService = productService;
+        _shipmentService = shipmentService;
     }
 
     public async Task<CustomerContext> GetCurrentCustomerContextAsync()
@@ -60,7 +64,7 @@ public class CustomerContextService
             }
 
             // Get shipment tracking if available
-            var shipments = await _orderService.GetShipmentsByOrderIdAsync(order.Id);
+            var shipments = await _shipmentService.GetShipmentsByOrderIdAsync(order.Id);
             var trackingNumber = shipments.FirstOrDefault()?.TrackingNumber;
 
             orderContexts.Add(new OrderContext
