@@ -99,7 +99,8 @@ jobs:
             { "SystemName": "Misc.UniversalCommerce","Version": "1.00"},
             { "SystemName": "Marketing.WinbackEmail","Version": "1.0.0"},
             { "SystemName": "Widgets.GoogleTagManager","Version": "1.00"},
-            { "SystemName": "Widgets.AiRecommendations","Version": "1.00"}
+            { "SystemName": "Widgets.AiRecommendations","Version": "1.00"},
+            { "SystemName": "Widgets.AiChatbot","Version": "1.00"}
           ],
           "PluginNamesToUninstall": [],
           "PluginNamesToDelete": [],

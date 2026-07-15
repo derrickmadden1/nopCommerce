@@ -1,0 +1,109 @@
+using Microsoft.AspNetCore.Mvc;
+using Nop.Plugin.Widgets.AiChatbot.Models;
+using Nop.Plugin.Widgets.AiChatbot.Services;
+using Nop.Services.Configuration;
+using Nop.Services.Messages;
+using Nop.Web.Framework;
+using Nop.Web.Framework.Controllers;
+using Nop.Web.Framework.Mvc.Filters;
+
+namespace Nop.Plugin.Widgets.AiChatbot.Controllers;
+
+public class AiChatbotController : BasePluginController
+{
+    private readonly AiChatbotSettings _settings;
+    private readonly ChatService _chatService;
+    private readonly ISettingService _settingService;
+    private readonly INotificationService _notificationService;
+
+    public AiChatbotController(
+        AiChatbotSettings settings,
+        ChatService chatService,
+        ISettingService settingService,
+        INotificationService notificationService)
+    {
+        _settings = settings;
+        _chatService = chatService;
+        _settingService = settingService;
+        _notificationService = notificationService;
+    }
+
+    /// <summary>
+    /// Chat endpoint — called by the frontend widget via fetch()
+    /// </summary>
+    [HttpPost]
+    [IgnoreAntiforgeryToken]
+    [Route("AiChatbot/Chat")]
+    public async Task<IActionResult> Chat([FromBody] ChatRequest request)
+    {
+        if (!_settings.Enabled)
+            return Json(new ChatResponse { Success = false, Error = "Chat is not available." });
+
+        if (string.IsNullOrWhiteSpace(request.Message))
+            return Json(new ChatResponse { Success = false, Error = "Please enter a message." });
+
+        // Basic input sanitation
+        request.Message = request.Message.Trim()[..Math.Min(request.Message.Trim().Length, 500)];
+
+        var response = await _chatService.GetResponseAsync(request);
+        return Json(response);
+    }
+
+    // ── Admin ─────────────────────────────────────────────────────────────────
+
+    [AuthorizeAdmin]
+    [Area(AreaNames.ADMIN)]
+    [AutoValidateAntiforgeryToken]
+    public IActionResult Configure()
+    {
+        var model = new ConfigurationModel
+        {
+            Enabled = _settings.Enabled,
+            AzureOpenAIEndpoint = _settings.AzureOpenAIEndpoint,
+            AzureOpenAIApiKey = _settings.AzureOpenAIApiKey,
+            DeploymentName = _settings.DeploymentName,
+            AzureSearchEndpoint = _settings.AzureSearchEndpoint,
+            AzureSearchQueryKey = _settings.AzureSearchQueryKey,
+            AzureSearchIndexName = _settings.AzureSearchIndexName,
+            BotName = _settings.BotName,
+            StoreName = _settings.StoreName,
+            WelcomeMessage = _settings.WelcomeMessage,
+            BubbleColour = _settings.BubbleColour,
+            ReturnsPolicy = _settings.ReturnsPolicy,
+            ShippingPolicy = _settings.ShippingPolicy,
+            MaxConversationTurns = _settings.MaxConversationTurns
+        };
+
+        return View("~/Plugins/Widgets.AiChatbot/Views/Configure.cshtml", model);
+    }
+
+    [AuthorizeAdmin]
+    [Area(AreaNames.ADMIN)]
+    [HttpPost]
+    [AutoValidateAntiforgeryToken]
+    public async Task<IActionResult> Configure(ConfigurationModel model)
+    {
+        if (!ModelState.IsValid)
+            return View("~/Plugins/Widgets.AiChatbot/Views/Configure.cshtml", model);
+
+        _settings.Enabled = model.Enabled;
+        _settings.AzureOpenAIEndpoint = model.AzureOpenAIEndpoint.Trim();
+        _settings.AzureOpenAIApiKey = model.AzureOpenAIApiKey.Trim();
+        _settings.DeploymentName = model.DeploymentName.Trim();
+        _settings.AzureSearchEndpoint = model.AzureSearchEndpoint.Trim();
+        _settings.AzureSearchQueryKey = model.AzureSearchQueryKey.Trim();
+        _settings.AzureSearchIndexName = model.AzureSearchIndexName.Trim();
+        _settings.BotName = model.BotName.Trim();
+        _settings.StoreName = model.StoreName.Trim();
+        _settings.WelcomeMessage = model.WelcomeMessage.Trim();
+        _settings.BubbleColour = model.BubbleColour.Trim();
+        _settings.ReturnsPolicy = model.ReturnsPolicy;
+        _settings.ShippingPolicy = model.ShippingPolicy;
+        _settings.MaxConversationTurns = model.MaxConversationTurns;
+
+        await _settingService.SaveSettingAsync(_settings);
+        _notificationService.SuccessNotification("AI Chatbot settings saved.");
+
+        return RedirectToAction("Configure");
+    }
+}
