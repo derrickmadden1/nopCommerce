@@ -26,6 +26,17 @@ public class ChatService
 
     public async Task<ChatResponse> GetResponseAsync(ChatRequest request)
     {
+        // Programmatic Guardrail: Pre-filter query for prompt injections and jailbreak keywords
+        var jailbreakKeywords = new[] { "ignore previous", "system prompt", "developer mode", "jailbreak", "dan mode" };
+        if (jailbreakKeywords.Any(k => request.Message.Contains(k, StringComparison.OrdinalIgnoreCase)))
+        {
+            return new ChatResponse
+            {
+                Response = "I can only assist you with store-related enquiries, orders, and products.",
+                Success = true
+            };
+        }
+
         try
         {
             var client = new OpenAIClient(
@@ -96,8 +107,12 @@ public class ChatService
         var sb = new System.Text.StringBuilder();
 
         sb.AppendLine($"""
-            You are {_settings.BotName}, a helpful and friendly assistant for {_settings.StoreName}.
+            You are {_settings.BotName}, a helpful and friendly shopping assistant for {_settings.StoreName}.
             You help customers with order status, product questions, and store policies.
+            
+            CRITICAL: You are strictly limited to store operations. Do not write code, tell stories, answer general-knowledge questions, or perform tasks unrelated to {_settings.StoreName}. If the customer's query is off-topic, politely decline and redirect them back to store products, policies, or order status.
+            Only recommend or discuss products that are listed in the 'Products relevant to their query' section below. If a product is not listed there, explain that you don't carry that item.
+            
             Always be warm, concise, and use British English spelling.
             Never make up information — if you don't know something, say so and offer to help another way.
             Keep responses short and conversational — 2-3 sentences where possible.
