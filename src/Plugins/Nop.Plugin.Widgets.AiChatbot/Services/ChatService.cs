@@ -1,5 +1,7 @@
 using Azure;
 using Azure.AI.OpenAI;
+using Azure.Identity;
+using Azure.Security.KeyVault.Secrets;
 using Microsoft.Extensions.Logging;
 using Nop.Plugin.Widgets.AiChatbot.Models;
 
@@ -39,9 +41,17 @@ public class ChatService
 
         try
         {
+            var apiKey = _settings.AzureOpenAIApiKey;
+            if (_settings.UseAzureKeyVault)
+            {
+                var secretClient = new SecretClient(new Uri(_settings.AzureKeyVaultUrl), new DefaultAzureCredential());
+                var secretResponse = await secretClient.GetSecretAsync(_settings.AzureKeyVaultSecretName);
+                apiKey = secretResponse.Value.Value;
+            }
+
             var client = new OpenAIClient(
                 new Uri(_settings.AzureOpenAIEndpoint),
-                new AzureKeyCredential(_settings.AzureOpenAIApiKey)
+                new AzureKeyCredential(apiKey)
             );
 
             // Build context in parallel

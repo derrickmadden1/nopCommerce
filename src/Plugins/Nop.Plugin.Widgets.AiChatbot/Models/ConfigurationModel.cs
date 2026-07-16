@@ -17,6 +17,15 @@ public record ConfigurationModel : BaseNopModel
     [NopResourceDisplayName("Plugins.Widgets.AiChatbot.DeploymentName")]
     public string DeploymentName { get; set; } = "gpt-4o-mini";
 
+    [NopResourceDisplayName("Plugins.Widgets.AiChatbot.UseAzureKeyVault")]
+    public bool UseAzureKeyVault { get; set; }
+
+    [NopResourceDisplayName("Plugins.Widgets.AiChatbot.AzureKeyVaultUrl")]
+    public string AzureKeyVaultUrl { get; set; } = string.Empty;
+
+    [NopResourceDisplayName("Plugins.Widgets.AiChatbot.AzureKeyVaultSecretName")]
+    public string AzureKeyVaultSecretName { get; set; } = string.Empty;
+
     [NopResourceDisplayName("Plugins.Widgets.AiChatbot.AzureSearchEndpoint")]
     public string AzureSearchEndpoint { get; set; } = string.Empty;
 
