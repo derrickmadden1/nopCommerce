@@ -66,10 +66,33 @@
                                 <div class="col-md-9"><nop-editor asp-for="AzureOpenAIEndpoint" /></div>
                             </div>
 
-                            <div class="form-group row">
+                            <div class="form-group row" id="pnlAzureOpenAIApiKey">
                                 <div class="col-md-3"><nop-label asp-for="AzureOpenAIApiKey" /></div>
                                 <div class="col-md-9">
                                     <nop-editor asp-for="AzureOpenAIApiKey" html-attributes="@(new { type = "password", autocomplete = "off" })" />
+                                </div>
+                            </div>
+
+                            <div class="form-group row">
+                                <div class="col-md-3"><nop-label asp-for="UseAzureKeyVault" /></div>
+                                <div class="col-md-9">
+                                    <nop-editor asp-for="UseAzureKeyVault" />
+                                </div>
+                            </div>
+
+                            <div class="form-group row" id="pnlKeyVaultUrl">
+                                <div class="col-md-3"><nop-label asp-for="AzureKeyVaultUrl" /></div>
+                                <div class="col-md-9">
+                                    <nop-editor asp-for="AzureKeyVaultUrl" />
+                                    <p class="text-muted">e.g. https://your-vault.vault.azure.net/</p>
+                                </div>
+                            </div>
+
+                            <div class="form-group row" id="pnlKeyVaultSecretName">
+                                <div class="col-md-3"><nop-label asp-for="AzureKeyVaultSecretName" /></div>
+                                <div class="col-md-9">
+                                    <nop-editor asp-for="AzureKeyVaultSecretName" />
+                                    <p class="text-muted">Name of the secret storing your Azure OpenAI API Key</p>
                                 </div>
                             </div>
 
@@ -143,3 +166,22 @@
         </div>
     </div>
 </section>
+
+<script>
+    $(document).ready(function () {
+        $("#UseAzureKeyVault").click(toggleKeyVault);
+        toggleKeyVault();
+    });
+
+    function toggleKeyVault() {
+        if ($('#UseAzureKeyVault').is(':checked')) {
+            $('#pnlKeyVaultUrl').show();
+            $('#pnlKeyVaultSecretName').show();
+            $('#pnlAzureOpenAIApiKey').hide();
+        } else {
+            $('#pnlKeyVaultUrl').hide();
+            $('#pnlKeyVaultSecretName').hide();
+            $('#pnlAzureOpenAIApiKey').show();
+        }
+    }
+</script>

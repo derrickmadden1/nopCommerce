@@ -11,6 +11,11 @@ public class AiChatbotSettings : ISettings
     public string AzureOpenAIApiKey { get; set; } = string.Empty;
     public string DeploymentName { get; set; } = "gpt-4o-mini";
 
+    // Azure Key Vault
+    public bool UseAzureKeyVault { get; set; } = false;
+    public string AzureKeyVaultUrl { get; set; } = string.Empty;
+    public string AzureKeyVaultSecretName { get; set; } = string.Empty;
+
     // Azure AI Search (for product Q&A — reuses existing index)
     public string AzureSearchEndpoint { get; set; } = string.Empty;
     public string AzureSearchQueryKey { get; set; } = string.Empty;
