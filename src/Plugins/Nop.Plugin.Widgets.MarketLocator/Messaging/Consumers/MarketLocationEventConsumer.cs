@@ -18,6 +18,7 @@ public class MarketLocationEventConsumer :
     private readonly ILogger<MarketLocationEventConsumer> _logger;
     private readonly MarketLocatorSettings _settings;
     private readonly Nop.Core.Configuration.AppSettings _appSettings;
+    private readonly Nop.Services.Media.IPictureService _pictureService;
 
     private string QueueName
     {
@@ -35,13 +36,15 @@ public class MarketLocationEventConsumer :
         IMarketLocationService marketLocationService,
         ILogger<MarketLocationEventConsumer> logger,
         MarketLocatorSettings settings,
-        Nop.Core.Configuration.AppSettings appSettings)
+        Nop.Core.Configuration.AppSettings appSettings,
+        Nop.Services.Media.IPictureService pictureService)
     {
         _publisher = publishers.FirstOrDefault();
         _marketLocationService = marketLocationService;
         _logger = logger;
         _settings = settings;
         _appSettings = appSettings;
+        _pictureService = pictureService;
     }
 
     public async Task HandleEventAsync(EntityInsertedEvent<MarketLocation> eventMessage)
@@ -70,7 +73,7 @@ public class MarketLocationEventConsumer :
 
             try
             {
-                var schedules = BuildMessagesAndTimes(market, "Created");
+                var schedules = await BuildMessagesAndTimesAsync(market, "Created");
                 var sequenceNumbers = new List<long>();
 
                 foreach (var (message, scheduledTime) in schedules)
@@ -130,7 +133,7 @@ public class MarketLocationEventConsumer :
                 await TryCancelPendingAsync(market, saveToDb: false);
 
                 // Re-schedule with the (potentially new) dates
-                var schedules = BuildMessagesAndTimes(market, "Updated");
+                var schedules = await BuildMessagesAndTimesAsync(market, "Updated");
                 var sequenceNumbers = new List<long>();
 
                 foreach (var (message, scheduledTime) in schedules)
@@ -230,7 +233,7 @@ public class MarketLocationEventConsumer :
         return true;
     }
 
-    private List<(MarketEventMessage message, DateTimeOffset? scheduledTime)> BuildMessagesAndTimes(
+    private async Task<List<(MarketEventMessage message, DateTimeOffset? scheduledTime)>> BuildMessagesAndTimesAsync(
         MarketLocation market, string changeType)
     {
         var occurrences = MarketDateHelper.GetAllFutureMarketOccurrences(market.UpcomingDates, market.Hours);
@@ -251,6 +254,15 @@ public class MarketLocationEventConsumer :
                 Description = market.Description,
                 MapUrl = $"{_settings.StoreUrl.TrimEnd('/')}/market-locations?id={market.Id}"
             };
+
+            if (market.PictureId > 0)
+            {
+                var pictureUrl = await _pictureService.GetPictureUrlAsync(market.PictureId);
+                if (!string.IsNullOrEmpty(pictureUrl))
+                {
+                    message.ImageUrl = pictureUrl;
+                }
+            }
 
             results.Add((message, scheduledTime));
         }
