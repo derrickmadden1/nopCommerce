@@ -267,6 +267,7 @@ public class MarketLocatorAdminController : BasePluginController
         Frequency = e.Frequency,
         Published = e.Published,
         DisplayOrder = e.DisplayOrder,
+        PictureId = e.PictureId,
     };
 
     private static MarketLocation MapToEntity(MarketLocationModel m, MarketLocation e)
@@ -285,6 +286,7 @@ public class MarketLocatorAdminController : BasePluginController
         e.Frequency = m.Frequency;
         e.Published = m.Published;
         e.DisplayOrder = m.DisplayOrder;
+        e.PictureId = m.PictureId;
         return e;
     }
 }
