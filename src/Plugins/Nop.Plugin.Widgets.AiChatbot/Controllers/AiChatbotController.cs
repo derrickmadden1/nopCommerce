@@ -74,7 +74,9 @@ public class AiChatbotController : BasePluginController
             BubbleColour = _settings.BubbleColour,
             ReturnsPolicy = _settings.ReturnsPolicy,
             ShippingPolicy = _settings.ShippingPolicy,
-            MaxConversationTurns = _settings.MaxConversationTurns
+            MaxConversationTurns = _settings.MaxConversationTurns,
+            MaxTokens = _settings.MaxTokens,
+            Temperature = _settings.Temperature
         };
 
         return View("~/Plugins/Widgets.AiChatbot/Views/Configure.cshtml", model);
@@ -106,6 +108,8 @@ public class AiChatbotController : BasePluginController
         _settings.ReturnsPolicy = model.ReturnsPolicy ?? string.Empty;
         _settings.ShippingPolicy = model.ShippingPolicy ?? string.Empty;
         _settings.MaxConversationTurns = model.MaxConversationTurns;
+        _settings.MaxTokens = model.MaxTokens;
+        _settings.Temperature = model.Temperature;
 
         await _settingService.SaveSettingAsync(_settings);
         _notificationService.SuccessNotification("AI Chatbot settings saved.");

@@ -154,6 +154,22 @@
                             </div>
 
                             <div class="form-group row">
+                                <div class="col-md-3"><nop-label asp-for="MaxTokens" /></div>
+                                <div class="col-md-9">
+                                    <nop-editor asp-for="MaxTokens" />
+                                    <p class="text-muted">Maximum number of tokens to generate in response. Leave empty to use model default (required for reasoning models like gpt-5-mini/o1/o3-mini).</p>
+                                </div>
+                            </div>
+
+                            <div class="form-group row">
+                                <div class="col-md-3"><nop-label asp-for="Temperature" /></div>
+                                <div class="col-md-9">
+                                    <nop-editor asp-for="Temperature" />
+                                    <p class="text-muted">Controls response randomness (e.g. 0.5 for factual, 1.0 for creative). Leave empty to use model default (required for reasoning models like gpt-5-mini/o1/o3-mini).</p>
+                                </div>
+                            </div>
+
+                            <div class="form-group row">
                                 <div class="col-md-9 offset-md-3">
                                     <button type="submit" class="btn btn-primary">Save</button>
                                 </div>

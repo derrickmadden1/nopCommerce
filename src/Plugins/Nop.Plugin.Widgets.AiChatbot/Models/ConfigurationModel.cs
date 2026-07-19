@@ -55,4 +55,10 @@ public record ConfigurationModel : BaseNopModel
 
     [NopResourceDisplayName("Plugins.Widgets.AiChatbot.MaxConversationTurns")]
     public int MaxConversationTurns { get; set; } = 10;
+
+    [NopResourceDisplayName("Plugins.Widgets.AiChatbot.MaxTokens")]
+    public int? MaxTokens { get; set; }
+
+    [NopResourceDisplayName("Plugins.Widgets.AiChatbot.Temperature")]
+    public float? Temperature { get; set; }
 }

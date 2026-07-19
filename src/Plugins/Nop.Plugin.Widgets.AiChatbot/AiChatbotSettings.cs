@@ -34,4 +34,6 @@ public class AiChatbotSettings : ISettings
     // Limits
     public int MaxConversationTurns { get; set; } = 10;
     public int MaxSearchResults { get; set; } = 3;
+    public int? MaxTokens { get; set; } = 500;
+    public float? Temperature { get; set; } = 0.5f;
 }
