@@ -90,21 +90,21 @@ public class AiChatbotController : BasePluginController
             return View("~/Plugins/Widgets.AiChatbot/Views/Configure.cshtml", model);
 
         _settings.Enabled = model.Enabled;
-        _settings.AzureOpenAIEndpoint = model.AzureOpenAIEndpoint.Trim();
+        _settings.AzureOpenAIEndpoint = model.AzureOpenAIEndpoint?.Trim() ?? string.Empty;
         _settings.AzureOpenAIApiKey = model.AzureOpenAIApiKey?.Trim() ?? string.Empty;
-        _settings.DeploymentName = model.DeploymentName.Trim();
+        _settings.DeploymentName = model.DeploymentName?.Trim() ?? string.Empty;
         _settings.UseAzureKeyVault = model.UseAzureKeyVault;
         _settings.AzureKeyVaultUrl = model.AzureKeyVaultUrl?.Trim() ?? string.Empty;
         _settings.AzureKeyVaultSecretName = model.AzureKeyVaultSecretName?.Trim() ?? string.Empty;
-        _settings.AzureSearchEndpoint = model.AzureSearchEndpoint.Trim();
-        _settings.AzureSearchQueryKey = model.AzureSearchQueryKey.Trim();
-        _settings.AzureSearchIndexName = model.AzureSearchIndexName.Trim();
-        _settings.BotName = model.BotName.Trim();
-        _settings.StoreName = model.StoreName.Trim();
-        _settings.WelcomeMessage = model.WelcomeMessage.Trim();
-        _settings.BubbleColour = model.BubbleColour.Trim();
-        _settings.ReturnsPolicy = model.ReturnsPolicy;
-        _settings.ShippingPolicy = model.ShippingPolicy;
+        _settings.AzureSearchEndpoint = model.AzureSearchEndpoint?.Trim() ?? string.Empty;
+        _settings.AzureSearchQueryKey = model.AzureSearchQueryKey?.Trim() ?? string.Empty;
+        _settings.AzureSearchIndexName = model.AzureSearchIndexName?.Trim() ?? string.Empty;
+        _settings.BotName = model.BotName?.Trim() ?? string.Empty;
+        _settings.StoreName = model.StoreName?.Trim() ?? string.Empty;
+        _settings.WelcomeMessage = model.WelcomeMessage?.Trim() ?? string.Empty;
+        _settings.BubbleColour = model.BubbleColour?.Trim() ?? string.Empty;
+        _settings.ReturnsPolicy = model.ReturnsPolicy ?? string.Empty;
+        _settings.ShippingPolicy = model.ShippingPolicy ?? string.Empty;
         _settings.MaxConversationTurns = model.MaxConversationTurns;
 
         await _settingService.SaveSettingAsync(_settings);
