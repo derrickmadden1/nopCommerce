@@ -75,6 +75,7 @@ public class AiChatbotController : BasePluginController
             ReturnsPolicy = _settings.ReturnsPolicy,
             ShippingPolicy = _settings.ShippingPolicy,
             MaxConversationTurns = _settings.MaxConversationTurns,
+            MaxSearchResults = _settings.MaxSearchResults,
             MaxTokens = _settings.MaxTokens,
             Temperature = _settings.Temperature
         };
@@ -89,7 +90,13 @@ public class AiChatbotController : BasePluginController
     public async Task<IActionResult> Configure(ConfigurationModel model)
     {
         if (!ModelState.IsValid)
+        {
+            var errors = string.Join("<br/>", ModelState.Values
+                .SelectMany(x => x.Errors)
+                .Select(x => x.ErrorMessage));
+            _notificationService.ErrorNotification($"Validation failed: {errors}");
             return View("~/Plugins/Widgets.AiChatbot/Views/Configure.cshtml", model);
+        }
 
         _settings.Enabled = model.Enabled;
         _settings.AzureOpenAIEndpoint = model.AzureOpenAIEndpoint?.Trim() ?? string.Empty;
@@ -108,6 +115,7 @@ public class AiChatbotController : BasePluginController
         _settings.ReturnsPolicy = model.ReturnsPolicy ?? string.Empty;
         _settings.ShippingPolicy = model.ShippingPolicy ?? string.Empty;
         _settings.MaxConversationTurns = model.MaxConversationTurns;
+        _settings.MaxSearchResults = model.MaxSearchResults;
         _settings.MaxTokens = model.MaxTokens;
         _settings.Temperature = model.Temperature;
 

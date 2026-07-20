@@ -79,6 +79,7 @@ public class AiChatbotPlugin : BasePlugin, IWidgetPlugin
             ["Plugins.Widgets.AiChatbot.ReturnsPolicy"] = "Returns Policy",
             ["Plugins.Widgets.AiChatbot.ShippingPolicy"] = "Shipping Policy",
             ["Plugins.Widgets.AiChatbot.MaxConversationTurns"] = "Max Conversation Turns",
+            ["Plugins.Widgets.AiChatbot.MaxSearchResults"] = "Max Search Results",
             ["Plugins.Widgets.AiChatbot.MaxTokens"] = "Max Tokens",
             ["Plugins.Widgets.AiChatbot.Temperature"] = "Temperature"
         });

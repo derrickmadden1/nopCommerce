@@ -56,6 +56,9 @@ public record ConfigurationModel : BaseNopModel
     [NopResourceDisplayName("Plugins.Widgets.AiChatbot.MaxConversationTurns")]
     public int MaxConversationTurns { get; set; } = 10;
 
+    [NopResourceDisplayName("Plugins.Widgets.AiChatbot.MaxSearchResults")]
+    public int MaxSearchResults { get; set; } = 3;
+
     [NopResourceDisplayName("Plugins.Widgets.AiChatbot.MaxTokens")]
     public int? MaxTokens { get; set; }
 
