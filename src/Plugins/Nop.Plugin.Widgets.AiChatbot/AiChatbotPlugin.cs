@@ -55,7 +55,9 @@ public class AiChatbotPlugin : BasePlugin, IWidgetPlugin
             WelcomeMessage = "Hi! How can I help you today?",
             BubbleColour = "#4A90D9",
             MaxConversationTurns = 10,
-            MaxSearchResults = 3
+            MaxSearchResults = 3,
+            MaxTokens = 500,
+            Temperature = 0.5f
         });
 
         await _localizationService.AddOrUpdateLocaleResourceAsync(new Dictionary<string, string>
@@ -76,7 +78,10 @@ public class AiChatbotPlugin : BasePlugin, IWidgetPlugin
             ["Plugins.Widgets.AiChatbot.BubbleColour"] = "Chat Bubble Colour",
             ["Plugins.Widgets.AiChatbot.ReturnsPolicy"] = "Returns Policy",
             ["Plugins.Widgets.AiChatbot.ShippingPolicy"] = "Shipping Policy",
-            ["Plugins.Widgets.AiChatbot.MaxConversationTurns"] = "Max Conversation Turns"
+            ["Plugins.Widgets.AiChatbot.MaxConversationTurns"] = "Max Conversation Turns",
+            ["Plugins.Widgets.AiChatbot.MaxSearchResults"] = "Max Search Results",
+            ["Plugins.Widgets.AiChatbot.MaxTokens"] = "Max Tokens",
+            ["Plugins.Widgets.AiChatbot.Temperature"] = "Temperature"
         });
 
         await base.InstallAsync();

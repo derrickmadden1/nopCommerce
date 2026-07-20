@@ -22,6 +22,7 @@
                 <div class="card card-default">
                     <div class="card-body">
                         <form asp-controller="AiChatbot" asp-action="Configure" method="post">
+                            <div asp-validation-summary="All" class="text-danger"></div>
 
                             <h4>General</h4>
 
@@ -150,6 +151,30 @@
                                 <div class="col-md-9">
                                     <nop-editor asp-for="MaxConversationTurns" />
                                     <p class="text-muted">Maximum number of back-and-forth exchanges kept in context. Higher = more coherent but more tokens used.</p>
+                                </div>
+                            </div>
+
+                            <div class="form-group row">
+                                <div class="col-md-3"><nop-label asp-for="MaxSearchResults" /></div>
+                                <div class="col-md-9">
+                                    <nop-editor asp-for="MaxSearchResults" />
+                                    <p class="text-muted">Maximum number of product search results injected into the chatbot's system prompt.</p>
+                                </div>
+                            </div>
+
+                            <div class="form-group row">
+                                <div class="col-md-3"><nop-label asp-for="MaxTokens" /></div>
+                                <div class="col-md-9">
+                                    <input asp-for="MaxTokens" type="number" class="form-control" />
+                                    <p class="text-muted">Maximum number of tokens to generate in response. Leave empty to use model default (required for reasoning models like gpt-5-mini/o1/o3-mini).</p>
+                                </div>
+                            </div>
+
+                            <div class="form-group row">
+                                <div class="col-md-3"><nop-label asp-for="Temperature" /></div>
+                                <div class="col-md-9">
+                                    <input asp-for="Temperature" type="number" step="0.1" class="form-control" />
+                                    <p class="text-muted">Controls response randomness (e.g. 0.5 for factual, 1.0 for creative). Leave empty to use model default (required for reasoning models like gpt-5-mini/o1/o3-mini).</p>
                                 </div>
                             </div>
 

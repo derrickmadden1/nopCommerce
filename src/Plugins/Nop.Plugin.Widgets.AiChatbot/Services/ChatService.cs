@@ -88,10 +88,14 @@ public class ChatService
 
             var options = new ChatCompletionsOptions
             {
-                DeploymentName = _settings.DeploymentName,
-                MaxTokens = 500,
-                Temperature = 0.5f // Slightly lower for factual accuracy
+                DeploymentName = _settings.DeploymentName
             };
+
+            if (_settings.MaxTokens.HasValue)
+                options.MaxTokens = _settings.MaxTokens.Value;
+
+            if (_settings.Temperature.HasValue)
+                options.Temperature = _settings.Temperature.Value;
 
             foreach (var message in messages)
                 options.Messages.Add(message);

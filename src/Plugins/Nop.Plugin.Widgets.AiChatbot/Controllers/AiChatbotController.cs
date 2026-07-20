@@ -74,7 +74,10 @@ public class AiChatbotController : BasePluginController
             BubbleColour = _settings.BubbleColour,
             ReturnsPolicy = _settings.ReturnsPolicy,
             ShippingPolicy = _settings.ShippingPolicy,
-            MaxConversationTurns = _settings.MaxConversationTurns
+            MaxConversationTurns = _settings.MaxConversationTurns,
+            MaxSearchResults = _settings.MaxSearchResults,
+            MaxTokens = _settings.MaxTokens,
+            Temperature = _settings.Temperature
         };
 
         return View("~/Plugins/Widgets.AiChatbot/Views/Configure.cshtml", model);
@@ -87,25 +90,34 @@ public class AiChatbotController : BasePluginController
     public async Task<IActionResult> Configure(ConfigurationModel model)
     {
         if (!ModelState.IsValid)
+        {
+            var errors = string.Join("<br/>", ModelState.Values
+                .SelectMany(x => x.Errors)
+                .Select(x => x.ErrorMessage));
+            _notificationService.ErrorNotification($"Validation failed: {errors}");
             return View("~/Plugins/Widgets.AiChatbot/Views/Configure.cshtml", model);
+        }
 
         _settings.Enabled = model.Enabled;
-        _settings.AzureOpenAIEndpoint = model.AzureOpenAIEndpoint.Trim();
+        _settings.AzureOpenAIEndpoint = model.AzureOpenAIEndpoint?.Trim() ?? string.Empty;
         _settings.AzureOpenAIApiKey = model.AzureOpenAIApiKey?.Trim() ?? string.Empty;
-        _settings.DeploymentName = model.DeploymentName.Trim();
+        _settings.DeploymentName = model.DeploymentName?.Trim() ?? string.Empty;
         _settings.UseAzureKeyVault = model.UseAzureKeyVault;
         _settings.AzureKeyVaultUrl = model.AzureKeyVaultUrl?.Trim() ?? string.Empty;
         _settings.AzureKeyVaultSecretName = model.AzureKeyVaultSecretName?.Trim() ?? string.Empty;
-        _settings.AzureSearchEndpoint = model.AzureSearchEndpoint.Trim();
-        _settings.AzureSearchQueryKey = model.AzureSearchQueryKey.Trim();
-        _settings.AzureSearchIndexName = model.AzureSearchIndexName.Trim();
-        _settings.BotName = model.BotName.Trim();
-        _settings.StoreName = model.StoreName.Trim();
-        _settings.WelcomeMessage = model.WelcomeMessage.Trim();
-        _settings.BubbleColour = model.BubbleColour.Trim();
-        _settings.ReturnsPolicy = model.ReturnsPolicy;
-        _settings.ShippingPolicy = model.ShippingPolicy;
+        _settings.AzureSearchEndpoint = model.AzureSearchEndpoint?.Trim() ?? string.Empty;
+        _settings.AzureSearchQueryKey = model.AzureSearchQueryKey?.Trim() ?? string.Empty;
+        _settings.AzureSearchIndexName = model.AzureSearchIndexName?.Trim() ?? string.Empty;
+        _settings.BotName = model.BotName?.Trim() ?? string.Empty;
+        _settings.StoreName = model.StoreName?.Trim() ?? string.Empty;
+        _settings.WelcomeMessage = model.WelcomeMessage?.Trim() ?? string.Empty;
+        _settings.BubbleColour = model.BubbleColour?.Trim() ?? string.Empty;
+        _settings.ReturnsPolicy = model.ReturnsPolicy ?? string.Empty;
+        _settings.ShippingPolicy = model.ShippingPolicy ?? string.Empty;
         _settings.MaxConversationTurns = model.MaxConversationTurns;
+        _settings.MaxSearchResults = model.MaxSearchResults;
+        _settings.MaxTokens = model.MaxTokens;
+        _settings.Temperature = model.Temperature;
 
         await _settingService.SaveSettingAsync(_settings);
         _notificationService.SuccessNotification("AI Chatbot settings saved.");

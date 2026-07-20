@@ -188,8 +188,38 @@
     let isOpen = false;
     let initialised = false;
 
+    // Load history from sessionStorage
+    try {
+        const storedHistory = sessionStorage.getItem('ai_chat_history');
+        if (storedHistory) {
+            history = JSON.parse(storedHistory);
+            if (history && history.length > 0) {
+                initialised = true;
+                history.forEach(turn => {
+                    appendMessage(turn.content, turn.role === 'user' ? 'user' : 'bot');
+                });
+            }
+        }
+    } catch (e) {
+        console.error('Failed to load chat history', e);
+    }
+
+    // Load open state
+    try {
+        const storedOpen = sessionStorage.getItem('ai_chat_open');
+        if (storedOpen === 'true') {
+            isOpen = true;
+            panel.classList.add('open');
+            if (!initialised) {
+                initialised = true;
+                appendMessage(welcomeMessage, 'bot');
+            }
+        }
+    } catch (e) {}
+
     function openChat() {
         isOpen = true;
+        try { sessionStorage.setItem('ai_chat_open', 'true'); } catch (e) {}
         panel.classList.add('open');
         input.focus();
 
@@ -201,6 +231,7 @@
 
     function closeChat() {
         isOpen = false;
+        try { sessionStorage.setItem('ai_chat_open', 'false'); } catch (e) {}
         panel.classList.remove('open');
     }
 
@@ -259,16 +290,22 @@
             const data = await response.json();
             removeTyping();
 
-            const reply = data.success ? data.response : (data.error || 'Sorry, something went wrong.');
+            const success = data.success !== undefined ? data.success : data.Success;
+            const responseText = data.response !== undefined ? data.response : data.Response;
+            const errorText = data.error !== undefined ? data.error : data.Error;
+
+            const reply = success ? responseText : (errorText || 'Sorry, something went wrong.');
             appendMessage(reply, 'bot');
 
-            if (data.success) {
+            if (success) {
                 history.push({ role: 'user', content: text });
                 history.push({ role: 'assistant', content: reply });
 
                 // Keep history bounded
                 if (history.length > @Model.MaxConversationTurns * 2)
                     history = history.slice(-@Model.MaxConversationTurns * 2);
+
+                try { sessionStorage.setItem('ai_chat_history', JSON.stringify(history)); } catch (e) {}
             }
         } catch (err) {
             removeTyping();
