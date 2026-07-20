@@ -113,6 +113,29 @@
         font-style: italic;
     }
 
+    /* Action button rendered in chat */
+    .ai-action-btn {
+        display: inline-block;
+        margin-top: 8px;
+        padding: 6px 14px;
+        background: var(--chat-colour);
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 13px;
+        text-decoration: none;
+    }
+
+    .ai-action-btn:hover { opacity: 0.88; }
+
+    .ai-action-success {
+        font-size: 12px;
+        color: #16a34a;
+        margin-top: 6px;
+        display: none;
+    }
+
     #ai-chat-input-row {
         display: flex;
         padding: 12px;
@@ -180,7 +203,7 @@
     const panel = document.getElementById('ai-chat-panel');
     const toggle = document.getElementById('ai-chat-toggle');
     const closeBtn = document.getElementById('ai-chat-close');
-    const messages = document.getElementById('ai-chat-messages');
+    const messagesEl = document.getElementById('ai-chat-messages');
     const input = document.getElementById('ai-chat-input');
     const sendBtn = document.getElementById('ai-chat-send');
 
@@ -196,7 +219,11 @@
             if (history && history.length > 0) {
                 initialised = true;
                 history.forEach(turn => {
-                    appendMessage(turn.content, turn.role === 'user' ? 'user' : 'bot');
+                    if (turn.role === 'user') {
+                        appendUserMessage(turn.content);
+                    } else {
+                        appendBotMessage(turn.content, null);
+                    }
                 });
             }
         }
@@ -212,11 +239,12 @@
             panel.classList.add('open');
             if (!initialised) {
                 initialised = true;
-                appendMessage(welcomeMessage, 'bot');
+                appendBotMessage(welcomeMessage, null);
             }
         }
     } catch (e) {}
 
+    // ── Panel open/close ─────────────────────────────────────────────────────
     function openChat() {
         isOpen = true;
         try { sessionStorage.setItem('ai_chat_open', 'true'); } catch (e) {}
@@ -225,7 +253,7 @@
 
         if (!initialised) {
             initialised = true;
-            appendMessage(welcomeMessage, 'bot');
+            appendBotMessage(welcomeMessage, null);
         }
     }
 
@@ -247,22 +275,84 @@
 
     sendBtn.addEventListener('click', sendMessage);
 
-    function appendMessage(text, role) {
+    // ── Rendering ────────────────────────────────────────────────────────────
+    function appendUserMessage(text) {
         const div = document.createElement('div');
-        div.className = `ai-msg ${role}`;
+        div.className = 'ai-msg user';
         div.textContent = text;
-        messages.appendChild(div);
-        messages.scrollTop = messages.scrollHeight;
-        return div;
+        messagesEl.appendChild(div);
+        scrollBottom();
     }
+
+    function appendBotMessage(text, action) {
+        const wrapper = document.createElement('div');
+        wrapper.style.cssText = 'align-self: flex-start; max-width: 90%;';
+
+        const msg = document.createElement('div');
+        msg.className = 'ai-msg bot';
+        msg.textContent = text;
+        wrapper.appendChild(msg);
+
+        // Render an action button if present
+        if (action) {
+            const btn = buildActionButton(action);
+            if (btn) wrapper.appendChild(btn);
+        }
+
+        messagesEl.appendChild(wrapper);
+        scrollBottom();
+    }
+
+    function buildActionButton(action) {
+        const container = document.createElement('div');
+
+        const btn = document.createElement('button');
+        btn.className = 'ai-action-btn';
+        btn.textContent = getActionLabel(action);
+
+        const success = document.createElement('div');
+        success.className = 'ai-action-success';
+
+        btn.addEventListener('click', async () => {
+            btn.disabled = true;
+            const result = await executeAction(action);
+            if (result.navigate) return; // Page is navigating — no feedback needed
+            if (result.ok) {
+                success.textContent = result.message || 'Done!';
+                success.style.display = 'block';
+                btn.style.display = 'none';
+            } else {
+                btn.disabled = false;
+                success.textContent = result.message || 'Something went wrong.';
+                success.style.color = '#dc2626';
+                success.style.display = 'block';
+            }
+        });
+
+        container.appendChild(btn);
+        container.appendChild(success);
+        return container;
+    }
+
+    function getActionLabel(action) {
+        switch (action.type) {
+            case 'addToCart': return action.label ? `Add "${action.label}" to cart` : 'Add to cart';
+            case 'navigate':
+                if (action.url === '/cart') return 'View cart';
+                if (action.url && action.url.includes('checkout')) return 'Go to checkout';
+                return action.label ? `Go to ${action.label}` : 'Go there';
+            default: return 'Do it';
+        }
+    }
+
 
     function showTyping() {
         const div = document.createElement('div');
         div.className = 'ai-msg typing';
         div.id = 'ai-typing';
         div.textContent = botName + ' is typing...';
-        messages.appendChild(div);
-        messages.scrollTop = messages.scrollHeight;
+        messagesEl.appendChild(div);
+        scrollBottom();
     }
 
     function removeTyping() {
@@ -270,6 +360,67 @@
         if (el) el.remove();
     }
 
+    function scrollBottom() {
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    // ── Action execution ─────────────────────────────────────────────────────
+    async function executeAction(action) {
+        switch (action.type) {
+            case 'addToCart':
+                return await addToCart(action.productId, action.quantity || 1);
+            case 'navigate':
+                if (action.url) {
+                    window.location.href = action.url;
+                    return { ok: true, navigate: true };
+                }
+                return { ok: false, message: 'No URL provided.' };
+            default:
+                return { ok: false, message: 'Unknown action.' };
+        }
+    }
+
+    async function addToCart(productId, quantity) {
+        if (!productId) return { ok: false, message: 'Product not found.' };
+
+        const url = `/addproducttocart/catalog/${productId}/1/${quantity}`;
+
+        if (typeof AjaxCart !== 'undefined') {
+            AjaxCart.addproducttocart_catalog(url);
+            return { ok: true, navigate: true };
+        }
+
+        try {
+            const formData = new URLSearchParams();
+            const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+            if (tokenInput) {
+                formData.append('__RequestVerificationToken', tokenInput.value);
+            }
+
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: formData.toString()
+            });
+
+            const data = await response.json();
+
+            if (data.redirect) {
+                window.location.href = data.redirect;
+                return { ok: true, navigate: true };
+            }
+
+            if (data.success) {
+                return { ok: true, message: 'Added to cart!' };
+            } else {
+                return { ok: false, message: data.message || 'Could not add to cart.' };
+            }
+        } catch (err) {
+            return { ok: false, message: 'Could not add to cart — please try manually.' };
+        }
+    }
+
+    // ── Send message ─────────────────────────────────────────────────────────
     async function sendMessage() {
         const text = input.value.trim();
         if (!text || sendBtn.disabled) return;
@@ -277,7 +428,7 @@
         input.value = '';
         sendBtn.disabled = true;
 
-        appendMessage(text, 'user');
+        appendUserMessage(text);
         showTyping();
 
         try {
@@ -295,7 +446,18 @@
             const errorText = data.error !== undefined ? data.error : data.Error;
 
             const reply = success ? responseText : (errorText || 'Sorry, something went wrong.');
-            appendMessage(reply, 'bot');
+
+            let action = data.action !== undefined ? data.action : data.Action;
+            if (action) {
+                action = {
+                    type: action.type !== undefined ? action.type : action.Type,
+                    url: action.url !== undefined ? action.url : action.Url,
+                    productId: action.productId !== undefined ? action.productId : action.ProductId,
+                    quantity: action.quantity !== undefined ? action.quantity : action.Quantity,
+                    label: action.label !== undefined ? action.label : action.Label
+                };
+            }
+            appendBotMessage(reply, action || null);
 
             if (success) {
                 history.push({ role: 'user', content: text });
@@ -309,7 +471,7 @@
             }
         } catch (err) {
             removeTyping();
-            appendMessage('Sorry, I could not connect. Please try again.', 'bot');
+            appendBotMessage('Sorry, I could not connect. Please try again.', null);
         } finally {
             sendBtn.disabled = false;
             input.focus();

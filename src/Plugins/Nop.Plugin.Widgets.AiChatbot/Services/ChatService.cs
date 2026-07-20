@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Azure;
 using Azure.AI.OpenAI;
 using Azure.Identity;
@@ -13,6 +14,11 @@ public class ChatService
     private readonly CustomerContextService _customerContextService;
     private readonly ProductSearchService _productSearchService;
     private readonly ILogger<ChatService> _logger;
+
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+    };
 
     public ChatService(
         AiChatbotSettings settings,
@@ -56,12 +62,13 @@ public class ChatService
 
             // Build context in parallel
             var customerContextTask = _customerContextService.GetCurrentCustomerContextAsync();
-            var relevantProductsTask = _productSearchService.GetRelevantProductsAsync(request.Message);
+            var relevantProductsTask = _productSearchService.SearchAsync(request.Message);
 
             await Task.WhenAll(customerContextTask, relevantProductsTask);
 
             var customerContext = customerContextTask.Result;
-            var relevantProducts = relevantProductsTask.Result;
+            var relevantProductsList = relevantProductsTask.Result;
+            var relevantProducts = ProductSearchService.FormatForPrompt(relevantProductsList);
 
             var systemPrompt = BuildSystemPrompt(customerContext, relevantProducts);
 
@@ -88,7 +95,8 @@ public class ChatService
 
             var options = new ChatCompletionsOptions
             {
-                DeploymentName = _settings.DeploymentName
+                DeploymentName = _settings.DeploymentName,
+                ResponseFormat = ChatCompletionsResponseFormat.JsonObject
             };
 
             if (_settings.MaxTokens.HasValue)
@@ -103,7 +111,7 @@ public class ChatService
             var response = await client.GetChatCompletionsAsync(options);
             var reply = response.Value.Choices[0].Message.Content;
 
-            return new ChatResponse { Response = reply, Success = true };
+            return ParseStructuredResponse(reply);
         }
         catch (Exception ex)
         {
@@ -116,21 +124,100 @@ public class ChatService
         }
     }
 
+    private ChatResponse ParseStructuredResponse(string content)
+    {
+        try
+        {
+            // Strip markdown fences if present
+            var cleaned = content
+                .Replace("```json", "")
+                .Replace("```", "")
+                .Trim();
+
+            var structured = JsonSerializer.Deserialize<AiStructuredResponse>(cleaned, JsonOptions);
+
+            if (structured == null)
+                return new ChatResponse { Response = content, Success = true };
+
+            var chatResponse = new ChatResponse
+            {
+                Response = structured.Message,
+                Success = true
+            };
+
+            // Map AI action to ChatAction
+            if (structured.Action != null)
+            {
+                chatResponse.Action = new ChatAction
+                {
+                    Type = structured.Action.Type,
+                    Url = structured.Action.Url,
+                    ProductId = structured.Action.ProductId,
+                    Quantity = structured.Action.Quantity > 0 ? structured.Action.Quantity : 1,
+                    Label = structured.Action.Label
+                };
+            }
+
+            return chatResponse;
+        }
+        catch
+        {
+            // If JSON parsing fails, treat the whole response as plain text
+            // This handles cases where the AI doesn't return JSON
+            return new ChatResponse { Response = content, Success = true };
+        }
+    }
+
     private string BuildSystemPrompt(CustomerContext customer, string relevantProducts)
     {
         var sb = new System.Text.StringBuilder();
 
-        sb.AppendLine($"""
-            You are {_settings.BotName}, a helpful and friendly shopping assistant for {_settings.StoreName}.
+        sb.AppendLine($$"""
+            You are {{_settings.BotName}}, a helpful and friendly shopping assistant for {{_settings.StoreName}}.
             You help customers with order status, product questions, and store policies.
             
-            CRITICAL: You are strictly limited to store operations and informational assistance. You cannot programmatically add items to the basket, modify orders, or process checkouts. If a customer asks to perform these actions, guide them to do so manually using the buttons on the website.
+            CRITICAL: You are strictly limited to store operations and informational assistance. You cannot programmatically modify past orders or process payments. If a customer asks to add an item to the basket or go to checkout, you can trigger these actions by returning the structured action JSON. Make sure to describe the action in your message response.
             Only recommend or discuss products that are listed in the 'Products relevant to their query' section below, or have already been mentioned in the conversation history. If a product is not listed and has not been mentioned, explain that you don't carry that item.
             
             Always be warm, concise, and use British English spelling.
             Never make up information — if you don't know something, say so and offer to help another way. Never promise to contact the workshop, human staff, or follow up with the customer later (as you do not have the ability to send emails or create support tickets). If you don't know the answer, advise them to use the 'Contact Us' page or contact support directly.
             Keep responses short and conversational — 2-3 sentences where possible.
             Use plain text only — no markdown, no bullet points, no bold text.
+            IMPORTANT: You must ALWAYS respond with a valid JSON object in this exact format:
+            {
+              "message": "Your friendly response here",
+              "action": null
+            }
+
+            Or if an action is needed:
+            {
+              "message": "Your friendly response here",
+              "action": {
+                "type": "addToCart",
+                "productId": 42,
+                "quantity": 1,
+                "label": "Product Name"
+              }
+            }
+
+            Available action types:
+            - addToCart: { "type": "addToCart", "productId": 123, "quantity": 1, "label": "Product name" }
+            - navigate: { "type": "navigate", "url": "/checkout", "label": "checkout" }
+            - viewCart: { "type": "navigate", "url": "/cart", "label": "cart" }
+
+            Navigation URLs:
+            - Cart: /cart
+            - Checkout: /checkout
+            - Search results: /search?q=QUERY (url-encode the query)
+            - Product page: /PRODUCT-SENAME (use the product's URL if known)
+
+            Rules:
+            - Only trigger addToCart if the customer explicitly asks to add something. In your message, tell them to click the button below to add it. Do not say "I have added it" or claim that the item is already in their cart.
+            - Only trigger navigation if the customer explicitly asks to go somewhere. In your message, tell them to click the button below to go there.
+            - For product pages use /search?q=PRODUCTNAME if you don't know the exact URL
+            - Keep the message short — 1-3 sentences
+            - Do not include markdown in the message field
+            - Do not output any text outside the JSON object
             """);
 
         // Customer context

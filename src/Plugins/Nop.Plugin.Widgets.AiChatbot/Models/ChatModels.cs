@@ -1,4 +1,4 @@
-namespace Nop.Plugin.Widgets.AiChatbot.Models;
+﻿namespace Nop.Plugin.Widgets.AiChatbot.Models;
 
 public class ChatRequest
 {
@@ -11,6 +11,38 @@ public class ChatResponse
     public string Response { get; set; } = string.Empty;
     public bool Success { get; set; } = true;
     public string? Error { get; set; }
+
+    /// <summary>
+    /// Optional action for the frontend to execute after showing the message
+    /// </summary>
+    public ChatAction? Action { get; set; }
+}
+public class ChatAction
+{
+    /// <summary>
+    /// addToCart | navigate | viewCart | checkout
+    /// </summary>
+    public string Type { get; set; } = string.Empty;
+
+    /// <summary>
+    /// For navigate actions — the URL to go to
+    /// </summary>
+    public string? Url { get; set; }
+
+    /// <summary>
+    /// For addToCart actions — nopCommerce product ID
+    /// </summary>
+    public int? ProductId { get; set; }
+
+    /// <summary>
+    /// For addToCart actions — quantity to add (default 1)
+    /// </summary>
+    public int Quantity { get; set; } = 1;
+
+    /// <summary>
+    /// Human-readable label for the action e.g. product name
+    /// </summary>
+    public string? Label { get; set; }
 }
 
 public class ConversationTurn
@@ -37,4 +69,22 @@ public class OrderContext
     public decimal OrderTotal { get; set; }
     public string? TrackingNumber { get; set; }
     public List<string> Products { get; set; } = new();
+}
+
+/// <summary>
+/// Structured response from Azure OpenAI — parsed from JSON
+/// </summary>
+public class AiStructuredResponse
+{
+    public string Message { get; set; } = string.Empty;
+    public AiAction? Action { get; set; }
+}
+
+public class AiAction
+{
+    public string Type { get; set; } = string.Empty;
+    public string? Url { get; set; }
+    public int? ProductId { get; set; }
+    public int Quantity { get; set; } = 1;
+    public string? Label { get; set; }
 }
