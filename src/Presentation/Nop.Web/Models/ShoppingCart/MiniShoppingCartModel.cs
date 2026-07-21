@@ -1,4 +1,4 @@
-﻿using Nop.Web.Framework.Models;
+using Nop.Web.Framework.Models;
 using Nop.Web.Models.Media;
 
 namespace Nop.Web.Models.ShoppingCart;
@@ -12,6 +12,7 @@ public partial record MiniShoppingCartModel : BaseNopModel
 
     public IList<ShoppingCartItemModel> Items { get; set; }
     public int TotalProducts { get; set; }
+    public int TotalDistinctProducts { get; set; }
     public string SubTotal { get; set; }
     public decimal SubTotalValue { get; set; }
     public bool DisplayShoppingCartButton { get; set; }
