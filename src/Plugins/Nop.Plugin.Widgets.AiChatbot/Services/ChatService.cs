@@ -212,8 +212,9 @@ public class ChatService
             - Product page: /PRODUCT-SENAME (use the product's URL if known)
 
             Rules:
-            - Only trigger addToCart if the customer explicitly asks to add something. In your message, tell them to click the button below to add it. Do not say "I have added it" or claim that the item is already in their cart.
-            - Only trigger navigation if the customer explicitly asks to go somewhere. In your message, tell them to click the button below to go there.
+            - Only trigger addToCart if the customer explicitly asks to add something. Since this action is executed automatically in the background, write your message stating that you have added the item to their basket (e.g., "Done — I've added Rosy Rosehip to your basket.").
+            - Only trigger navigation if the customer explicitly asks to go somewhere. Since this action is executed automatically in the background, write your message stating that you are redirecting them (e.g., "Sure, I'm opening your cart/checkout for you now.").
+            - The shopping cart context is always the exact, real-time, up-to-date state of the user's basket (which already reflects all items added in previous turns). Do not perform manual calculations, additions, or adjustments to the basket total or items. Always trust and report the exact items and total value provided in the current context.
             - For product pages use /search?q=PRODUCTNAME if you don't know the exact URL
             - Keep the message short — 1-3 sentences
             - Do not include markdown in the message field
@@ -245,6 +246,21 @@ public class ChatService
         {
             sb.AppendLine("\nThe customer is not logged in. You do not have access to their order history.");
             sb.AppendLine("If they ask about an order, politely ask them to log in for order details.");
+        }
+
+        // Shopping cart context
+        if (customer.Cart != null && customer.Cart.Items.Any())
+        {
+            sb.AppendLine("\nThe customer's current shopping cart contains:");
+            foreach (var item in customer.Cart.Items)
+            {
+                sb.AppendLine($"- {item.ProductName} (Qty: {item.Quantity}) — Unit Price: £{item.UnitPrice:F2} — Subtotal: £{item.SubTotal:F2}");
+            }
+            sb.AppendLine($"Total Basket Value: £{customer.Cart.Total:F2}");
+        }
+        else
+        {
+            sb.AppendLine("\nThe customer's shopping cart is currently empty.");
         }
 
         // Relevant products from search

@@ -1073,6 +1073,7 @@ public partial class ShoppingCartModelFactory : IShoppingCartModelFactory
             if (cart.Any())
             {
                 model.TotalProducts = cart.Sum(item => item.Quantity);
+                model.TotalDistinctProducts = cart.Count;
 
                 //subtotal
                 var subTotalIncludingTax = await _workContext.GetTaxDisplayTypeAsync() == TaxDisplayType.IncludingTax && !_taxSettings.ForceTaxExclusionFromOrderSubtotal;

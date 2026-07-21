@@ -14,32 +14,84 @@ namespace Nop.Plugin.Widgets.AiChatbot.Services;
 public class CustomerContextService
 {
     private readonly IWorkContext _workContext;
+    private readonly IStoreContext _storeContext;
     private readonly ICustomerService _customerService;
     private readonly IOrderService _orderService;
     private readonly IProductService _productService;
     private readonly IShipmentService _shipmentService;
+    private readonly IShoppingCartService _shoppingCartService;
+    private readonly IPriceCalculationService _priceCalculationService;
 
     public CustomerContextService(
         IWorkContext workContext,
+        IStoreContext storeContext,
         ICustomerService customerService,
         IOrderService orderService,
         IProductService productService,
-        IShipmentService shipmentService)
+        IShipmentService shipmentService,
+        IShoppingCartService shoppingCartService,
+        IPriceCalculationService priceCalculationService)
     {
         _workContext = workContext;
+        _storeContext = storeContext;
         _customerService = customerService;
         _orderService = orderService;
         _productService = productService;
         _shipmentService = shipmentService;
+        _shoppingCartService = shoppingCartService;
+        _priceCalculationService = priceCalculationService;
     }
 
     public async Task<CustomerContext> GetCurrentCustomerContextAsync()
     {
         var customer = await _workContext.GetCurrentCustomerAsync();
+        var store = await _storeContext.GetCurrentStoreAsync();
+        
+        // Get shopping cart context
+        var cartItems = await _shoppingCartService.GetShoppingCartAsync(customer, ShoppingCartType.ShoppingCart, store.Id);
+        ShoppingCartContext? cartContext = null;
+
+        if (cartItems.Any())
+        {
+            var cartItemContexts = new List<ShoppingCartItemContext>();
+            decimal cartTotal = 0;
+
+            foreach (var item in cartItems)
+            {
+                var product = await _productService.GetProductByIdAsync(item.ProductId);
+                if (product != null)
+                {
+                    var (_, finalPrice, _, _) = await _priceCalculationService.GetFinalPriceAsync(product, customer, store, quantity: item.Quantity);
+                    var subTotal = finalPrice * item.Quantity;
+                    cartTotal += subTotal;
+
+                    cartItemContexts.Add(new ShoppingCartItemContext
+                    {
+                        ProductName = product.Name,
+                        Quantity = item.Quantity,
+                        UnitPrice = finalPrice,
+                        SubTotal = subTotal
+                    });
+                }
+            }
+
+            cartContext = new ShoppingCartContext
+            {
+                Items = cartItemContexts,
+                Total = cartTotal
+            };
+        }
+
         var isGuest = await _customerService.IsGuestAsync(customer);
 
         if (isGuest)
-            return new CustomerContext { IsLoggedIn = false };
+        {
+            return new CustomerContext
+            {
+                IsLoggedIn = false,
+                Cart = cartContext
+            };
+        }
 
         var fullName = await _customerService.GetCustomerFullNameAsync(customer);
         var firstName = fullName?.Split(' ').FirstOrDefault() ?? "there";
@@ -82,7 +134,8 @@ public class CustomerContextService
         {
             IsLoggedIn = true,
             FirstName = firstName,
-            RecentOrders = orderContexts
+            RecentOrders = orderContexts,
+            Cart = cartContext
         };
     }
 }
