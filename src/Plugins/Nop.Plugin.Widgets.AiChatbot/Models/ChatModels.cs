@@ -1,4 +1,4 @@
-﻿namespace Nop.Plugin.Widgets.AiChatbot.Models;
+namespace Nop.Plugin.Widgets.AiChatbot.Models;
 
 public class ChatRequest
 {
@@ -59,6 +59,21 @@ public class CustomerContext
     public bool IsLoggedIn { get; set; }
     public string? FirstName { get; set; }
     public List<OrderContext> RecentOrders { get; set; } = new();
+    public ShoppingCartContext? Cart { get; set; }
+}
+
+public class ShoppingCartContext
+{
+    public List<ShoppingCartItemContext> Items { get; set; } = new();
+    public decimal Total { get; set; }
+}
+
+public class ShoppingCartItemContext
+{
+    public string ProductName { get; set; } = string.Empty;
+    public int Quantity { get; set; }
+    public decimal UnitPrice { get; set; }
+    public decimal SubTotal { get; set; }
 }
 
 public class OrderContext

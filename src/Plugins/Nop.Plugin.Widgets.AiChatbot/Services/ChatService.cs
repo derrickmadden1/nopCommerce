@@ -247,6 +247,21 @@ public class ChatService
             sb.AppendLine("If they ask about an order, politely ask them to log in for order details.");
         }
 
+        // Shopping cart context
+        if (customer.Cart != null && customer.Cart.Items.Any())
+        {
+            sb.AppendLine("\nThe customer's current shopping cart contains:");
+            foreach (var item in customer.Cart.Items)
+            {
+                sb.AppendLine($"- {item.ProductName} (Qty: {item.Quantity}) — Unit Price: £{item.UnitPrice:F2} — Subtotal: £{item.SubTotal:F2}");
+            }
+            sb.AppendLine($"Total Basket Value: £{customer.Cart.Total:F2}");
+        }
+        else
+        {
+            sb.AppendLine("\nThe customer's shopping cart is currently empty.");
+        }
+
         // Relevant products from search
         if (!string.IsNullOrWhiteSpace(relevantProducts))
         {
