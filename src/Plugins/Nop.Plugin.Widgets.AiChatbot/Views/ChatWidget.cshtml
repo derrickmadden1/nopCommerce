@@ -457,7 +457,7 @@
                     label: action.label !== undefined ? action.label : action.Label
                 };
             }
-            appendBotMessage(reply, action || null);
+            appendBotMessage(reply, null);
 
             if (success) {
                 history.push({ role: 'user', content: text });
@@ -468,6 +468,10 @@
                     history = history.slice(-@Model.MaxConversationTurns * 2);
 
                 try { sessionStorage.setItem('ai_chat_history', JSON.stringify(history)); } catch (e) {}
+
+                if (action) {
+                    executeAction(action);
+                }
             }
         } catch (err) {
             removeTyping();
