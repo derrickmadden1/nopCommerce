@@ -1,0 +1,7 @@
+.Google-btn {
+  display: inline-block;
+  width: 150px;
+  height: 23px;
+  background-image: url('Images/Google_logo.png');
+  background-repeat: no-repeat;
+}
