@@ -128,18 +128,15 @@
                     </div>
                 </section>
 
-                @if (Model.NewsletterEnabled)
+                @if (Model.NewsletterEnabled && Model.NewsLetterSubscriptions.Count > 0)
                 {
                     <section class="fieldset-modern options-section-modern">
                         <div class="form-fields-modern checkbox-list-modern">
-                            @for (int i = 0; i < Model.NewsLetterSubscriptions.Count; i++)
-                            {
-                                <div class="checkbox-item-modern">
-                                    <input type="hidden" asp-for="NewsLetterSubscriptions[i].TypeId" />
-                                    <input type="checkbox" asp-for="NewsLetterSubscriptions[i].IsActive" id="newsletter_@i" />
-                                    <label for="newsletter_@i">@T("Account.SubscribeToNewsletter") (@Model.NewsLetterSubscriptions[i].Name)</label>
-                                </div>
-                            }
+                            <div class="checkbox-item-modern">
+                                <input type="hidden" asp-for="NewsLetterSubscriptions[0].TypeId" />
+                                <input type="checkbox" asp-for="NewsLetterSubscriptions[0].IsActive" id="newsletter_0" />
+                                <label for="newsletter_0">@T("Account.SubscribeToNewsletter")</label>
+                            </div>
                         </div>
                     </section>
                 }

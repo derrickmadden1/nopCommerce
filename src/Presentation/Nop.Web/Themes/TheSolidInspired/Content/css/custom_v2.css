@@ -5543,3 +5543,32 @@ body {
 .captcha-modern {
   margin-top: 20px;
 }
+
+/* --- REGISTRATION FORM MOBILE STYLES --- */
+@media (max-width: 768px) {
+  .registration-wrapper-modern {
+    margin: 20px 15px;
+    padding: 20px;
+  }
+  
+  .form-row-modern {
+    flex-direction: column;
+    gap: 0;
+  }
+  
+  .dob-selectors-modern {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  
+  .dob-selectors-modern select {
+    width: 100%;
+  }
+
+  .gender-options-modern {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+}
