@@ -5427,3 +5427,119 @@ body {
   }
 }
 
+
+/* --- REGISTRATION FORM MODERN --- */
+.registration-wrapper-modern {
+  max-width: 800px;
+  margin: 40px auto;
+  background: #fff;
+  padding: 40px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.05);
+  border-radius: 8px;
+}
+
+.fieldset-modern {
+  margin-bottom: 40px;
+}
+
+.fieldset-modern .fieldset-title h2 {
+  font-size: 1.2rem;
+  border-bottom: 2px solid var(--border-color);
+  padding-bottom: 10px;
+  margin-bottom: 20px;
+  color: var(--dark-grey);
+}
+
+.form-group-modern {
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.form-row-modern {
+  display: flex;
+  gap: 20px;
+}
+
+.form-row-modern .form-group-modern {
+  flex: 1;
+}
+
+.form-group-modern label {
+  font-weight: 600;
+  margin-bottom: 8px;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.form-group-modern input.form-control,
+.form-group-modern select.form-control {
+  padding: 12px 15px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  font-family: var(--body-font);
+  font-size: 1rem;
+  transition: border-color 0.3s ease;
+}
+
+.form-group-modern input.form-control:focus,
+.form-group-modern select.form-control:focus {
+  outline: none;
+  border-color: var(--brand-magenta);
+}
+
+.gender-options-modern,
+.dob-selectors-modern {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+
+.gender-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.checkbox-item-modern {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.checkbox-item-modern label {
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.registration-footer-modern {
+  margin-top: 40px;
+  text-align: center;
+}
+
+.register-btn-modern {
+  background: var(--brand-turquoise);
+  color: #fff;
+  border: none;
+  padding: 15px 40px;
+  font-family: var(--heading-font);
+  font-size: 1rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.register-btn-modern:hover {
+  background: var(--brand-magenta);
+}
+
+.captcha-modern {
+  margin-top: 20px;
+}

@@ -115,6 +115,16 @@
                                 <span asp-validation-for="ConfirmPassword"></span>
                             </div>
                         </div>
+                        @if (Model.DisplayCaptcha)
+                        {
+                            <div class="form-group-modern captcha-modern">
+                                <nop-captcha />
+                            </div>
+                        }
+                        @if (Model.HoneypotEnabled)
+                        {
+                            @Html.Raw(Html.GenerateHoneypotInput())
+                        }
                     </div>
                 </section>
 
