@@ -1,0 +1,67 @@
+@model Nop.Plugin.ExternalAuth.Apple.Models.ConfigurationModel
+
+@{
+    Layout = "_ConfigurePlugin";
+}
+
+@await Component.InvokeAsync("StoreScopeConfiguration")
+
+<form asp-controller="AppleAuthentication" asp-action="Configure" method="post">
+    <div class="cards-group">
+        <div class="card card-default">
+            <div class="card-body">
+                <p>
+                    To configure Apple authentication:<br />
+                    1. Navigate to the Apple Developer portal and create an App ID and a Services ID.<br />
+                    2. Note the Services ID as your Client ID.<br />
+                    3. Under Certificates, Identifiers & Profiles, create a private key for "Sign in with Apple".<br />
+                    4. Download the .p8 file and open it in a text editor to get your Private Key.<br />
+                    5. Fill in the fields below.
+                </p>
+                <div class="form-group row">
+                    <div class="col-md-3">
+                        <nop-label asp-for="ClientId" />
+                    </div>
+                    <div class="col-md-9">
+                        <nop-editor asp-for="ClientId" />
+                        <span asp-validation-for="ClientId"></span>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <div class="col-md-3">
+                        <nop-label asp-for="TeamId" />
+                    </div>
+                    <div class="col-md-9">
+                        <nop-editor asp-for="TeamId" />
+                        <span asp-validation-for="TeamId"></span>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <div class="col-md-3">
+                        <nop-label asp-for="KeyId" />
+                    </div>
+                    <div class="col-md-9">
+                        <nop-editor asp-for="KeyId" />
+                        <span asp-validation-for="KeyId"></span>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <div class="col-md-3">
+                        <nop-label asp-for="PrivateKey" />
+                    </div>
+                    <div class="col-md-9">
+                        <nop-textarea asp-for="PrivateKey" />
+                        <span asp-validation-for="PrivateKey"></span>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <div class="col-md-9 offset-md-3">
+                        <button type="submit" name="save" class="btn btn-primary">
+                            @T("Admin.Common.Save")
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
