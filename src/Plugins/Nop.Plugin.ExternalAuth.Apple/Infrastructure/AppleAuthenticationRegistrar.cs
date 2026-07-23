@@ -26,6 +26,7 @@ public class AppleAuthenticationRegistrar : IExternalAuthenticationRegistrar
             options.ClientId = string.IsNullOrEmpty(settings?.ClientId) ? nameof(options.ClientId) : settings.ClientId;
             options.TeamId = string.IsNullOrEmpty(settings?.TeamId) ? nameof(options.TeamId) : settings.TeamId;
             options.KeyId = string.IsNullOrEmpty(settings?.KeyId) ? nameof(options.KeyId) : settings.KeyId;
+            options.ClientSecret = "dummy";
             options.PrivateKey = (keyId, cancellationToken) => Task.FromResult<ReadOnlyMemory<char>>(settings?.PrivateKey?.AsMemory() ?? new ReadOnlyMemory<char>());
 
             //store access and refresh tokens for the further usage

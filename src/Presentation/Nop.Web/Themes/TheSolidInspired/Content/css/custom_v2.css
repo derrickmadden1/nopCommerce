@@ -5572,3 +5572,30 @@ body {
     gap: 10px;
   }
 }
+
+/* External Auth Buttons List Styling */
+.external-auth-wrapper-modern {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.external-auth-wrapper-modern .title {
+    color: #666;
+    font-size: 14px;
+    margin-bottom: 5px;
+}
+
+/* Base styles for all auth blocks to ensure neat stacking */
+.facebook-login-block, .Google-login-block, .Apple-login-block {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
+.facebook-login-block .buttons, .Google-login-block .buttons, .Apple-login-block .buttons {
+    display: flex;
+    justify-content: center;
+}
