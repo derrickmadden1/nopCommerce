@@ -1,0 +1,11 @@
+{
+  "Group": "ExternalAuth methods",
+  "FriendlyName": "Apple authentication",
+  "SystemName": "ExternalAuth.Apple",
+  "Version": "5.00.4",
+  "SupportedVersions": [ "5.00" ],
+  "Author": "Rose Cottage Croft",
+  "DisplayOrder": 5,
+  "FileName": "Nop.Plugin.ExternalAuth.Apple.dll",
+  "Description": "This plugin enables Apple authentication (login using Apple account)"
+}
