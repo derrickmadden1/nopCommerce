@@ -39,7 +39,7 @@ public class AppleAuthenticationRegistrar : IExternalAuthenticationRegistrar
                 {
                     context.HandleResponse();
 
-                    var errorUrl = context.Properties.GetString(AppleAuthenticationDefaults.ErrorCallback);
+                    var errorUrl = context.Properties?.GetString(AppleAuthenticationDefaults.ErrorCallback) ?? "/login";
                     context.Response.Redirect(errorUrl);
 
                     return Task.FromResult(0);

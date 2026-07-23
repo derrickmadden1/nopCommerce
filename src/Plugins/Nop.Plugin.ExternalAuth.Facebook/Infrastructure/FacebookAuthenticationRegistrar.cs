@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Facebook;
 using Microsoft.AspNetCore.Authentication.OAuth;
 using Microsoft.Extensions.DependencyInjection;
@@ -37,7 +37,7 @@ public class FacebookAuthenticationRegistrar : IExternalAuthenticationRegistrar
                 {
                     context.HandleResponse();
 
-                    var errorUrl = context.Properties.GetString(FacebookAuthenticationDefaults.ErrorCallback);
+                    var errorUrl = context.Properties?.GetString(FacebookAuthenticationDefaults.ErrorCallback) ?? "/login";
                     context.Response.Redirect(errorUrl);
 
                     return Task.FromResult(0);

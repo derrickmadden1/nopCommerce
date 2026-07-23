@@ -37,7 +37,7 @@ public class GoogleAuthenticationRegistrar : IExternalAuthenticationRegistrar
                 {
                     context.HandleResponse();
 
-                    var errorUrl = context.Properties.GetString(GoogleAuthenticationDefaults.ErrorCallback);
+                    var errorUrl = context.Properties?.GetString(GoogleAuthenticationDefaults.ErrorCallback) ?? "/login";
                     context.Response.Redirect(errorUrl);
 
                     return Task.FromResult(0);
