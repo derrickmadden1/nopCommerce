@@ -55,6 +55,7 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
+        flex-shrink: 0;
     }
 
     #ai-chat-header span { font-weight: 600; font-size: 15px; }
@@ -142,6 +143,7 @@
         gap: 8px;
         border-top: 1px solid #e5e7eb;
         background: white;
+        flex-shrink: 0;
     }
 
     #ai-chat-input {
@@ -172,7 +174,7 @@
     #ai-chat-send:hover { opacity: 0.88; }
     #ai-chat-send:disabled { opacity: 0.4; cursor: not-allowed; }
 
-    @@media (max-width: 480px) {
+    @media (max-width: 600px) {
         #ai-chat-bubble {
             bottom: 16px;
             right: 16px;
@@ -183,16 +185,26 @@
             top: 0;
             left: 0;
             width: 100vw;
+            width: 100%;
             height: 100vh;
+            height: 100dvh;
             bottom: 0;
             right: 0;
             border-radius: 0;
             box-shadow: none;
+            box-sizing: border-box;
         }
 
         #ai-chat-messages {
             flex: 1;
             height: auto;
+            min-height: 0;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        #ai-chat-input {
+            font-size: 16px;
         }
 
         #ai-chat-panel.open ~ #ai-chat-toggle {
@@ -259,12 +271,37 @@
         console.error('Failed to load chat history', e);
     }
 
+    // ── Mobile Viewport & Virtual Keyboard Handler ───────────────────────────
+    function updateMobileViewport() {
+        if (!isOpen) return;
+        if (window.innerWidth <= 600) {
+            if (window.visualViewport) {
+                panel.style.height = window.visualViewport.height + 'px';
+                panel.style.top = window.visualViewport.offsetTop + 'px';
+            } else {
+                panel.style.height = '100dvh';
+                panel.style.top = '0px';
+            }
+            scrollBottom();
+        } else {
+            panel.style.height = '';
+            panel.style.top = '';
+        }
+    }
+
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', updateMobileViewport);
+        window.visualViewport.addEventListener('scroll', updateMobileViewport);
+    }
+    window.addEventListener('resize', updateMobileViewport);
+
     // Load open state
     try {
         const storedOpen = sessionStorage.getItem('ai_chat_open');
         if (storedOpen === 'true') {
             isOpen = true;
             panel.classList.add('open');
+            updateMobileViewport();
             if (!initialised) {
                 initialised = true;
                 appendBotMessage(welcomeMessage, null);
@@ -277,6 +314,7 @@
         isOpen = true;
         try { sessionStorage.setItem('ai_chat_open', 'true'); } catch (e) {}
         panel.classList.add('open');
+        updateMobileViewport();
         input.focus();
 
         if (!initialised) {
@@ -289,10 +327,29 @@
         isOpen = false;
         try { sessionStorage.setItem('ai_chat_open', 'false'); } catch (e) {}
         panel.classList.remove('open');
+        panel.style.height = '';
+        panel.style.top = '';
     }
 
     toggle.addEventListener('click', () => isOpen ? closeChat() : openChat());
     closeBtn.addEventListener('click', closeChat);
+
+    input.addEventListener('focus', () => {
+        setTimeout(() => {
+            updateMobileViewport();
+            scrollBottom();
+        }, 100);
+        setTimeout(() => {
+            updateMobileViewport();
+            scrollBottom();
+        }, 300);
+    });
+
+    input.addEventListener('blur', () => {
+        setTimeout(() => {
+            updateMobileViewport();
+        }, 100);
+    });
 
     input.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
