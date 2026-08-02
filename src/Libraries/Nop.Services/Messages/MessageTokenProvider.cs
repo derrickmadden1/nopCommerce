@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using System.Net;
 using System.Text;
 using Microsoft.AspNetCore.Http;
@@ -802,26 +802,26 @@ public partial class MessageTokenProvider : IMessageTokenProvider
         var cusTotal = await _priceFormatter.FormatPriceAsync(orderTotalInCustomerCurrency, true, order.CustomerCurrencyCode, false, languageId);
 
         //subtotal
-        sb.AppendLine($"<tr style=\"text-align:right;\"><td>&nbsp;</td><td colspan=\"2\" style=\"background-color: {_templatesSettings.Color3};padding:0.6em 0.4em;\"><strong>{await _localizationService.GetResourceAsync("Messages.Order.SubTotal", languageId)}</strong></td> <td style=\"background-color: {_templatesSettings.Color3};padding:0.6em 0.4em;\"><strong>{cusSubTotal}</strong></td></tr>");
+        sb.AppendLine($"<tr style=\"text-align:right;\"><td>&nbsp;</td><td colspan=\"2\" style=\"background-color: {_templatesSettings.Color3};padding:0.6em 0.4em;\"><strong>{await _localizationService.GetResourceAsync("Messages.Order.SubTotal", languageId)}</strong></td> <td style=\"background-color: {_templatesSettings.Color3};padding:0.6em 0.4em;\"><strong>{WebUtility.HtmlEncode(cusSubTotal)}</strong></td></tr>");
 
         //discount (applied to order subtotal)
         if (displaySubTotalDiscount)
-            sb.AppendLine($"<tr style=\"text-align:right;\"><td>&nbsp;</td><td colspan=\"2\" style=\"background-color: {_templatesSettings.Color3};padding:0.6em 0.4em;\"><strong>{await _localizationService.GetResourceAsync("Messages.Order.SubTotalDiscount", languageId)}</strong></td> <td style=\"background-color: {_templatesSettings.Color3};padding:0.6em 0.4em;\"><strong>{cusSubTotalDiscount}</strong></td></tr>");
+            sb.AppendLine($"<tr style=\"text-align:right;\"><td>&nbsp;</td><td colspan=\"2\" style=\"background-color: {_templatesSettings.Color3};padding:0.6em 0.4em;\"><strong>{await _localizationService.GetResourceAsync("Messages.Order.SubTotalDiscount", languageId)}</strong></td> <td style=\"background-color: {_templatesSettings.Color3};padding:0.6em 0.4em;\"><strong>{WebUtility.HtmlEncode(cusSubTotalDiscount)}</strong></td></tr>");
 
         //shipping
         if (displayShipping)
-            sb.AppendLine($"<tr style=\"text-align:right;\"><td>&nbsp;</td><td colspan=\"2\" style=\"background-color: {_templatesSettings.Color3};padding:0.6em 0.4em;\"><strong>{await _localizationService.GetResourceAsync("Messages.Order.Shipping", languageId)}</strong></td> <td style=\"background-color: {_templatesSettings.Color3};padding:0.6em 0.4em;\"><strong>{cusShipTotal}</strong></td></tr>");
+            sb.AppendLine($"<tr style=\"text-align:right;\"><td>&nbsp;</td><td colspan=\"2\" style=\"background-color: {_templatesSettings.Color3};padding:0.6em 0.4em;\"><strong>{await _localizationService.GetResourceAsync("Messages.Order.Shipping", languageId)}</strong></td> <td style=\"background-color: {_templatesSettings.Color3};padding:0.6em 0.4em;\"><strong>{WebUtility.HtmlEncode(cusShipTotal)}</strong></td></tr>");
 
         //payment method fee
         if (displayPaymentMethodFee)
         {
             var paymentMethodFeeTitle = await _localizationService.GetResourceAsync("Messages.Order.PaymentMethodAdditionalFee", languageId);
-            sb.AppendLine($"<tr style=\"text-align:right;\"><td>&nbsp;</td><td colspan=\"2\" style=\"background-color: {_templatesSettings.Color3};padding:0.6em 0.4em;\"><strong>{paymentMethodFeeTitle}</strong></td> <td style=\"background-color: {_templatesSettings.Color3};padding:0.6em 0.4em;\"><strong>{cusPaymentMethodAdditionalFee}</strong></td></tr>");
+            sb.AppendLine($"<tr style=\"text-align:right;\"><td>&nbsp;</td><td colspan=\"2\" style=\"background-color: {_templatesSettings.Color3};padding:0.6em 0.4em;\"><strong>{paymentMethodFeeTitle}</strong></td> <td style=\"background-color: {_templatesSettings.Color3};padding:0.6em 0.4em;\"><strong>{WebUtility.HtmlEncode(cusPaymentMethodAdditionalFee)}</strong></td></tr>");
         }
 
         //tax
         if (displayTax)
-            sb.AppendLine($"<tr style=\"text-align:right;\"><td>&nbsp;</td><td colspan=\"2\" style=\"background-color: {_templatesSettings.Color3};padding:0.6em 0.4em;\"><strong>{await _localizationService.GetResourceAsync("Messages.Order.Tax", languageId)}</strong></td> <td style=\"background-color: {_templatesSettings.Color3};padding:0.6em 0.4em;\"><strong>{cusTaxTotal}</strong></td></tr>");
+            sb.AppendLine($"<tr style=\"text-align:right;\"><td>&nbsp;</td><td colspan=\"2\" style=\"background-color: {_templatesSettings.Color3};padding:0.6em 0.4em;\"><strong>{await _localizationService.GetResourceAsync("Messages.Order.Tax", languageId)}</strong></td> <td style=\"background-color: {_templatesSettings.Color3};padding:0.6em 0.4em;\"><strong>{WebUtility.HtmlEncode(cusTaxTotal)}</strong></td></tr>");
 
         if (displayTaxRates)
         {
@@ -830,13 +830,13 @@ public partial class MessageTokenProvider : IMessageTokenProvider
                 var taxRate = string.Format(await _localizationService.GetResourceAsync("Messages.Order.TaxRateLine"),
                     _priceFormatter.FormatTaxRate(item.Key));
                 var taxValue = await _priceFormatter.FormatPriceAsync(item.Value, true, order.CustomerCurrencyCode, false, languageId);
-                sb.AppendLine($"<tr style=\"text-align:right;\"><td>&nbsp;</td><td colspan=\"2\" style=\"background-color: {_templatesSettings.Color3};padding:0.6em 0.4em;\"><strong>{taxRate}</strong></td> <td style=\"background-color: {_templatesSettings.Color3};padding:0.6em 0.4em;\"><strong>{taxValue}</strong></td></tr>");
+                sb.AppendLine($"<tr style=\"text-align:right;\"><td>&nbsp;</td><td colspan=\"2\" style=\"background-color: {_templatesSettings.Color3};padding:0.6em 0.4em;\"><strong>{taxRate}</strong></td> <td style=\"background-color: {_templatesSettings.Color3};padding:0.6em 0.4em;\"><strong>{WebUtility.HtmlEncode(taxValue)}</strong></td></tr>");
             }
         }
 
         //discount
         if (displayDiscount)
-            sb.AppendLine($"<tr style=\"text-align:right;\"><td>&nbsp;</td><td colspan=\"2\" style=\"background-color: {_templatesSettings.Color3};padding:0.6em 0.4em;\"><strong>{await _localizationService.GetResourceAsync("Messages.Order.TotalDiscount", languageId)}</strong></td> <td style=\"background-color: {_templatesSettings.Color3};padding:0.6em 0.4em;\"><strong>{cusDiscount}</strong></td></tr>");
+            sb.AppendLine($"<tr style=\"text-align:right;\"><td>&nbsp;</td><td colspan=\"2\" style=\"background-color: {_templatesSettings.Color3};padding:0.6em 0.4em;\"><strong>{await _localizationService.GetResourceAsync("Messages.Order.TotalDiscount", languageId)}</strong></td> <td style=\"background-color: {_templatesSettings.Color3};padding:0.6em 0.4em;\"><strong>{WebUtility.HtmlEncode(cusDiscount)}</strong></td></tr>");
 
         //gift cards
         foreach (var gcuh in await _giftCardService.GetGiftCardUsageHistoryAsync(order))
@@ -845,7 +845,7 @@ public partial class MessageTokenProvider : IMessageTokenProvider
                 WebUtility.HtmlEncode((await _giftCardService.GetGiftCardByIdAsync(gcuh.GiftCardId))?.GiftCardCouponCode));
             var giftCardAmount = await _priceFormatter.FormatPriceAsync(-_currencyService.ConvertCurrency(gcuh.UsedValue, order.CurrencyRate), true, order.CustomerCurrencyCode,
                 false, languageId);
-            sb.AppendLine($"<tr style=\"text-align:right;\"><td>&nbsp;</td><td colspan=\"2\" style=\"background-color: {_templatesSettings.Color3};padding:0.6em 0.4em;\"><strong>{giftCardText}</strong></td> <td style=\"background-color: {_templatesSettings.Color3};padding:0.6em 0.4em;\"><strong>{giftCardAmount}</strong></td></tr>");
+            sb.AppendLine($"<tr style=\"text-align:right;\"><td>&nbsp;</td><td colspan=\"2\" style=\"background-color: {_templatesSettings.Color3};padding:0.6em 0.4em;\"><strong>{giftCardText}</strong></td> <td style=\"background-color: {_templatesSettings.Color3};padding:0.6em 0.4em;\"><strong>{WebUtility.HtmlEncode(giftCardAmount)}</strong></td></tr>");
         }
 
         //reward points
@@ -855,11 +855,11 @@ public partial class MessageTokenProvider : IMessageTokenProvider
                 -redeemedRewardPointsEntry.Points);
             var rpAmount = await _priceFormatter.FormatPriceAsync(-_currencyService.ConvertCurrency(redeemedRewardPointsEntry.UsedAmount, order.CurrencyRate), true,
                 order.CustomerCurrencyCode, false, languageId);
-            sb.AppendLine($"<tr style=\"text-align:right;\"><td>&nbsp;</td><td colspan=\"2\" style=\"background-color: {_templatesSettings.Color3};padding:0.6em 0.4em;\"><strong>{rpTitle}</strong></td> <td style=\"background-color: {_templatesSettings.Color3};padding:0.6em 0.4em;\"><strong>{rpAmount}</strong></td></tr>");
+            sb.AppendLine($"<tr style=\"text-align:right;\"><td>&nbsp;</td><td colspan=\"2\" style=\"background-color: {_templatesSettings.Color3};padding:0.6em 0.4em;\"><strong>{rpTitle}</strong></td> <td style=\"background-color: {_templatesSettings.Color3};padding:0.6em 0.4em;\"><strong>{WebUtility.HtmlEncode(rpAmount)}</strong></td></tr>");
         }
 
         //total
-        sb.AppendLine($"<tr style=\"text-align:right;\"><td>&nbsp;</td><td colspan=\"2\" style=\"background-color: {_templatesSettings.Color3};padding:0.6em 0.4em;\"><strong>{await _localizationService.GetResourceAsync("Messages.Order.OrderTotal", languageId)}</strong></td> <td style=\"background-color: {_templatesSettings.Color3};padding:0.6em 0.4em;\"><strong>{cusTotal}</strong></td></tr>");
+        sb.AppendLine($"<tr style=\"text-align:right;\"><td>&nbsp;</td><td colspan=\"2\" style=\"background-color: {_templatesSettings.Color3};padding:0.6em 0.4em;\"><strong>{await _localizationService.GetResourceAsync("Messages.Order.OrderTotal", languageId)}</strong></td> <td style=\"background-color: {_templatesSettings.Color3};padding:0.6em 0.4em;\"><strong>{WebUtility.HtmlEncode(cusTotal)}</strong></td></tr>");
     }
 
     /// <summary>
@@ -1572,7 +1572,7 @@ public partial class MessageTokenProvider : IMessageTokenProvider
             //price
             var (unitPrice, _, _) = await _shoppingCartService.GetUnitPriceAsync(item, true);
             var (price, _) = await _taxService.GetProductPriceAsync(product, unitPrice);
-            sb.AppendLine($"<td style=\"padding: 0.6em 0.4em;text-align: right;\">{await _priceFormatter.FormatPriceAsync(price)}</td>");
+            sb.AppendLine($"<td style=\"padding: 0.6em 0.4em;text-align: right;\">{WebUtility.HtmlEncode(await _priceFormatter.FormatPriceAsync(price))}</td>");
 
             //quantity
             sb.AppendLine($"<td style=\"padding: 0.6em 0.4em;text-align: center;\">{item.Quantity}</td>");
@@ -1580,7 +1580,7 @@ public partial class MessageTokenProvider : IMessageTokenProvider
             //total
             var (subTotal, _, _, _) = await _shoppingCartService.GetSubTotalAsync(item, true);
             var (subTotalPrice, _) = await _taxService.GetProductPriceAsync(product, subTotal);
-            sb.AppendLine($"<td style=\"padding: 0.6em 0.4em;text-align: right;\">{await _priceFormatter.FormatPriceAsync(subTotalPrice)}</td>");
+            sb.AppendLine($"<td style=\"padding: 0.6em 0.4em;text-align: right;\">{WebUtility.HtmlEncode(await _priceFormatter.FormatPriceAsync(subTotalPrice))}</td>");
 
             sb.AppendLine("</tr>");
         }
