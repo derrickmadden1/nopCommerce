@@ -932,8 +932,9 @@ public class PayPalCommerceServiceManager
     /// Prepare patches to update an order
     /// </summary>
     /// <param name="purchaseUnit">Purchase unit details</param>
+    /// <param name="existingPurchaseUnit">Existing purchase unit from PayPal</param>
     /// <returns>List of patch objects</returns>
-    private static List<Patch<object>> PreparePatches(PurchaseUnit purchaseUnit)
+    private static List<Patch<object>> PreparePatches(PurchaseUnit purchaseUnit, PurchaseUnit existingPurchaseUnit = null)
     {
         var patches = new List<Patch<object>>
         {
@@ -942,53 +943,56 @@ public class PayPalCommerceServiceManager
                 Op = PatchOpType.REPLACE.ToString().ToLower(),
                 Path = "/purchase_units/@reference_id=='default'/amount",
                 Value = purchaseUnit.Amount
-            },
-            new()
-            {
-                Op = PatchOpType.REPLACE.ToString().ToLower(),
-                Path = "/purchase_units/@reference_id=='default'/items",
-                Value = purchaseUnit.Items
-            },
-            new()
-            {
-                Op = PatchOpType.REPLACE.ToString().ToLower(),
-                Path = "/purchase_units/@reference_id=='default'/supplementary_data/card",
-                Value = purchaseUnit.SupplementaryData.Card
             }
         };
 
-        if (purchaseUnit.Shipping?.Name is not null)
+        if (purchaseUnit.Items?.Any() == true)
         {
+            var op = existingPurchaseUnit?.Items is not null ? PatchOpType.REPLACE : PatchOpType.ADD;
             patches.Add(new()
             {
-                Op = PatchOpType.REPLACE.ToString().ToLower(),
+                Op = op.ToString().ToLower(),
+                Path = "/purchase_units/@reference_id=='default'/items",
+                Value = purchaseUnit.Items
+            });
+        }
+
+        if (purchaseUnit.Shipping?.Name is not null)
+        {
+            var op = existingPurchaseUnit?.Shipping?.Name is not null ? PatchOpType.REPLACE : PatchOpType.ADD;
+            patches.Add(new()
+            {
+                Op = op.ToString().ToLower(),
                 Path = "/purchase_units/@reference_id=='default'/shipping/name",
                 Value = purchaseUnit.Shipping.Name
             });
         }
         if (purchaseUnit.Shipping?.Address is not null)
         {
+            var op = existingPurchaseUnit?.Shipping?.Address is not null ? PatchOpType.REPLACE : PatchOpType.ADD;
             patches.Add(new()
             {
-                Op = PatchOpType.REPLACE.ToString().ToLower(),
+                Op = op.ToString().ToLower(),
                 Path = "/purchase_units/@reference_id=='default'/shipping/address",
                 Value = purchaseUnit.Shipping.Address
             });
         }
         if (purchaseUnit.Shipping?.Options is not null)
         {
+            var op = existingPurchaseUnit?.Shipping?.Options is not null ? PatchOpType.REPLACE : PatchOpType.ADD;
             patches.Add(new()
             {
-                Op = PatchOpType.REPLACE.ToString().ToLower(),
+                Op = op.ToString().ToLower(),
                 Path = "/purchase_units/@reference_id=='default'/shipping/options",
                 Value = purchaseUnit.Shipping.Options
             });
         }
         if (!string.IsNullOrEmpty(purchaseUnit.Shipping?.Type))
         {
+            var op = !string.IsNullOrEmpty(existingPurchaseUnit?.Shipping?.Type) ? PatchOpType.REPLACE : PatchOpType.ADD;
             patches.Add(new()
             {
-                Op = PatchOpType.REPLACE.ToString().ToLower(),
+                Op = op.ToString().ToLower(),
                 Path = "/purchase_units/@reference_id=='default'/shipping/type",
                 Value = purchaseUnit.Shipping.Type
             });
@@ -1784,7 +1788,7 @@ public class PayPalCommerceServiceManager
             else
             {
                 //order exists, so just update some details
-                var patches = PreparePatches(purchaseUnit);
+                var patches = PreparePatches(purchaseUnit, order?.PurchaseUnits?.FirstOrDefault());
                 patches.Add(new()
                 {
                     Op = PatchOpType.REPLACE.ToString().ToLower(),
@@ -1927,7 +1931,7 @@ public class PayPalCommerceServiceManager
                 Items = items,
                 Amount = orderAmount,
                 SupplementaryData = new() { Card = cardData }
-            });
+            }, unit);
             var updateRequest = new UpdateOrderRequest<object>(patches) { OrderId = order.Id };
             await _httpClient.RequestAsync<UpdateOrderRequest<object>, EmptyResponse>(updateRequest, settings);
 
@@ -2065,7 +2069,7 @@ public class PayPalCommerceServiceManager
                 Items = items,
                 Amount = orderAmount,
                 SupplementaryData = new() { Card = cardData }
-            });
+            }, unit);
             var updateRequest = new UpdateOrderRequest<object>(patches) { OrderId = order.Id };
             await _httpClient.RequestAsync<UpdateOrderRequest<object>, EmptyResponse>(updateRequest, settings);
 
