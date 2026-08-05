@@ -248,11 +248,17 @@
     const sendBtn = document.getElementById('ai-chat-send');
 
     let history = [];
+    let sessionGuid = null;
     let isOpen = false;
     let initialised = false;
 
-    // Load history from sessionStorage
+    // Load sessionGuid and history from sessionStorage
     try {
+        const storedGuid = sessionStorage.getItem('ai_chat_session_guid');
+        if (storedGuid) {
+            sessionGuid = storedGuid;
+        }
+
         const storedHistory = sessionStorage.getItem('ai_chat_history');
         if (storedHistory) {
             history = JSON.parse(storedHistory);
@@ -520,11 +526,17 @@
             const response = await fetch(chatEndpoint, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: text, history: history })
+                body: JSON.stringify({ message: text, history: history, sessionGuid: sessionGuid })
             });
 
             const data = await response.json();
             removeTyping();
+
+            const returnedGuid = data.sessionGuid !== undefined ? data.sessionGuid : data.SessionGuid;
+            if (returnedGuid) {
+                sessionGuid = returnedGuid;
+                try { sessionStorage.setItem('ai_chat_session_guid', sessionGuid); } catch (e) {}
+            }
 
             const success = data.success !== undefined ? data.success : data.Success;
             const responseText = data.response !== undefined ? data.response : data.Response;

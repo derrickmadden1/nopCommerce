@@ -2,12 +2,14 @@ namespace Nop.Plugin.Widgets.AiChatbot.Models;
 
 public class ChatRequest
 {
+    public Guid? SessionGuid { get; set; }
     public string Message { get; set; } = string.Empty;
     public List<ConversationTurn> History { get; set; } = new();
 }
 
 public class ChatResponse
 {
+    public Guid? SessionGuid { get; set; }
     public string Response { get; set; } = string.Empty;
     public bool Success { get; set; } = true;
     public string? Error { get; set; }
@@ -103,3 +105,28 @@ public class AiAction
     public int Quantity { get; set; } = 1;
     public string? Label { get; set; }
 }
+
+public class ChatSessionItemModel
+{
+    public int Id { get; set; }
+    public Guid SessionGuid { get; set; }
+    public int CustomerId { get; set; }
+    public string CustomerName { get; set; } = string.Empty;
+    public string CustomerEmail { get; set; } = string.Empty;
+    public int MessageCount { get; set; }
+    public DateTime CreatedOnUtc { get; set; }
+    public DateTime UpdatedOnUtc { get; set; }
+}
+
+public class ChatSessionDetailsModel
+{
+    public int Id { get; set; }
+    public Guid SessionGuid { get; set; }
+    public int CustomerId { get; set; }
+    public string CustomerName { get; set; } = string.Empty;
+    public string CustomerEmail { get; set; } = string.Empty;
+    public DateTime CreatedOnUtc { get; set; }
+    public DateTime UpdatedOnUtc { get; set; }
+    public List<ConversationTurn> Turns { get; set; } = new();
+}
+
