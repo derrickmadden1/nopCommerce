@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
+using Nop.Core;
 using Nop.Plugin.Widgets.AiChatbot.Models;
 using Nop.Plugin.Widgets.AiChatbot.Services;
 using Nop.Services.Configuration;
+using Nop.Services.Customers;
 using Nop.Services.Messages;
 using Nop.Web.Framework;
 using Nop.Web.Framework.Controllers;
@@ -13,17 +15,26 @@ public class AiChatbotController : BasePluginController
 {
     private readonly AiChatbotSettings _settings;
     private readonly ChatService _chatService;
+    private readonly ChatSessionService _chatSessionService;
+    private readonly IWorkContext _workContext;
+    private readonly ICustomerService _customerService;
     private readonly ISettingService _settingService;
     private readonly INotificationService _notificationService;
 
     public AiChatbotController(
         AiChatbotSettings settings,
         ChatService chatService,
+        ChatSessionService chatSessionService,
+        IWorkContext workContext,
+        ICustomerService customerService,
         ISettingService settingService,
         INotificationService notificationService)
     {
         _settings = settings;
         _chatService = chatService;
+        _chatSessionService = chatSessionService;
+        _workContext = workContext;
+        _customerService = customerService;
         _settingService = settingService;
         _notificationService = notificationService;
     }
@@ -45,7 +56,21 @@ public class AiChatbotController : BasePluginController
         // Basic input sanitation
         request.Message = request.Message.Trim()[..Math.Min(request.Message.Trim().Length, 500)];
 
+        var currentCustomer = await _workContext.GetCurrentCustomerAsync();
+        var isGuest = currentCustomer == null || await _customerService.IsGuestAsync(currentCustomer);
+        var customerId = isGuest ? 0 : currentCustomer!.Id;
+
+        // Fetch or assign session
+        var session = await _chatSessionService.GetOrCreateSessionAsync(request.SessionGuid, customerId);
+
         var response = await _chatService.GetResponseAsync(request);
+        response.SessionGuid = session.SessionGuid;
+
+        if (response.Success && !string.IsNullOrWhiteSpace(response.Response))
+        {
+            await _chatSessionService.SaveTurnAsync(session.SessionGuid, customerId, request.Message, response.Response);
+        }
+
         return Json(response);
     }
 
@@ -123,5 +148,38 @@ public class AiChatbotController : BasePluginController
         _notificationService.SuccessNotification("AI Chatbot settings saved.");
 
         return RedirectToAction("Configure");
+    }
+
+    [AuthorizeAdmin]
+    [Area(AreaNames.ADMIN)]
+    public async Task<IActionResult> History(int pageIndex = 0, int pageSize = 20)
+    {
+        var model = await _chatSessionService.GetPagedSessionsAsync(pageIndex, pageSize);
+        return View("~/Plugins/Widgets.AiChatbot/Views/History.cshtml", model);
+    }
+
+    [AuthorizeAdmin]
+    [Area(AreaNames.ADMIN)]
+    public async Task<IActionResult> HistoryDetails(int id)
+    {
+        var model = await _chatSessionService.GetSessionDetailsAsync(id);
+        if (model == null)
+        {
+            _notificationService.ErrorNotification("Chat session not found.");
+            return RedirectToAction("History");
+        }
+
+        return View("~/Plugins/Widgets.AiChatbot/Views/HistoryDetails.cshtml", model);
+    }
+
+    [AuthorizeAdmin]
+    [Area(AreaNames.ADMIN)]
+    [HttpPost]
+    [AutoValidateAntiforgeryToken]
+    public async Task<IActionResult> DeleteHistory(int id)
+    {
+        await _chatSessionService.DeleteSessionAsync(id);
+        _notificationService.SuccessNotification("Chat session deleted.");
+        return RedirectToAction("History");
     }
 }

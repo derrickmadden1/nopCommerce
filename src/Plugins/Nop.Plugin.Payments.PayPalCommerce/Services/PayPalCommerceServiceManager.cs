@@ -1896,7 +1896,12 @@ public class PayPalCommerceServiceManager
                 CurrencyCode = currencyCode,
                 ShippingIsRequired = shippingIsRequired
             };
-            var shipping = await PrepareUpdatedShippingAsync(details, order.Payer?.EmailAddress, selectedAddress, selectedOption);
+            var payerEmail = order.Payer?.EmailAddress 
+                ?? order.PaymentSource?.PayPal?.EmailAddress 
+                ?? order.PaymentSource?.Venmo?.EmailAddress 
+                ?? order.PaymentSource?.GooglePay?.EmailAddress 
+                ?? order.PaymentSource?.ApplePay?.EmailAddress;
+            var shipping = await PrepareUpdatedShippingAsync(details, payerEmail, selectedAddress, selectedOption);
             if (shipping is null)
                 return false;
 
@@ -2073,35 +2078,48 @@ public class PayPalCommerceServiceManager
             var updateRequest = new UpdateOrderRequest<object>(patches) { OrderId = order.Id };
             await _httpClient.RequestAsync<UpdateOrderRequest<object>, EmptyResponse>(updateRequest, settings);
 
-            //place order immediately, if the appropriate setting is enabled
-            if (placement == ButtonPlacement.PaymentMethod)
-                return (order, settings.SkipOrderConfirmPage);
-
-            var fallbackEmail = order.Payer?.EmailAddress 
+            var payer = order.Payer ?? (Payer)order.PaymentSource?.PayPal ?? (Payer)order.PaymentSource?.Venmo;
+            var payerAddress = payer?.Address ?? order.PaymentSource?.Card?.BillingAddress;
+            var payerEmail = payer?.EmailAddress 
+                ?? order.PaymentSource?.PayPal?.EmailAddress 
+                ?? order.PaymentSource?.Venmo?.EmailAddress 
                 ?? order.PaymentSource?.GooglePay?.EmailAddress 
-                ?? order.PaymentSource?.ApplePay?.EmailAddress 
-                ?? customer.Email;
+                ?? order.PaymentSource?.ApplePay?.EmailAddress;
+
+            var fallbackEmail = payerEmail ?? customer.Email;
 
             if (string.IsNullOrEmpty(fallbackEmail) || !CommonHelper.IsValidEmail(fallbackEmail))
             {
                 fallbackEmail = $"guest_{Guid.NewGuid():N}@noemail.com";
             }
 
+            var payerFirstName = payer?.Name?.GivenName 
+                ?? order.PaymentSource?.GooglePay?.Name 
+                ?? order.PaymentSource?.ApplePay?.Name 
+                ?? (order.PaymentSource?.Card?.Name?.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault())
+                ?? customer.FirstName;
+
+            var payerLastName = payer?.Name?.Surname 
+                ?? (order.PaymentSource?.Card?.Name?.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length > 1 
+                    ? string.Join(" ", order.PaymentSource.Card.Name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Skip(1)) 
+                    : null)
+                ?? customer.LastName;
+
             //or update billing details and redirect customer to the confirmation page
-            if (order.Payer is not null)
+            if (payer is not null || payerAddress is not null)
             {
-                var billingCountry = await _countryService.GetCountryByTwoLetterIsoCodeAsync(order.Payer.Address?.CountryCode);
+                var billingCountry = await _countryService.GetCountryByTwoLetterIsoCodeAsync(payerAddress?.CountryCode);
                 var billingState = await _stateProvinceService
-                    .GetStateProvinceByAbbreviationAsync(order.Payer.Address?.AdminArea1, billingCountry?.Id);
+                    .GetStateProvinceByAbbreviationAsync(payerAddress?.AdminArea1, billingCountry?.Id);
                 var billingAddress = await PrepareCustomerAddressAsync(customer, new()
                 {
                     Email = fallbackEmail,
-                    FirstName = order.Payer.Name?.GivenName ?? order.PaymentSource?.GooglePay?.Name ?? order.PaymentSource?.ApplePay?.Name ?? customer.FirstName,
-                    LastName = order.Payer.Name?.Surname ?? customer.LastName,
-                    Address1 = order.Payer.Address?.AddressLine1,
-                    Address2 = order.Payer.Address?.AddressLine2,
-                    City = order.Payer.Address?.AdminArea2,
-                    ZipPostalCode = order.Payer.Address?.PostalCode,
+                    FirstName = payerFirstName,
+                    LastName = payerLastName,
+                    Address1 = payerAddress?.AddressLine1,
+                    Address2 = payerAddress?.AddressLine2,
+                    City = payerAddress?.AdminArea2,
+                    ZipPostalCode = payerAddress?.PostalCode,
                     StateProvinceId = billingState?.Id,
                     CountryId = billingCountry?.Id
                 });
@@ -2120,11 +2138,22 @@ public class PayPalCommerceServiceManager
                 var shippingCountry = await _countryService.GetCountryByTwoLetterIsoCodeAsync(shippingAddress.CountryCode);
                 var shippingState = await _stateProvinceService
                     .GetStateProvinceByAbbreviationAsync(shippingAddress.AdminArea1, shippingCountry?.Id);
+
+                var shippingName = shipping.Name?.FullName;
+                var shippingFirstName = payerFirstName 
+                    ?? (shippingName?.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault()) 
+                    ?? customer.FirstName;
+                var shippingLastName = payerLastName 
+                    ?? (shippingName?.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length > 1 
+                        ? string.Join(" ", shippingName.Split(' ', StringSplitOptions.RemoveEmptyEntries).Skip(1)) 
+                        : null) 
+                    ?? customer.LastName;
+
                 var newShippingAddress = await PrepareCustomerAddressAsync(customer, new()
                 {
                     Email = fallbackEmail,
-                    FirstName = order.Payer?.Name?.GivenName ?? order.PaymentSource?.GooglePay?.Name ?? order.PaymentSource?.ApplePay?.Name ?? customer.FirstName,
-                    LastName = order.Payer?.Name?.Surname ?? customer.LastName,
+                    FirstName = shippingFirstName,
+                    LastName = shippingLastName,
                     Address1 = shippingAddress.AddressLine1,
                     Address2 = shippingAddress.AddressLine2,
                     City = shippingAddress.AdminArea2,
@@ -2152,7 +2181,16 @@ public class PayPalCommerceServiceManager
                 await _addressService.UpdateAddressAsync(finalBilling);
             }
 
+            if (string.IsNullOrEmpty(customer.Email) && CommonHelper.IsValidEmail(fallbackEmail) && !fallbackEmail.EndsWith("@noemail.com", StringComparison.OrdinalIgnoreCase))
+            {
+                customer.Email = fallbackEmail;
+            }
+
             await _customerService.UpdateCustomerAsync(customer);
+
+            //place order immediately, if the appropriate setting is enabled
+            if (placement == ButtonPlacement.PaymentMethod)
+                return (order, settings.SkipOrderConfirmPage);
 
             return (order, settings.SkipOrderConfirmPage);
         });

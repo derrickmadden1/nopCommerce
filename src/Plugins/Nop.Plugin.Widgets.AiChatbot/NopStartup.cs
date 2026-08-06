@@ -13,6 +13,7 @@ public class NopStartup : INopStartup
         services.AddScoped<CustomerContextService>();
         services.AddScoped<ProductSearchService>();
         services.AddScoped<ChatService>();
+        services.AddScoped<ChatSessionService>();
     }
 
     public void Configure(IApplicationBuilder app) { }
