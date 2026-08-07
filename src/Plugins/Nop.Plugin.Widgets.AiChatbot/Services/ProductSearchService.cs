@@ -1,4 +1,4 @@
-﻿using Azure;
+using Azure;
 using Azure.Search.Documents;
 using Azure.Search.Documents.Models;
 using Microsoft.Extensions.Logging;
@@ -12,6 +12,7 @@ public class ProductSearchResult
     public string? ShortDescription { get; set; }
     public string Price { get; set; } = string.Empty;
     public string? Url { get; set; }
+    public List<string> CategoryNames { get; set; } = new();
 }
 
 /// <summary>
@@ -67,6 +68,19 @@ public class ProductSearchService
                 var desc = result.Document["shortDescription"]?.ToString();
                 var price = result.Document["price"]?.ToString();
 
+                var categoryNames = new List<string>();
+                if (result.Document.TryGetValue("categoryNames", out var catsObj) && catsObj != null)
+                {
+                    if (catsObj is System.Collections.IEnumerable catList && !(catsObj is string))
+                    {
+                        foreach (var cat in catList)
+                        {
+                            if (cat != null)
+                                categoryNames.Add(cat.ToString()!);
+                        }
+                    }
+                }
+
                 if (id != null && name != null && int.TryParse(id, out var productId))
                 {
                     results.Add(new ProductSearchResult
@@ -74,7 +88,8 @@ public class ProductSearchService
                         Id = productId,
                         Name = name,
                         ShortDescription = desc,
-                        Price = price != null ? $"£{decimal.Parse(price):F2}" : string.Empty
+                        Price = price != null && decimal.TryParse(price, out var p) ? $"£{p:F2}" : price ?? string.Empty,
+                        CategoryNames = categoryNames
                     });
                 }
             }
@@ -90,7 +105,7 @@ public class ProductSearchService
 
     /// <summary>
     /// Formats search results as a string for injection into the system prompt.
-    /// Includes product IDs so the AI can reference them in actions.
+    /// Includes product IDs and category names so the AI can reference them accurately.
     /// </summary>
     public static string FormatForPrompt(List<ProductSearchResult> results)
     {
@@ -98,7 +113,15 @@ public class ProductSearchService
             return string.Empty;
 
         return string.Join("\n", results.Select(r =>
-            $"- [ID:{r.Id}] {r.Name} ({r.Price})" +
-            (r.ShortDescription != null ? $": {r.ShortDescription}" : "")));
+        {
+            var categories = r.CategoryNames.Any()
+                ? $" [Categories: {string.Join(", ", r.CategoryNames)}]"
+                : string.Empty;
+            var desc = !string.IsNullOrWhiteSpace(r.ShortDescription)
+                ? $": {r.ShortDescription}"
+                : string.Empty;
+
+            return $"- [ID:{r.Id}] {r.Name} ({r.Price}){categories}{desc}";
+        }));
     }
 }
