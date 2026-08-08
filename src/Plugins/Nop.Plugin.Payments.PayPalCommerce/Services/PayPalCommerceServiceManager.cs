@@ -1704,8 +1704,8 @@ public class PayPalCommerceServiceManager
                 var context = PrepareOrderContext(settings, details, paymentRequest.OrderGuid.ToString(), isApplepay);
                 var payer = await PrepareBillingDetailsAsync(settings, details);
 
-                //only registered customers can save payment tokens
-                var vault = !settings.UseVault || isGuest ? null : new VaultInstruction
+                //only registered customers can save payment tokens if saveCard is requested or recurring item
+                var vault = !settings.UseVault || isGuest || (!saveCard && !isRecurring) ? null : new VaultInstruction
                 {
                     UsageType = VaultUsageType.MERCHANT.ToString().ToUpper(),
                     CustomerType = VaultUsageType.CONSUMER.ToString().ToUpper(),
