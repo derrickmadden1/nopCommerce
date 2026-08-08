@@ -152,6 +152,28 @@ public class PayPalCommerceModelFactory
     /// A task that represents the asynchronous operation
     /// The task result contains the order model
     /// </returns>
+    private static string SanitizeUserErrorMessage(string error, string fallbackMessage)
+    {
+        if (string.IsNullOrEmpty(error))
+            return fallbackMessage;
+
+        // If the error contains raw API JSON, exceptions, HTTP error codes or technical details, replace with a clean fallback message
+        if (error.Contains('{') || error.Contains('}') ||
+            error.Contains("NopException", StringComparison.OrdinalIgnoreCase) ||
+            error.Contains("Failed request", StringComparison.OrdinalIgnoreCase) ||
+            error.Contains("UNPROCESSABLE_ENTITY", StringComparison.OrdinalIgnoreCase) ||
+            error.Contains("INVALID_REQUEST", StringComparison.OrdinalIgnoreCase) ||
+            error.Contains("NOT_ENABLED", StringComparison.OrdinalIgnoreCase) ||
+            error.Contains("AUTHENTICATION_FAILURE", StringComparison.OrdinalIgnoreCase) ||
+            error.Contains("System.", StringComparison.OrdinalIgnoreCase) ||
+            error.Contains("Exception", StringComparison.OrdinalIgnoreCase))
+        {
+            return fallbackMessage;
+        }
+
+        return error;
+    }
+
     public async Task<OrderModel> PrepareOrderModelAsync(ButtonPlacement placement, string orderId, string paymentSource, int? cardId, bool saveCard)
     {
         var model = new OrderModel();
@@ -163,9 +185,10 @@ public class PayPalCommerceModelFactory
             : await _serviceManager.GetOrderAsync(_settings, orderId);
         if (!string.IsNullOrEmpty(error) || order is null || string.IsNullOrEmpty(order.Id))
         {
+            var fallback = await _localizationService.GetResourceAsync("Plugins.Payments.PayPalCommerce.Order.Error");
             model.Error = string.IsNullOrEmpty(error)
-                ? await _localizationService.GetResourceAsync("Plugins.Payments.PayPalCommerce.Order.Error")
-                : error;
+                ? fallback
+                : SanitizeUserErrorMessage(error, fallback);
             return model;
         }
 
