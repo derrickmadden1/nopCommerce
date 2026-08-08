@@ -1,4 +1,4 @@
-﻿@model PaymentInfoModel
+@model PaymentInfoModel
 
 @{
     //container names
@@ -353,6 +353,9 @@
     }
 
     function errorCallback(err) {
+        if (err && err.message && err.message.indexOf('Expected an order id to be passed') !== -1) {
+            return;
+        }
         displayBarNotification(err.message, 'error', 0);
     }
 

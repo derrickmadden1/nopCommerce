@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using Nop.Plugin.Payments.PayPalCommerce.Domain;
 using Nop.Plugin.Payments.PayPalCommerce.Models.Admin;
 using Nop.Plugin.Payments.PayPalCommerce.Models.Public;
@@ -161,7 +161,7 @@ public class PayPalCommerceModelFactory
         var (order, error) = string.IsNullOrEmpty(orderId)
             ? await _serviceManager.CreateOrderAsync(_settings, placement, paymentSource, cardId, saveCard)
             : await _serviceManager.GetOrderAsync(_settings, orderId);
-        if (!string.IsNullOrEmpty(error) || order is null)
+        if (!string.IsNullOrEmpty(error) || order is null || string.IsNullOrEmpty(order.Id))
         {
             model.Error = string.IsNullOrEmpty(error)
                 ? await _localizationService.GetResourceAsync("Plugins.Payments.PayPalCommerce.Order.Error")

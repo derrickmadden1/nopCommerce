@@ -678,20 +678,20 @@ public class PayPalCommerceServiceManager
         }
 
         var (shippingOptions, pickupPoints) = await PrepareShippingOptionsAsync(details);
-        if ((!shippingOptions?.Any() ?? true) && details.ShippingAddress is not null)
+        if ((!shippingOptions?.Any() ?? true) && details.ShippingAddress is not null && details.Placement == ButtonPlacement.PaymentMethod)
             throw new NopException("No available shipping options");
 
-        var selectedShippingOption = shippingOptions.FirstOrDefault();
-        if (!string.IsNullOrEmpty(selectedOptionId))
+        var selectedShippingOption = shippingOptions?.FirstOrDefault();
+        if (!string.IsNullOrEmpty(selectedOptionId) && shippingOptions?.Any() == true)
         {
             var existingOption = shippingOptions
-                .FirstOrDefault(option => string.Equals(option.Name, selectedOptionId, StringComparison.InvariantCultureIgnoreCase))
-                ?? throw new NopException("Selected shipping option is unavailable");
+                .FirstOrDefault(option => string.Equals(option.Name, selectedOptionId, StringComparison.InvariantCultureIgnoreCase));
 
-            selectedShippingOption = existingOption;
+            if (existingOption is not null)
+                selectedShippingOption = existingOption;
         }
 
-        if (selectedShippingOption is null)
+        if (selectedShippingOption is null && details.Placement == ButtonPlacement.PaymentMethod)
             throw new NopException("Selected shipping option is unavailable");
 
         PickupPoint pickupPoint = null;
