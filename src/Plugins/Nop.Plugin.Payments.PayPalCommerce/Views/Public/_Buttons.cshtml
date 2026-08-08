@@ -531,9 +531,12 @@
                 } else if (data.redirect) {
                     setLocation(data.redirect);
                     orderId = null;
-                } else {
+                } else if (data.orderId) {
                     orderId = data.orderId;
                     status = data.status;
+                } else {
+                    displayBarNotification('Failed to create PayPal order. Please try again.', 'error', 0);
+                    orderId = null;
                 }
             },
             complete: function (jqXHR, textStatus) {
@@ -553,6 +556,19 @@
 
         return orderId;
     }
+
+    function cancelCallback(data) {
+        if (isProductPage) {
+            setLocation('@Url.RouteUrl(NopRouteNames.General.CART)');
+        }
+    }
+
+    function errorCallback(err) {
+        if (err && err.message && err.message.indexOf('Expected an order id to be passed') !== -1) {
+            return;
+        }
+        displayBarNotification(err.message, 'error', 0);
+    };
 
     function approveCallback(data, actions) {
         var redirectUrl = '';
@@ -599,15 +615,7 @@
         setLocation(redirectUrl);
     }
 
-    function cancelCallback(data) {
-        if (isProductPage) {
-            setLocation('@Url.RouteUrl(NopRouteNames.General.CART)');
-        }
-    }
 
-    function errorCallback(err) {
-        displayBarNotification(err.message, 'error', 0);
-    }
 
     function shippingAddressChangeCallback(data, actions) {
         //shipping address was changed on the PayPal's side, we should update it here as well
