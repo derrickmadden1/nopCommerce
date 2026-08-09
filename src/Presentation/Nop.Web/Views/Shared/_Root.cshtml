@@ -1,4 +1,4 @@
-﻿@{
+@{
     Layout = "_Root.Head";
 }
 @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.BodyStartHtmlTagAfter })
@@ -26,3 +26,25 @@
 </div>
 @await Component.InvokeAsync(typeof(EuCookieLawViewComponent))
 @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.BodyEndHtmlTagBefore })
+
+<script asp-location="Footer">
+(function () {
+    document.addEventListener('DOMContentLoaded', function () {
+        var cartHasItems = document.querySelector('.cart-item-row') || document.querySelector('.checkout-data');
+        if (!cartHasItems) return;
+
+        var isSubmittingOrder = false;
+        document.addEventListener('submit', function () { isSubmittingOrder = true; });
+
+        function handleAbandonment() {
+            if (!isSubmittingOrder && document.visibilityState === 'hidden' && typeof clarity === 'function') {
+                clarity('event', 'checkout_left_page');
+            }
+        }
+
+        document.addEventListener('visibilitychange', handleAbandonment);
+        window.addEventListener('pagehide', handleAbandonment);
+    });
+})();
+</script>
+
