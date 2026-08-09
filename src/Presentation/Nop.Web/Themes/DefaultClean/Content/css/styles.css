@@ -562,7 +562,7 @@ label+* {
 }
 
 .cart .product-quantity div.up {
-  background: url('../images/vote-up.png') no-repeat 50% 50%;
+  background: url('../images/up.png') no-repeat 50% 50%;
   width: 50px;
   height: 25px;
   border: 0;
@@ -570,7 +570,7 @@ label+* {
 }
 
 .cart .product-quantity div.down {
-  background: url('../images/vote-down.png') no-repeat 50% 50%;
+  background: url('../images/down.png') no-repeat 50% 50%;
   width: 50px;
   height: 25px;
   border: 0;
