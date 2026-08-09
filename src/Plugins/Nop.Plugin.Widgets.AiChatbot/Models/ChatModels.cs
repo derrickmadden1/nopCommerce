@@ -15,10 +15,16 @@ public class ChatResponse
     public string? Error { get; set; }
 
     /// <summary>
-    /// Optional action for the frontend to execute after showing the message
+    /// Optional primary action for the frontend to execute
     /// </summary>
     public ChatAction? Action { get; set; }
+
+    /// <summary>
+    /// List of actions to execute (e.g. adding multiple products at once)
+    /// </summary>
+    public List<ChatAction> Actions { get; set; } = new();
 }
+
 public class ChatAction
 {
     /// <summary>
@@ -95,6 +101,7 @@ public class AiStructuredResponse
 {
     public string Message { get; set; } = string.Empty;
     public AiAction? Action { get; set; }
+    public List<AiAction>? Actions { get; set; }
 }
 
 public class AiAction

@@ -47,6 +47,15 @@ public record ConfigurationModel : BaseNopModel
     [NopResourceDisplayName("Plugins.Widgets.AiChatbot.BubbleColour")]
     public string? BubbleColour { get; set; } = "#4A90D9";
 
+    [NopResourceDisplayName("Plugins.Widgets.AiChatbot.EnablePulseEffect")]
+    public bool EnablePulseEffect { get; set; } = true;
+
+    [NopResourceDisplayName("Plugins.Widgets.AiChatbot.EnableTeaserBubble")]
+    public bool EnableTeaserBubble { get; set; } = true;
+
+    [NopResourceDisplayName("Plugins.Widgets.AiChatbot.TeaserText")]
+    public string? TeaserText { get; set; } = "👋 Hi! Need help finding anything?";
+
     [NopResourceDisplayName("Plugins.Widgets.AiChatbot.ReturnsPolicy")]
     public string? ReturnsPolicy { get; set; } = string.Empty;
 

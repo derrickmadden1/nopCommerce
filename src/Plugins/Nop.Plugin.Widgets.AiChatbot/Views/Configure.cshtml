@@ -65,6 +65,30 @@
                                 </div>
                             </div>
 
+                            <div class="form-group row">
+                                <div class="col-md-3"><nop-label asp-for="EnablePulseEffect" /></div>
+                                <div class="col-md-9">
+                                    <nop-editor asp-for="EnablePulseEffect" />
+                                    <p class="text-muted">Display an animated glowing pulse around the chat bubble when closed to attract user attention.</p>
+                                </div>
+                            </div>
+
+                            <div class="form-group row">
+                                <div class="col-md-3"><nop-label asp-for="EnableTeaserBubble" /></div>
+                                <div class="col-md-9">
+                                    <nop-editor asp-for="EnableTeaserBubble" />
+                                    <p class="text-muted">Show a proactive greeting speech bubble next to the chat button on page load.</p>
+                                </div>
+                            </div>
+
+                            <div class="form-group row">
+                                <div class="col-md-3"><nop-label asp-for="TeaserText" /></div>
+                                <div class="col-md-9">
+                                    <nop-editor asp-for="TeaserText" />
+                                    <p class="text-muted">Message shown inside the proactive teaser bubble (e.g. "👋 Hi! Need help finding anything?").</p>
+                                </div>
+                            </div>
+
                             <h4>Azure OpenAI</h4>
 
                             <div class="form-group row">

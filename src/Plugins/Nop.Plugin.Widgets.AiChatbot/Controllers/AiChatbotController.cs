@@ -97,6 +97,9 @@ public class AiChatbotController : BasePluginController
             StoreName = _settings.StoreName,
             WelcomeMessage = _settings.WelcomeMessage,
             BubbleColour = _settings.BubbleColour,
+            EnablePulseEffect = _settings.EnablePulseEffect,
+            EnableTeaserBubble = _settings.EnableTeaserBubble,
+            TeaserText = _settings.TeaserText,
             ReturnsPolicy = _settings.ReturnsPolicy,
             ShippingPolicy = _settings.ShippingPolicy,
             MaxConversationTurns = _settings.MaxConversationTurns,
@@ -137,6 +140,9 @@ public class AiChatbotController : BasePluginController
         _settings.StoreName = model.StoreName?.Trim() ?? string.Empty;
         _settings.WelcomeMessage = model.WelcomeMessage?.Trim() ?? string.Empty;
         _settings.BubbleColour = model.BubbleColour?.Trim() ?? string.Empty;
+        _settings.EnablePulseEffect = model.EnablePulseEffect;
+        _settings.EnableTeaserBubble = model.EnableTeaserBubble;
+        _settings.TeaserText = model.TeaserText?.Trim() ?? string.Empty;
         _settings.ReturnsPolicy = model.ReturnsPolicy ?? string.Empty;
         _settings.ShippingPolicy = model.ShippingPolicy ?? string.Empty;
         _settings.MaxConversationTurns = model.MaxConversationTurns;

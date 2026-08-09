@@ -21,11 +21,14 @@ public class AiChatbotSettings : ISettings
     public string AzureSearchQueryKey { get; set; } = string.Empty;
     public string AzureSearchIndexName { get; set; } = "products";
 
-    // Chatbot persona
+    // Chatbot persona & appearance
     public string BotName { get; set; } = "Store Assistant";
     public string StoreName { get; set; } = string.Empty;
     public string WelcomeMessage { get; set; } = "Hi! How can I help you today?";
     public string BubbleColour { get; set; } = "#4A90D9";
+    public bool EnablePulseEffect { get; set; } = true;
+    public bool EnableTeaserBubble { get; set; } = true;
+    public string TeaserText { get; set; } = "👋 Hi! Need help finding anything?";
 
     // Store policies — pasted as plain text, injected into system prompt
     public string ReturnsPolicy { get; set; } = string.Empty;
