@@ -145,18 +145,37 @@ public class ChatService
                 Success = true
             };
 
-            // Map AI action to ChatAction
-            if (structured.Action != null)
+            var actionsList = new List<ChatAction>();
+
+            if (structured.Actions != null && structured.Actions.Any())
             {
-                chatResponse.Action = new ChatAction
+                foreach (var act in structured.Actions)
+                {
+                    actionsList.Add(new ChatAction
+                    {
+                        Type = act.Type,
+                        Url = act.Url,
+                        ProductId = act.ProductId,
+                        Quantity = act.Quantity > 0 ? act.Quantity : 1,
+                        Label = act.Label
+                    });
+                }
+            }
+
+            if (structured.Action != null && !actionsList.Any(a => a.ProductId == structured.Action.ProductId && a.Type == structured.Action.Type))
+            {
+                actionsList.Add(new ChatAction
                 {
                     Type = structured.Action.Type,
                     Url = structured.Action.Url,
                     ProductId = structured.Action.ProductId,
                     Quantity = structured.Action.Quantity > 0 ? structured.Action.Quantity : 1,
                     Label = structured.Action.Label
-                };
+                });
             }
+
+            chatResponse.Actions = actionsList;
+            chatResponse.Action = actionsList.FirstOrDefault();
 
             return chatResponse;
         }
@@ -176,7 +195,7 @@ public class ChatService
             You are {{_settings.BotName}}, a helpful and friendly shopping assistant for {{_settings.StoreName}}.
             You help customers with order status, product questions, and store policies.
             
-            CRITICAL: You are strictly limited to store operations and informational assistance. Do not write code, tell stories, answer general-knowledge questions, or perform tasks unrelated to {{_settings.StoreName}}. If the customer's query is off-topic, politely decline and redirect them back to store products, policies, or order status. You cannot programmatically modify past orders or process payments. If a customer asks to add an item to the basket or go to checkout, you can trigger these actions by returning the structured action JSON. Make sure to describe the action in your message response.
+            CRITICAL: You are strictly limited to store operations and informational assistance. Do not write code, tell stories, answer general-knowledge questions, or perform tasks unrelated to {{_settings.StoreName}}. If the customer's query is off-topic, politely decline and redirect them back to store products, policies, or order status. You cannot programmatically modify past orders or process payments. If a customer asks to add items to the basket or go to checkout, you can trigger these actions by returning the structured action JSON. Make sure to describe the action in your message response.
             Only recommend or discuss products that are listed in the 'Products relevant to their query' section below, or have already been mentioned in the conversation history. If a product is not listed and has not been mentioned, explain that you don't carry that item.
             
             Always be warm, concise, and use British English spelling.
@@ -186,18 +205,27 @@ public class ChatService
             IMPORTANT: You must ALWAYS respond with a valid JSON object in this exact format:
             {
               "message": "Your friendly response here",
-              "action": null
+              "action": null,
+              "actions": []
             }
 
-            Or if an action is needed:
+            Or if an action or multiple actions are needed:
             {
               "message": "Your friendly response here",
-              "action": {
-                "type": "addToCart",
-                "productId": 42,
-                "quantity": 1,
-                "label": "Product Name"
-              }
+              "actions": [
+                {
+                  "type": "addToCart",
+                  "productId": 42,
+                  "quantity": 1,
+                  "label": "Product Name"
+                },
+                {
+                  "type": "addToCart",
+                  "productId": 88,
+                  "quantity": 1,
+                  "label": "Second Product Name"
+                }
+              ]
             }
 
             Available action types:
@@ -212,7 +240,7 @@ public class ChatService
             - Product page: /PRODUCT-SENAME (use the product's URL if known)
 
             Rules:
-            - Only trigger addToCart if the customer explicitly asks to add something. Since this action is executed automatically in the background, write your message stating that you have added the item to their basket (e.g., "Done — I've added Rosy Rosehip to your basket.").
+            - If the customer asks to add one or MULTIPLE items to their basket, include an addToCart action for EACH requested item in the "actions" array so all requested items are added to their basket at once in a single turn! State in your message response that you have added all requested items (e.g. "Done — I've added Slainte Mhath candle and Rosemary & Nettle shampoo bar to your basket.").
             - Only trigger navigation if the customer explicitly asks to go somewhere. Since this action is executed automatically in the background, write your message stating that you are redirecting them (e.g., "Sure, I'm opening your cart/checkout for you now.").
             - The shopping cart context is always the exact, real-time, up-to-date state of the user's basket (which already reflects all items added in previous turns). Do not perform manual calculations, additions, or adjustments to the basket total or items. Always trust and report the exact items and total value provided in the current context.
             - For product pages use /search?q=PRODUCTNAME if you don't know the exact URL

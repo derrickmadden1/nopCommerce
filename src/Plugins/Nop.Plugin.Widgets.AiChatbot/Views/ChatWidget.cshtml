@@ -10,92 +10,310 @@
         bottom: 24px;
         right: 24px;
         z-index: 999999999;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
         font-size: 14px;
     }
 
+    /* ── Toggle Button ──────────────────────────────────────────────────────── */
     #ai-chat-toggle {
-        width: 56px;
-        height: 56px;
+        position: relative;
+        width: 60px;
+        height: 60px;
         border-radius: 50%;
-        background: var(--chat-colour);
+        background: linear-gradient(135deg, var(--chat-colour), var(--chat-colour));
         border: none;
         cursor: pointer;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.22);
         display: flex;
         align-items: center;
         justify-content: center;
         margin-left: auto;
-        transition: transform 0.2s;
+        transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.25s ease;
+        outline: none;
     }
 
-    #ai-chat-toggle:hover { transform: scale(1.05); }
+    #ai-chat-toggle:hover {
+        transform: scale(1.08);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+    }
 
-    #ai-chat-toggle svg { fill: white; width: 24px; height: 24px; }
+    #ai-chat-toggle:active {
+        transform: scale(0.95);
+    }
 
-    #ai-chat-panel {
-        display: none;
+    #ai-chat-toggle svg {
+        fill: white;
+        width: 26px;
+        height: 26px;
+        transition: transform 0.3s ease;
+    }
+
+    #ai-chat-toggle.active svg {
+        transform: rotate(90deg) scale(0.85);
+    }
+
+    /* Pulse Ripple Effect */
+    @if (Model.EnablePulseEffect)
+    {
+        <text>
+        #ai-chat-toggle.has-pulse::after {
+            content: '';
+            position: absolute;
+            top: -4px;
+            left: -4px;
+            right: -4px;
+            bottom: -4px;
+            border-radius: 50%;
+            border: 2.5px solid var(--chat-colour);
+            z-index: -1;
+            animation: ai-chat-pulse-wave 2.4s infinite cubic-bezier(0.215, 0.61, 0.355, 1);
+            pointer-events: none;
+        }
+
+        #ai-chat-toggle.has-pulse::before {
+            content: '';
+            position: absolute;
+            top: -4px;
+            left: -4px;
+            right: -4px;
+            bottom: -4px;
+            border-radius: 50%;
+            border: 2.5px solid var(--chat-colour);
+            z-index: -1;
+            animation: ai-chat-pulse-wave 2.4s infinite cubic-bezier(0.215, 0.61, 0.355, 1);
+            animation-delay: 1.2s;
+            pointer-events: none;
+        }
+        </text>
+    }
+
+    @@keyframes ai-chat-pulse-wave {
+        0% { transform: scale(0.95); opacity: 0.85; }
+        50% { transform: scale(1.35); opacity: 0.4; }
+        100% { transform: scale(1.7); opacity: 0; }
+    }
+
+    /* Page Load Wiggle Animation */
+    .ai-chat-wiggle {
+        animation: ai-chat-attention-wiggle 1.2s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+    }
+
+    @@keyframes ai-chat-attention-wiggle {
+        0%, 100% { transform: scale(1) rotate(0deg); }
+        15% { transform: scale(1.12) rotate(-10deg); }
+        30% { transform: scale(1.12) rotate(10deg); }
+        45% { transform: scale(1.1) rotate(-6deg); }
+        60% { transform: scale(1.05) rotate(6deg); }
+        75% { transform: scale(1.02) rotate(-2deg); }
+    }
+
+    /* Notification Badge / Sparkle Dot */
+    .ai-chat-badge {
         position: absolute;
-        bottom: 68px;
+        top: 2px;
+        right: 2px;
+        width: 14px;
+        height: 14px;
+        background: #22c55e;
+        border: 2.5px solid #ffffff;
+        border-radius: 50%;
+        box-shadow: 0 0 0 1px rgba(0,0,0,0.1);
+    }
+
+    /* ── Proactive Teaser Speech Bubble ──────────────────────────────────────── */
+    #ai-chat-teaser {
+        position: absolute;
+        bottom: 74px;
         right: 0;
-        width: 340px;
-        background: #fff;
-        border-radius: 16px;
-        box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+        background: #ffffff;
+        color: #1f2937;
+        padding: 10px 14px 10px 16px;
+        border-radius: 14px;
+        box-shadow: 0 10px 25px -5px rgba(0,0,0,0.18), 0 8px 10px -6px rgba(0,0,0,0.1);
+        border: 1px solid #e5e7eb;
+        font-size: 13.5px;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        white-space: nowrap;
+        max-width: 280px;
+        cursor: pointer;
+        opacity: 0;
+        transform: translateY(10px) scale(0.95);
+        pointer-events: none;
+        transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        z-index: 999999998;
+    }
+
+    #ai-chat-teaser.visible {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        pointer-events: auto;
+    }
+
+    #ai-chat-teaser .ai-teaser-arrow {
+        position: absolute;
+        bottom: -6px;
+        right: 22px;
+        width: 12px;
+        height: 12px;
+        background: #ffffff;
+        border-right: 1px solid #e5e7eb;
+        border-bottom: 1px solid #e5e7eb;
+        transform: rotate(45deg);
+    }
+
+    #ai-teaser-text {
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    #ai-teaser-close {
+        background: none;
+        border: none;
+        color: #9ca3af;
+        cursor: pointer;
+        font-size: 16px;
+        line-height: 1;
+        padding: 2px 4px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: color 0.15s ease, background 0.15s ease;
+    }
+
+    #ai-teaser-close:hover {
+        color: #374151;
+        background: #f3f4f6;
+    }
+
+    /* ── Chat Panel Window ─────────────────────────────────────────────────── */
+    #ai-chat-panel {
+        display: flex;
+        position: absolute;
+        bottom: 74px;
+        right: 0;
+        width: 360px;
+        background: #ffffff;
+        border-radius: 20px;
+        box-shadow: 0 12px 40px rgba(0,0,0,0.18), 0 4px 12px rgba(0,0,0,0.08);
         overflow: hidden;
         flex-direction: column;
+        opacity: 0;
+        transform: scale(0.92) translateY(20px);
+        transform-origin: bottom right;
+        pointer-events: none;
+        visibility: hidden;
+        transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), 
+                    transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+                    visibility 0.25s;
     }
 
-    #ai-chat-panel.open { display: flex; }
+    #ai-chat-panel.open {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+        pointer-events: auto;
+        visibility: visible;
+    }
 
+    /* Header */
     #ai-chat-header {
-        background: var(--chat-colour);
+        background: linear-gradient(135deg, var(--chat-colour), var(--chat-colour));
         color: white;
-        padding: 14px 16px;
+        padding: 14px 18px;
         display: flex;
         justify-content: space-between;
         align-items: center;
         flex-shrink: 0;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
 
-    #ai-chat-header span { font-weight: 600; font-size: 15px; }
+    .ai-header-info {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .ai-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.22);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .ai-bot-name {
+        font-weight: 600;
+        font-size: 15px;
+        line-height: 1.2;
+    }
+
+    .ai-bot-status {
+        font-size: 11px;
+        opacity: 0.9;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        margin-top: 2px;
+    }
+
+    .ai-status-dot {
+        width: 7px;
+        height: 7px;
+        background: #4ade80;
+        border-radius: 50%;
+        display: inline-block;
+        box-shadow: 0 0 6px #4ade80;
+    }
 
     #ai-chat-close {
-        background: none;
+        background: rgba(255,255,255,0.15);
         border: none;
         color: white;
         cursor: pointer;
-        font-size: 20px;
-        line-height: 1;
-        padding: 0;
-        opacity: 0.8;
+        font-size: 18px;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.2s ease;
     }
 
-    #ai-chat-close:hover { opacity: 1; }
+    #ai-chat-close:hover { background: rgba(255,255,255,0.3); }
 
+    /* Messages Container */
     #ai-chat-messages {
         padding: 16px;
-        height: 320px;
+        height: 340px;
         overflow-y: auto;
         display: flex;
         flex-direction: column;
-        gap: 10px;
-        background: #f8f9fa;
+        gap: 12px;
+        background: #f8fafc;
     }
 
     .ai-msg {
-        max-width: 82%;
-        padding: 10px 13px;
-        border-radius: 12px;
-        line-height: 1.45;
+        max-width: 84%;
+        padding: 10px 14px;
+        border-radius: 14px;
+        line-height: 1.48;
         word-break: break-word;
+        font-size: 13.5px;
     }
 
     .ai-msg.bot {
-        background: white;
-        border: 1px solid #e5e7eb;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        color: #1e293b;
         align-self: flex-start;
         border-bottom-left-radius: 4px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
     }
 
     .ai-msg.user {
@@ -103,32 +321,76 @@
         color: white;
         align-self: flex-end;
         border-bottom-right-radius: 4px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
 
     .ai-msg.typing {
-        background: white;
-        border: 1px solid #e5e7eb;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
         align-self: flex-start;
         border-bottom-left-radius: 4px;
-        color: #9ca3af;
+        color: #94a3b8;
         font-style: italic;
+    }
+
+    /* Quick Starter Chips */
+    .ai-starter-container {
+        margin-top: 8px;
+        margin-bottom: 4px;
+    }
+
+    .ai-starter-title {
+        font-size: 12px;
+        font-weight: 600;
+        color: #64748b;
+        margin-bottom: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .ai-starter-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .ai-chip {
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-radius: 18px;
+        padding: 6px 12px;
+        font-size: 12.5px;
+        color: #334155;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-align: left;
+    }
+
+    .ai-chip:hover {
+        background: var(--chat-colour);
+        color: #ffffff;
+        border-color: var(--chat-colour);
+        transform: translateY(-1px);
+        box-shadow: 0 2px 6px rgba(0,0,0,0.12);
     }
 
     /* Action button rendered in chat */
     .ai-action-btn {
         display: inline-block;
         margin-top: 8px;
-        padding: 6px 14px;
+        padding: 7px 16px;
         background: var(--chat-colour);
         color: white;
         border: none;
-        border-radius: 6px;
+        border-radius: 8px;
         cursor: pointer;
         font-size: 13px;
+        font-weight: 500;
         text-decoration: none;
+        transition: opacity 0.2s ease;
     }
 
-    .ai-action-btn:hover { opacity: 0.88; }
+    .ai-action-btn:hover { opacity: 0.9; }
 
     .ai-action-success {
         font-size: 12px;
@@ -137,47 +399,60 @@
         display: none;
     }
 
+    /* Input Area */
     #ai-chat-input-row {
         display: flex;
         padding: 12px;
         gap: 8px;
-        border-top: 1px solid #e5e7eb;
-        background: white;
+        border-top: 1px solid #e2e8f0;
+        background: #ffffff;
         flex-shrink: 0;
     }
 
     #ai-chat-input {
         flex: 1;
-        border: 1px solid #d1d5db;
-        border-radius: 8px;
-        padding: 8px 12px;
-        font-size: 14px;
+        border: 1px solid #cbd5e1;
+        border-radius: 10px;
+        padding: 9px 13px;
+        font-size: 13.5px;
         outline: none;
         resize: none;
-        height: 38px;
+        height: 40px;
         line-height: 1.4;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
     }
 
-    #ai-chat-input:focus { border-color: var(--chat-colour); }
+    #ai-chat-input:focus {
+        border-color: var(--chat-colour);
+        box-shadow: 0 0 0 3px rgba(74, 144, 217, 0.15);
+    }
 
     #ai-chat-send {
         background: var(--chat-colour);
         border: none;
-        border-radius: 8px;
+        border-radius: 10px;
         color: white;
         cursor: pointer;
         padding: 0 14px;
-        font-size: 18px;
-        transition: opacity 0.2s;
+        font-size: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: opacity 0.2s ease, transform 0.15s ease;
     }
 
-    #ai-chat-send:hover { opacity: 0.88; }
-    #ai-chat-send:disabled { opacity: 0.4; cursor: not-allowed; }
+    #ai-chat-send:hover { opacity: 0.9; transform: scale(1.04); }
+    #ai-chat-send:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
 
     @@media (max-width: 600px) {
         #ai-chat-bubble {
             bottom: 16px;
             right: 16px;
+        }
+
+        #ai-chat-teaser {
+            max-width: 220px;
+            bottom: 70px;
         }
 
         #ai-chat-panel {
@@ -214,9 +489,28 @@
 </style>
 
 <div id="ai-chat-bubble">
+    @if (Model.EnableTeaserBubble)
+    {
+        <div id="ai-chat-teaser" role="tooltip" aria-live="polite">
+            <span id="ai-teaser-text">@Model.TeaserText</span>
+            <button id="ai-teaser-close" aria-label="Dismiss speech bubble">&times;</button>
+            <div class="ai-teaser-arrow"></div>
+        </div>
+    }
+
     <div id="ai-chat-panel" role="dialog" aria-label="Chat with @Model.BotName">
         <div id="ai-chat-header">
-            <span>@Model.BotName</span>
+            <div class="ai-header-info">
+                <div class="ai-avatar">
+                    <svg viewBox="0 0 24 24" fill="white" width="18" height="18">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="ai-bot-name">@Model.BotName</div>
+                    <div class="ai-bot-status"><span class="ai-status-dot"></span> Online</div>
+                </div>
+            </div>
             <button id="ai-chat-close" aria-label="Close chat">&#x2715;</button>
         </div>
         <div id="ai-chat-messages" aria-live="polite"></div>
@@ -227,7 +521,8 @@
         </div>
     </div>
 
-    <button id="ai-chat-toggle" aria-label="Open chat">
+    <button id="ai-chat-toggle" class="@(Model.EnablePulseEffect ? "has-pulse" : "")" aria-label="Open chat">
+        <span class="ai-chat-badge"></span>
         <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/>
         </svg>
@@ -239,6 +534,7 @@
     const botName = '@Html.Raw(Model.BotName)';
     const welcomeMessage = '@Html.Raw(Model.WelcomeMessage)';
     const chatEndpoint = '/AiChatbot/Chat';
+    const enableTeaser = @(Model.EnableTeaserBubble ? "true" : "false");
 
     const panel = document.getElementById('ai-chat-panel');
     const toggle = document.getElementById('ai-chat-toggle');
@@ -246,6 +542,8 @@
     const messagesEl = document.getElementById('ai-chat-messages');
     const input = document.getElementById('ai-chat-input');
     const sendBtn = document.getElementById('ai-chat-send');
+    const teaser = document.getElementById('ai-chat-teaser');
+    const teaserClose = document.getElementById('ai-teaser-close');
 
     let history = [];
     let sessionGuid = null;
@@ -307,25 +605,77 @@
         if (storedOpen === 'true') {
             isOpen = true;
             panel.classList.add('open');
+            toggle.classList.add('active');
             updateMobileViewport();
             if (!initialised) {
                 initialised = true;
                 appendBotMessage(welcomeMessage, null);
+                showStarterChips();
             }
         }
     } catch (e) {}
 
+    // ── Entry Wiggle & Teaser Callout Popup Logic ──────────────────────────────
+    window.addEventListener('load', () => {
+        if (!isOpen) {
+            // Trigger eye-catching wiggle animation on load
+            setTimeout(() => {
+                if (!isOpen) {
+                    toggle.classList.add('ai-chat-wiggle');
+                    setTimeout(() => toggle.classList.remove('ai-chat-wiggle'), 1200);
+                }
+            }, 1200);
+
+            // Trigger teaser speech bubble after 2.8s
+            if (teaser && enableTeaser) {
+                setTimeout(() => {
+                    const teaserDismissed = sessionStorage.getItem('ai_chat_teaser_dismissed');
+                    if (!isOpen && teaserDismissed !== 'true') {
+                        teaser.classList.add('visible');
+                    }
+                }, 2800);
+            }
+        }
+    });
+
+    function hideTeaser() {
+        if (teaser) {
+            teaser.classList.remove('visible');
+        }
+    }
+
+    function dismissTeaser(e) {
+        if (e) e.stopPropagation();
+        hideTeaser();
+        try { sessionStorage.setItem('ai_chat_teaser_dismissed', 'true'); } catch (e) {}
+    }
+
+    if (teaser) {
+        teaser.addEventListener('click', (e) => {
+            if (e.target === teaserClose || teaserClose.contains(e.target)) {
+                dismissTeaser(e);
+            } else {
+                dismissTeaser(e);
+                openChat();
+            }
+        });
+    }
+
     // ── Panel open/close ─────────────────────────────────────────────────────
     function openChat() {
         isOpen = true;
+        hideTeaser();
         try { sessionStorage.setItem('ai_chat_open', 'true'); } catch (e) {}
         panel.classList.add('open');
+        toggle.classList.add('active');
+        toggle.classList.remove('has-pulse');
         updateMobileViewport();
         input.focus();
 
         if (!initialised) {
             initialised = true;
             appendBotMessage(welcomeMessage, null);
+            showStarterChips();
         }
     }
 
@@ -333,6 +683,10 @@
         isOpen = false;
         try { sessionStorage.setItem('ai_chat_open', 'false'); } catch (e) {}
         panel.classList.remove('open');
+        toggle.classList.remove('active');
+        @if (Model.EnablePulseEffect) {
+            <text>toggle.classList.add('has-pulse');</text>
+        }
         panel.style.height = '';
         panel.style.top = '';
     }
@@ -366,8 +720,44 @@
 
     sendBtn.addEventListener('click', sendMessage);
 
-    // ── Rendering ────────────────────────────────────────────────────────────
+    // ── Rendering & Starter Chips ─────────────────────────────────────────────
+    function showStarterChips() {
+        if (history.length > 0) return; // Only show on fresh conversation
+
+        const container = document.createElement('div');
+        container.className = 'ai-starter-container';
+        container.id = 'ai-starter-chips';
+
+        container.innerHTML = `
+            <div class="ai-starter-title">Suggested questions:</div>
+            <div class="ai-starter-chips">
+                <button class="ai-chip" data-prompt="What is your return policy?">↩️ Returns policy</button>
+                <button class="ai-chip" data-prompt="What are your shipping and delivery options?">🚚 Shipping & delivery</button>
+                <button class="ai-chip" data-prompt="Can you recommend popular products?">🔍 Product advice</button>
+                <button class="ai-chip" data-prompt="How do I track my order?">📦 Track order</button>
+            </div>
+        `;
+
+        container.querySelectorAll('.ai-chip').forEach(chip => {
+            chip.addEventListener('click', () => {
+                const promptText = chip.getAttribute('data-prompt');
+                input.value = promptText;
+                removeStarterChips();
+                sendMessage();
+            });
+        });
+
+        messagesEl.appendChild(container);
+        scrollBottom();
+    }
+
+    function removeStarterChips() {
+        const chipsEl = document.getElementById('ai-starter-chips');
+        if (chipsEl) chipsEl.remove();
+    }
+
     function appendUserMessage(text) {
+        removeStarterChips();
         const div = document.createElement('div');
         div.className = 'ai-msg user';
         div.textContent = text;
@@ -435,7 +825,6 @@
             default: return 'Do it';
         }
     }
-
 
     function showTyping() {
         const div = document.createElement('div');
@@ -511,6 +900,15 @@
         }
     }
 
+    async function executeActions(actionList) {
+        for (let i = 0; i < actionList.length; i++) {
+            await executeAction(actionList[i]);
+            if (i < actionList.length - 1) {
+                await new Promise(r => setTimeout(r, 350));
+            }
+        }
+    }
+
     // ── Send message ─────────────────────────────────────────────────────────
     async function sendMessage() {
         const text = input.value.trim();
@@ -544,16 +942,30 @@
 
             const reply = success ? responseText : (errorText || 'Sorry, something went wrong.');
 
-            let action = data.action !== undefined ? data.action : data.Action;
-            if (action) {
-                action = {
-                    type: action.type !== undefined ? action.type : action.Type,
-                    url: action.url !== undefined ? action.url : action.Url,
-                    productId: action.productId !== undefined ? action.productId : action.ProductId,
-                    quantity: action.quantity !== undefined ? action.quantity : action.Quantity,
-                    label: action.label !== undefined ? action.label : action.Label
-                };
+            const rawActions = data.actions !== undefined ? data.actions : (data.Actions !== undefined ? data.Actions : null);
+            let actionList = [];
+
+            if (Array.isArray(rawActions) && rawActions.length > 0) {
+                actionList = rawActions.map(a => ({
+                    type: a.type !== undefined ? a.type : a.Type,
+                    url: a.url !== undefined ? a.url : a.Url,
+                    productId: a.productId !== undefined ? a.productId : a.ProductId,
+                    quantity: a.quantity !== undefined ? a.quantity : a.Quantity,
+                    label: a.label !== undefined ? a.label : a.Label
+                }));
+            } else {
+                let singleAction = data.action !== undefined ? data.action : data.Action;
+                if (singleAction) {
+                    actionList.push({
+                        type: singleAction.type !== undefined ? singleAction.type : singleAction.Type,
+                        url: singleAction.url !== undefined ? singleAction.url : singleAction.Url,
+                        productId: singleAction.productId !== undefined ? singleAction.productId : singleAction.ProductId,
+                        quantity: singleAction.quantity !== undefined ? singleAction.quantity : singleAction.Quantity,
+                        label: singleAction.label !== undefined ? singleAction.label : singleAction.Label
+                    });
+                }
             }
+
             appendBotMessage(reply, null);
 
             if (success) {
@@ -566,8 +978,8 @@
 
                 try { sessionStorage.setItem('ai_chat_history', JSON.stringify(history)); } catch (e) {}
 
-                if (action) {
-                    executeAction(action);
+                if (actionList.length > 0) {
+                    executeActions(actionList);
                 }
             }
         } catch (err) {
