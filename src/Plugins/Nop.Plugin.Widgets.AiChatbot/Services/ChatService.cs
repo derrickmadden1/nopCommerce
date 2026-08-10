@@ -17,6 +17,7 @@ public class ChatService
     private readonly ProductSearchService _productSearchService;
     private readonly IMarketLocationService? _marketLocationService;
     private readonly ILogger<ChatService> _logger;
+    private readonly Nop.Services.Logging.ILogger? _nopLogger;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -34,6 +35,7 @@ public class ChatService
         _customerContextService = customerContextService;
         _productSearchService = productSearchService;
         _marketLocationService = serviceProvider.GetService<IMarketLocationService>();
+        _nopLogger = serviceProvider.GetService<Nop.Services.Logging.ILogger>();
         _logger = logger;
     }
 
@@ -48,6 +50,13 @@ public class ChatService
                 Response = "I can only assist you with store-related enquiries, orders, and products.",
                 Success = true
             };
+        }
+
+        if (string.IsNullOrWhiteSpace(_settings.AzureOpenAIEndpoint))
+        {
+            const string msg = "AI Chatbot Error: Azure OpenAI Endpoint is not configured in Admin settings.";
+            if (_nopLogger != null) await _nopLogger.ErrorAsync(msg);
+            return new ChatResponse { Success = false, Error = msg };
         }
 
         try
@@ -65,12 +74,10 @@ public class ChatService
                 new AzureKeyCredential(apiKey)
             );
 
-            // Build context in parallel
-            var customerContextTask = _customerContextService.GetCurrentCustomerContextAsync();
-            var relevantProductsTask = _productSearchService.SearchAsync(request.Message);
-            var marketsTask = _marketLocationService != null 
-                ? _marketLocationService.GetPublishedDtosAsync() 
-                : Task.FromResult<IList<MarketLocationDto>>(new List<MarketLocationDto>());
+            // Build context in parallel with fault tolerance
+            var customerContextTask = SafeGetCustomerContextAsync();
+            var relevantProductsTask = SafeSearchProductsAsync(request.Message);
+            var marketsTask = SafeGetMarketsAsync();
 
             await Task.WhenAll(customerContextTask, relevantProductsTask, marketsTask);
 
@@ -125,11 +132,58 @@ public class ChatService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Chat completion failed for message: {Message}", request.Message);
+            if (_nopLogger != null)
+            {
+                await _nopLogger.ErrorAsync($"AI Chatbot error processing message '{request.Message}': {ex.Message}", ex);
+            }
+
             return new ChatResponse
             {
                 Success = false,
                 Error = "Sorry, I'm having trouble responding right now. Please try again in a moment."
             };
+        }
+    }
+
+    private async Task<CustomerContext> SafeGetCustomerContextAsync()
+    {
+        try
+        {
+            return await _customerContextService.GetCurrentCustomerContextAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to load customer context for chatbot");
+            return new CustomerContext();
+        }
+    }
+
+    private async Task<List<ProductSearchResult>> SafeSearchProductsAsync(string query)
+    {
+        try
+        {
+            return await _productSearchService.SearchAsync(query);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to perform product search for chatbot query: {Query}", query);
+            return new List<ProductSearchResult>();
+        }
+    }
+
+    private async Task<IList<MarketLocationDto>> SafeGetMarketsAsync()
+    {
+        try
+        {
+            if (_marketLocationService == null)
+                return new List<MarketLocationDto>();
+
+            return await _marketLocationService.GetPublishedDtosAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to load published market locations for chatbot");
+            return new List<MarketLocationDto>();
         }
     }
 
