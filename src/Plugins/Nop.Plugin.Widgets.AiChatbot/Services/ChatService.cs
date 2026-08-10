@@ -3,8 +3,10 @@ using Azure;
 using Azure.AI.OpenAI;
 using Azure.Identity;
 using Azure.Security.KeyVault.Secrets;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Nop.Plugin.Widgets.AiChatbot.Models;
+using Nop.Plugin.Widgets.MarketLocator.Services;
 
 namespace Nop.Plugin.Widgets.AiChatbot.Services;
 
@@ -13,6 +15,7 @@ public class ChatService
     private readonly AiChatbotSettings _settings;
     private readonly CustomerContextService _customerContextService;
     private readonly ProductSearchService _productSearchService;
+    private readonly IMarketLocationService? _marketLocationService;
     private readonly ILogger<ChatService> _logger;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -24,11 +27,13 @@ public class ChatService
         AiChatbotSettings settings,
         CustomerContextService customerContextService,
         ProductSearchService productSearchService,
+        IServiceProvider serviceProvider,
         ILogger<ChatService> logger)
     {
         _settings = settings;
         _customerContextService = customerContextService;
         _productSearchService = productSearchService;
+        _marketLocationService = serviceProvider.GetService<IMarketLocationService>();
         _logger = logger;
     }
 
@@ -63,14 +68,18 @@ public class ChatService
             // Build context in parallel
             var customerContextTask = _customerContextService.GetCurrentCustomerContextAsync();
             var relevantProductsTask = _productSearchService.SearchAsync(request.Message);
+            var marketsTask = _marketLocationService != null 
+                ? _marketLocationService.GetPublishedDtosAsync() 
+                : Task.FromResult<IList<MarketLocationDto>>(new List<MarketLocationDto>());
 
-            await Task.WhenAll(customerContextTask, relevantProductsTask);
+            await Task.WhenAll(customerContextTask, relevantProductsTask, marketsTask);
 
             var customerContext = customerContextTask.Result;
             var relevantProductsList = relevantProductsTask.Result;
             var relevantProducts = ProductSearchService.FormatForPrompt(relevantProductsList);
+            var marketsList = marketsTask.Result;
 
-            var systemPrompt = BuildSystemPrompt(customerContext, relevantProducts);
+            var systemPrompt = BuildSystemPrompt(customerContext, relevantProducts, marketsList);
 
             // Build messages — system prompt + capped history + new message
             var messages = new List<ChatRequestMessage>
@@ -187,7 +196,7 @@ public class ChatService
         }
     }
 
-    private string BuildSystemPrompt(CustomerContext customer, string relevantProducts)
+    private string BuildSystemPrompt(CustomerContext customer, string relevantProducts, IList<MarketLocationDto> markets)
     {
         var sb = new System.Text.StringBuilder();
 
@@ -240,6 +249,13 @@ public class ChatService
             - Product page: /PRODUCT-SENAME (use the product's URL if known)
 
             Rules:
+            - For questions about product ingredients, benefits, or common wellness uses (e.g., magnesium for cramps or muscle tension, lavender for sleep, oatmeal for dry skin), provide helpful, balanced general wellness information and common customer experiences, while gently noting that customers should check with a GP for persistent health concerns. Do not decline or claim you lack information simply because a question asks about general ingredient benefits.
+            - For market questions (e.g., "When is your next market?", "When are you next in Thurso?"):
+              * Check the 'Today's Date' and the 'Upcoming Markets & Event Locations' listed below.
+              * If asked about a specific town or city (e.g. Thurso, Lairg, Wick, etc.), filter by that town/city name and provide the upcoming dates, operating hours, and address for that market.
+              * If asked for the next market, identify the earliest upcoming market date relative to today's date and report the market name, town/city, date, and hours.
+              * Always inform customers asking about markets, delivery, or pickup options that they can select 'Market Pickup' during checkout (at the shipping step) to collect their order in person at any upcoming market for free without paying shipping fees!
+              * Direct customers to /marketlocator if they wish to view the full interactive map.
             - If the customer asks to add one or MULTIPLE items to their basket, include an addToCart action for EACH requested item in the "actions" array so all requested items are added to their basket at once in a single turn! State in your message response that you have added all requested items (e.g. "Done — I've added Slainte Mhath candle and Rosemary & Nettle shampoo bar to your basket.").
             - Only trigger navigation if the customer explicitly asks to go somewhere. Since this action is executed automatically in the background, write your message stating that you are redirecting them (e.g., "Sure, I'm opening your cart/checkout for you now.").
             - The shopping cart context is always the exact, real-time, up-to-date state of the user's basket (which already reflects all items added in previous turns). Do not perform manual calculations, additions, or adjustments to the basket total or items. Always trust and report the exact items and total value provided in the current context.
@@ -291,6 +307,12 @@ public class ChatService
             sb.AppendLine("\nThe customer's shopping cart is currently empty.");
         }
 
+        // Upcoming Markets & Event Locations
+        if (markets != null && markets.Any())
+        {
+            sb.AppendLine(FormatMarketLocationsForPrompt(markets));
+        }
+
         // Relevant products from search
         if (!string.IsNullOrWhiteSpace(relevantProducts))
         {
@@ -307,6 +329,24 @@ public class ChatService
         if (!string.IsNullOrWhiteSpace(_settings.ShippingPolicy))
         {
             sb.AppendLine($"\nShipping policy:\n{_settings.ShippingPolicy}");
+        }
+
+        return sb.ToString();
+    }
+
+    private string FormatMarketLocationsForPrompt(IList<MarketLocationDto> markets)
+    {
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine($"\nToday's Date: {DateTime.UtcNow:dddd, d MMMM yyyy}");
+        sb.AppendLine("Upcoming Markets & Event Locations:");
+
+        foreach (var m in markets)
+        {
+            var datesText = m.Dates != null && m.Dates.Any()
+                ? string.Join(", ", m.Dates)
+                : "Dates vary — see market locator page";
+
+            sb.AppendLine($"- {m.Name} ({m.City}) — Address: {m.Address} — Operating Hours: {m.Hours} — Upcoming Dates: {datesText} — Frequency: {m.Frequency}");
         }
 
         return sb.ToString();
