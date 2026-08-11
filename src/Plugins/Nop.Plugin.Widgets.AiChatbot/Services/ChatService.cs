@@ -124,7 +124,18 @@ public class ChatService
             foreach (var message in messages)
                 options.Messages.Add(message);
 
-            var response = await client.GetChatCompletionsAsync(options);
+            Azure.Response<ChatCompletions> response;
+            try
+            {
+                response = await client.GetChatCompletionsAsync(options);
+            }
+            catch (RequestFailedException ex) when (options.Temperature.HasValue && ex.Message.Contains("temperature", StringComparison.OrdinalIgnoreCase))
+            {
+                _logger.LogWarning(ex, "Temperature setting {Temp} is unsupported by deployment '{Deployment}'. Retrying with default model temperature.", options.Temperature, _settings.DeploymentName);
+                options.Temperature = null;
+                response = await client.GetChatCompletionsAsync(options);
+            }
+
             var reply = response.Value.Choices[0].Message.Content;
 
             return ParseStructuredResponse(reply);
@@ -309,7 +320,7 @@ public class ChatService
               * If asked about a specific town or city (e.g. Thurso, Lairg, Wick, etc.), filter by that town/city name and provide the upcoming dates, operating hours, and address for that market.
               * If asked for the next market, identify the earliest upcoming market date relative to today's date and report the market name, town/city, date, and hours.
               * Always inform customers asking about markets, delivery, or pickup options that they can select 'Market Pickup' during checkout (at the shipping step) to collect their order in person at any upcoming market for free without paying shipping fees!
-              * Direct customers to /marketlocator if they wish to view the full interactive map.
+              * Direct customers to /marketlocator if they wish to view the full interactive map, and include a navigate action: { "type": "navigate", "url": "/marketlocator", "label": "Market Locator Map" }.
             - If the customer asks to add one or MULTIPLE items to their basket, include an addToCart action for EACH requested item in the "actions" array so all requested items are added to their basket at once in a single turn! State in your message response that you have added all requested items (e.g. "Done — I've added Slainte Mhath candle and Rosemary & Nettle shampoo bar to your basket.").
             - Only trigger navigation if the customer explicitly asks to go somewhere. Since this action is executed automatically in the background, write your message stating that you are redirecting them (e.g., "Sure, I'm opening your cart/checkout for you now.").
             - The shopping cart context is always the exact, real-time, up-to-date state of the user's basket (which already reflects all items added in previous turns). Do not perform manual calculations, additions, or adjustments to the basket total or items. Always trust and report the exact items and total value provided in the current context.

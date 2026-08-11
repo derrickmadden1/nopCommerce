@@ -409,6 +409,19 @@
         display: none;
     }
 
+    /* Inline chat links */
+    .ai-chat-link {
+        color: #2563eb !important;
+        font-weight: 600 !important;
+        text-decoration: underline !important;
+        word-break: break-word;
+        transition: color 0.15s ease;
+    }
+    .ai-chat-link:hover {
+        color: #1d4ed8 !important;
+        text-decoration: underline !important;
+    }
+
     /* Input Area */
     #ai-chat-input-row {
         display: flex;
@@ -776,20 +789,50 @@
         scrollBottom();
     }
 
-    function appendBotMessage(text, action) {
+    function formatMessageHtml(rawText) {
+        if (!rawText) return '';
+
+        // Escape HTML special characters
+        let safe = rawText
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+
+        // Format HTTP/HTTPS URLs
+        safe = safe.replace(/(https?:\/\/[^\s<]+)/g, function(url) {
+            return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="ai-chat-link">${url}</a>`;
+        });
+
+        // Format relative paths starting with / (e.g. /marketlocator, /cart, /checkout, /contactus)
+        safe = safe.replace(/(^|\s|[\(\[\{])(\/([a-zA-Z0-9_\-\/\?=&%]+))/g, function(match, prefix, path) {
+            let label = path;
+            if (path === '/marketlocator') label = 'Market Locator Map 🗺️';
+            else if (path === '/cart') label = 'View Cart 🛒';
+            else if (path === '/checkout') label = 'Checkout 💳';
+            else if (path === '/contactus') label = 'Contact Us 📬';
+            return `${prefix}<a href="${path}" class="ai-chat-link">${label}</a>`;
+        });
+
+        return safe;
+    }
+
+    function appendBotMessage(text, actions) {
         const wrapper = document.createElement('div');
         wrapper.style.cssText = 'align-self: flex-start; max-width: 90%;';
 
         const msg = document.createElement('div');
         msg.className = 'ai-msg bot';
-        msg.textContent = text;
+        msg.innerHTML = formatMessageHtml(text);
         wrapper.appendChild(msg);
 
-        // Render an action button if present
-        if (action) {
-            const btn = buildActionButton(action);
+        // Render action buttons if present
+        const actionList = Array.isArray(actions) ? actions : (actions ? [actions] : []);
+        actionList.forEach(act => {
+            const btn = buildActionButton(act);
             if (btn) wrapper.appendChild(btn);
-        }
+        });
 
         messagesEl.appendChild(wrapper);
         scrollBottom();
@@ -830,9 +873,10 @@
         switch (action.type) {
             case 'addToCart': return action.label ? `Add "${action.label}" to cart` : 'Add to cart';
             case 'navigate':
-                if (action.url === '/cart') return 'View cart';
-                if (action.url && action.url.includes('checkout')) return 'Go to checkout';
-                return action.label ? `Go to ${action.label}` : 'Go there';
+                if (action.url === '/marketlocator') return '🗺️ Open Market Locator Map';
+                if (action.url === '/cart') return '🛒 View Cart';
+                if (action.url && action.url.includes('checkout')) return '💳 Go to Checkout';
+                return action.label ? `Go to ${action.label}` : 'Open Page';
             default: return 'Do it';
         }
     }
@@ -977,7 +1021,7 @@
                 }
             }
 
-            appendBotMessage(reply, null);
+            appendBotMessage(reply, actionList);
 
             if (success) {
                 history.push({ role: 'user', content: text });
