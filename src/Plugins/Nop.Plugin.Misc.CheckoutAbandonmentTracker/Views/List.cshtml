@@ -1,0 +1,38 @@
+@model CheckoutAttemptSearchModel
+@using Nop.Plugin.Misc.CheckoutAbandonmentTracker.Models
+@{
+    Layout = "_AdminLayout";
+    ViewBag.PageTitle = "Abandoned Checkouts";
+}
+
+@* NOTE: this view assumes nopCommerce's standard admin Table/DataTablesModel
+   partial (as used throughout core admin grids). Adjust ColumnProperty /
+   DataUrl usage to match whatever version of the admin grid helpers your
+   4.90 fork uses if it's been customized. *@
+
+<form asp-controller="CheckoutAbandonmentTracker" asp-action="List" method="post">
+    <div class="content-header clearfix">
+        <h1 class="float-left">Abandoned Checkouts</h1>
+    </div>
+    <div class="content">
+        <div class="card card-default">
+            <div class="card-body">
+                @await Html.PartialAsync("Table", new DataTablesModel
+                {
+                    Name = "checkout-attempts-grid",
+                    UrlRead = new DataUrl("ListData", "CheckoutAbandonmentTracker", null),
+                    Length = 50,
+                    LengthMenu = "50, 100, 250",
+                    ColumnCollection = new List<ColumnProperty>
+                    {
+                        new ColumnProperty(nameof(CheckoutAttemptModel.CustomerEmail)) { Title = "Customer" },
+                        new ColumnProperty(nameof(CheckoutAttemptModel.LastStepReached)) { Title = "Last Step" },
+                        new ColumnProperty(nameof(CheckoutAttemptModel.CartTotal)) { Title = "Cart Total" },
+                        new ColumnProperty(nameof(CheckoutAttemptModel.StartedOnUtc)) { Title = "Started", Render = new RenderDate() },
+                        new ColumnProperty(nameof(CheckoutAttemptModel.LastActivityUtc)) { Title = "Last Activity", Render = new RenderDate() }
+                    }
+                })
+            </div>
+        </div>
+    </div>
+</form>
