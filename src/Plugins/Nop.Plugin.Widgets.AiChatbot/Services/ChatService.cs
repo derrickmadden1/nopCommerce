@@ -124,7 +124,18 @@ public class ChatService
             foreach (var message in messages)
                 options.Messages.Add(message);
 
-            var response = await client.GetChatCompletionsAsync(options);
+            Azure.Response<ChatCompletions> response;
+            try
+            {
+                response = await client.GetChatCompletionsAsync(options);
+            }
+            catch (RequestFailedException ex) when (options.Temperature.HasValue && ex.Message.Contains("temperature", StringComparison.OrdinalIgnoreCase))
+            {
+                _logger.LogWarning(ex, "Temperature setting {Temp} is unsupported by deployment '{Deployment}'. Retrying with default model temperature.", options.Temperature, _settings.DeploymentName);
+                options.Temperature = null;
+                response = await client.GetChatCompletionsAsync(options);
+            }
+
             var reply = response.Value.Choices[0].Message.Content;
 
             return ParseStructuredResponse(reply);
