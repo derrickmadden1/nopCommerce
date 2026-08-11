@@ -800,15 +800,18 @@
             .replace(/"/g, '&quot;')
             .replace(/'/g, '&#039;');
 
+        // Correct legacy /marketlocator paths to /market-locations
+        safe = safe.replace(/\/marketlocator/g, '/market-locations');
+
         // Format HTTP/HTTPS URLs
         safe = safe.replace(/(https?:\/\/[^\s<]+)/g, function(url) {
             return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="ai-chat-link">${url}</a>`;
         });
 
-        // Format relative paths starting with / (e.g. /marketlocator, /cart, /checkout, /contactus)
+        // Format relative paths starting with / (e.g. /market-locations?id=5, /cart, /checkout, /contactus)
         safe = safe.replace(/(^|\s|[\(\[\{])(\/([a-zA-Z0-9_\-\/\?=&%]+))/g, function(match, prefix, path) {
             let label = path;
-            if (path === '/marketlocator') label = 'Market Locator Map 🗺️';
+            if (path.startsWith('/market-locations')) label = 'Market Locator Map 🗺️';
             else if (path === '/cart') label = 'View Cart 🛒';
             else if (path === '/checkout') label = 'Checkout 💳';
             else if (path === '/contactus') label = 'Contact Us 📬';
@@ -817,6 +820,17 @@
 
         return safe;
     }
+
+    // Handle clicks on inline links to close chat before navigating
+    messagesEl.addEventListener('click', (e) => {
+        const link = e.target.closest('a.ai-chat-link');
+        if (link && link.getAttribute('href')) {
+            const href = link.getAttribute('href');
+            if (!href.startsWith('http')) {
+                try { sessionStorage.setItem('ai_chat_open', 'false'); } catch (err) {}
+            }
+        }
+    });
 
     function appendBotMessage(text, actions) {
         const wrapper = document.createElement('div');
@@ -873,7 +887,7 @@
         switch (action.type) {
             case 'addToCart': return action.label ? `Add "${action.label}" to cart` : 'Add to cart';
             case 'navigate':
-                if (action.url === '/marketlocator') return '🗺️ Open Market Locator Map';
+                if (action.url && action.url.includes('market')) return '🗺️ Open Market Locator Map';
                 if (action.url === '/cart') return '🛒 View Cart';
                 if (action.url && action.url.includes('checkout')) return '💳 Go to Checkout';
                 return action.label ? `Go to ${action.label}` : 'Open Page';
@@ -906,7 +920,9 @@
                 return await addToCart(action.productId, action.quantity || 1);
             case 'navigate':
                 if (action.url) {
-                    window.location.href = action.url;
+                    let navUrl = action.url === '/marketlocator' ? '/market-locations' : action.url;
+                    try { sessionStorage.setItem('ai_chat_open', 'false'); } catch (e) {}
+                    window.location.href = navUrl;
                     return { ok: true, navigate: true };
                 }
                 return { ok: false, message: 'No URL provided.' };
