@@ -320,7 +320,8 @@ public class ChatService
               * If asked about a specific town or city (e.g. Thurso, Lairg, Wick, etc.), filter by that town/city name and provide the upcoming dates, operating hours, and address for that market.
               * If asked for the next market, identify the earliest upcoming market date relative to today's date and report the market name, town/city, date, and hours.
               * Always inform customers asking about markets, delivery, or pickup options that they can select 'Market Pickup' during checkout (at the shipping step) to collect their order in person at any upcoming market for free without paying shipping fees!
-              * Direct customers to /marketlocator if they wish to view the full interactive map, and include a navigate action: { "type": "navigate", "url": "/marketlocator", "label": "Market Locator Map" }.
+              * When mentioning a specific market, link directly to its specific URL: /market-locations?id=ID (or /market-locations for all markets).
+              * CRITICAL: Do NOT return an automatic navigate action for general informational market questions. Only return a navigate action if the user explicitly asks to be taken to the page (e.g. "take me to the map" or "open the market page").
             - If the customer asks to add one or MULTIPLE items to their basket, include an addToCart action for EACH requested item in the "actions" array so all requested items are added to their basket at once in a single turn! State in your message response that you have added all requested items (e.g. "Done — I've added Slainte Mhath candle and Rosemary & Nettle shampoo bar to your basket.").
             - Only trigger navigation if the customer explicitly asks to go somewhere. Since this action is executed automatically in the background, write your message stating that you are redirecting them (e.g., "Sure, I'm opening your cart/checkout for you now.").
             - The shopping cart context is always the exact, real-time, up-to-date state of the user's basket (which already reflects all items added in previous turns). Do not perform manual calculations, additions, or adjustments to the basket total or items. Always trust and report the exact items and total value provided in the current context.
@@ -411,7 +412,7 @@ public class ChatService
                 ? string.Join(", ", m.Dates)
                 : "Dates vary — see market locator page";
 
-            sb.AppendLine($"- {m.Name} ({m.City}) — Address: {m.Address} — Operating Hours: {m.Hours} — Upcoming Dates: {datesText} — Frequency: {m.Frequency}");
+            sb.AppendLine($"- ID: {m.Id} — {m.Name} ({m.City}) — Address: {m.Address} — Operating Hours: {m.Hours} — Upcoming Dates: {datesText} — Market URL: /market-locations?id={m.Id}");
         }
 
         return sb.ToString();
