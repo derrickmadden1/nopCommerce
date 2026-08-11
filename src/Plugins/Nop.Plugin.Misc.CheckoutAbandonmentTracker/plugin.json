@@ -1,0 +1,11 @@
+{
+  "Group": "Misc",
+  "FriendlyName": "Checkout Abandonment Tracker",
+  "SystemName": "Misc.CheckoutAbandonmentTracker",
+  "Version": "1.00",
+  "SupportedVersions": [ "5.00" ],
+  "Author": "Derrick",
+  "DisplayOrder": 1,
+  "FileName": "Nop.Plugin.Misc.CheckoutAbandonmentTracker.dll",
+  "Description": "Server-side checkout funnel and abandonment logging"
+}
