@@ -801,13 +801,14 @@ public partial class CommonModelFactory : ICommonModelFactory
 
             foreach (var additionsRule in _robotsTxtSettings.AdditionsRules)
             {
-                if (string.IsNullOrEmpty(additionsRule))
+                var ruleText = additionsRule.Replace("[[COMMA]]", ",");
+                if (string.IsNullOrEmpty(ruleText))
                 {
                     sb.AppendLine();
                     continue;
                 }
 
-                foreach (var line in additionsRule.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None))
+                foreach (var line in ruleText.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None))
                     sb.AppendLine(line);
             }
 
