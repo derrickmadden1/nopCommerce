@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Mvc;
 using Nop.Core;
@@ -1618,10 +1618,10 @@ public partial class SettingController : BaseAdminController
             //robots.txt settings
             var robotsTxtSettings = await _settingService.LoadSettingAsync<RobotsTxtSettings>(storeScope);
             robotsTxtSettings.AllowSitemapXml = model.RobotsTxtSettings.AllowSitemapXml;
-            robotsTxtSettings.AdditionsRules = model.RobotsTxtSettings.AdditionsRules?.Split(Environment.NewLine).ToList();
+            robotsTxtSettings.AdditionsRules = model.RobotsTxtSettings.AdditionsRules?.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None).ToList();
             robotsTxtSettings.DisallowLanguages = model.RobotsTxtSettings.DisallowLanguages?.ToList() ?? new List<int>();
-            robotsTxtSettings.DisallowPaths = model.RobotsTxtSettings.DisallowPaths?.Split(Environment.NewLine).ToList();
-            robotsTxtSettings.LocalizableDisallowPaths = model.RobotsTxtSettings.LocalizableDisallowPaths?.Split(Environment.NewLine).ToList();
+            robotsTxtSettings.DisallowPaths = model.RobotsTxtSettings.DisallowPaths?.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None).ToList();
+            robotsTxtSettings.LocalizableDisallowPaths = model.RobotsTxtSettings.LocalizableDisallowPaths?.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None).ToList();
 
             //we do not clear cache after each setting update.
             //this behavior can increase performance because cached settings will not be cleared 
