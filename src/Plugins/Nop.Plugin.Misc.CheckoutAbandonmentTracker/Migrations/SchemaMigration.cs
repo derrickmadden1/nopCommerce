@@ -7,7 +7,7 @@ namespace Nop.Plugin.Misc.CheckoutAbandonmentTracker.Migrations
 {
     // IMPORTANT: update this timestamp to match when you actually run the
     // install — do not leave it backdated to when this was drafted.
-    [NopMigration("2026-08-09 00:00:00", "CheckoutAttempt table", MigrationProcessType.Installation)]
+    [NopMigration("2026-08-09 00:00:00", "CheckoutAttempt table", MigrationProcessType.Update)]
     public class SchemaMigration : Migration
     {
         public override void Up()
