@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Nop.Core;
 using Nop.Core.Configuration;
 using Nop.Core.Domain;
@@ -884,7 +884,7 @@ public partial class SettingModelFactory : ISettingModelFactory
             LocalizableDisallowPaths =
                 string.Join(Environment.NewLine, robotsTxtSettings.LocalizableDisallowPaths),
             DisallowLanguages = robotsTxtSettings.DisallowLanguages.ToList(),
-            AdditionsRules = string.Join(Environment.NewLine, robotsTxtSettings.AdditionsRules),
+            AdditionsRules = string.Join(Environment.NewLine, robotsTxtSettings.AdditionsRules.Select(x => x.Replace("[[COMMA]]", ","))),
             AvailableLanguages = new List<SelectListItem>()
         };
 
