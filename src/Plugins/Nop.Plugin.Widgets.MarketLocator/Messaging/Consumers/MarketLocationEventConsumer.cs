@@ -257,9 +257,14 @@ public class MarketLocationEventConsumer :
 
             if (market.PictureId > 0)
             {
-                var pictureUrl = await _pictureService.GetPictureUrlAsync(market.PictureId);
+                var pictureUrl = await _pictureService.GetPictureUrlAsync(market.PictureId, storeLocation: _settings.StoreUrl);
                 if (!string.IsNullOrEmpty(pictureUrl))
                 {
+                    if (!pictureUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase) &&
+                        !pictureUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+                    {
+                        pictureUrl = $"{_settings.StoreUrl.TrimEnd('/')}/{pictureUrl.TrimStart('/')}";
+                    }
                     message.ImageUrl = pictureUrl;
                 }
             }
