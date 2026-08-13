@@ -9,7 +9,7 @@
         Review Reward Management
         <small>
             <i class="fas fa-arrow-circle-left"></i>
-            <a asp-action="List" asp-controller="Plugin" asp-area="@Nop.Web.Framework.AreaNames.Admin">@T("Admin.Configuration.Plugins.BackToList")</a>
+            <a asp-action="List" asp-controller="Plugin" asp-area="@Nop.Web.Framework.AreaNames.ADMIN">@T("Admin.Configuration.Plugins.BackToList")</a>
         </small>
     </h1>
 </div>
@@ -89,22 +89,19 @@
                         <button type="button" id="btnCreateMarketCode" class="btn btn-success"><i class="fas fa-plus"></i> Add Market Code</button>
                     </div>
                 </div>
-                <div id="market-code-alert" style="display: none;" class="alert"></div>
 
-                <nop-doc>
-                    <table class="table table-bordered table-striped" id="market-codes-grid">
-                        <thead>
-                            <tr>
-                                <th>Code</th>
-                                <th>Created Date (UTC)</th>
-                                <th>Expiry Date (UTC)</th>
-                                <th>Status</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody></tbody>
-                    </table>
-                </nop-doc>
+                <table class="table table-bordered table-striped" id="market-codes-grid">
+                    <thead>
+                        <tr>
+                            <th>Code</th>
+                            <th>Created Date (UTC)</th>
+                            <th>Expiry Date (UTC)</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
             </div>
         </div>
 
@@ -114,6 +111,16 @@
                 <h3 class="card-title"><i class="fas fa-ticket-alt"></i> Granted Reward Coupons</h3>
             </div>
             <div class="card-body">
+                <div class="row" style="margin-bottom: 15px;">
+                    <div class="col-md-5">
+                        <input type="text" id="searchCouponCode" class="form-control" placeholder="Search Coupon Code (e.g. RVW-ABC1234)" style="text-transform: uppercase;" />
+                    </div>
+                    <div class="col-md-4">
+                        <button type="button" id="btnSearchCoupon" class="btn btn-primary"><i class="fas fa-search"></i> Search Coupon</button>
+                        <button type="button" id="btnClearSearchCoupon" class="btn btn-secondary"><i class="fas fa-undo"></i> Clear</button>
+                    </div>
+                </div>
+
                 <table class="table table-bordered table-striped" id="coupons-grid">
                     <thead>
                         <tr>
@@ -155,6 +162,21 @@
                 }
             });
         });
+
+        $("#btnSearchCoupon").click(function () {
+            loadCoupons();
+        });
+
+        $("#btnClearSearchCoupon").click(function () {
+            $("#searchCouponCode").val("");
+            loadCoupons();
+        });
+
+        $("#searchCouponCode").keypress(function (e) {
+            if (e.which === 13) {
+                loadCoupons();
+            }
+        });
     });
 
     function loadMarketCodes() {
@@ -189,11 +211,12 @@
     }
 
     function loadCoupons() {
-        $.post("@Url.Action("CouponList", "ReviewRewardAdmin")", { Page: 1, PageSize: 50 }, function (res) {
+        var searchCode = $("#searchCouponCode").val();
+        $.post("@Url.Action("CouponList", "ReviewRewardAdmin")", { Page: 1, PageSize: 50, SearchCouponCode: searchCode }, function (res) {
             var tbody = $("#coupons-grid tbody");
             tbody.empty();
             if (!res.Data || res.Data.length === 0) {
-                tbody.append("<tr><td colspan='7' class='text-center'>No granted reward coupons found yet.</td></tr>");
+                tbody.append("<tr><td colspan='7' class='text-center'>No granted reward coupons found matching search.</td></tr>");
                 return;
             }
             $.each(res.Data, function (i, item) {
@@ -201,8 +224,8 @@
                     ? '<span class="badge badge-success">Redeemed (' + (item.RedeemedVia || 'Online') + ')</span>'
                     : '<span class="badge badge-info">Active / Unused</span>';
                 var actionBtn = item.IsRedeemed
-                    ? '-'
-                    : '<button class="btn btn-xs btn-primary" onclick="markRedeemed(' + item.Id + ')">Mark Redeemed (Market)</button>';
+                    ? '<button class="btn btn-xs btn-secondary" disabled>Redeemed</button>'
+                    : '<button class="btn btn-xs btn-primary" onclick="markRedeemed(' + item.Id + ')"><i class="fas fa-check-circle"></i> Mark Redeemed (Market)</button>';
                 var row = "<tr>" +
                     "<td>" + item.CustomerEmail + "</td>" +
                     "<td>" + item.ProductName + "</td>" +
@@ -218,7 +241,7 @@
     }
 
     function markRedeemed(id) {
-        if (!confirm("Are you sure you want to mark this coupon as redeemed at a market stall?"))
+        if (!confirm("Are you sure you want to mark this coupon code as redeemed at a market stall?\n\nThis will deactivate the discount so it cannot be used online."))
             return;
 
         $.post("@Url.Action("MarkRedeemedManually", "ReviewRewardAdmin")", { id: id }, function (res) {

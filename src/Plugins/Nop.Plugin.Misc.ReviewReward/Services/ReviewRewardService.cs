@@ -143,13 +143,18 @@ namespace Nop.Plugin.Misc.ReviewReward.Services
             if (reward == null || reward.RedeemedOnUtc.HasValue)
                 return;
 
+            var discount = await _discountRepository.GetByIdAsync(reward.DiscountId);
+
             reward.RedeemedOnUtc = DateTime.UtcNow;
             reward.RedeemedVia = "Market";
             await _rewardRepository.UpdateAsync(reward);
 
-            var discount = await _discountRepository.GetByIdAsync(reward.DiscountId);
             if (discount != null)
             {
+                // Deactivate the discount so it can no longer be used online
+                discount.IsActive = false;
+                await _discountService.UpdateDiscountAsync(discount);
+
                 await _discountService.InsertDiscountUsageHistoryAsync(new DiscountUsageHistory
                 {
                     DiscountId = discount.Id,

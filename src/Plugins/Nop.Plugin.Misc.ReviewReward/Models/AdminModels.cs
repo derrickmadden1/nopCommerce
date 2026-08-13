@@ -29,6 +29,7 @@ namespace Nop.Plugin.Misc.ReviewReward.Models
 
     public record ReviewRewardCouponSearchModel : BaseSearchModel
     {
+        public string? SearchCouponCode { get; set; }
     }
 
     public record ReviewRewardCouponModel : BaseNopEntityModel

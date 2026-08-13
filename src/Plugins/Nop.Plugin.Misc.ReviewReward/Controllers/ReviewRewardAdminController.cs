@@ -13,6 +13,7 @@ using Nop.Plugin.Misc.ReviewReward.Services;
 using Nop.Services.Catalog;
 using Nop.Services.Configuration;
 using Nop.Services.Customers;
+using Nop.Services.Discounts;
 using Nop.Services.Messages;
 using Nop.Web.Framework;
 using Nop.Web.Framework.Controllers;
@@ -33,6 +34,7 @@ namespace Nop.Plugin.Misc.ReviewReward.Controllers
         private readonly IRepository<ProductReview> _productReviewRepository;
         private readonly IProductService _productService;
         private readonly ICustomerService _customerService;
+        private readonly IDiscountService _discountService;
         private readonly IReviewRewardService _reviewRewardService;
         private readonly INotificationService _notificationService;
 
@@ -44,6 +46,7 @@ namespace Nop.Plugin.Misc.ReviewReward.Controllers
             IRepository<ProductReview> productReviewRepository,
             IProductService productService,
             ICustomerService customerService,
+            IDiscountService discountService,
             IReviewRewardService reviewRewardService,
             INotificationService notificationService)
         {
@@ -54,6 +57,7 @@ namespace Nop.Plugin.Misc.ReviewReward.Controllers
             _productReviewRepository = productReviewRepository;
             _productService = productService;
             _customerService = customerService;
+            _discountService = discountService;
             _reviewRewardService = reviewRewardService;
             _notificationService = notificationService;
         }
@@ -156,12 +160,24 @@ namespace Nop.Plugin.Misc.ReviewReward.Controllers
         [HttpPost]
         public async Task<IActionResult> CouponList(ReviewRewardCouponSearchModel searchModel)
         {
-            var rewards = await _rewardRepository.Table.OrderByDescending(r => r.CreatedOnUtc)
+            var query = _rewardRepository.Table;
+
+            if (!string.IsNullOrWhiteSpace(searchModel.SearchCouponCode))
+            {
+                var searchCode = searchModel.SearchCouponCode.Trim();
+                var matchingDiscountIds = _discountRepository.Table
+                    .Where(d => d.CouponCode.Contains(searchCode))
+                    .Select(d => d.Id);
+
+                query = query.Where(r => matchingDiscountIds.Contains(r.DiscountId));
+            }
+
+            var pagedList = await query.OrderByDescending(r => r.CreatedOnUtc)
                 .ToPagedListAsync(searchModel.Page - 1, searchModel.PageSize);
 
-            var model = new ReviewRewardCouponListModel().PrepareToGrid(searchModel, rewards, () =>
+            var model = new ReviewRewardCouponListModel().PrepareToGrid(searchModel, pagedList, () =>
             {
-                return rewards.Select(r =>
+                return pagedList.Select(r =>
                 {
                     var customer = _customerService.GetCustomerByIdAsync(r.CustomerId).Result;
                     var review = _productReviewRepository.GetByIdAsync(r.ProductReviewId).Result;
@@ -176,6 +192,19 @@ namespace Nop.Plugin.Misc.ReviewReward.Controllers
                             : $"{discount.DiscountAmount:C2}";
                     }
 
+                    var usageHistoryList = _discountService.GetAllDiscountUsageHistoryAsync(r.DiscountId, null, null, false, 0, 1).Result;
+                    var usageHistory = usageHistoryList.FirstOrDefault();
+
+                    bool isRedeemed = r.RedeemedOnUtc.HasValue || usageHistory != null || (discount != null && !discount.IsActive);
+                    string? redeemedVia = r.RedeemedVia;
+                    DateTime? redeemedOn = r.RedeemedOnUtc;
+
+                    if (usageHistory != null && !r.RedeemedOnUtc.HasValue)
+                    {
+                        redeemedVia = usageHistory.OrderId > 0 ? $"Online (Order #{usageHistory.OrderId})" : "Online";
+                        redeemedOn = usageHistory.CreatedOnUtc;
+                    }
+
                     return new ReviewRewardCouponModel
                     {
                         Id = r.Id,
@@ -186,9 +215,9 @@ namespace Nop.Plugin.Misc.ReviewReward.Controllers
                         CouponCode = discount?.CouponCode ?? string.Empty,
                         DiscountAmountText = amountText,
                         CreatedOnUtc = r.CreatedOnUtc,
-                        RedeemedOnUtc = r.RedeemedOnUtc,
-                        RedeemedVia = r.RedeemedVia,
-                        IsRedeemed = r.RedeemedOnUtc.HasValue
+                        RedeemedOnUtc = redeemedOn,
+                        RedeemedVia = redeemedVia ?? (isRedeemed ? "Market" : null),
+                        IsRedeemed = isRedeemed
                     };
                 });
             });
