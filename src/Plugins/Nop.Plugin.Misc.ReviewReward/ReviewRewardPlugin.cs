@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Nop.Core.Domain.Cms;
 using Nop.Data.Migrations;
 using Nop.Plugin.Misc.ReviewReward.Components;
+using Nop.Plugin.Misc.ReviewReward.Domain;
 using Nop.Services.Cms;
 using Nop.Services.Common;
 using Nop.Services.Configuration;
@@ -48,6 +49,14 @@ namespace Nop.Plugin.Misc.ReviewReward
         {
             _migrationManager.ApplyUpMigrations(GetType().Assembly);
 
+            await _settingService.SaveSettingAsync(new ReviewRewardSettings
+            {
+                RewardAmount = 5.00m,
+                UsePercentage = false,
+                CouponPrefix = "RVW-",
+                ExpiryDays = 30
+            });
+
             if (!_widgetSettings.ActiveWidgetSystemNames.Contains(PluginDescriptor.SystemName))
             {
                 _widgetSettings.ActiveWidgetSystemNames.Add(PluginDescriptor.SystemName);
@@ -67,6 +76,8 @@ namespace Nop.Plugin.Misc.ReviewReward
         public override async Task UninstallAsync()
         {
             _migrationManager.ApplyDownMigrations(GetType().Assembly);
+
+            await _settingService.DeleteSettingAsync<ReviewRewardSettings>();
 
             if (_widgetSettings.ActiveWidgetSystemNames.Contains(PluginDescriptor.SystemName))
             {

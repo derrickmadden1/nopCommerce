@@ -1,9 +1,13 @@
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 using Nop.Core;
 using Nop.Core.Domain.Catalog;
 using Nop.Core.Domain.Customers;
 using Nop.Core.Domain.Discounts;
 using Nop.Data;
 using Nop.Plugin.Misc.ReviewReward.Domain;
+using Nop.Services.Configuration;
 using Nop.Services.Discounts;
 using Nop.Services.Messages;
 using Nop.Services.Orders;
@@ -18,6 +22,7 @@ namespace Nop.Plugin.Misc.ReviewReward.Services
         private readonly IRepository<Discount> _discountRepository;
         private readonly IOrderService _orderService;
         private readonly IDiscountService _discountService;
+        private readonly ISettingService _settingService;
         private readonly IWorkflowMessageService _workflowMessageService;
 
         public ReviewRewardService(
@@ -27,6 +32,7 @@ namespace Nop.Plugin.Misc.ReviewReward.Services
             IRepository<Discount> discountRepository,
             IOrderService orderService,
             IDiscountService discountService,
+            ISettingService settingService,
             IWorkflowMessageService workflowMessageService)
         {
             _marketCodeRepository = marketCodeRepository;
@@ -35,6 +41,7 @@ namespace Nop.Plugin.Misc.ReviewReward.Services
             _discountRepository = discountRepository;
             _orderService = orderService;
             _discountService = discountService;
+            _settingService = settingService;
             _workflowMessageService = workflowMessageService;
         }
 
@@ -68,26 +75,43 @@ namespace Nop.Plugin.Misc.ReviewReward.Services
         public async Task<ReviewRewardCoupon> GrantRewardAsync(Customer customer, ProductReview review,
             MarketPurchaseCode? marketCodeUsed = null)
         {
+            var settings = await _settingService.LoadSettingAsync<ReviewRewardSettings>();
+
+            var now = DateTime.UtcNow;
+            DateTime? endDate = settings.ExpiryDays > 0 ? now.AddDays(settings.ExpiryDays) : null;
+            var prefix = string.IsNullOrWhiteSpace(settings.CouponPrefix) ? "RVW-" : settings.CouponPrefix.Trim();
+
             var discount = new Discount
             {
                 Name = $"Review reward - customer {customer.Id} - review {review.Id}",
                 DiscountTypeId = (int)DiscountType.AssignedToOrderTotal,
-                UsePercentage = false,
-                DiscountAmount = 0,
+                UsePercentage = settings.UsePercentage,
+                DiscountAmount = settings.UsePercentage ? 0 : settings.RewardAmount,
+                DiscountPercentage = settings.UsePercentage ? settings.RewardAmount : 0,
                 RequiresCouponCode = true,
-                CouponCode = GenerateCouponCode(),
+                CouponCode = prefix + Guid.NewGuid().ToString("N")[..8].ToUpperInvariant(),
                 DiscountLimitationId = (int)DiscountLimitationType.NTimesOnly,
                 LimitationTimes = 1,
+                StartDateUtc = now,
+                EndDateUtc = endDate,
                 IsActive = true
             };
             await _discountService.InsertDiscountAsync(discount);
+
+            // Attach requirement rule to enforce "only 1 review reward coupon per order"
+            var requirement = new DiscountRequirement
+            {
+                DiscountId = discount.Id,
+                DiscountRequirementRuleSystemName = "Misc.ReviewReward"
+            };
+            await _discountService.InsertDiscountRequirementAsync(requirement);
 
             var reward = new ReviewRewardCoupon
             {
                 CustomerId = customer.Id,
                 ProductReviewId = review.Id,
                 DiscountId = discount.Id,
-                CreatedOnUtc = DateTime.UtcNow
+                CreatedOnUtc = now
             };
             await _rewardRepository.InsertAsync(reward);
 
@@ -99,7 +123,7 @@ namespace Nop.Plugin.Misc.ReviewReward.Services
                     CustomerId = customer.Id,
                     ProductId = review.ProductId,
                     ProductReviewId = review.Id,
-                    UsedOnUtc = DateTime.UtcNow
+                    UsedOnUtc = now
                 });
             }
 
@@ -125,11 +149,6 @@ namespace Nop.Plugin.Misc.ReviewReward.Services
                     CreatedOnUtc = DateTime.UtcNow
                 });
             }
-        }
-
-        private static string GenerateCouponCode()
-        {
-            return "RVW-" + Guid.NewGuid().ToString("N")[..8].ToUpperInvariant();
         }
     }
 }
