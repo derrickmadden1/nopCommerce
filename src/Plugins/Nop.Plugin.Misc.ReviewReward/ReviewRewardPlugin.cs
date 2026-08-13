@@ -50,7 +50,11 @@ namespace Nop.Plugin.Misc.ReviewReward
 
         public Task<IList<string>> GetWidgetZonesAsync()
         {
-            return Task.FromResult<IList<string>>(new List<string> { PublicWidgetZones.ProductReviewsPageBottom });
+            return Task.FromResult<IList<string>>(new List<string>
+            {
+                PublicWidgetZones.ProductReviewsPageInsideForm,
+                PublicWidgetZones.ProductReviewsPageBottom
+            });
         }
 
         public Type GetWidgetViewComponent(string widgetZone)

@@ -6,6 +6,7 @@ using Nop.Plugin.Misc.ReviewReward.Services;
 using Nop.Services.Catalog;
 using Nop.Services.Customers;
 using Nop.Web.Framework.Components;
+using Nop.Web.Framework.Infrastructure;
 using Nop.Web.Models.Catalog;
 
 namespace Nop.Plugin.Misc.ReviewReward.Components
@@ -31,6 +32,10 @@ namespace Nop.Plugin.Misc.ReviewReward.Components
 
         public async Task<IViewComponentResult> InvokeAsync(string widgetZone, object? additionalData = null)
         {
+            // Skip bottom zone if inside-form zone is invoked to avoid double rendering
+            if (widgetZone == PublicWidgetZones.ProductReviewsPageBottom)
+                return Content(string.Empty);
+
             var customer = await _workContext.GetCurrentCustomerAsync();
             if (customer == null || !await _customerService.IsRegisteredAsync(customer))
                 return Content(string.Empty);

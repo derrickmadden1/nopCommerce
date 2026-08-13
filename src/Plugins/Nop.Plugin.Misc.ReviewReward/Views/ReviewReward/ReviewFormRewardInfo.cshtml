@@ -1,31 +1,43 @@
 @model Nop.Plugin.Misc.ReviewReward.Models.ReviewRewardFormModel
 
-<div class="review-reward-verification-box" style="margin: 15px 0; padding: 15px; border-radius: 6px; background-color: #f8f9fa; border: 1px solid #e9ecef;">
+<div class="review-reward-verification-box" style="margin: 20px 0; padding: 18px 20px; border-radius: 8px; background: linear-gradient(135deg, #f8f9fa 0%, #f1f3f5 100%); border: 1px solid #dee2e6; box-shadow: 0 2px 5px rgba(0,0,0,0.03);">
     @if (Model.HasOrderedProduct)
     {
-        <div class="verified-purchase-badge" style="color: #28a745; font-weight: 600; display: flex; align-items: center; gap: 8px;">
-            <span style="font-size: 1.2em;">✓</span>
-            <span>Verified Purchase — Submit your review to earn a discount reward coupon!</span>
+        <div class="verified-purchase-badge" style="color: #2b8a3e; font-weight: 600; display: flex; align-items: center; gap: 12px; font-size: 1.05em;">
+            <div style="background-color: #d3f9d8; width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.3em; color: #2b8a3e; flex-shrink: 0;">
+                ✓
+            </div>
+            <div>
+                <strong style="display: block; color: #2b8a3e; font-size: 1.1em;">Verified Online Purchase</strong>
+                <span style="font-weight: normal; color: #495057; font-size: 0.95em;">Submit your review to earn an exclusive discount reward coupon via email!</span>
+            </div>
         </div>
     }
     else
     {
         <div class="market-code-entry">
-            <label for="MarketPurchaseCode" style="font-weight: 600; display: block; margin-bottom: 6px;">
-                @T("Plugins.Misc.ReviewReward.MarketCode")
-            </label>
-            <p class="hint" style="font-size: 0.9em; color: #6c757d; margin-bottom: 8px;">
-                @T("Plugins.Misc.ReviewReward.MarketCode.Hint")
-            </p>
-            <input type="text" 
-                   name="MarketPurchaseCode" 
-                   id="MarketPurchaseCode" 
-                   class="form-control review-title" 
-                   placeholder="e.g. ROSECOTTAGE-AUG26" 
-                   style="max-width: 350px; text-transform: uppercase;" />
+            <div style="display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px;">
+                <div style="background-color: #e7f5ff; width: 38px; height: 38px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.3em; color: #1c7ed6; flex-shrink: 0;">
+                    🎁
+                </div>
+                <div>
+                    <strong style="display: block; color: #1c7ed6; font-size: 1.1em;">Bought this item at a Market Stall?</strong>
+                    <span style="color: #495057; font-size: 0.95em;">Enter your stall purchase code below to verify your review and earn an exclusive discount reward coupon!</span>
+                </div>
+            </div>
+
+            <div style="margin-top: 10px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px;">
+                <input type="text" 
+                       name="MarketPurchaseCode" 
+                       id="MarketPurchaseCode" 
+                       class="form-control review-title" 
+                       placeholder="e.g. ROSECOTTAGE-AUG26" 
+                       style="max-width: 320px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; background-color: #ffffff; border: 2px solid #1c7ed6; padding: 8px 12px; border-radius: 6px;" />
+            </div>
+            
             @if (!string.IsNullOrEmpty(Model.ErrorMessage))
             {
-                <span class="field-validation-error" style="color: #dc3545; display: block; margin-top: 4px;">
+                <span class="field-validation-error" style="color: #e03131; font-weight: 600; display: block; margin-top: 6px;">
                     @Model.ErrorMessage
                 </span>
             }
