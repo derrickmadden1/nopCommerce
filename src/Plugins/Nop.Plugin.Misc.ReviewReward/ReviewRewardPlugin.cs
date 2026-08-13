@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Nop.Core;
 using Nop.Core.Domain.Cms;
 using Nop.Core.Domain.Messages;
 using Nop.Data.Migrations;
@@ -11,6 +12,7 @@ using Nop.Plugin.Misc.ReviewReward.Services;
 using Nop.Services.Cms;
 using Nop.Services.Common;
 using Nop.Services.Configuration;
+using Nop.Services.Helpers;
 using Nop.Services.Localization;
 using Nop.Services.Messages;
 using Nop.Services.Plugins;
@@ -25,6 +27,7 @@ namespace Nop.Plugin.Misc.ReviewReward
         private readonly ISettingService _settingService;
         private readonly IMessageTemplateService _messageTemplateService;
         private readonly IEmailAccountService _emailAccountService;
+        private readonly IWebHelper _webHelper;
         private readonly WidgetSettings _widgetSettings;
 
         public ReviewRewardPlugin(
@@ -33,6 +36,7 @@ namespace Nop.Plugin.Misc.ReviewReward
             ISettingService settingService,
             IMessageTemplateService messageTemplateService,
             IEmailAccountService emailAccountService,
+            IWebHelper webHelper,
             WidgetSettings widgetSettings)
         {
             _migrationManager = migrationManager;
@@ -40,6 +44,7 @@ namespace Nop.Plugin.Misc.ReviewReward
             _settingService = settingService;
             _messageTemplateService = messageTemplateService;
             _emailAccountService = emailAccountService;
+            _webHelper = webHelper;
             _widgetSettings = widgetSettings;
         }
 
@@ -51,6 +56,11 @@ namespace Nop.Plugin.Misc.ReviewReward
         public Type GetWidgetViewComponent(string widgetZone)
         {
             return typeof(ReviewRewardReviewFormViewComponent);
+        }
+
+        public override string GetConfigurationPageUrl()
+        {
+            return $"{_webHelper.GetStoreLocation()}Admin/ReviewRewardAdmin/Configure";
         }
 
         public bool HideInWidgetList => false;

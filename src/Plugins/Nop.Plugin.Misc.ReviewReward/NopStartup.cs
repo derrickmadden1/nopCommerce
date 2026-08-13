@@ -10,6 +10,7 @@ using Nop.Plugin.Misc.ReviewReward.Infrastructure;
 using Nop.Plugin.Misc.ReviewReward.Services;
 using Nop.Services.Discounts;
 using Nop.Services.Events;
+using Nop.Web.Framework.Events;
 
 namespace Nop.Plugin.Misc.ReviewReward
 {
@@ -23,6 +24,7 @@ namespace Nop.Plugin.Misc.ReviewReward
             services.AddScoped<IConsumer<EntityInsertedEvent<ProductReview>>, ProductReviewEventConsumer>();
             services.AddScoped<IConsumer<ProductReviewApprovedEvent>, ProductReviewEventConsumer>();
             services.AddScoped<IConsumer<AdditionalTokensAddedEvent>, ReviewRewardMessageTokenEventConsumer>();
+            services.AddScoped<IConsumer<AdminMenuCreatedEvent>, AdminMenuConsumer>();
         }
 
         public void Configure(IApplicationBuilder application)
