@@ -1,4 +1,4 @@
-﻿namespace Nop.Web.Framework.Infrastructure;
+namespace Nop.Web.Framework.Infrastructure;
 
 public static partial class PublicWidgetZones
 {
@@ -174,6 +174,7 @@ public static partial class PublicWidgetZones
     public static string ProductPriceBottom => "product_price_bottom";
     public static string ProductPriceTop => "product_price_top";
     public static string ProductReviewsPageBottom => "productreviews_page_bottom";
+    public static string ProductReviewsPageInsideForm => "productreviews_page_inside_form";
     public static string ProductReviewsPageInsideReview => "productreviews_page_inside_review";
     public static string ProductReviewsPageTop => "productreviews_page_top";
     public static string ProductsByTagBeforeProductList => "productsbytag_before_product_list";

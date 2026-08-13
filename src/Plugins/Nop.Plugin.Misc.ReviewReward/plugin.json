@@ -1,0 +1,11 @@
+{
+  "Group": "Misc",
+  "FriendlyName": "Review Reward Discounts",
+  "SystemName": "Misc.ReviewReward",
+  "Version": "1.00",
+  "SupportedVersions": [ "5.00" ],
+  "Author": "Derrick Madden",
+  "DisplayOrder": 1,
+  "FileName": "Nop.Plugin.Misc.ReviewReward.dll",
+  "Description": "Reward customers with discount coupons upon product review submission."
+}

@@ -23,7 +23,9 @@
     <ProjectReference Include="..\..\Libraries\Nop.Services\Nop.Services.csproj" />
     <ProjectReference Include="..\..\Libraries\Nop.Data\Nop.Data.csproj" />
     <ProjectReference Include="..\..\Libraries\Nop.Core\Nop.Core.csproj" />
-    <ProjectReference Include="..\Nop.Plugin.Widgets.MarketLocator\Nop.Plugin.Widgets.MarketLocator.csproj" />
+    <ProjectReference Include="..\Nop.Plugin.Widgets.MarketLocator\Nop.Plugin.Widgets.MarketLocator.csproj">
+      <Private>false</Private>
+    </ProjectReference>
     <ClearPluginAssemblies Include="$(MSBuildProjectDirectory)\..\..\Build\ClearPluginAssemblies.proj" />
   </ItemGroup>
 

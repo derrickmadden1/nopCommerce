@@ -1,0 +1,253 @@
+@model Nop.Plugin.Misc.ReviewReward.Models.ReviewRewardConfigureModel
+@{
+    Layout = "_AdminLayout";
+    ViewBag.Title = "Review Reward Management";
+}
+
+<div class="content-header clearfix">
+    <h1 class="float-left">
+        Review Reward Management
+        <small>
+            <i class="fas fa-arrow-circle-left"></i>
+            <a asp-action="List" asp-controller="Plugin" asp-area="@Nop.Web.Framework.AreaNames.ADMIN">@T("Admin.Configuration.Plugins.BackToList")</a>
+        </small>
+    </h1>
+</div>
+
+<section class="content">
+    <div class="container-fluid">
+        <!-- Settings Card -->
+        <div class="card card-default">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-cog"></i> Reward Settings</h3>
+            </div>
+            <div class="card-body">
+                <form asp-action="Configure" method="post">
+                    <div class="form-group row">
+                        <div class="col-md-3">
+                            <label for="RewardAmount">Reward Amount / Percentage</label>
+                        </div>
+                        <div class="col-md-9">
+                            <input type="number" step="0.01" name="RewardAmount" id="RewardAmount" value="@Model.RewardAmount" class="form-control" style="max-width: 250px;" />
+                            <span class="hint">Value of discount coupon (e.g. 5.00 for £5 off or 10 for 10% off).</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <div class="col-md-3">
+                            <label for="UsePercentage">Use Percentage?</label>
+                        </div>
+                        <div class="col-md-9">
+                            @Html.CheckBoxFor(m => m.UsePercentage)
+                            <span class="hint">Check to apply percentage discount instead of fixed currency amount.</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <div class="col-md-3">
+                            <label for="CouponPrefix">Coupon Code Prefix</label>
+                        </div>
+                        <div class="col-md-9">
+                            <input type="text" name="CouponPrefix" id="CouponPrefix" value="@Model.CouponPrefix" class="form-control" style="max-width: 250px;" />
+                            <span class="hint">Prefix for auto-generated coupon codes (default: RVW-).</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <div class="col-md-3">
+                            <label for="ExpiryDays">Expiry Duration (Days)</label>
+                        </div>
+                        <div class="col-md-9">
+                            <input type="number" name="ExpiryDays" id="ExpiryDays" value="@Model.ExpiryDays" class="form-control" style="max-width: 250px;" />
+                            <span class="hint">Number of days until generated reward coupon expires (0 = no expiry).</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group row">
+                        <div class="col-md-9 offset-md-3">
+                            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Settings</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Market Purchase Codes Card -->
+        <div class="card card-default">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-store"></i> Market Purchase Codes</h3>
+            </div>
+            <div class="card-body">
+                <div class="row" style="margin-bottom: 15px;">
+                    <div class="col-md-4">
+                        <input type="text" id="newMarketCode" class="form-control" placeholder="Code (e.g. ROSECOTTAGE-AUG26)" style="text-transform: uppercase;" />
+                    </div>
+                    <div class="col-md-3">
+                        <input type="number" id="newMarketDays" class="form-control" placeholder="Valid Days (default: 30)" value="30" />
+                    </div>
+                    <div class="col-md-3">
+                        <button type="button" id="btnCreateMarketCode" class="btn btn-success"><i class="fas fa-plus"></i> Add Market Code</button>
+                    </div>
+                </div>
+
+                <table class="table table-bordered table-striped" id="market-codes-grid">
+                    <thead>
+                        <tr>
+                            <th>Code</th>
+                            <th>Created Date (UTC)</th>
+                            <th>Expiry Date (UTC)</th>
+                            <th>Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Granted Reward Coupons Card -->
+        <div class="card card-default">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-ticket-alt"></i> Granted Reward Coupons</h3>
+            </div>
+            <div class="card-body">
+                <div class="row" style="margin-bottom: 15px;">
+                    <div class="col-md-5">
+                        <input type="text" id="searchCouponCode" class="form-control" placeholder="Search Coupon Code (e.g. RVW-ABC1234)" style="text-transform: uppercase;" />
+                    </div>
+                    <div class="col-md-4">
+                        <button type="button" id="btnSearchCoupon" class="btn btn-primary"><i class="fas fa-search"></i> Search Coupon</button>
+                        <button type="button" id="btnClearSearchCoupon" class="btn btn-secondary"><i class="fas fa-undo"></i> Clear</button>
+                    </div>
+                </div>
+
+                <table class="table table-bordered table-striped" id="coupons-grid">
+                    <thead>
+                        <tr>
+                            <th>Customer</th>
+                            <th>Product Name</th>
+                            <th>Coupon Code</th>
+                            <th>Discount</th>
+                            <th>Issued Date (UTC)</th>
+                            <th>Redemption Status</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+    $(document).ready(function () {
+        loadMarketCodes();
+        loadCoupons();
+
+        $("#btnCreateMarketCode").click(function () {
+            var code = $("#newMarketCode").val();
+            var days = $("#newMarketDays").val();
+            if (!code) {
+                alert("Please enter a market purchase code.");
+                return;
+            }
+
+            $.post("@Url.Action("MarketCodeCreate", "ReviewRewardAdmin")", { code: code, daysValid: days }, function (res) {
+                if (res.success) {
+                    $("#newMarketCode").val("");
+                    loadMarketCodes();
+                } else {
+                    alert(res.message || "Failed to create code");
+                }
+            });
+        });
+
+        $("#btnSearchCoupon").click(function () {
+            loadCoupons();
+        });
+
+        $("#btnClearSearchCoupon").click(function () {
+            $("#searchCouponCode").val("");
+            loadCoupons();
+        });
+
+        $("#searchCouponCode").keypress(function (e) {
+            if (e.which === 13) {
+                loadCoupons();
+            }
+        });
+    });
+
+    function loadMarketCodes() {
+        $.post("@Url.Action("MarketCodeList", "ReviewRewardAdmin")", { Page: 1, PageSize: 50 }, function (res) {
+            var tbody = $("#market-codes-grid tbody");
+            tbody.empty();
+            if (!res.Data || res.Data.length === 0) {
+                tbody.append("<tr><td colspan='5' class='text-center'>No market purchase codes found.</td></tr>");
+                return;
+            }
+            $.each(res.Data, function (i, item) {
+                var status = item.IsActive ? '<span class="badge badge-success">Active</span>' : '<span class="badge badge-secondary">Inactive</span>';
+                var btnText = item.IsActive ? 'Deactivate' : 'Activate';
+                var row = "<tr>" +
+                    "<td><strong>" + item.Code + "</strong></td>" +
+                    "<td>" + item.CreatedOnUtc + "</td>" +
+                    "<td>" + item.ExpiryDateUtc + "</td>" +
+                    "<td>" + status + "</td>" +
+                    "<td><button class='btn btn-xs btn-warning' onclick='toggleMarketCode(" + item.Id + ")'>" + btnText + "</button></td>" +
+                    "</tr>";
+                tbody.append(row);
+            });
+        });
+    }
+
+    function toggleMarketCode(id) {
+        $.post("@Url.Action("MarketCodeToggleStatus", "ReviewRewardAdmin")", { id: id }, function (res) {
+            if (res.success) {
+                loadMarketCodes();
+            }
+        });
+    }
+
+    function loadCoupons() {
+        var searchCode = $("#searchCouponCode").val();
+        $.post("@Url.Action("CouponList", "ReviewRewardAdmin")", { Page: 1, PageSize: 50, SearchCouponCode: searchCode }, function (res) {
+            var tbody = $("#coupons-grid tbody");
+            tbody.empty();
+            if (!res.Data || res.Data.length === 0) {
+                tbody.append("<tr><td colspan='7' class='text-center'>No granted reward coupons found matching search.</td></tr>");
+                return;
+            }
+            $.each(res.Data, function (i, item) {
+                var status = item.IsRedeemed
+                    ? '<span class="badge badge-success">Redeemed (' + (item.RedeemedVia || 'Online') + ')</span>'
+                    : '<span class="badge badge-info">Active / Unused</span>';
+                var actionBtn = item.IsRedeemed
+                    ? '<button class="btn btn-xs btn-secondary" disabled>Redeemed</button>'
+                    : '<button class="btn btn-xs btn-primary" onclick="markRedeemed(' + item.Id + ')"><i class="fas fa-check-circle"></i> Mark Redeemed (Market)</button>';
+                var row = "<tr>" +
+                    "<td>" + item.CustomerEmail + "</td>" +
+                    "<td>" + item.ProductName + "</td>" +
+                    "<td><code>" + item.CouponCode + "</code></td>" +
+                    "<td>" + item.DiscountAmountText + "</td>" +
+                    "<td>" + item.CreatedOnUtc + "</td>" +
+                    "<td>" + status + "</td>" +
+                    "<td>" + actionBtn + "</td>" +
+                    "</tr>";
+                tbody.append(row);
+            });
+        });
+    }
+
+    function markRedeemed(id) {
+        if (!confirm("Are you sure you want to mark this coupon code as redeemed at a market stall?\n\nThis will deactivate the discount so it cannot be used online."))
+            return;
+
+        $.post("@Url.Action("MarkRedeemedManually", "ReviewRewardAdmin")", { id: id }, function (res) {
+            if (res.success) {
+                loadCoupons();
+            }
+        });
+    }
+</script>
