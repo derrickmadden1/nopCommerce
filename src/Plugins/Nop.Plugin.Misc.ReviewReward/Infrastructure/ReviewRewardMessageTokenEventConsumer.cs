@@ -18,7 +18,8 @@ namespace Nop.Plugin.Misc.ReviewReward.Infrastructure
                 eventMessage.AddTokens(
                     "%ReviewReward.CouponCode%",
                     "%ReviewReward.RewardAmount%",
-                    "%ReviewReward.ProductName%"
+                    "%ReviewReward.ProductName%",
+                    "%ReviewReward.ExpiryDate%"
                 );
             }
 

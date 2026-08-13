@@ -89,26 +89,55 @@ namespace Nop.Plugin.Misc.ReviewReward
 
             // Message template seeding
             var templates = await _messageTemplateService.GetMessageTemplatesByNameAsync(ReviewRewardMessageService.MessageTemplateName);
+            var emailAccount = (await _emailAccountService.GetAllEmailAccountsAsync()).FirstOrDefault();
+
+            const string templateSubject = "%Store.Name%. Thank you for your review! Here is your reward coupon";
+            const string templateBody = @"<p><a href=""%Store.URL%"">%Store.Name%</a></p>
+<p>Hello %Customer.FullName%,</p>
+<p>Thank you for taking the time to review <strong>%ReviewReward.ProductName%</strong>!</p>
+<p>As a token of our appreciation, here is your exclusive discount reward coupon:</p>
+
+<div style=""padding: 20px; background-color: #f8f9fa; border: 2px dashed #28a745; border-radius: 8px; text-align: center; margin: 20px 0;"">
+    <div style=""font-size: 13px; text-transform: uppercase; color: #6c757d; letter-spacing: 1px; margin-bottom: 5px;"">Your Coupon Code</div>
+    <div style=""font-size: 24px; font-weight: bold; color: #28a745; letter-spacing: 3px; font-family: monospace;"">%ReviewReward.CouponCode%</div>
+    <div style=""font-size: 16px; margin-top: 8px; color: #343a40;"">Discount Value: <strong>%ReviewReward.RewardAmount%</strong></div>
+</div>
+
+<h4 style=""color: #343a40; margin-bottom: 10px;"">How to Redeem Your Discount:</h4>
+<ul style=""color: #495057; line-height: 1.6; padding-left: 20px;"">
+    <li><strong>Online:</strong> Enter your coupon code during checkout in the discount code box.</li>
+    <li><strong>In-Person at Market Stall:</strong> Present this email or coupon code to stall staff at any of our market locations.</li>
+</ul>
+
+<h4 style=""color: #343a40; margin-bottom: 10px;"">Terms & Conditions:</h4>
+<ul style=""color: #6c757d; font-size: 0.9em; line-height: 1.6; padding-left: 20px;"">
+    <li><strong>Single Use Only:</strong> This code can only be redeemed once (either online OR at a market stall).</li>
+    <li><strong>Expiry Date:</strong> %ReviewReward.ExpiryDate%</li>
+    <li><strong>Cart Stacking:</strong> Can be combined with standard promo codes, but only one review reward coupon is allowed per order.</li>
+</ul>
+
+<p>Thank you for being a valued customer!</p>
+<p>Best regards,<br/><strong>%Store.Name% Team</strong></p>";
+
             if (!templates.Any())
             {
-                var emailAccount = (await _emailAccountService.GetAllEmailAccountsAsync()).FirstOrDefault();
                 await _messageTemplateService.InsertMessageTemplateAsync(new MessageTemplate
                 {
                     Name = ReviewRewardMessageService.MessageTemplateName,
-                    Subject = "%Store.Name%. Thank you for your review! Here is your reward coupon",
-                    Body = @"<p><a href=""%Store.URL%"">%Store.Name%</a></p>
-<p>Hello %Customer.FullName%,</p>
-<p>Thank you for taking the time to review <strong>%ReviewReward.ProductName%</strong>!</p>
-<p>As a token of our appreciation, here is your exclusive discount coupon for your next purchase:</p>
-<div style=""padding: 15px; background-color: #f8f9fa; border: 1px dashed #28a745; text-align: center; margin: 15px 0;"">
-    <span style=""font-size: 18px; font-weight: bold; color: #28a745; letter-spacing: 2px;"">%ReviewReward.CouponCode%</span>
-    <p style=""margin-top: 5px; margin-bottom: 0;"">Discount Value: <strong>%ReviewReward.RewardAmount%</strong></p>
-</div>
-<p>Simply enter this code at checkout on your next order.</p>
-<p>Thank you for being a valued customer!</p>",
+                    Subject = templateSubject,
+                    Body = templateBody,
                     IsActive = true,
                     EmailAccountId = emailAccount?.Id ?? 0
                 });
+            }
+            else
+            {
+                foreach (var template in templates)
+                {
+                    template.Subject = templateSubject;
+                    template.Body = templateBody;
+                    await _messageTemplateService.UpdateMessageTemplateAsync(template);
+                }
             }
 
             await _localizationService.AddOrUpdateLocaleResourceAsync(new Dictionary<string, string>

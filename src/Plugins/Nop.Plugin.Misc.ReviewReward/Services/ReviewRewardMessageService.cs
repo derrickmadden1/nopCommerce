@@ -64,8 +64,12 @@ namespace Nop.Plugin.Misc.ReviewReward.Services
             var settings = await _settingService.LoadSettingAsync<ReviewRewardSettings>();
 
             string rewardAmountText = settings.UsePercentage
-                ? $"{settings.RewardAmount:G29}%"
-                : $"{discount.DiscountAmount:C2}";
+                ? $"{settings.RewardAmount:G29}% off"
+                : $"{discount.DiscountAmount:C2} off";
+
+            string expiryDateText = discount.EndDateUtc.HasValue
+                ? discount.EndDateUtc.Value.ToString("dd MMMM yyyy")
+                : "No Expiration Date";
 
             var commonTokens = new List<Token>();
             await _messageTokenProvider.AddCustomerTokensAsync(commonTokens, customer);
@@ -81,6 +85,7 @@ namespace Nop.Plugin.Misc.ReviewReward.Services
                 tokens.Add(new Token("ReviewReward.CouponCode", discount.CouponCode));
                 tokens.Add(new Token("ReviewReward.RewardAmount", rewardAmountText));
                 tokens.Add(new Token("ReviewReward.ProductName", product?.Name ?? string.Empty));
+                tokens.Add(new Token("ReviewReward.ExpiryDate", expiryDateText));
 
                 await _workflowMessageService.SendNotificationAsync(
                     messageTemplate,
