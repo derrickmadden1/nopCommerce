@@ -1,0 +1,34 @@
+@model Nop.Plugin.Misc.ReviewReward.Models.ReviewRewardFormModel
+
+<div class="review-reward-verification-box" style="margin: 15px 0; padding: 15px; border-radius: 6px; background-color: #f8f9fa; border: 1px solid #e9ecef;">
+    @if (Model.HasOrderedProduct)
+    {
+        <div class="verified-purchase-badge" style="color: #28a745; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 1.2em;">✓</span>
+            <span>Verified Purchase — Submit your review to earn a discount reward coupon!</span>
+        </div>
+    }
+    else
+    {
+        <div class="market-code-entry">
+            <label for="MarketPurchaseCode" style="font-weight: 600; display: block; margin-bottom: 6px;">
+                @T("Plugins.Misc.ReviewReward.MarketCode")
+            </label>
+            <p class="hint" style="font-size: 0.9em; color: #6c757d; margin-bottom: 8px;">
+                @T("Plugins.Misc.ReviewReward.MarketCode.Hint")
+            </p>
+            <input type="text" 
+                   name="MarketPurchaseCode" 
+                   id="MarketPurchaseCode" 
+                   class="form-control review-title" 
+                   placeholder="e.g. ROSECOTTAGE-AUG26" 
+                   style="max-width: 350px; text-transform: uppercase;" />
+            @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+            {
+                <span class="field-validation-error" style="color: #dc3545; display: block; margin-top: 4px;">
+                    @Model.ErrorMessage
+                </span>
+            }
+        </div>
+    }
+</div>
