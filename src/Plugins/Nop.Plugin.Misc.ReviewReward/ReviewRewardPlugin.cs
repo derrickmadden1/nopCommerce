@@ -1,14 +1,18 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Nop.Core.Domain.Cms;
+using Nop.Core.Domain.Messages;
 using Nop.Data.Migrations;
 using Nop.Plugin.Misc.ReviewReward.Components;
 using Nop.Plugin.Misc.ReviewReward.Domain;
+using Nop.Plugin.Misc.ReviewReward.Services;
 using Nop.Services.Cms;
 using Nop.Services.Common;
 using Nop.Services.Configuration;
 using Nop.Services.Localization;
+using Nop.Services.Messages;
 using Nop.Services.Plugins;
 using Nop.Web.Framework.Infrastructure;
 
@@ -19,17 +23,23 @@ namespace Nop.Plugin.Misc.ReviewReward
         private readonly IMigrationManager _migrationManager;
         private readonly ILocalizationService _localizationService;
         private readonly ISettingService _settingService;
+        private readonly IMessageTemplateService _messageTemplateService;
+        private readonly IEmailAccountService _emailAccountService;
         private readonly WidgetSettings _widgetSettings;
 
         public ReviewRewardPlugin(
             IMigrationManager migrationManager,
             ILocalizationService localizationService,
             ISettingService settingService,
+            IMessageTemplateService messageTemplateService,
+            IEmailAccountService emailAccountService,
             WidgetSettings widgetSettings)
         {
             _migrationManager = migrationManager;
             _localizationService = localizationService;
             _settingService = settingService;
+            _messageTemplateService = messageTemplateService;
+            _emailAccountService = emailAccountService;
             _widgetSettings = widgetSettings;
         }
 
@@ -63,6 +73,30 @@ namespace Nop.Plugin.Misc.ReviewReward
                 await _settingService.SaveSettingAsync(_widgetSettings);
             }
 
+            // Message template seeding
+            var templates = await _messageTemplateService.GetMessageTemplatesByNameAsync(ReviewRewardMessageService.MessageTemplateName);
+            if (!templates.Any())
+            {
+                var emailAccount = (await _emailAccountService.GetAllEmailAccountsAsync()).FirstOrDefault();
+                await _messageTemplateService.InsertMessageTemplateAsync(new MessageTemplate
+                {
+                    Name = ReviewRewardMessageService.MessageTemplateName,
+                    Subject = "%Store.Name%. Thank you for your review! Here is your reward coupon",
+                    Body = @"<p><a href=""%Store.URL%"">%Store.Name%</a></p>
+<p>Hello %Customer.FullName%,</p>
+<p>Thank you for taking the time to review <strong>%ReviewReward.ProductName%</strong>!</p>
+<p>As a token of our appreciation, here is your exclusive discount coupon for your next purchase:</p>
+<div style=""padding: 15px; background-color: #f8f9fa; border: 1px dashed #28a745; text-align: center; margin: 15px 0;"">
+    <span style=""font-size: 18px; font-weight: bold; color: #28a745; letter-spacing: 2px;"">%ReviewReward.CouponCode%</span>
+    <p style=""margin-top: 5px; margin-bottom: 0;"">Discount Value: <strong>%ReviewReward.RewardAmount%</strong></p>
+</div>
+<p>Simply enter this code at checkout on your next order.</p>
+<p>Thank you for being a valued customer!</p>",
+                    IsActive = true,
+                    EmailAccountId = emailAccount?.Id ?? 0
+                });
+            }
+
             await _localizationService.AddOrUpdateLocaleResourceAsync(new Dictionary<string, string>
             {
                 ["Plugins.Misc.ReviewReward.MarketCode"] = "Market Purchase Code",
@@ -78,6 +112,12 @@ namespace Nop.Plugin.Misc.ReviewReward
             _migrationManager.ApplyDownMigrations(GetType().Assembly);
 
             await _settingService.DeleteSettingAsync<ReviewRewardSettings>();
+
+            var templates = await _messageTemplateService.GetMessageTemplatesByNameAsync(ReviewRewardMessageService.MessageTemplateName);
+            foreach (var template in templates)
+            {
+                await _messageTemplateService.DeleteMessageTemplateAsync(template);
+            }
 
             if (_widgetSettings.ActiveWidgetSystemNames.Contains(PluginDescriptor.SystemName))
             {

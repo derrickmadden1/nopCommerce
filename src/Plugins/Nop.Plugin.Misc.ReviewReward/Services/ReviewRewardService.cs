@@ -7,9 +7,9 @@ using Nop.Core.Domain.Customers;
 using Nop.Core.Domain.Discounts;
 using Nop.Data;
 using Nop.Plugin.Misc.ReviewReward.Domain;
+using Nop.Services.Catalog;
 using Nop.Services.Configuration;
 using Nop.Services.Discounts;
-using Nop.Services.Messages;
 using Nop.Services.Orders;
 
 namespace Nop.Plugin.Misc.ReviewReward.Services
@@ -21,9 +21,10 @@ namespace Nop.Plugin.Misc.ReviewReward.Services
         private readonly IRepository<ReviewRewardCoupon> _rewardRepository;
         private readonly IRepository<Discount> _discountRepository;
         private readonly IOrderService _orderService;
+        private readonly IProductService _productService;
         private readonly IDiscountService _discountService;
         private readonly ISettingService _settingService;
-        private readonly IWorkflowMessageService _workflowMessageService;
+        private readonly IReviewRewardMessageService _reviewRewardMessageService;
 
         public ReviewRewardService(
             IRepository<MarketPurchaseCode> marketCodeRepository,
@@ -31,18 +32,20 @@ namespace Nop.Plugin.Misc.ReviewReward.Services
             IRepository<ReviewRewardCoupon> rewardRepository,
             IRepository<Discount> discountRepository,
             IOrderService orderService,
+            IProductService productService,
             IDiscountService discountService,
             ISettingService settingService,
-            IWorkflowMessageService workflowMessageService)
+            IReviewRewardMessageService reviewRewardMessageService)
         {
             _marketCodeRepository = marketCodeRepository;
             _marketCodeUsageRepository = marketCodeUsageRepository;
             _rewardRepository = rewardRepository;
             _discountRepository = discountRepository;
             _orderService = orderService;
+            _productService = productService;
             _discountService = discountService;
             _settingService = settingService;
-            _workflowMessageService = workflowMessageService;
+            _reviewRewardMessageService = reviewRewardMessageService;
         }
 
         public async Task<bool> CustomerHasOrderedProductAsync(Customer customer, Product product)
@@ -126,6 +129,10 @@ namespace Nop.Plugin.Misc.ReviewReward.Services
                     UsedOnUtc = now
                 });
             }
+
+            // Send reward email to customer
+            var product = await _productService.GetProductByIdAsync(review.ProductId);
+            await _reviewRewardMessageService.SendReviewRewardCouponEmailAsync(customer, product, discount, storeId: review.StoreId);
 
             return reward;
         }

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Nop.Core.Domain.Catalog;
+using Nop.Core.Domain.Messages;
 using Nop.Core.Events;
 using Nop.Core.Infrastructure;
 using Nop.Plugin.Misc.ReviewReward.Discounts;
@@ -17,9 +18,11 @@ namespace Nop.Plugin.Misc.ReviewReward
         public void ConfigureServices(IServiceCollection services, IConfiguration configuration)
         {
             services.AddScoped<IReviewRewardService, ReviewRewardService>();
+            services.AddScoped<IReviewRewardMessageService, ReviewRewardMessageService>();
             services.AddScoped<IDiscountRequirementRule, ReviewRewardRequirementRule>();
             services.AddScoped<IConsumer<EntityInsertedEvent<ProductReview>>, ProductReviewEventConsumer>();
             services.AddScoped<IConsumer<ProductReviewApprovedEvent>, ProductReviewEventConsumer>();
+            services.AddScoped<IConsumer<AdditionalTokensAddedEvent>, ReviewRewardMessageTokenEventConsumer>();
         }
 
         public void Configure(IApplicationBuilder application)
