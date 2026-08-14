@@ -153,6 +153,12 @@ public class ShopifyCheckoutController : BasePluginController
     [IgnoreAntiforgeryToken]
     public async Task<IActionResult> InitCheckout()
     {
+        if (string.IsNullOrWhiteSpace(_settings.StoreUrl) || string.IsNullOrWhiteSpace(_settings.StorefrontAccessToken))
+        {
+            _notificationService.ErrorNotification("Shopify Checkout is not configured yet. Please configure the Store URL and Storefront Access Token in Admin panel.");
+            return RedirectToRoute("ShoppingCart");
+        }
+
         var customer = await _workContext.GetCurrentCustomerAsync();
         var store = await _storeContext.GetCurrentStoreAsync();
 
