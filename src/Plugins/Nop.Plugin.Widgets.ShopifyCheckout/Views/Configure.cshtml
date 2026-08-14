@@ -7,7 +7,7 @@
     <div class="cards-group">
         <div class="card card-default">
             <div class="card-header">
-                Shopify Storefront API Settings
+                Shopify Integration Settings
             </div>
             <div class="card-body">
                 <div class="form-group row">
@@ -26,6 +26,16 @@
                     <div class="col-md-9">
                         <nop-editor asp-for="StorefrontAccessToken" />
                         <span asp-validation-for="StorefrontAccessToken"></span>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <div class="col-md-3">
+                        <nop-label asp-for="AdminApiAccessToken" />
+                    </div>
+                    <div class="col-md-9">
+                        <nop-editor asp-for="AdminApiAccessToken" />
+                        <span asp-validation-for="AdminApiAccessToken"></span>
+                        <small class="form-text text-muted">Or leave blank to load from Azure Key Vault setting <code>Shopify:AdminApiAccessToken</code>.</small>
                     </div>
                 </div>
                 <div class="form-group row">
@@ -66,6 +76,15 @@
                 </div>
                 <div class="form-group row">
                     <div class="col-md-3">
+                        <nop-label asp-for="EnableAutoCatalogSync" />
+                    </div>
+                    <div class="col-md-9">
+                        <nop-editor asp-for="EnableAutoCatalogSync" />
+                        <span asp-validation-for="EnableAutoCatalogSync"></span>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <div class="col-md-3">
                         <nop-label asp-for="CustomButtonText" />
                     </div>
                     <div class="col-md-9">
@@ -84,3 +103,19 @@
         </div>
     </div>
 </form>
+
+<div class="cards-group mt-3">
+    <div class="card card-default">
+        <div class="card-header">
+            Catalog Initial Population & Full Sync
+        </div>
+        <div class="card-body">
+            <p>Push your entire nopCommerce product catalog and variant combinations to Shopify, automatically mapping all resulting Shopify Variant IDs back into your local database.</p>
+            <form asp-controller="ShopifyCheckout" asp-action="RunFullCatalogSync" method="post">
+                <button type="submit" class="btn btn-success">
+                    <i class="fas fa-sync-alt"></i> Run Full Catalog Sync to Shopify
+                </button>
+            </form>
+        </div>
+    </div>
+</div>

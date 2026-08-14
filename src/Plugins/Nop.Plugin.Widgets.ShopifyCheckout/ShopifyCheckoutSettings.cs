@@ -13,9 +13,14 @@ public class ShopifyCheckoutSettings : ISettings
     public string StoreUrl { get; set; }
 
     /// <summary>
-    /// Gets or sets the Shopify Storefront API Access Token
+    /// Gets or sets the Shopify Storefront API Access Token (for cart creation)
     /// </summary>
     public string StorefrontAccessToken { get; set; }
+
+    /// <summary>
+    /// Gets or sets the Shopify Admin API Access Token (for product catalog sync)
+    /// </summary>
+    public string AdminApiAccessToken { get; set; }
 
     /// <summary>
     /// Gets or sets the Shopify GraphQL API version (e.g. "2024-07")
@@ -36,6 +41,11 @@ public class ShopifyCheckoutSettings : ISettings
     /// Gets or sets a value indicating whether to fallback to SKU as Variant ID if no explicit mapping exists
     /// </summary>
     public bool FallbackToSkuAsVariantId { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether to automatically sync products to Shopify on create/update/delete
+    /// </summary>
+    public bool EnableAutoCatalogSync { get; set; }
 
     /// <summary>
     /// Gets or sets custom text for the checkout button

@@ -14,6 +14,9 @@ public record ConfigurationModel : BaseNopModel
     [NopResourceDisplayName("Plugins.Widgets.ShopifyCheckout.Fields.StorefrontAccessToken")]
     public string StorefrontAccessToken { get; set; }
 
+    [NopResourceDisplayName("Plugins.Widgets.ShopifyCheckout.Fields.AdminApiAccessToken")]
+    public string AdminApiAccessToken { get; set; }
+
     [NopResourceDisplayName("Plugins.Widgets.ShopifyCheckout.Fields.ApiVersion")]
     public string ApiVersion { get; set; }
 
@@ -25,6 +28,9 @@ public record ConfigurationModel : BaseNopModel
 
     [NopResourceDisplayName("Plugins.Widgets.ShopifyCheckout.Fields.FallbackToSkuAsVariantId")]
     public bool FallbackToSkuAsVariantId { get; set; }
+
+    [NopResourceDisplayName("Plugins.Widgets.ShopifyCheckout.Fields.EnableAutoCatalogSync")]
+    public bool EnableAutoCatalogSync { get; set; }
 
     [NopResourceDisplayName("Plugins.Widgets.ShopifyCheckout.Fields.CustomButtonText")]
     public string CustomButtonText { get; set; }

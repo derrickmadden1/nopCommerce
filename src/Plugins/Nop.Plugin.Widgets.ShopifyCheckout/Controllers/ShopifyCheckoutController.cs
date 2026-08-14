@@ -30,6 +30,7 @@ public class ShopifyCheckoutController : BasePluginController
     private readonly IShopifyVariantMappingService _variantMappingService;
     private readonly IShopifyStorefrontService _shopifyStorefrontService;
     private readonly IShopifyOrderSyncService _orderSyncService;
+    private readonly IShopifyAdminApiService _adminApiService;
     private readonly ShopifyCheckoutSettings _settings;
     private readonly ISettingService _settingService;
     private readonly INotificationService _notificationService;
@@ -48,6 +49,7 @@ public class ShopifyCheckoutController : BasePluginController
         IShopifyVariantMappingService variantMappingService,
         IShopifyStorefrontService shopifyStorefrontService,
         IShopifyOrderSyncService orderSyncService,
+        IShopifyAdminApiService adminApiService,
         ShopifyCheckoutSettings settings,
         ISettingService settingService,
         INotificationService notificationService,
@@ -61,6 +63,7 @@ public class ShopifyCheckoutController : BasePluginController
         _variantMappingService = variantMappingService;
         _shopifyStorefrontService = shopifyStorefrontService;
         _orderSyncService = orderSyncService;
+        _adminApiService = adminApiService;
         _settings = settings;
         _settingService = settingService;
         _notificationService = notificationService;
@@ -82,10 +85,12 @@ public class ShopifyCheckoutController : BasePluginController
         {
             StoreUrl = _settings.StoreUrl,
             StorefrontAccessToken = _settings.StorefrontAccessToken,
+            AdminApiAccessToken = _settings.AdminApiAccessToken,
             ApiVersion = string.IsNullOrWhiteSpace(_settings.ApiVersion) ? ShopifyCheckoutDefaults.DefaultApiVersion : _settings.ApiVersion,
             DisplayButtonOnShoppingCart = _settings.DisplayButtonOnShoppingCart,
             DisplayButtonOnPaymentMethod = _settings.DisplayButtonOnPaymentMethod,
             FallbackToSkuAsVariantId = _settings.FallbackToSkuAsVariantId,
+            EnableAutoCatalogSync = _settings.EnableAutoCatalogSync,
             CustomButtonText = string.IsNullOrWhiteSpace(_settings.CustomButtonText) ? "Checkout with Shopify" : _settings.CustomButtonText
         };
 
@@ -104,10 +109,12 @@ public class ShopifyCheckoutController : BasePluginController
 
         _settings.StoreUrl = model.StoreUrl;
         _settings.StorefrontAccessToken = model.StorefrontAccessToken;
+        _settings.AdminApiAccessToken = model.AdminApiAccessToken;
         _settings.ApiVersion = model.ApiVersion;
         _settings.DisplayButtonOnShoppingCart = model.DisplayButtonOnShoppingCart;
         _settings.DisplayButtonOnPaymentMethod = model.DisplayButtonOnPaymentMethod;
         _settings.FallbackToSkuAsVariantId = model.FallbackToSkuAsVariantId;
+        _settings.EnableAutoCatalogSync = model.EnableAutoCatalogSync;
         _settings.CustomButtonText = model.CustomButtonText;
 
         await _settingService.SaveSettingAsync(_settings);
@@ -115,6 +122,27 @@ public class ShopifyCheckoutController : BasePluginController
         _notificationService.SuccessNotification(await _localizationService.GetResourceAsync("Admin.Plugins.Saved"));
 
         return Configure();
+    }
+
+    [HttpPost]
+    [Area(AreaNames.ADMIN)]
+    [AuthorizeAdmin]
+    [AutoValidateAntiforgeryToken]
+    [CheckPermission(StandardPermission.Configuration.MANAGE_WIDGETS)]
+    public async Task<IActionResult> RunFullCatalogSync()
+    {
+        var (totalProcessed, syncedCount, failedCount, logs) = await _adminApiService.FullCatalogSyncAsync();
+
+        if (failedCount == 0)
+        {
+            _notificationService.SuccessNotification($"Full catalog sync completed successfully! Processed {totalProcessed} items ({syncedCount} synced).");
+        }
+        else
+        {
+            _notificationService.WarningNotification($"Full catalog sync finished with warnings: {syncedCount} synced, {failedCount} failed out of {totalProcessed}. Check System Log for details.");
+        }
+
+        return RedirectToAction("Configure");
     }
 
     #endregion

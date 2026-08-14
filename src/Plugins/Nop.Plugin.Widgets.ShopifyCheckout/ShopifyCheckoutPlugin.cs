@@ -68,10 +68,12 @@ public class ShopifyCheckoutPlugin : BasePlugin, IWidgetPlugin
         {
             StoreUrl = "",
             StorefrontAccessToken = "",
+            AdminApiAccessToken = "",
             ApiVersion = ShopifyCheckoutDefaults.DefaultApiVersion,
             DisplayButtonOnShoppingCart = true,
             DisplayButtonOnPaymentMethod = true,
             FallbackToSkuAsVariantId = true,
+            EnableAutoCatalogSync = true,
             CustomButtonText = "Checkout with Shopify"
         });
 
@@ -80,15 +82,19 @@ public class ShopifyCheckoutPlugin : BasePlugin, IWidgetPlugin
             ["Plugins.Widgets.ShopifyCheckout.Fields.StoreUrl"] = "Shopify Store URL",
             ["Plugins.Widgets.ShopifyCheckout.Fields.StoreUrl.Hint"] = "Enter your Shopify Store URL (e.g. your-store.myshopify.com).",
             ["Plugins.Widgets.ShopifyCheckout.Fields.StorefrontAccessToken"] = "Storefront Access Token",
-            ["Plugins.Widgets.ShopifyCheckout.Fields.StorefrontAccessToken.Hint"] = "Enter your Shopify Storefront API Access Token.",
+            ["Plugins.Widgets.ShopifyCheckout.Fields.StorefrontAccessToken.Hint"] = "Enter your Shopify Storefront API Access Token for cart creation.",
+            ["Plugins.Widgets.ShopifyCheckout.Fields.AdminApiAccessToken"] = "Admin API Access Token",
+            ["Plugins.Widgets.ShopifyCheckout.Fields.AdminApiAccessToken.Hint"] = "Enter Admin API Access Token (or leave blank to use Azure Key Vault 'Shopify:AdminApiAccessToken').",
             ["Plugins.Widgets.ShopifyCheckout.Fields.ApiVersion"] = "API Version",
-            ["Plugins.Widgets.ShopifyCheckout.Fields.ApiVersion.Hint"] = "Enter the Shopify Storefront API version (e.g. 2024-07).",
+            ["Plugins.Widgets.ShopifyCheckout.Fields.ApiVersion.Hint"] = "Enter the Shopify API version (e.g. 2024-07).",
             ["Plugins.Widgets.ShopifyCheckout.Fields.DisplayButtonOnShoppingCart"] = "Display on Shopping Cart",
             ["Plugins.Widgets.ShopifyCheckout.Fields.DisplayButtonOnShoppingCart.Hint"] = "Check to display the 'Checkout with Shopify' button on the cart page.",
             ["Plugins.Widgets.ShopifyCheckout.Fields.DisplayButtonOnPaymentMethod"] = "Display on Checkout Payment Page",
             ["Plugins.Widgets.ShopifyCheckout.Fields.DisplayButtonOnPaymentMethod.Hint"] = "Check to display the button on the payment method selection page.",
             ["Plugins.Widgets.ShopifyCheckout.Fields.FallbackToSkuAsVariantId"] = "Fallback to SKU as Variant ID",
             ["Plugins.Widgets.ShopifyCheckout.Fields.FallbackToSkuAsVariantId.Hint"] = "If enabled, uses product or attribute combination SKU as Shopify Variant ID if no explicit generic attribute mapping exists.",
+            ["Plugins.Widgets.ShopifyCheckout.Fields.EnableAutoCatalogSync"] = "Auto-Sync Products to Shopify",
+            ["Plugins.Widgets.ShopifyCheckout.Fields.EnableAutoCatalogSync.Hint"] = "Check to automatically push nopCommerce product creations, updates, and deletes to Shopify.",
             ["Plugins.Widgets.ShopifyCheckout.Fields.CustomButtonText"] = "Checkout Button Text",
             ["Plugins.Widgets.ShopifyCheckout.Fields.CustomButtonText.Hint"] = "Enter custom text for the Shopify checkout button."
         });
