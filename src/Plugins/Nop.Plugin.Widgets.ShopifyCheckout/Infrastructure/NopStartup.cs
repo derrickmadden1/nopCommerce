@@ -20,6 +20,7 @@ public class NopStartup : INopStartup
     public void ConfigureServices(IServiceCollection services, IConfiguration configuration)
     {
         services.AddScoped<IShopifyVariantMappingService, ShopifyVariantMappingService>();
+        services.AddScoped<IShopifyOrderSyncService, ShopifyOrderSyncService>();
         services.AddHttpClient<IShopifyStorefrontService, ShopifyStorefrontService>().WithProxy();
     }
 

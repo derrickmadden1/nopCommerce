@@ -29,6 +29,7 @@ public class ShopifyCheckoutController : BasePluginController
     private readonly IProductService _productService;
     private readonly IShopifyVariantMappingService _variantMappingService;
     private readonly IShopifyStorefrontService _shopifyStorefrontService;
+    private readonly IShopifyOrderSyncService _orderSyncService;
     private readonly ShopifyCheckoutSettings _settings;
     private readonly ISettingService _settingService;
     private readonly INotificationService _notificationService;
@@ -46,6 +47,7 @@ public class ShopifyCheckoutController : BasePluginController
         IProductService productService,
         IShopifyVariantMappingService variantMappingService,
         IShopifyStorefrontService shopifyStorefrontService,
+        IShopifyOrderSyncService orderSyncService,
         ShopifyCheckoutSettings settings,
         ISettingService settingService,
         INotificationService notificationService,
@@ -58,6 +60,7 @@ public class ShopifyCheckoutController : BasePluginController
         _productService = productService;
         _variantMappingService = variantMappingService;
         _shopifyStorefrontService = shopifyStorefrontService;
+        _orderSyncService = orderSyncService;
         _settings = settings;
         _settingService = settingService;
         _notificationService = notificationService;
@@ -167,13 +170,21 @@ public class ShopifyCheckoutController : BasePluginController
             return RedirectToRoute("ShoppingCart");
         }
 
-        if (string.IsNullOrWhiteSpace(checkoutUrl))
-        {
-            _notificationService.ErrorNotification("Failed to obtain Shopify checkout URL.");
-            return RedirectToRoute("ShoppingCart");
-        }
+        // Clear local nopCommerce shopping cart session upon successful handoff
+        await _shoppingCartService.ClearShoppingCartAsync(customer, store.Id);
 
         return Redirect(checkoutUrl);
+    }
+
+    [HttpPost]
+    [IgnoreAntiforgeryToken]
+    public async Task<IActionResult> ProcessOrderWebhook([FromBody] ShopifyWebhookOrderModel model)
+    {
+        var (success, message, count) = await _orderSyncService.ProcessShopifyOrderAsync(model);
+        if (!success)
+            return BadRequest(new { success = false, message });
+
+        return Ok(new { success = true, message, syncedItemsCount = count });
     }
 
     #endregion
