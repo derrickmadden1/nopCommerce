@@ -1,4 +1,3 @@
-﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
 VisualStudioVersion = 18.1.11312.151
@@ -128,6 +127,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nop.Plugin.Misc.CheckoutAbandonmentTracker", "Plugins\Nop.Plugin.Misc.CheckoutAbandonmentTracker\Nop.Plugin.Misc.CheckoutAbandonmentTracker.csproj", "{191C8666-9A6D-5EA1-5F92-0E50D5623015}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nop.Plugin.Misc.ReviewReward", "Plugins\Nop.Plugin.Misc.ReviewReward\Nop.Plugin.Misc.ReviewReward.csproj", "{6F2AA2F5-6DA1-43E0-AF2A-BE8AC37B651B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nop.Plugin.Widgets.ShopifyCheckout", "Plugins\Nop.Plugin.Widgets.ShopifyCheckout\Nop.Plugin.Widgets.ShopifyCheckout.csproj", "{9B56A102-4F8A-4211-9C3E-29175C01A980}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -1063,6 +1064,22 @@ Global
 		{6F2AA2F5-6DA1-43E0-AF2A-BE8AC37B651B}.Release|x64.Build.0 = Release|Any CPU
 		{6F2AA2F5-6DA1-43E0-AF2A-BE8AC37B651B}.Release|x86.ActiveCfg = Release|Any CPU
 		{6F2AA2F5-6DA1-43E0-AF2A-BE8AC37B651B}.Release|x86.Build.0 = Release|Any CPU
+		{9B56A102-4F8A-4211-9C3E-29175C01A980}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9B56A102-4F8A-4211-9C3E-29175C01A980}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9B56A102-4F8A-4211-9C3E-29175C01A980}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{9B56A102-4F8A-4211-9C3E-29175C01A980}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{9B56A102-4F8A-4211-9C3E-29175C01A980}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{9B56A102-4F8A-4211-9C3E-29175C01A980}.Debug|x64.Build.0 = Debug|Any CPU
+		{9B56A102-4F8A-4211-9C3E-29175C01A980}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{9B56A102-4F8A-4211-9C3E-29175C01A980}.Debug|x86.Build.0 = Debug|Any CPU
+		{9B56A102-4F8A-4211-9C3E-29175C01A980}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9B56A102-4F8A-4211-9C3E-29175C01A980}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9B56A102-4F8A-4211-9C3E-29175C01A980}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{9B56A102-4F8A-4211-9C3E-29175C01A980}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{9B56A102-4F8A-4211-9C3E-29175C01A980}.Release|x64.ActiveCfg = Release|Any CPU
+		{9B56A102-4F8A-4211-9C3E-29175C01A980}.Release|x64.Build.0 = Release|Any CPU
+		{9B56A102-4F8A-4211-9C3E-29175C01A980}.Release|x86.ActiveCfg = Release|Any CPU
+		{9B56A102-4F8A-4211-9C3E-29175C01A980}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

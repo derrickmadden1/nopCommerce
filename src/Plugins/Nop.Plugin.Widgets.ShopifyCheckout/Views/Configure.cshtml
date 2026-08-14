@@ -1,0 +1,86 @@
+@model Nop.Plugin.Widgets.ShopifyCheckout.Models.ConfigurationModel
+@{
+    Layout = "_ConfigurePlugin";
+}
+
+<form asp-controller="ShopifyCheckout" asp-action="Configure" method="post">
+    <div class="cards-group">
+        <div class="card card-default">
+            <div class="card-header">
+                Shopify Storefront API Settings
+            </div>
+            <div class="card-body">
+                <div class="form-group row">
+                    <div class="col-md-3">
+                        <nop-label asp-for="StoreUrl" />
+                    </div>
+                    <div class="col-md-9">
+                        <nop-editor asp-for="StoreUrl" />
+                        <span asp-validation-for="StoreUrl"></span>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <div class="col-md-3">
+                        <nop-label asp-for="StorefrontAccessToken" />
+                    </div>
+                    <div class="col-md-9">
+                        <nop-editor asp-for="StorefrontAccessToken" />
+                        <span asp-validation-for="StorefrontAccessToken"></span>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <div class="col-md-3">
+                        <nop-label asp-for="ApiVersion" />
+                    </div>
+                    <div class="col-md-9">
+                        <nop-editor asp-for="ApiVersion" />
+                        <span asp-validation-for="ApiVersion"></span>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <div class="col-md-3">
+                        <nop-label asp-for="DisplayButtonOnShoppingCart" />
+                    </div>
+                    <div class="col-md-9">
+                        <nop-editor asp-for="DisplayButtonOnShoppingCart" />
+                        <span asp-validation-for="DisplayButtonOnShoppingCart"></span>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <div class="col-md-3">
+                        <nop-label asp-for="DisplayButtonOnPaymentMethod" />
+                    </div>
+                    <div class="col-md-9">
+                        <nop-editor asp-for="DisplayButtonOnPaymentMethod" />
+                        <span asp-validation-for="DisplayButtonOnPaymentMethod"></span>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <div class="col-md-3">
+                        <nop-label asp-for="FallbackToSkuAsVariantId" />
+                    </div>
+                    <div class="col-md-9">
+                        <nop-editor asp-for="FallbackToSkuAsVariantId" />
+                        <span asp-validation-for="FallbackToSkuAsVariantId"></span>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <div class="col-md-3">
+                        <nop-label asp-for="CustomButtonText" />
+                    </div>
+                    <div class="col-md-9">
+                        <nop-editor asp-for="CustomButtonText" />
+                        <span asp-validation-for="CustomButtonText"></span>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <div class="col-md-9 offset-md-3">
+                        <button type="submit" name="save" class="btn btn-primary">
+                            @T("Admin.Common.Save")
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
