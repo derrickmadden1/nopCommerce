@@ -23,6 +23,7 @@
             </div>
             <div class="card-body">
                 <form asp-action="Configure" method="post">
+                    @Html.AntiForgeryToken()
                     <div class="form-group row">
                         <div class="col-md-3">
                             <label for="RewardAmount">Reward Amount / Percentage</label>
@@ -153,7 +154,10 @@
                 return;
             }
 
-            $.post("@Url.Action("MarketCodeCreate", "ReviewRewardAdmin")", { code: code, daysValid: days }, function (res) {
+            var postData = { code: code, daysValid: days };
+            addAntiForgeryToken(postData);
+
+            $.post("@Url.Action("MarketCodeCreate", "ReviewRewardAdmin")", postData, function (res) {
                 if (res.success) {
                     $("#newMarketCode").val("");
                     loadMarketCodes();
@@ -180,7 +184,10 @@
     });
 
     function loadMarketCodes() {
-        $.post("@Url.Action("MarketCodeList", "ReviewRewardAdmin")", { Page: 1, PageSize: 50 }, function (res) {
+        var postData = { Page: 1, PageSize: 50 };
+        addAntiForgeryToken(postData);
+
+        $.post("@Url.Action("MarketCodeList", "ReviewRewardAdmin")", postData, function (res) {
             var tbody = $("#market-codes-grid tbody");
             tbody.empty();
             if (!res.Data || res.Data.length === 0) {
@@ -203,7 +210,10 @@
     }
 
     function toggleMarketCode(id) {
-        $.post("@Url.Action("MarketCodeToggleStatus", "ReviewRewardAdmin")", { id: id }, function (res) {
+        var postData = { id: id };
+        addAntiForgeryToken(postData);
+
+        $.post("@Url.Action("MarketCodeToggleStatus", "ReviewRewardAdmin")", postData, function (res) {
             if (res.success) {
                 loadMarketCodes();
             }
@@ -212,7 +222,10 @@
 
     function loadCoupons() {
         var searchCode = $("#searchCouponCode").val();
-        $.post("@Url.Action("CouponList", "ReviewRewardAdmin")", { Page: 1, PageSize: 50, SearchCouponCode: searchCode }, function (res) {
+        var postData = { Page: 1, PageSize: 50, SearchCouponCode: searchCode };
+        addAntiForgeryToken(postData);
+
+        $.post("@Url.Action("CouponList", "ReviewRewardAdmin")", postData, function (res) {
             var tbody = $("#coupons-grid tbody");
             tbody.empty();
             if (!res.Data || res.Data.length === 0) {
@@ -244,7 +257,10 @@
         if (!confirm("Are you sure you want to mark this coupon code as redeemed at a market stall?\n\nThis will deactivate the discount so it cannot be used online."))
             return;
 
-        $.post("@Url.Action("MarkRedeemedManually", "ReviewRewardAdmin")", { id: id }, function (res) {
+        var postData = { id: id };
+        addAntiForgeryToken(postData);
+
+        $.post("@Url.Action("MarkRedeemedManually", "ReviewRewardAdmin")", postData, function (res) {
             if (res.success) {
                 loadCoupons();
             }
