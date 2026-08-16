@@ -28,6 +28,9 @@ public class ShopifyAdminApiService : IShopifyAdminApiService
     private readonly IGenericAttributeService _genericAttributeService;
     private readonly ILogger _logger;
 
+    private static string _cachedAccessToken;
+    private static DateTime _tokenExpiresAt = DateTime.MinValue;
+
     #endregion
 
     #region Ctor
@@ -55,16 +58,73 @@ public class ShopifyAdminApiService : IShopifyAdminApiService
     #region Utilities
 
     /// <summary>
-    /// Gets the effective Admin API Access token (checking settings first, then Azure Key Vault / IConfiguration fallback)
+    /// Gets the effective Admin API Access token.
+    /// Checks explicit settings first, then Azure Key Vault / IConfiguration, then executes OAuth client_credentials grant if Client ID/Secret are provided.
     /// </summary>
-    private string GetEffectiveAdminToken()
+    private async Task<string> GetEffectiveAdminTokenAsync()
     {
+        // 1. Check explicit setting
         if (!string.IsNullOrWhiteSpace(_settings.AdminApiAccessToken))
             return _settings.AdminApiAccessToken.Trim();
 
+        // 2. Check Azure Key Vault / IConfiguration fallback
         var kvToken = _configuration["Shopify:AdminApiAccessToken"] ?? _configuration["ShopifyAdminApiAccessToken"];
         if (!string.IsNullOrWhiteSpace(kvToken))
             return kvToken.Trim();
+
+        // 3. Check memory cache for client_credentials access token
+        if (!string.IsNullOrWhiteSpace(_cachedAccessToken) && DateTime.UtcNow < _tokenExpiresAt)
+            return _cachedAccessToken;
+
+        // 4. Try client_credentials grant exchange using Client ID + Client Secret
+        var clientId = !string.IsNullOrWhiteSpace(_settings.ClientId) ? _settings.ClientId.Trim() : _configuration["Shopify:ClientId"];
+        var clientSecret = !string.IsNullOrWhiteSpace(_settings.ClientSecret) ? _settings.ClientSecret.Trim() : _configuration["Shopify:ClientSecret"];
+
+        if (!string.IsNullOrWhiteSpace(clientId) && !string.IsNullOrWhiteSpace(clientSecret) && !string.IsNullOrWhiteSpace(_settings.StoreUrl))
+        {
+            var storeDomain = _settings.StoreUrl.Trim().Replace("https://", "").Replace("http://", "").TrimEnd('/');
+            var oauthUrl = $"https://{storeDomain}/admin/oauth/access_token";
+
+            try
+            {
+                using var request = new HttpRequestMessage(HttpMethod.Post, oauthUrl);
+                var formValues = new Dictionary<string, string>
+                {
+                    ["grant_type"] = "client_credentials",
+                    ["client_id"] = clientId,
+                    ["client_secret"] = clientSecret
+                };
+                request.Content = new FormUrlEncodedContent(formValues);
+
+                var response = await _httpClient.SendAsync(request);
+                var content = await response.Content.ReadAsStringAsync();
+
+                if (response.IsSuccessStatusCode)
+                {
+                    using var doc = JsonDocument.Parse(content);
+                    if (doc.RootElement.TryGetProperty("access_token", out var tokenProp))
+                    {
+                        var token = tokenProp.GetString();
+                        int expiresIn = 86399;
+                        if (doc.RootElement.TryGetProperty("expires_in", out var expiresProp) && expiresProp.TryGetInt32(out var exp))
+                            expiresIn = exp;
+
+                        _cachedAccessToken = token;
+                        _tokenExpiresAt = DateTime.UtcNow.AddSeconds(expiresIn - 300); // 5 min safety margin
+                        await _logger.InformationAsync("Successfully retrieved Shopify Admin API access token via client_credentials grant.");
+                        return token;
+                    }
+                }
+                else
+                {
+                    await _logger.WarningAsync($"Shopify OAuth client_credentials grant failed HTTP {response.StatusCode}: {content}");
+                }
+            }
+            catch (Exception ex)
+            {
+                await _logger.ErrorAsync("Error exchanging Client ID and Secret for Shopify access token", ex);
+            }
+        }
 
         return null;
     }
@@ -81,9 +141,9 @@ public class ShopifyAdminApiService : IShopifyAdminApiService
         if (product == null)
             return (false, null, "Product is null");
 
-        var token = GetEffectiveAdminToken();
+        var token = await GetEffectiveAdminTokenAsync();
         if (string.IsNullOrWhiteSpace(token))
-            return (false, null, "Shopify Admin API Access Token is not configured (checked Plugin Settings and Azure Key Vault).");
+            return (false, null, "Shopify Admin API Access Token is not configured (checked Plugin Settings, Key Vault, and Client Credentials grant).");
 
         if (string.IsNullOrWhiteSpace(_settings.StoreUrl))
             return (false, null, "Shopify Store URL is not configured.");
@@ -190,7 +250,6 @@ mutation productSet($input: ProductSetInput!) {
                             var variantGid = variantIdProp.GetString();
                             if (!string.IsNullOrWhiteSpace(variantGid))
                             {
-                                // Store ShopifyVariantId generic attribute on Product
                                 await _genericAttributeService.SaveAttributeAsync(product, ShopifyCheckoutDefaults.ShopifyVariantIdAttribute, variantGid);
                                 return (true, variantGid, $"Successfully synced product '{product.Name}' to Shopify. Variant GID: {variantGid}");
                             }
@@ -216,7 +275,6 @@ mutation productSet($input: ProductSetInput!) {
         if (product == null || combination == null)
             return (false, null, "Product or combination is null");
 
-        // Fallback to parent product sync if single combination
         var result = await CreateOrUpdateProductAsync(product);
         if (result.Success && !string.IsNullOrWhiteSpace(result.VariantGid))
         {
@@ -248,16 +306,15 @@ mutation productSet($input: ProductSetInput!) {
         int syncedCount = 0;
         int failedCount = 0;
 
-        var token = GetEffectiveAdminToken();
+        var token = await GetEffectiveAdminTokenAsync();
         if (string.IsNullOrWhiteSpace(token))
         {
-            logs.Add("ERROR: Shopify Admin API Access Token is not configured.");
+            logs.Add("ERROR: Shopify Admin API Access Token could not be retrieved.");
             return (0, 0, 0, logs);
         }
 
         logs.Add("Starting full nopCommerce catalog sync to Shopify...");
 
-        // Fetch products (paged)
         int pageIndex = 0;
         int pageSize = 50;
 
@@ -271,7 +328,6 @@ mutation productSet($input: ProductSetInput!) {
             {
                 totalProcessed++;
 
-                // Check combinations
                 var combinations = await _productAttributeService.GetAllProductAttributeCombinationsAsync(product.Id);
                 if (combinations != null && combinations.Any())
                 {

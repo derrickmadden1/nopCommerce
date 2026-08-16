@@ -23,6 +23,16 @@ public class ShopifyCheckoutSettings : ISettings
     public string AdminApiAccessToken { get; set; }
 
     /// <summary>
+    /// Gets or sets the Shopify App Client ID (for OAuth client_credentials grant)
+    /// </summary>
+    public string ClientId { get; set; }
+
+    /// <summary>
+    /// Gets or sets the Shopify App Client Secret (for OAuth client_credentials grant)
+    /// </summary>
+    public string ClientSecret { get; set; }
+
+    /// <summary>
     /// Gets or sets the Shopify GraphQL API version (e.g. "2024-07")
     /// </summary>
     public string ApiVersion { get; set; }
