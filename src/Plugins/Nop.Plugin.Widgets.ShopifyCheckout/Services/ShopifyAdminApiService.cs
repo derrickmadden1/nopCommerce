@@ -9,6 +9,7 @@ using Microsoft.Extensions.Configuration;
 using Nop.Core.Domain.Catalog;
 using Nop.Services.Catalog;
 using Nop.Services.Common;
+using Nop.Services.Configuration;
 using Nop.Services.Logging;
 
 namespace Nop.Plugin.Widgets.ShopifyCheckout.Services;
@@ -26,6 +27,7 @@ public class ShopifyAdminApiService : IShopifyAdminApiService
     private readonly IProductService _productService;
     private readonly IProductAttributeService _productAttributeService;
     private readonly IGenericAttributeService _genericAttributeService;
+    private readonly ISettingService _settingService;
     private readonly ILogger _logger;
 
     private static string _cachedAccessToken;
@@ -42,6 +44,7 @@ public class ShopifyAdminApiService : IShopifyAdminApiService
         IProductService productService,
         IProductAttributeService productAttributeService,
         IGenericAttributeService genericAttributeService,
+        ISettingService settingService,
         ILogger logger)
     {
         _httpClient = httpClient;
@@ -50,6 +53,7 @@ public class ShopifyAdminApiService : IShopifyAdminApiService
         _productService = productService;
         _productAttributeService = productAttributeService;
         _genericAttributeService = genericAttributeService;
+        _settingService = settingService;
         _logger = logger;
     }
 
@@ -63,20 +67,16 @@ public class ShopifyAdminApiService : IShopifyAdminApiService
     /// </summary>
     private async Task<string> GetEffectiveAdminTokenAsync()
     {
-        // 1. Check explicit setting
         if (!string.IsNullOrWhiteSpace(_settings.AdminApiAccessToken))
             return _settings.AdminApiAccessToken.Trim();
 
-        // 2. Check Azure Key Vault / IConfiguration fallback
         var kvToken = _configuration["Shopify:AdminApiAccessToken"] ?? _configuration["ShopifyAdminApiAccessToken"];
         if (!string.IsNullOrWhiteSpace(kvToken))
             return kvToken.Trim();
 
-        // 3. Check memory cache for client_credentials access token
         if (!string.IsNullOrWhiteSpace(_cachedAccessToken) && DateTime.UtcNow < _tokenExpiresAt)
             return _cachedAccessToken;
 
-        // 4. Try client_credentials grant exchange using Client ID + Client Secret
         var clientId = !string.IsNullOrWhiteSpace(_settings.ClientId) ? _settings.ClientId.Trim() : _configuration["Shopify:ClientId"];
         var clientSecret = !string.IsNullOrWhiteSpace(_settings.ClientSecret) ? _settings.ClientSecret.Trim() : _configuration["Shopify:ClientSecret"];
 
@@ -110,7 +110,7 @@ public class ShopifyAdminApiService : IShopifyAdminApiService
                             expiresIn = exp;
 
                         _cachedAccessToken = token;
-                        _tokenExpiresAt = DateTime.UtcNow.AddSeconds(expiresIn - 300); // 5 min safety margin
+                        _tokenExpiresAt = DateTime.UtcNow.AddSeconds(expiresIn - 300);
                         await _logger.InformationAsync("Successfully retrieved Shopify Admin API access token via client_credentials grant.");
                         return token;
                     }
@@ -132,6 +132,111 @@ public class ShopifyAdminApiService : IShopifyAdminApiService
     #endregion
 
     #region Methods
+
+    /// <summary>
+    /// Auto-generates or retrieves a Storefront API Access Token using Admin API
+    /// </summary>
+    public async Task<(bool Success, string Token, string Message)> GetOrCreateStorefrontAccessTokenAsync()
+    {
+        if (!string.IsNullOrWhiteSpace(_settings.StorefrontAccessToken))
+            return (true, _settings.StorefrontAccessToken, "Storefront Access Token is already configured.");
+
+        var adminToken = await GetEffectiveAdminTokenAsync();
+        if (string.IsNullOrWhiteSpace(adminToken))
+            return (false, null, "Admin API Access Token / Client Credentials missing. Please provide Client ID & Secret or Admin Token first.");
+
+        if (string.IsNullOrWhiteSpace(_settings.StoreUrl))
+            return (false, null, "Shopify Store URL is missing.");
+
+        var storeDomain = _settings.StoreUrl.Trim().Replace("https://", "").Replace("http://", "").TrimEnd('/');
+        var apiVersion = string.IsNullOrWhiteSpace(_settings.ApiVersion) ? ShopifyCheckoutDefaults.DefaultApiVersion : _settings.ApiVersion.Trim();
+        var endpoint = $"https://{storeDomain}/admin/api/{apiVersion}/graphql.json";
+
+        // 1. Try querying existing storefront access tokens
+        var query = @"
+query {
+  shop {
+    storefrontAccessTokens(first: 5) {
+      nodes {
+        accessToken
+        title
+      }
+    }
+  }
+}";
+        try
+        {
+            using var req1 = new HttpRequestMessage(HttpMethod.Post, endpoint);
+            req1.Headers.Add("X-Shopify-Access-Token", adminToken);
+            req1.Content = new StringContent(JsonSerializer.Serialize(new { query }), Encoding.UTF8, "application/json");
+
+            var resp1 = await _httpClient.SendAsync(req1);
+            var content1 = await resp1.Content.ReadAsStringAsync();
+
+            if (resp1.IsSuccessStatusCode)
+            {
+                using var doc1 = JsonDocument.Parse(content1);
+                if (doc1.RootElement.TryGetProperty("data", out var data1) && data1.TryGetProperty("shop", out var shop1))
+                {
+                    if (shop1.TryGetProperty("storefrontAccessTokens", out var sfTokens) && sfTokens.TryGetProperty("nodes", out var nodes) && nodes.ValueKind == JsonValueKind.Array && nodes.GetArrayLength() > 0)
+                    {
+                        var firstToken = nodes[0].GetProperty("accessToken").GetString();
+                        if (!string.IsNullOrWhiteSpace(firstToken))
+                        {
+                            _settings.StorefrontAccessToken = firstToken;
+                            await _settingService.SaveSettingAsync(_settings);
+                            return (true, firstToken, "Successfully retrieved existing Storefront Access Token from Shopify!");
+                        }
+                    }
+                }
+            }
+
+            // 2. Create new Storefront Access Token
+            var mutation = @"
+mutation {
+  storefrontAccessTokenCreate(input: {title: ""nopCommerce Plugin Storefront Token""}) {
+    storefrontAccessToken {
+      accessToken
+    }
+    userErrors {
+      field
+      message
+    }
+  }
+}";
+            using var req2 = new HttpRequestMessage(HttpMethod.Post, endpoint);
+            req2.Headers.Add("X-Shopify-Access-Token", adminToken);
+            req2.Content = new StringContent(JsonSerializer.Serialize(new { query = mutation }), Encoding.UTF8, "application/json");
+
+            var resp2 = await _httpClient.SendAsync(req2);
+            var content2 = await resp2.Content.ReadAsStringAsync();
+
+            if (resp2.IsSuccessStatusCode)
+            {
+                using var doc2 = JsonDocument.Parse(content2);
+                if (doc2.RootElement.TryGetProperty("data", out var data2) && data2.TryGetProperty("storefrontAccessTokenCreate", out var sfCreate))
+                {
+                    if (sfCreate.TryGetProperty("storefrontAccessToken", out var sfTokenObj) && sfTokenObj.TryGetProperty("accessToken", out var createdTokenProp))
+                    {
+                        var newToken = createdTokenProp.GetString();
+                        if (!string.IsNullOrWhiteSpace(newToken))
+                        {
+                            _settings.StorefrontAccessToken = newToken;
+                            await _settingService.SaveSettingAsync(_settings);
+                            return (true, newToken, "Successfully generated and saved new Storefront Access Token!");
+                        }
+                    }
+                }
+            }
+
+            return (false, null, "Failed to auto-generate Storefront Access Token from Shopify Admin API.");
+        }
+        catch (Exception ex)
+        {
+            await _logger.ErrorAsync("Error auto-generating Storefront Access Token", ex);
+            return (false, null, ex.Message);
+        }
+    }
 
     /// <summary>
     /// Pushes a product to Shopify Admin API and saves the resulting Variant GID to GenericAttributes

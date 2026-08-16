@@ -36,4 +36,10 @@ public interface IShopifyAdminApiService
     /// </summary>
     /// <returns>Sync summary results</returns>
     Task<(int TotalProcessed, int SyncedCount, int FailedCount, List<string> Logs)> FullCatalogSyncAsync();
+
+    /// <summary>
+    /// Auto-generates or retrieves a Storefront API Access Token using Admin API
+    /// </summary>
+    /// <returns>Result containing success flag, token string, and message</returns>
+    Task<(bool Success, string Token, string Message)> GetOrCreateStorefrontAccessTokenAsync();
 }
