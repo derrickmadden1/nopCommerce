@@ -123,9 +123,39 @@ public class ShopifyCheckoutController : BasePluginController
 
         await _settingService.SaveSettingAsync(_settings);
 
+        // Auto-generate Storefront Access Token if missing
+        if (string.IsNullOrWhiteSpace(_settings.StorefrontAccessToken))
+        {
+            var (success, token, msg) = await _adminApiService.GetOrCreateStorefrontAccessTokenAsync();
+            if (success && !string.IsNullOrWhiteSpace(token))
+            {
+                _notificationService.SuccessNotification($"Storefront Access Token automatically generated and saved!");
+            }
+        }
+
         _notificationService.SuccessNotification(await _localizationService.GetResourceAsync("Admin.Plugins.Saved"));
 
         return Configure();
+    }
+
+    [HttpPost]
+    [Area(AreaNames.ADMIN)]
+    [AuthorizeAdmin]
+    [AutoValidateAntiforgeryToken]
+    [CheckPermission(StandardPermission.Configuration.MANAGE_WIDGETS)]
+    public async Task<IActionResult> AutoGenerateStorefrontToken()
+    {
+        var (success, token, msg) = await _adminApiService.GetOrCreateStorefrontAccessTokenAsync();
+        if (success)
+        {
+            _notificationService.SuccessNotification(msg);
+        }
+        else
+        {
+            _notificationService.ErrorNotification(msg);
+        }
+
+        return RedirectToAction("Configure");
     }
 
     [HttpPost]
