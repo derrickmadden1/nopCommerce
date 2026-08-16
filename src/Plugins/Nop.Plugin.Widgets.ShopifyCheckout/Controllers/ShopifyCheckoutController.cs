@@ -86,6 +86,8 @@ public class ShopifyCheckoutController : BasePluginController
             StoreUrl = _settings.StoreUrl,
             StorefrontAccessToken = _settings.StorefrontAccessToken,
             AdminApiAccessToken = _settings.AdminApiAccessToken,
+            ClientId = _settings.ClientId,
+            ClientSecret = _settings.ClientSecret,
             ApiVersion = string.IsNullOrWhiteSpace(_settings.ApiVersion) ? ShopifyCheckoutDefaults.DefaultApiVersion : _settings.ApiVersion,
             DisplayButtonOnShoppingCart = _settings.DisplayButtonOnShoppingCart,
             DisplayButtonOnPaymentMethod = _settings.DisplayButtonOnPaymentMethod,
@@ -110,6 +112,8 @@ public class ShopifyCheckoutController : BasePluginController
         _settings.StoreUrl = model.StoreUrl;
         _settings.StorefrontAccessToken = model.StorefrontAccessToken;
         _settings.AdminApiAccessToken = model.AdminApiAccessToken;
+        _settings.ClientId = model.ClientId;
+        _settings.ClientSecret = model.ClientSecret;
         _settings.ApiVersion = model.ApiVersion;
         _settings.DisplayButtonOnShoppingCart = model.DisplayButtonOnShoppingCart;
         _settings.DisplayButtonOnPaymentMethod = model.DisplayButtonOnPaymentMethod;

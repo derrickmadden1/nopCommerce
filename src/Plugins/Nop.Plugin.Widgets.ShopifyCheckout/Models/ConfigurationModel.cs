@@ -17,6 +17,12 @@ public record ConfigurationModel : BaseNopModel
     [NopResourceDisplayName("Plugins.Widgets.ShopifyCheckout.Fields.AdminApiAccessToken")]
     public string AdminApiAccessToken { get; set; }
 
+    [NopResourceDisplayName("Plugins.Widgets.ShopifyCheckout.Fields.ClientId")]
+    public string ClientId { get; set; }
+
+    [NopResourceDisplayName("Plugins.Widgets.ShopifyCheckout.Fields.ClientSecret")]
+    public string ClientSecret { get; set; }
+
     [NopResourceDisplayName("Plugins.Widgets.ShopifyCheckout.Fields.ApiVersion")]
     public string ApiVersion { get; set; }
 
