@@ -25,9 +25,17 @@
                     LengthMenu = "50, 100, 250",
                     ColumnCollection = new List<ColumnProperty>
                     {
-                        new ColumnProperty(nameof(CheckoutAttemptModel.CustomerEmail)) { Title = "Customer" },
+                        new ColumnProperty(nameof(CheckoutAttemptModel.CustomerEmail)) 
+                        { 
+                            Title = "Customer",
+                            Render = new RenderCustom("renderCustomerColumn")
+                        },
                         new ColumnProperty(nameof(CheckoutAttemptModel.LastStepReached)) { Title = "Last Step" },
-                        new ColumnProperty(nameof(CheckoutAttemptModel.CartTotal)) { Title = "Cart Total" },
+                        new ColumnProperty(nameof(CheckoutAttemptModel.CartTotal)) 
+                        { 
+                            Title = "Cart Total",
+                            Render = new RenderCustom("renderCartColumn")
+                        },
                         new ColumnProperty(nameof(CheckoutAttemptModel.StartedOnUtc)) { Title = "Started", Render = new RenderDate() },
                         new ColumnProperty(nameof(CheckoutAttemptModel.LastActivityUtc)) { Title = "Last Activity", Render = new RenderDate() }
                     }
@@ -36,3 +44,22 @@
         </div>
     </div>
 </form>
+
+<script>
+    function renderCustomerColumn(data, type, row, meta) {
+        if (row.CustomerId && row.CustomerId > 0) {
+            var customerUrl = '@Url.Content("~/Admin/Customer/Edit/")' + row.CustomerId;
+            return '<a href="' + customerUrl + '" target="_blank">' + (data || '(customer)') + '</a>';
+        }
+        return data || '(guest)';
+    }
+
+    function renderCartColumn(data, type, row, meta) {
+        var cartText = data !== null && data !== undefined ? ('$' + parseFloat(data).toFixed(2)) : '-';
+        if (row.CustomerId && row.CustomerId > 0) {
+            var cartUrl = '@Url.Content("~/Admin/Customer/Edit/")' + row.CustomerId + '#customer-cart';
+            return '<a href="' + cartUrl + '" target="_blank" title="View Customer Cart">' + cartText + '</a>';
+        }
+        return cartText;
+    }
+</script>

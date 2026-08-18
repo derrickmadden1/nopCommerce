@@ -10,6 +10,7 @@ namespace Nop.Plugin.Misc.CheckoutAbandonmentTracker.Models
 
     public record CheckoutAttemptModel : BaseNopEntityModel
     {
+        public int? CustomerId { get; set; }
         public string CustomerEmail { get; set; } = string.Empty;
         public string CustomerGuid { get; set; } = string.Empty;
         public string LastStepReached { get; set; } = string.Empty;
