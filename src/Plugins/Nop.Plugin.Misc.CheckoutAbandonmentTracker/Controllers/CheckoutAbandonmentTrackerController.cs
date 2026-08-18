@@ -69,6 +69,7 @@ namespace Nop.Plugin.Misc.CheckoutAbandonmentTracker.Controllers
                     return new CheckoutAttemptModel
                     {
                         Id = attempt.Id,
+                        CustomerId = attempt.CustomerId,
                         CustomerEmail = isGuest ? "(guest)" : customer?.Email,
                         CustomerGuid = attempt.CustomerGuid,
                         LastStepReached = attempt.LastStepReached.ToString(),
