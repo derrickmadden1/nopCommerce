@@ -26,7 +26,7 @@
                     <div class="col-md-9">
                         <nop-editor asp-for="StorefrontAccessToken" />
                         <span asp-validation-for="StorefrontAccessToken"></span>
-                        <small class="form-text text-muted">Leave empty to automatically generate from Shopify Admin API upon save (requires Client ID & Secret below).</small>
+                        <small class="form-text text-muted">Enter your Storefront API Access Token (e.g. from Shopify Headless Sales Channel or App API credentials). If left empty, the plugin will attempt to auto-generate one via Shopify Admin API (requires Client ID & Secret below with <code>write_storefront_access_tokens</code> scope).</small>
                     </div>
                 </div>
                 <div class="form-group row">

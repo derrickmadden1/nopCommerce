@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Nop.Plugin.Widgets.ShopifyCheckout.Models;
+using Nop.Plugin.Widgets.ShopifyCheckout.Services;
 using Nop.Services.Security;
 using Nop.Web.Framework.Components;
 using Nop.Web.Framework.Infrastructure;
@@ -15,6 +16,7 @@ public class ShopifyCheckoutViewComponent : NopViewComponent
 
     private readonly ShopifyCheckoutSettings _settings;
     private readonly IPermissionService _permissionService;
+    private readonly IShopifyAdminApiService _adminApiService;
 
     #endregion
 
@@ -22,10 +24,12 @@ public class ShopifyCheckoutViewComponent : NopViewComponent
 
     public ShopifyCheckoutViewComponent(
         ShopifyCheckoutSettings settings,
-        IPermissionService permissionService)
+        IPermissionService permissionService,
+        IShopifyAdminApiService adminApiService)
     {
         _settings = settings;
         _permissionService = permissionService;
+        _adminApiService = adminApiService;
     }
 
     #endregion
@@ -47,6 +51,15 @@ public class ShopifyCheckoutViewComponent : NopViewComponent
         else
         {
             return Content(string.Empty);
+        }
+
+        if (string.IsNullOrWhiteSpace(_settings.StorefrontAccessToken) && !string.IsNullOrWhiteSpace(_settings.StoreUrl))
+        {
+            var (success, token, _) = await _adminApiService.GetOrCreateStorefrontAccessTokenAsync();
+            if (success && !string.IsNullOrWhiteSpace(token))
+            {
+                _settings.StorefrontAccessToken = token;
+            }
         }
 
         bool isConfigured = !string.IsNullOrWhiteSpace(_settings.StoreUrl) && !string.IsNullOrWhiteSpace(_settings.StorefrontAccessToken);
