@@ -18,6 +18,7 @@ public class ShopifyStorefrontService : IShopifyStorefrontService
 
     private readonly HttpClient _httpClient;
     private readonly ShopifyCheckoutSettings _settings;
+    private readonly IShopifyAdminApiService _adminApiService;
     private readonly ILogger<ShopifyStorefrontService> _logger;
 
     #endregion
@@ -27,10 +28,12 @@ public class ShopifyStorefrontService : IShopifyStorefrontService
     public ShopifyStorefrontService(
         HttpClient httpClient,
         ShopifyCheckoutSettings settings,
+        IShopifyAdminApiService adminApiService,
         ILogger<ShopifyStorefrontService> logger)
     {
         _httpClient = httpClient;
         _settings = settings;
+        _adminApiService = adminApiService;
         _logger = logger;
     }
 
@@ -55,8 +58,16 @@ public class ShopifyStorefrontService : IShopifyStorefrontService
 
         if (string.IsNullOrWhiteSpace(_settings.StorefrontAccessToken))
         {
-            errors.Add("Shopify Storefront Access Token is not configured.");
-            return (null, errors);
+            var (success, token, msg) = await _adminApiService.GetOrCreateStorefrontAccessTokenAsync();
+            if (success && !string.IsNullOrWhiteSpace(token))
+            {
+                _settings.StorefrontAccessToken = token;
+            }
+            else
+            {
+                errors.Add($"Shopify Storefront Access Token is not configured ({msg}).");
+                return (null, errors);
+            }
         }
 
         var storeDomain = _settings.StoreUrl.Trim().Replace("https://", "").Replace("http://", "").TrimEnd('/');

@@ -189,8 +189,20 @@ public class ShopifyCheckoutController : BasePluginController
     {
         if (string.IsNullOrWhiteSpace(_settings.StoreUrl) || string.IsNullOrWhiteSpace(_settings.StorefrontAccessToken))
         {
-            _notificationService.ErrorNotification("Shopify Checkout is not configured yet. Please configure the Store URL and Storefront Access Token in Admin panel.");
-            return RedirectToRoute("ShoppingCart");
+            if (!string.IsNullOrWhiteSpace(_settings.StoreUrl))
+            {
+                var (success, token, _) = await _adminApiService.GetOrCreateStorefrontAccessTokenAsync();
+                if (success && !string.IsNullOrWhiteSpace(token))
+                {
+                    _settings.StorefrontAccessToken = token;
+                }
+            }
+
+            if (string.IsNullOrWhiteSpace(_settings.StoreUrl) || string.IsNullOrWhiteSpace(_settings.StorefrontAccessToken))
+            {
+                _notificationService.ErrorNotification("Shopify Checkout is not configured yet. Please configure the Store URL and Storefront Access Token in Admin panel.");
+                return RedirectToRoute("ShoppingCart");
+            }
         }
 
         var customer = await _workContext.GetCurrentCustomerAsync();

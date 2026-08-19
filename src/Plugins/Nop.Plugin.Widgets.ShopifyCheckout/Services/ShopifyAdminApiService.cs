@@ -87,17 +87,26 @@ public class ShopifyAdminApiService : IShopifyAdminApiService
 
             try
             {
-                using var request = new HttpRequestMessage(HttpMethod.Post, oauthUrl);
                 var formValues = new Dictionary<string, string>
                 {
                     ["grant_type"] = "client_credentials",
                     ["client_id"] = clientId,
                     ["client_secret"] = clientSecret
                 };
+
+                using var request = new HttpRequestMessage(HttpMethod.Post, oauthUrl);
                 request.Content = new FormUrlEncodedContent(formValues);
 
                 var response = await _httpClient.SendAsync(request);
                 var content = await response.Content.ReadAsStringAsync();
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    using var jsonReq = new HttpRequestMessage(HttpMethod.Post, oauthUrl);
+                    jsonReq.Content = new StringContent(JsonSerializer.Serialize(formValues), Encoding.UTF8, "application/json");
+                    response = await _httpClient.SendAsync(jsonReq);
+                    content = await response.Content.ReadAsStringAsync();
+                }
 
                 if (response.IsSuccessStatusCode)
                 {
