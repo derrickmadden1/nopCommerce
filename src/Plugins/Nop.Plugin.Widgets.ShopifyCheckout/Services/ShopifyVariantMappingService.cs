@@ -102,17 +102,24 @@ public class ShopifyVariantMappingService : IShopifyVariantMappingService
         if (string.IsNullOrWhiteSpace(rawVariantId))
             return null;
 
-        // If it's already a full GID (e.g. gid://shopify/ProductVariant/123456)
-        if (rawVariantId.StartsWith("gid://shopify/ProductVariant/", System.StringComparison.OrdinalIgnoreCase))
-            return rawVariantId;
+        var trimmed = rawVariantId.Trim();
 
-        // If it's pure digits, prepend the GID prefix
-        if (Regex.IsMatch(rawVariantId, @"^\d+$"))
-            return $"gid://shopify/ProductVariant/{rawVariantId}";
+        // 1. If it's already a full GID (e.g. gid://shopify/ProductVariant/123456)
+        if (trimmed.StartsWith("gid://shopify/ProductVariant/", System.StringComparison.OrdinalIgnoreCase))
+            return trimmed;
 
-        // If it starts with gid://, trust it
-        if (rawVariantId.StartsWith("gid://", System.StringComparison.OrdinalIgnoreCase))
-            return rawVariantId;
+        // 2. If it starts with any gid://, trust it
+        if (trimmed.StartsWith("gid://", System.StringComparison.OrdinalIgnoreCase))
+            return trimmed;
+
+        // 3. If pure digits
+        if (Regex.IsMatch(trimmed, @"^\d+$"))
+            return $"gid://shopify/ProductVariant/{trimmed}";
+
+        // 4. Extract numeric ID from string if digits exist
+        var match = Regex.Match(trimmed, @"\d{6,}");
+        if (match.Success)
+            return $"gid://shopify/ProductVariant/{match.Value}";
 
         return null;
     }

@@ -10,6 +10,7 @@ using Nop.Plugin.Widgets.ShopifyCheckout.Services;
 using Nop.Services.Catalog;
 using Nop.Services.Configuration;
 using Nop.Services.Localization;
+using Nop.Services.Logging;
 using Nop.Services.Messages;
 using Nop.Services.Orders;
 using Nop.Services.Security;
@@ -36,6 +37,7 @@ public class ShopifyCheckoutController : BasePluginController
     private readonly INotificationService _notificationService;
     private readonly ILocalizationService _localizationService;
     private readonly IPermissionService _permissionService;
+    private readonly ILogger _logger;
 
     #endregion
 
@@ -54,7 +56,8 @@ public class ShopifyCheckoutController : BasePluginController
         ISettingService settingService,
         INotificationService notificationService,
         ILocalizationService localizationService,
-        IPermissionService permissionService)
+        IPermissionService permissionService,
+        ILogger logger)
     {
         _workContext = workContext;
         _storeContext = storeContext;
@@ -69,6 +72,7 @@ public class ShopifyCheckoutController : BasePluginController
         _notificationService = notificationService;
         _localizationService = localizationService;
         _permissionService = permissionService;
+        _logger = logger;
     }
 
     #endregion
@@ -211,6 +215,8 @@ public class ShopifyCheckoutController : BasePluginController
     [IgnoreAntiforgeryToken]
     public async Task<IActionResult> InitCheckout()
     {
+        await _logger.InformationAsync("Initiating Shopify Checkout handoff...");
+
         if (string.IsNullOrWhiteSpace(_settings.StoreUrl) || string.IsNullOrWhiteSpace(_settings.StorefrontAccessToken))
         {
             if (!string.IsNullOrWhiteSpace(_settings.StoreUrl))
@@ -224,7 +230,9 @@ public class ShopifyCheckoutController : BasePluginController
 
             if (string.IsNullOrWhiteSpace(_settings.StoreUrl) || string.IsNullOrWhiteSpace(_settings.StorefrontAccessToken))
             {
-                _notificationService.ErrorNotification("Shopify Checkout is not configured yet. Please configure the Store URL and Storefront Access Token in Admin panel.");
+                var errMsg = "Shopify Checkout is not configured yet. Please configure the Store URL and Storefront Access Token in Admin panel.";
+                await _logger.WarningAsync(errMsg);
+                _notificationService.ErrorNotification(errMsg);
                 return RedirectToRoute("ShoppingCart");
             }
         }
@@ -259,20 +267,26 @@ public class ShopifyCheckoutController : BasePluginController
         if (unmappedItems.Any())
         {
             var unmappedMsg = string.Join(", ", unmappedItems);
-            _notificationService.ErrorNotification($"The following items cannot be checked out via Shopify (missing Shopify Variant ID mapping): {unmappedMsg}");
+            var errMsg = $"The following items cannot be checked out via Shopify (missing Shopify Variant ID mapping): {unmappedMsg}";
+            await _logger.WarningAsync(errMsg);
+            _notificationService.ErrorNotification(errMsg);
             return RedirectToRoute("ShoppingCart");
         }
 
+        await _logger.InformationAsync($"Calling Shopify Storefront API cartCreate with {lineItems.Count} line items...");
         var (checkoutUrl, errors) = await _shopifyStorefrontService.CreateCartAsync(lineItems);
 
         if (errors != null && errors.Any())
         {
             foreach (var err in errors)
             {
+                await _logger.ErrorAsync($"Shopify Checkout Error: {err}");
                 _notificationService.ErrorNotification($"Shopify Checkout Error: {err}");
             }
             return RedirectToRoute("ShoppingCart");
         }
+
+        await _logger.InformationAsync($"Shopify Cart created successfully. Redirecting customer to {checkoutUrl}");
 
         // Clear local nopCommerce shopping cart session upon successful handoff
         await _shoppingCartService.ClearShoppingCartAsync(customer, store.Id);

@@ -74,7 +74,7 @@ public class ShopifyCheckoutViewComponent : NopViewComponent
         var model = new ShopifyCheckoutButtonModel
         {
             ButtonText = string.IsNullOrWhiteSpace(_settings.CustomButtonText) ? "Checkout with Shopify" : _settings.CustomButtonText,
-            InitCheckoutUrl = Url.Action("InitCheckout", "ShopifyCheckout"),
+            InitCheckoutUrl = Url.RouteUrl("Plugin.Widgets.ShopifyCheckout.InitCheckout") ?? Url.Action("InitCheckout", "ShopifyCheckout"),
             IsConfigured = isConfigured,
             IsAdmin = isAdmin
         };
