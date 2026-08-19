@@ -65,112 +65,118 @@ public class ShopifyAdminApiService : IShopifyAdminApiService
     /// Gets the effective Admin API Access token.
     /// Checks explicit settings first, then Azure Key Vault / IConfiguration, then executes OAuth client_credentials grant if Client ID/Secret are provided.
     /// </summary>
-    private async Task<string> GetEffectiveAdminTokenAsync()
+    private async Task<(string Token, string Error)> GetEffectiveAdminTokenAsync()
     {
         if (!string.IsNullOrWhiteSpace(_settings.AdminApiAccessToken))
         {
-            var trimmedToken = _settings.AdminApiAccessToken.Trim();
-            if (await TestAdminTokenAsync(trimmedToken))
-                return trimmedToken;
+            return (_settings.AdminApiAccessToken.Trim(), null);
         }
 
         var kvToken = _configuration["Shopify:AdminApiAccessToken"] ?? _configuration["ShopifyAdminApiAccessToken"];
         if (!string.IsNullOrWhiteSpace(kvToken))
         {
-            var trimmedKv = kvToken.Trim();
-            if (await TestAdminTokenAsync(trimmedKv))
-                return trimmedKv;
+            return (kvToken.Trim(), null);
         }
 
         if (!string.IsNullOrWhiteSpace(_cachedAccessToken) && DateTime.UtcNow < _tokenExpiresAt)
-            return _cachedAccessToken;
+            return (_cachedAccessToken, null);
 
         var clientId = !string.IsNullOrWhiteSpace(_settings.ClientId) ? _settings.ClientId.Trim() : _configuration["Shopify:ClientId"];
         var clientSecret = !string.IsNullOrWhiteSpace(_settings.ClientSecret) ? _settings.ClientSecret.Trim() : _configuration["Shopify:ClientSecret"];
 
-        if (!string.IsNullOrWhiteSpace(clientId) && !string.IsNullOrWhiteSpace(clientSecret) && !string.IsNullOrWhiteSpace(_settings.StoreUrl))
+        if (string.IsNullOrWhiteSpace(clientId) || string.IsNullOrWhiteSpace(clientSecret))
         {
-            var storeDomain = _settings.StoreUrl.Trim().Replace("https://", "").Replace("http://", "").TrimEnd('/');
-            var oauthUrl = $"https://{storeDomain}/admin/oauth/access_token";
-
-            try
-            {
-                var formValues = new Dictionary<string, string>
-                {
-                    ["grant_type"] = "client_credentials",
-                    ["client_id"] = clientId,
-                    ["client_secret"] = clientSecret
-                };
-
-                using var request = new HttpRequestMessage(HttpMethod.Post, oauthUrl);
-                request.Content = new FormUrlEncodedContent(formValues);
-
-                var response = await _httpClient.SendAsync(request);
-                var content = await response.Content.ReadAsStringAsync();
-
-                if (!response.IsSuccessStatusCode)
-                {
-                    using var jsonReq = new HttpRequestMessage(HttpMethod.Post, oauthUrl);
-                    jsonReq.Content = new StringContent(JsonSerializer.Serialize(formValues), Encoding.UTF8, "application/json");
-                    response = await _httpClient.SendAsync(jsonReq);
-                    content = await response.Content.ReadAsStringAsync();
-                }
-
-                if (!response.IsSuccessStatusCode)
-                {
-                    using var basicReq = new HttpRequestMessage(HttpMethod.Post, oauthUrl);
-                    var authBytes = Encoding.UTF8.GetBytes($"{clientId}:{clientSecret}");
-                    basicReq.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", Convert.ToBase64String(authBytes));
-                    basicReq.Content = new FormUrlEncodedContent(new Dictionary<string, string> { ["grant_type"] = "client_credentials" });
-                    response = await _httpClient.SendAsync(basicReq);
-                    content = await response.Content.ReadAsStringAsync();
-                }
-
-                if (response.IsSuccessStatusCode)
-                {
-                    using var doc = JsonDocument.Parse(content);
-                    if (doc.RootElement.TryGetProperty("access_token", out var tokenProp))
-                    {
-                        var token = tokenProp.GetString();
-                        int expiresIn = 86399;
-                        if (doc.RootElement.TryGetProperty("expires_in", out var expiresProp) && expiresProp.TryGetInt32(out var exp))
-                            expiresIn = exp;
-
-                        _cachedAccessToken = token;
-                        _tokenExpiresAt = DateTime.UtcNow.AddSeconds(expiresIn - 300);
-                        await _logger.InformationAsync("Successfully retrieved Shopify Admin API access token via client_credentials grant.");
-                        return token;
-                    }
-                }
-                else
-                {
-                    await _logger.WarningAsync($"Shopify OAuth client_credentials grant failed HTTP {response.StatusCode}: {content}");
-                }
-            }
-            catch (Exception ex)
-            {
-                await _logger.ErrorAsync("Error exchanging Client ID and Secret for Shopify access token", ex);
-            }
-
-            // Fallback: Test if ClientSecret or ClientId acts directly as valid Admin API access token
-            if (await TestAdminTokenAsync(clientSecret))
-            {
-                _cachedAccessToken = clientSecret;
-                _tokenExpiresAt = DateTime.UtcNow.AddDays(1);
-                await _logger.InformationAsync("Client Secret verified directly as valid Shopify Admin API access token.");
-                return clientSecret;
-            }
-
-            if (await TestAdminTokenAsync(clientId))
-            {
-                _cachedAccessToken = clientId;
-                _tokenExpiresAt = DateTime.UtcNow.AddDays(1);
-                await _logger.InformationAsync("Client ID verified directly as valid Shopify Admin API access token.");
-                return clientId;
-            }
+            return (null, "Client ID or Client Secret is missing in plugin settings.");
         }
 
-        return null;
+        if (string.IsNullOrWhiteSpace(_settings.StoreUrl))
+        {
+            return (null, "Shopify Store URL is missing in plugin settings.");
+        }
+
+        var storeDomain = _settings.StoreUrl.Trim().Replace("https://", "").Replace("http://", "").TrimEnd('/');
+        var oauthUrl = $"https://{storeDomain}/admin/oauth/access_token";
+        string lastError = null;
+
+        try
+        {
+            var formValues = new Dictionary<string, string>
+            {
+                ["grant_type"] = "client_credentials",
+                ["client_id"] = clientId,
+                ["client_secret"] = clientSecret
+            };
+
+            using var request = new HttpRequestMessage(HttpMethod.Post, oauthUrl);
+            request.Content = new FormUrlEncodedContent(formValues);
+
+            var response = await _httpClient.SendAsync(request);
+            var content = await response.Content.ReadAsStringAsync();
+
+            if (!response.IsSuccessStatusCode)
+            {
+                using var jsonReq = new HttpRequestMessage(HttpMethod.Post, oauthUrl);
+                jsonReq.Content = new StringContent(JsonSerializer.Serialize(formValues), Encoding.UTF8, "application/json");
+                response = await _httpClient.SendAsync(jsonReq);
+                content = await response.Content.ReadAsStringAsync();
+            }
+
+            if (!response.IsSuccessStatusCode)
+            {
+                using var basicReq = new HttpRequestMessage(HttpMethod.Post, oauthUrl);
+                var authBytes = Encoding.UTF8.GetBytes($"{clientId}:{clientSecret}");
+                basicReq.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", Convert.ToBase64String(authBytes));
+                basicReq.Content = new FormUrlEncodedContent(new Dictionary<string, string> { ["grant_type"] = "client_credentials" });
+                response = await _httpClient.SendAsync(basicReq);
+                content = await response.Content.ReadAsStringAsync();
+            }
+
+            if (response.IsSuccessStatusCode)
+            {
+                using var doc = JsonDocument.Parse(content);
+                if (doc.RootElement.TryGetProperty("access_token", out var tokenProp))
+                {
+                    var token = tokenProp.GetString();
+                    int expiresIn = 86399;
+                    if (doc.RootElement.TryGetProperty("expires_in", out var expiresProp) && expiresProp.TryGetInt32(out var exp))
+                        expiresIn = exp;
+
+                    _cachedAccessToken = token;
+                    _tokenExpiresAt = DateTime.UtcNow.AddSeconds(expiresIn - 300);
+                    await _logger.InformationAsync("Successfully retrieved Shopify Admin API access token via client_credentials grant.");
+                    return (token, null);
+                }
+            }
+            else
+            {
+                lastError = $"Shopify OAuth client_credentials grant failed HTTP {response.StatusCode}: {content}";
+                await _logger.WarningAsync(lastError);
+            }
+        }
+        catch (Exception ex)
+        {
+            lastError = $"Error exchanging Client ID and Secret for Shopify access token: {ex.Message}";
+            await _logger.ErrorAsync(lastError, ex);
+        }
+
+        // Fallback: Test if ClientSecret or ClientId acts directly as valid Admin API access token
+        if (await TestAdminTokenAsync(clientSecret))
+        {
+            _cachedAccessToken = clientSecret;
+            _tokenExpiresAt = DateTime.UtcNow.AddDays(1);
+            await _logger.InformationAsync("Client Secret verified directly as valid Shopify Admin API access token.");
+            return (clientSecret, null);
+        }
+
+        if (await TestAdminTokenAsync(clientId))
+        {
+            _cachedAccessToken = clientId;
+            _tokenExpiresAt = DateTime.UtcNow.AddDays(1);
+            await _logger.InformationAsync("Client ID verified directly as valid Shopify Admin API access token.");
+            return (clientId, null);
+        }
+
+        return (null, lastError ?? "Shopify OAuth Client Credentials grant failed.");
     }
 
     /// <summary>
@@ -223,9 +229,9 @@ public class ShopifyAdminApiService : IShopifyAdminApiService
         if (!string.IsNullOrWhiteSpace(_settings.StorefrontAccessToken))
             return (true, _settings.StorefrontAccessToken, "Storefront Access Token is already configured.");
 
-        var adminToken = await GetEffectiveAdminTokenAsync();
+        var (adminToken, adminError) = await GetEffectiveAdminTokenAsync();
         if (string.IsNullOrWhiteSpace(adminToken))
-            return (false, null, "Admin API Access Token / Client Credentials missing. Please provide Client ID & Secret or Admin Token first.");
+            return (false, null, $"Admin API access token retrieval failed: {adminError}");
 
         if (string.IsNullOrWhiteSpace(_settings.StoreUrl))
             return (false, null, "Shopify Store URL is missing.");
@@ -255,19 +261,33 @@ query {
             var resp1 = await _httpClient.SendAsync(req1);
             var content1 = await resp1.Content.ReadAsStringAsync();
 
+            var lastError = "Failed to auto-generate Storefront Access Token from Shopify Admin API.";
+
             if (resp1.IsSuccessStatusCode)
             {
                 using var doc1 = JsonDocument.Parse(content1);
-                if (doc1.RootElement.TryGetProperty("data", out var data1) && data1.TryGetProperty("shop", out var shop1))
+                var root1 = doc1.RootElement;
+                if (root1.ValueKind == JsonValueKind.Object && root1.TryGetProperty("errors", out var errors1) && errors1.ValueKind == JsonValueKind.Array && errors1.GetArrayLength() > 0)
                 {
-                    if (shop1.TryGetProperty("storefrontAccessTokens", out var sfTokens) && sfTokens.TryGetProperty("nodes", out var nodes) && nodes.ValueKind == JsonValueKind.Array && nodes.GetArrayLength() > 0)
+                    lastError = string.Join("; ", errors1.EnumerateArray().Select(e => e.ValueKind == JsonValueKind.Object && e.TryGetProperty("message", out var m) ? m.GetString() : e.ToString()));
+                }
+                else if (root1.ValueKind == JsonValueKind.Object && root1.TryGetProperty("data", out var data1) && data1.ValueKind == JsonValueKind.Object)
+                {
+                    if (data1.TryGetProperty("shop", out var shop1) && shop1.ValueKind == JsonValueKind.Object)
                     {
-                        var firstToken = nodes[0].GetProperty("accessToken").GetString();
-                        if (!string.IsNullOrWhiteSpace(firstToken))
+                        if (shop1.TryGetProperty("storefrontAccessTokens", out var sfTokens) && sfTokens.ValueKind == JsonValueKind.Object && sfTokens.TryGetProperty("nodes", out var nodes) && nodes.ValueKind == JsonValueKind.Array && nodes.GetArrayLength() > 0)
                         {
-                            _settings.StorefrontAccessToken = firstToken;
-                            await _settingService.SaveSettingAsync(_settings);
-                            return (true, firstToken, "Successfully retrieved existing Storefront Access Token from Shopify!");
+                            var firstNode = nodes[0];
+                            if (firstNode.ValueKind == JsonValueKind.Object && firstNode.TryGetProperty("accessToken", out var firstTokenProp))
+                            {
+                                var firstToken = firstTokenProp.GetString();
+                                if (!string.IsNullOrWhiteSpace(firstToken))
+                                {
+                                    _settings.StorefrontAccessToken = firstToken;
+                                    await _settingService.SaveSettingAsync(_settings);
+                                    return (true, firstToken, "Successfully retrieved existing Storefront Access Token from Shopify!");
+                                }
+                            }
                         }
                     }
                 }
@@ -296,22 +316,41 @@ mutation {
             if (resp2.IsSuccessStatusCode)
             {
                 using var doc2 = JsonDocument.Parse(content2);
-                if (doc2.RootElement.TryGetProperty("data", out var data2) && data2.TryGetProperty("storefrontAccessTokenCreate", out var sfCreate))
+                var root2 = doc2.RootElement;
+                if (root2.ValueKind == JsonValueKind.Object && root2.TryGetProperty("errors", out var errors2) && errors2.ValueKind == JsonValueKind.Array && errors2.GetArrayLength() > 0)
                 {
-                    if (sfCreate.TryGetProperty("storefrontAccessToken", out var sfTokenObj) && sfTokenObj.TryGetProperty("accessToken", out var createdTokenProp))
+                    lastError = string.Join("; ", errors2.EnumerateArray().Select(e => e.ValueKind == JsonValueKind.Object && e.TryGetProperty("message", out var m) ? m.GetString() : e.ToString()));
+                }
+                else if (root2.ValueKind == JsonValueKind.Object && root2.TryGetProperty("data", out var data2) && data2.ValueKind == JsonValueKind.Object)
+                {
+                    if (data2.TryGetProperty("storefrontAccessTokenCreate", out var sfCreate) && sfCreate.ValueKind == JsonValueKind.Object)
                     {
-                        var newToken = createdTokenProp.GetString();
-                        if (!string.IsNullOrWhiteSpace(newToken))
+                        if (sfCreate.TryGetProperty("userErrors", out var uErrors) && uErrors.ValueKind == JsonValueKind.Array && uErrors.GetArrayLength() > 0)
                         {
-                            _settings.StorefrontAccessToken = newToken;
-                            await _settingService.SaveSettingAsync(_settings);
-                            return (true, newToken, "Successfully generated and saved new Storefront Access Token!");
+                            var uMsg = string.Join("; ", uErrors.EnumerateArray().Select(e => e.ValueKind == JsonValueKind.Object && e.TryGetProperty("message", out var m) ? m.GetString() : e.ToString()));
+                            lastError = $"Shopify user error: {uMsg}";
+                        }
+
+                        if (sfCreate.TryGetProperty("storefrontAccessToken", out var sfTokenObj) && sfTokenObj.ValueKind == JsonValueKind.Object && sfTokenObj.TryGetProperty("accessToken", out var createdTokenProp))
+                        {
+                            var newToken = createdTokenProp.GetString();
+                            if (!string.IsNullOrWhiteSpace(newToken))
+                            {
+                                _settings.StorefrontAccessToken = newToken;
+                                await _settingService.SaveSettingAsync(_settings);
+                                return (true, newToken, "Successfully generated and saved new Storefront Access Token!");
+                            }
                         }
                     }
                 }
             }
+            else
+            {
+                lastError = $"Shopify Admin API returned HTTP {resp2.StatusCode}: {content2}";
+            }
 
-            return (false, null, "Failed to auto-generate Storefront Access Token from Shopify Admin API.");
+            await _logger.WarningAsync($"GetOrCreateStorefrontAccessTokenAsync failed: {lastError}");
+            return (false, null, lastError);
         }
         catch (Exception ex)
         {
@@ -328,9 +367,9 @@ mutation {
         if (product == null)
             return (false, null, "Product is null");
 
-        var token = await GetEffectiveAdminTokenAsync();
+        var (token, tokenErr) = await GetEffectiveAdminTokenAsync();
         if (string.IsNullOrWhiteSpace(token))
-            return (false, null, "Shopify Admin API Access Token is not configured (checked Plugin Settings, Key Vault, and Client Credentials grant).");
+            return (false, null, $"Shopify Admin API Access Token could not be retrieved: {tokenErr}");
 
         if (string.IsNullOrWhiteSpace(_settings.StoreUrl))
             return (false, null, "Shopify Store URL is not configured.");
@@ -493,10 +532,10 @@ mutation productSet($input: ProductSetInput!) {
         int syncedCount = 0;
         int failedCount = 0;
 
-        var token = await GetEffectiveAdminTokenAsync();
+        var (token, tokenErr) = await GetEffectiveAdminTokenAsync();
         if (string.IsNullOrWhiteSpace(token))
         {
-            logs.Add("ERROR: Shopify Admin API Access Token could not be retrieved.");
+            logs.Add($"ERROR: Shopify Admin API Access Token could not be retrieved ({tokenErr}).");
             return (0, 0, 0, logs);
         }
 

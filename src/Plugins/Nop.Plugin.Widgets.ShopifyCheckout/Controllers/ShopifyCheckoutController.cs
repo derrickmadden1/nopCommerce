@@ -79,8 +79,10 @@ public class ShopifyCheckoutController : BasePluginController
     [AuthorizeAdmin]
     [AutoValidateAntiforgeryToken]
     [CheckPermission(StandardPermission.Configuration.MANAGE_WIDGETS)]
-    public IActionResult Configure()
+    public async Task<IActionResult> Configure()
     {
+        await EnsureLocaleResourcesAsync();
+
         var model = new ConfigurationModel
         {
             StoreUrl = _settings.StoreUrl,
@@ -99,6 +101,24 @@ public class ShopifyCheckoutController : BasePluginController
         return View("~/Plugins/Widgets.ShopifyCheckout/Views/Configure.cshtml", model);
     }
 
+    private async Task EnsureLocaleResourcesAsync()
+    {
+        await _localizationService.AddOrUpdateLocaleResourceAsync("Plugins.Widgets.ShopifyCheckout.Fields.StoreUrl", "Shopify Store URL");
+        await _localizationService.AddOrUpdateLocaleResourceAsync("Plugins.Widgets.ShopifyCheckout.Fields.StorefrontAccessToken", "Storefront Access Token");
+        await _localizationService.AddOrUpdateLocaleResourceAsync("Plugins.Widgets.ShopifyCheckout.Fields.StorefrontAccessToken.Hint", "Enter your Storefront API Access Token (e.g. from Shopify Headless Sales Channel or App API credentials).");
+        await _localizationService.AddOrUpdateLocaleResourceAsync("Plugins.Widgets.ShopifyCheckout.Fields.AdminApiAccessToken", "Admin API Access Token");
+        await _localizationService.AddOrUpdateLocaleResourceAsync("Plugins.Widgets.ShopifyCheckout.Fields.ClientId", "Shopify App Client ID");
+        await _localizationService.AddOrUpdateLocaleResourceAsync("Plugins.Widgets.ShopifyCheckout.Fields.ClientId.Hint", "Enter Client ID (API Key) for OAuth Client Credentials grant.");
+        await _localizationService.AddOrUpdateLocaleResourceAsync("Plugins.Widgets.ShopifyCheckout.Fields.ClientSecret", "Shopify App Client Secret");
+        await _localizationService.AddOrUpdateLocaleResourceAsync("Plugins.Widgets.ShopifyCheckout.Fields.ClientSecret.Hint", "Enter Client Secret (API Secret Key) for OAuth Client Credentials grant.");
+        await _localizationService.AddOrUpdateLocaleResourceAsync("Plugins.Widgets.ShopifyCheckout.Fields.ApiVersion", "API Version");
+        await _localizationService.AddOrUpdateLocaleResourceAsync("Plugins.Widgets.ShopifyCheckout.Fields.DisplayButtonOnShoppingCart", "Display on Shopping Cart");
+        await _localizationService.AddOrUpdateLocaleResourceAsync("Plugins.Widgets.ShopifyCheckout.Fields.DisplayButtonOnPaymentMethod", "Display on Checkout Payment Page");
+        await _localizationService.AddOrUpdateLocaleResourceAsync("Plugins.Widgets.ShopifyCheckout.Fields.FallbackToSkuAsVariantId", "Fallback to SKU as Variant ID");
+        await _localizationService.AddOrUpdateLocaleResourceAsync("Plugins.Widgets.ShopifyCheckout.Fields.EnableAutoCatalogSync", "Auto-Sync Products to Shopify");
+        await _localizationService.AddOrUpdateLocaleResourceAsync("Plugins.Widgets.ShopifyCheckout.Fields.CustomButtonText", "Checkout Button Text");
+    }
+
     [HttpPost]
     [Area(AreaNames.ADMIN)]
     [AuthorizeAdmin]
@@ -107,7 +127,7 @@ public class ShopifyCheckoutController : BasePluginController
     public async Task<IActionResult> Configure(ConfigurationModel model)
     {
         if (!ModelState.IsValid)
-            return Configure();
+            return await Configure();
 
         _settings.StoreUrl = model.StoreUrl;
         _settings.StorefrontAccessToken = model.StorefrontAccessToken;
@@ -131,11 +151,15 @@ public class ShopifyCheckoutController : BasePluginController
             {
                 _notificationService.SuccessNotification($"Storefront Access Token automatically generated and saved!");
             }
+            else
+            {
+                _notificationService.WarningNotification($"Could not auto-generate Storefront Access Token: {msg}");
+            }
         }
 
         _notificationService.SuccessNotification(await _localizationService.GetResourceAsync("Admin.Plugins.Saved"));
 
-        return Configure();
+        return await Configure();
     }
 
     [HttpPost]
