@@ -68,11 +68,19 @@ public class ShopifyAdminApiService : IShopifyAdminApiService
     private async Task<string> GetEffectiveAdminTokenAsync()
     {
         if (!string.IsNullOrWhiteSpace(_settings.AdminApiAccessToken))
-            return _settings.AdminApiAccessToken.Trim();
+        {
+            var trimmedToken = _settings.AdminApiAccessToken.Trim();
+            if (await TestAdminTokenAsync(trimmedToken))
+                return trimmedToken;
+        }
 
         var kvToken = _configuration["Shopify:AdminApiAccessToken"] ?? _configuration["ShopifyAdminApiAccessToken"];
         if (!string.IsNullOrWhiteSpace(kvToken))
-            return kvToken.Trim();
+        {
+            var trimmedKv = kvToken.Trim();
+            if (await TestAdminTokenAsync(trimmedKv))
+                return trimmedKv;
+        }
 
         if (!string.IsNullOrWhiteSpace(_cachedAccessToken) && DateTime.UtcNow < _tokenExpiresAt)
             return _cachedAccessToken;
@@ -108,6 +116,16 @@ public class ShopifyAdminApiService : IShopifyAdminApiService
                     content = await response.Content.ReadAsStringAsync();
                 }
 
+                if (!response.IsSuccessStatusCode)
+                {
+                    using var basicReq = new HttpRequestMessage(HttpMethod.Post, oauthUrl);
+                    var authBytes = Encoding.UTF8.GetBytes($"{clientId}:{clientSecret}");
+                    basicReq.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", Convert.ToBase64String(authBytes));
+                    basicReq.Content = new FormUrlEncodedContent(new Dictionary<string, string> { ["grant_type"] = "client_credentials" });
+                    response = await _httpClient.SendAsync(basicReq);
+                    content = await response.Content.ReadAsStringAsync();
+                }
+
                 if (response.IsSuccessStatusCode)
                 {
                     using var doc = JsonDocument.Parse(content);
@@ -133,9 +151,64 @@ public class ShopifyAdminApiService : IShopifyAdminApiService
             {
                 await _logger.ErrorAsync("Error exchanging Client ID and Secret for Shopify access token", ex);
             }
+
+            // Fallback: Test if ClientSecret or ClientId acts directly as valid Admin API access token
+            if (await TestAdminTokenAsync(clientSecret))
+            {
+                _cachedAccessToken = clientSecret;
+                _tokenExpiresAt = DateTime.UtcNow.AddDays(1);
+                await _logger.InformationAsync("Client Secret verified directly as valid Shopify Admin API access token.");
+                return clientSecret;
+            }
+
+            if (await TestAdminTokenAsync(clientId))
+            {
+                _cachedAccessToken = clientId;
+                _tokenExpiresAt = DateTime.UtcNow.AddDays(1);
+                await _logger.InformationAsync("Client ID verified directly as valid Shopify Admin API access token.");
+                return clientId;
+            }
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// Tests whether a candidate token is accepted by Shopify Admin API GraphQL endpoint
+    /// </summary>
+    private async Task<bool> TestAdminTokenAsync(string token)
+    {
+        if (string.IsNullOrWhiteSpace(token) || string.IsNullOrWhiteSpace(_settings.StoreUrl))
+            return false;
+
+        try
+        {
+            var storeDomain = _settings.StoreUrl.Trim().Replace("https://", "").Replace("http://", "").TrimEnd('/');
+            var apiVersion = string.IsNullOrWhiteSpace(_settings.ApiVersion) ? ShopifyCheckoutDefaults.DefaultApiVersion : _settings.ApiVersion.Trim();
+            var endpoint = $"https://{storeDomain}/admin/api/{apiVersion}/graphql.json";
+
+            var testQuery = new { query = "{ shop { name } }" };
+            using var req = new HttpRequestMessage(HttpMethod.Post, endpoint);
+            req.Headers.Add("X-Shopify-Access-Token", token.Trim());
+            req.Content = new StringContent(JsonSerializer.Serialize(testQuery), Encoding.UTF8, "application/json");
+
+            var resp = await _httpClient.SendAsync(req);
+            if (resp.IsSuccessStatusCode)
+            {
+                var body = await resp.Content.ReadAsStringAsync();
+                using var doc = JsonDocument.Parse(body);
+                if (doc.RootElement.TryGetProperty("data", out var data) && data.TryGetProperty("shop", out _))
+                {
+                    return true;
+                }
+            }
+        }
+        catch
+        {
+            // Ignore testing exception
+        }
+
+        return false;
     }
 
     #endregion
