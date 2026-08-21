@@ -4,10 +4,12 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Nop.Core;
+using Nop.Core.Domain.Customers;
 using Nop.Core.Domain.Orders;
 using Nop.Plugin.Widgets.ShopifyCheckout.Models;
 using Nop.Plugin.Widgets.ShopifyCheckout.Services;
 using Nop.Services.Catalog;
+using Nop.Services.Common;
 using Nop.Services.Configuration;
 using Nop.Services.Localization;
 using Nop.Services.Logging;
@@ -28,6 +30,8 @@ public class ShopifyCheckoutController : BasePluginController
     private readonly IStoreContext _storeContext;
     private readonly IShoppingCartService _shoppingCartService;
     private readonly IProductService _productService;
+    private readonly IPriceCalculationService _priceCalculationService;
+    private readonly IGenericAttributeService _genericAttributeService;
     private readonly IShopifyVariantMappingService _variantMappingService;
     private readonly IShopifyStorefrontService _shopifyStorefrontService;
     private readonly IShopifyOrderSyncService _orderSyncService;
@@ -48,6 +52,8 @@ public class ShopifyCheckoutController : BasePluginController
         IStoreContext storeContext,
         IShoppingCartService shoppingCartService,
         IProductService productService,
+        IPriceCalculationService priceCalculationService,
+        IGenericAttributeService genericAttributeService,
         IShopifyVariantMappingService variantMappingService,
         IShopifyStorefrontService shopifyStorefrontService,
         IShopifyOrderSyncService orderSyncService,
@@ -63,6 +69,8 @@ public class ShopifyCheckoutController : BasePluginController
         _storeContext = storeContext;
         _shoppingCartService = shoppingCartService;
         _productService = productService;
+        _priceCalculationService = priceCalculationService;
+        _genericAttributeService = genericAttributeService;
         _variantMappingService = variantMappingService;
         _shopifyStorefrontService = shopifyStorefrontService;
         _orderSyncService = orderSyncService;
@@ -273,8 +281,11 @@ public class ShopifyCheckoutController : BasePluginController
             return RedirectToRoute("ShoppingCart");
         }
 
+        var couponCode = await _genericAttributeService.GetAttributeAsync<Customer, string>(customer.Id, NopCustomerDefaults.DiscountCouponCodeAttribute);
+        List<string> discountCodes = !string.IsNullOrWhiteSpace(couponCode) ? new List<string> { couponCode } : null;
+
         await _logger.InformationAsync($"Calling Shopify Storefront API cartCreate with {lineItems.Count} line items...");
-        var (checkoutUrl, errors) = await _shopifyStorefrontService.CreateCartAsync(lineItems);
+        var (checkoutUrl, errors) = await _shopifyStorefrontService.CreateCartAsync(lineItems, discountCodes);
 
         if (errors != null && errors.Any())
         {
@@ -286,11 +297,26 @@ public class ShopifyCheckoutController : BasePluginController
             return RedirectToRoute("ShoppingCart");
         }
 
+        if (!string.IsNullOrWhiteSpace(checkoutUrl))
+        {
+            try
+            {
+                var returnUrl = Url.RouteUrl("ShoppingCart", null, Request.Scheme);
+                if (!string.IsNullOrWhiteSpace(returnUrl))
+                {
+                    var sep = checkoutUrl.Contains("?") ? "&" : "?";
+                    checkoutUrl = $"{checkoutUrl}{sep}return_to={Uri.EscapeDataString(returnUrl)}";
+                }
+            }
+            catch
+            {
+                // Ignore if Request.Scheme is unavailable
+            }
+        }
+
         await _logger.InformationAsync($"Shopify Cart created successfully. Redirecting customer to {checkoutUrl}");
 
-        // Clear local nopCommerce shopping cart session upon successful handoff
-        await _shoppingCartService.ClearShoppingCartAsync(customer, store.Id);
-
+        // Preserve local nopCommerce cart so items are not lost if customer abandons or navigates back
         return Redirect(checkoutUrl);
     }
 

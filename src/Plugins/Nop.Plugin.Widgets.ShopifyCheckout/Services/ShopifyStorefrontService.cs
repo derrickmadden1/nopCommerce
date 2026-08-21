@@ -46,7 +46,7 @@ public class ShopifyStorefrontService : IShopifyStorefrontService
     /// </summary>
     /// <param name="lineItems">List of line items containing merchandiseId (variant GID) and quantity</param>
     /// <returns>Checkout URL if successful, error messages otherwise</returns>
-    public async Task<(string CheckoutUrl, List<string> Errors)> CreateCartAsync(IEnumerable<(string MerchandiseId, int Quantity)> lineItems)
+    public async Task<(string CheckoutUrl, List<string> Errors)> CreateCartAsync(IEnumerable<(string MerchandiseId, int Quantity)> lineItems, IEnumerable<string> discountCodes = null)
     {
         var errors = new List<string>();
 
@@ -100,6 +100,8 @@ mutation cartCreate($input: CartInput!) {
   }
 }";
 
+        var dCodesPayload = discountCodes?.Where(c => !string.IsNullOrWhiteSpace(c)).Select(c => c.Trim()).Distinct().ToArray() ?? Array.Empty<string>();
+
         var requestBody = new
         {
             query = mutation,
@@ -107,7 +109,16 @@ mutation cartCreate($input: CartInput!) {
             {
                 input = new
                 {
-                    lines = linesPayload
+                    lines = linesPayload,
+                    buyerIdentity = new
+                    {
+                        countryCode = "GB"
+                    },
+                    discountCodes = dCodesPayload,
+                    attributes = new[]
+                    {
+                        new { key = "return_to", value = $"/cart" }
+                    }
                 }
             }
         };
@@ -115,7 +126,14 @@ mutation cartCreate($input: CartInput!) {
         try
         {
             using var request = new HttpRequestMessage(HttpMethod.Post, endpoint);
-            request.Headers.Add("X-Shopify-Storefront-Access-Token", _settings.StorefrontAccessToken.Trim());
+            var tokenStr = _settings.StorefrontAccessToken.Trim();
+
+            if (tokenStr.StartsWith("shpat_", StringComparison.OrdinalIgnoreCase))
+            {
+                request.Headers.Add("Shopify-Storefront-Private-Token", tokenStr);
+            }
+
+            request.Headers.Add("X-Shopify-Storefront-Access-Token", tokenStr);
             request.Content = new StringContent(JsonSerializer.Serialize(requestBody), Encoding.UTF8, "application/json");
 
             var response = await _httpClient.SendAsync(request);
@@ -124,7 +142,7 @@ mutation cartCreate($input: CartInput!) {
             if (!response.IsSuccessStatusCode)
             {
                 _logger.LogError("Shopify Storefront API returned HTTP {StatusCode}: {Content}", response.StatusCode, responseContent);
-                errors.Add($"Shopify Storefront API error ({response.StatusCode}).");
+                errors.Add($"Shopify Storefront API error ({response.StatusCode}): {responseContent}");
                 return (null, errors);
             }
 

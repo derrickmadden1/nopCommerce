@@ -381,6 +381,66 @@ mutation {
         var priceStr = product.Price.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
         var skuStr = string.IsNullOrWhiteSpace(product.Sku) ? $"NOP-{product.Id}" : product.Sku.Trim();
 
+        // 1. Check if product GID is already stored on nopCommerce Product
+        var existingProductGid = await _genericAttributeService.GetAttributeAsync<Product, string>(product.Id, "ShopifyProductId");
+
+        // 2. If not stored, query Shopify GraphQL to see if product/variant already exists by SKU
+        if (string.IsNullOrWhiteSpace(existingProductGid))
+        {
+            try
+            {
+                var findQuery = @"
+query findVariantBySku($query: String!) {
+  productVariants(first: 1, query: $query) {
+    nodes {
+      id
+      product {
+        id
+      }
+    }
+  }
+}";
+                using var findReq = new HttpRequestMessage(HttpMethod.Post, endpoint);
+                findReq.Headers.Add("X-Shopify-Access-Token", token);
+                findReq.Content = new StringContent(JsonSerializer.Serialize(new { query = findQuery, variables = new { query = $"sku:{skuStr}" } }), Encoding.UTF8, "application/json");
+
+                var findResp = await _httpClient.SendAsync(findReq);
+                if (findResp.IsSuccessStatusCode)
+                {
+                    var findContent = await findResp.Content.ReadAsStringAsync();
+                    using var findDoc = JsonDocument.Parse(findContent);
+                    if (findDoc.RootElement.TryGetProperty("data", out var findData) && findData.TryGetProperty("productVariants", out var pVariants))
+                    {
+                        if (pVariants.TryGetProperty("nodes", out var vNodes) && vNodes.ValueKind == JsonValueKind.Array && vNodes.GetArrayLength() > 0)
+                        {
+                            var vNode = vNodes[0];
+                            if (vNode.TryGetProperty("id", out var existingVariantIdProp))
+                            {
+                                var foundVariantGid = existingVariantIdProp.GetString();
+                                if (!string.IsNullOrWhiteSpace(foundVariantGid))
+                                {
+                                    await _genericAttributeService.SaveAttributeAsync(product, ShopifyCheckoutDefaults.ShopifyVariantIdAttribute, foundVariantGid);
+                                }
+                            }
+
+                            if (vNode.TryGetProperty("product", out var parentProd) && parentProd.TryGetProperty("id", out var parentIdProp))
+                            {
+                                existingProductGid = parentIdProp.GetString();
+                                if (!string.IsNullOrWhiteSpace(existingProductGid))
+                                {
+                                    await _genericAttributeService.SaveAttributeAsync(product, "ShopifyProductId", existingProductGid);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                await _logger.WarningAsync($"SKU lookup failed for product #{product.Id}: {ex.Message}");
+            }
+        }
+
         var mutation = @"
 mutation productSet($input: ProductSetInput!) {
   productSet(synchronous: true, input: $input) {
@@ -403,41 +463,49 @@ mutation productSet($input: ProductSetInput!) {
   }
 }";
 
+        var inputDict = new Dictionary<string, object>
+        {
+            ["title"] = product.Name,
+            ["descriptionHtml"] = product.FullDescription ?? product.ShortDescription ?? product.Name,
+            ["vendor"] = "nopCommerce",
+            ["status"] = "ACTIVE",
+            ["productOptions"] = new[]
+            {
+                new
+                {
+                    name = "Title",
+                    values = new[] { new { name = "Default Title" } }
+                }
+            },
+            ["variants"] = new[]
+            {
+                new
+                {
+                    sku = skuStr,
+                    price = priceStr,
+                    optionValues = new[]
+                    {
+                        new
+                        {
+                            name = "Default Title",
+                            optionName = "Title"
+                        }
+                    }
+                }
+            }
+        };
+
+        if (!string.IsNullOrWhiteSpace(existingProductGid))
+        {
+            inputDict["id"] = existingProductGid;
+        }
+
         var requestPayload = new
         {
             query = mutation,
             variables = new
             {
-                input = new
-                {
-                    title = product.Name,
-                    descriptionHtml = product.FullDescription ?? product.ShortDescription ?? product.Name,
-                    vendor = "nopCommerce",
-                    productOptions = new[]
-                    {
-                        new
-                        {
-                            name = "Title",
-                            values = new[] { new { name = "Default Title" } }
-                        }
-                    },
-                    variants = new[]
-                    {
-                        new
-                        {
-                            sku = skuStr,
-                            price = priceStr,
-                            optionValues = new[]
-                            {
-                                new
-                                {
-                                    name = "Default Title",
-                                    optionName = "Title"
-                                }
-                            }
-                        }
-                    }
-                }
+                input = inputDict
             }
         };
 
@@ -466,9 +534,18 @@ mutation productSet($input: ProductSetInput!) {
                     return (false, null, $"Shopify GraphQL user errors: {errMsg}");
                 }
 
-                if (productSet.TryGetProperty("product", out var shopifyProduct) && shopifyProduct.TryGetProperty("variants", out var variants))
+                if (productSet.TryGetProperty("product", out var shopifyProduct))
                 {
-                    if (variants.TryGetProperty("nodes", out var nodes) && nodes.ValueKind == JsonValueKind.Array && nodes.GetArrayLength() > 0)
+                    if (shopifyProduct.TryGetProperty("id", out var createdProductGidProp))
+                    {
+                        var createdProductGid = createdProductGidProp.GetString();
+                        if (!string.IsNullOrWhiteSpace(createdProductGid))
+                        {
+                            await _genericAttributeService.SaveAttributeAsync(product, "ShopifyProductId", createdProductGid);
+                        }
+                    }
+
+                    if (shopifyProduct.TryGetProperty("variants", out var variants) && variants.TryGetProperty("nodes", out var nodes) && nodes.ValueKind == JsonValueKind.Array && nodes.GetArrayLength() > 0)
                     {
                         var firstVariant = nodes[0];
                         if (firstVariant.TryGetProperty("id", out var variantIdProp))
@@ -598,6 +675,119 @@ mutation productSet($input: ProductSetInput!) {
         await _logger.InformationAsync(summary);
 
         return (totalProcessed, syncedCount, failedCount, logs);
+    }
+
+    /// <summary>
+    /// Creates a Shopify Draft Order with custom item prices and returns the invoice checkout URL
+    /// </summary>
+    /// <param name="items">List of items containing Variant GID, quantity, and custom unit price</param>
+    /// <param name="customerEmail">Customer email address</param>
+    /// <returns>Result containing success flag, invoice URL, and error message</returns>
+    public async Task<(bool Success, string InvoiceUrl, string Message)> CreateDraftOrderAsync(
+        IEnumerable<(string VariantGid, int Quantity, decimal UnitPrice)> items,
+        string customerEmail = null)
+    {
+        if (items == null || !items.Any())
+            return (false, null, "No items provided for draft order.");
+
+        var (token, tokenErr) = await GetEffectiveAdminTokenAsync();
+        if (string.IsNullOrWhiteSpace(token))
+            return (false, null, $"Shopify Admin API Access Token missing: {tokenErr}");
+
+        if (string.IsNullOrWhiteSpace(_settings.StoreUrl))
+            return (false, null, "Shopify Store URL is not configured.");
+
+        var storeDomain = _settings.StoreUrl.Trim().Replace("https://", "").Replace("http://", "").TrimEnd('/');
+        var apiVersion = string.IsNullOrWhiteSpace(_settings.ApiVersion) ? ShopifyCheckoutDefaults.DefaultApiVersion : _settings.ApiVersion.Trim();
+        var endpoint = $"https://{storeDomain}/admin/api/{apiVersion}/graphql.json";
+
+        var lineItemsPayload = items.Select(item => new
+        {
+            variantId = item.VariantGid,
+            quantity = item.Quantity,
+            originalUnitPrice = item.UnitPrice.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)
+        }).ToArray();
+
+        var mutation = @"
+mutation draftOrderCreate($input: DraftOrderInput!) {
+  draftOrderCreate(input: $input) {
+    draftOrder {
+      id
+      name
+      invoiceUrl
+    }
+    userErrors {
+      field
+      message
+    }
+  }
+}";
+
+        var inputPayload = new Dictionary<string, object>
+        {
+            ["currencyCode"] = "GBP",
+            ["lineItems"] = lineItemsPayload
+        };
+
+        if (!string.IsNullOrWhiteSpace(customerEmail))
+        {
+            inputPayload["email"] = customerEmail.Trim();
+        }
+
+        var requestPayload = new
+        {
+            query = mutation,
+            variables = new
+            {
+                input = inputPayload
+            }
+        };
+
+        try
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Post, endpoint);
+            request.Headers.Add("X-Shopify-Access-Token", token);
+            request.Content = new StringContent(JsonSerializer.Serialize(requestPayload), Encoding.UTF8, "application/json");
+
+            var response = await _httpClient.SendAsync(request);
+            var responseContent = await response.Content.ReadAsStringAsync();
+
+            if (!response.IsSuccessStatusCode)
+            {
+                return (false, null, $"Shopify Admin API returned HTTP {response.StatusCode}: {responseContent}");
+            }
+
+            using var doc = JsonDocument.Parse(responseContent);
+            var root = doc.RootElement;
+
+            if (root.TryGetProperty("data", out var data) && data.TryGetProperty("draftOrderCreate", out var draftOrderCreate))
+            {
+                if (draftOrderCreate.TryGetProperty("userErrors", out var userErrors) && userErrors.ValueKind == JsonValueKind.Array && userErrors.GetArrayLength() > 0)
+                {
+                    var errMsg = string.Join("; ", userErrors.EnumerateArray().Select(e => e.GetProperty("message").GetString()));
+                    return (false, null, $"Shopify Draft Order GraphQL user errors: {errMsg}");
+                }
+
+                if (draftOrderCreate.TryGetProperty("draftOrder", out var draftOrder))
+                {
+                    if (draftOrder.TryGetProperty("invoiceUrl", out var invoiceUrlProp))
+                    {
+                        var invoiceUrl = invoiceUrlProp.GetString();
+                        if (!string.IsNullOrWhiteSpace(invoiceUrl))
+                        {
+                            return (true, invoiceUrl, "Draft order created successfully.");
+                        }
+                    }
+                }
+            }
+
+            return (false, null, "Shopify Admin API did not return a valid invoice URL.");
+        }
+        catch (Exception ex)
+        {
+            await _logger.ErrorAsync($"Exception in CreateDraftOrderAsync: {ex.Message}", ex);
+            return (false, null, ex.Message);
+        }
     }
 
     #endregion

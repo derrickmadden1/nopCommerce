@@ -13,5 +13,5 @@ public interface IShopifyStorefrontService
     /// </summary>
     /// <param name="lineItems">List of line items containing merchandiseId (variant GID) and quantity</param>
     /// <returns>Checkout URL if successful, error messages otherwise</returns>
-    Task<(string CheckoutUrl, List<string> Errors)> CreateCartAsync(IEnumerable<(string MerchandiseId, int Quantity)> lineItems);
+    Task<(string CheckoutUrl, List<string> Errors)> CreateCartAsync(IEnumerable<(string MerchandiseId, int Quantity)> lineItems, IEnumerable<string> discountCodes = null);
 }
