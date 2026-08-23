@@ -1,11 +1,15 @@
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Nop.Core.Domain.Catalog;
 using Nop.Core.Domain.Logging;
+using Nop.Core.Domain.Orders;
 using Nop.Plugin.Widgets.ShopifyCheckout.Models;
 using Nop.Services.Catalog;
 using Nop.Services.Common;
+using Nop.Services.Customers;
 using Nop.Services.Logging;
+using Nop.Services.Orders;
 
 namespace Nop.Plugin.Widgets.ShopifyCheckout.Services;
 
@@ -19,6 +23,8 @@ public class ShopifyOrderSyncService : IShopifyOrderSyncService
     private readonly IProductService _productService;
     private readonly IProductAttributeService _productAttributeService;
     private readonly IGenericAttributeService _genericAttributeService;
+    private readonly ICustomerService _customerService;
+    private readonly IShoppingCartService _shoppingCartService;
     private readonly ILogger _logger;
     private readonly ShopifyCheckoutSettings _settings;
 
@@ -30,12 +36,16 @@ public class ShopifyOrderSyncService : IShopifyOrderSyncService
         IProductService productService,
         IProductAttributeService productAttributeService,
         IGenericAttributeService genericAttributeService,
+        ICustomerService customerService,
+        IShoppingCartService shoppingCartService,
         ILogger logger,
         ShopifyCheckoutSettings settings)
     {
         _productService = productService;
         _productAttributeService = productAttributeService;
         _genericAttributeService = genericAttributeService;
+        _customerService = customerService;
+        _shoppingCartService = shoppingCartService;
         _logger = logger;
         _settings = settings;
     }
@@ -94,6 +104,29 @@ public class ShopifyOrderSyncService : IShopifyOrderSyncService
             if (!matched)
             {
                 await _logger.WarningAsync($"Shopify Order #{order.Name}: Could not match item '{item.Title}' (SKU: '{item.Sku}', Variant ID: '{item.VariantId}') to nopCommerce catalog.");
+            }
+        }
+
+        // Clear customer shopping cart if customer exists by email
+        var customerEmail = order.Email ?? order.Customer?.Email;
+        if (!string.IsNullOrWhiteSpace(customerEmail))
+        {
+            try
+            {
+                var customer = await _customerService.GetCustomerByEmailAsync(customerEmail.Trim());
+                if (customer != null)
+                {
+                    var cart = await _shoppingCartService.GetShoppingCartAsync(customer, ShoppingCartType.ShoppingCart);
+                    if (cart.Any())
+                    {
+                        await _shoppingCartService.ClearShoppingCartAsync(customer, cart.First().StoreId);
+                        await _logger.InformationAsync($"Shopify Order #{order.Name}: Cleared local nopCommerce shopping cart for customer '{customerEmail}'");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                await _logger.ErrorAsync($"Error clearing cart for customer '{customerEmail}' on Shopify order sync", ex);
             }
         }
 

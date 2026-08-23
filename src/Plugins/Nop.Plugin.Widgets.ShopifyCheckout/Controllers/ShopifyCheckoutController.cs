@@ -4,12 +4,15 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Nop.Core;
+using Nop.Core.Domain.Customers;
 using Nop.Core.Domain.Orders;
 using Nop.Plugin.Widgets.ShopifyCheckout.Models;
 using Nop.Plugin.Widgets.ShopifyCheckout.Services;
 using Nop.Services.Catalog;
+using Nop.Services.Common;
 using Nop.Services.Configuration;
 using Nop.Services.Localization;
+using Nop.Services.Logging;
 using Nop.Services.Messages;
 using Nop.Services.Orders;
 using Nop.Services.Security;
@@ -27,6 +30,9 @@ public class ShopifyCheckoutController : BasePluginController
     private readonly IStoreContext _storeContext;
     private readonly IShoppingCartService _shoppingCartService;
     private readonly IProductService _productService;
+    private readonly IPriceCalculationService _priceCalculationService;
+    private readonly IOrderTotalCalculationService _orderTotalCalculationService;
+    private readonly IGenericAttributeService _genericAttributeService;
     private readonly IShopifyVariantMappingService _variantMappingService;
     private readonly IShopifyStorefrontService _shopifyStorefrontService;
     private readonly IShopifyOrderSyncService _orderSyncService;
@@ -36,6 +42,7 @@ public class ShopifyCheckoutController : BasePluginController
     private readonly INotificationService _notificationService;
     private readonly ILocalizationService _localizationService;
     private readonly IPermissionService _permissionService;
+    private readonly ILogger _logger;
 
     #endregion
 
@@ -46,6 +53,9 @@ public class ShopifyCheckoutController : BasePluginController
         IStoreContext storeContext,
         IShoppingCartService shoppingCartService,
         IProductService productService,
+        IPriceCalculationService priceCalculationService,
+        IOrderTotalCalculationService orderTotalCalculationService,
+        IGenericAttributeService genericAttributeService,
         IShopifyVariantMappingService variantMappingService,
         IShopifyStorefrontService shopifyStorefrontService,
         IShopifyOrderSyncService orderSyncService,
@@ -54,12 +64,16 @@ public class ShopifyCheckoutController : BasePluginController
         ISettingService settingService,
         INotificationService notificationService,
         ILocalizationService localizationService,
-        IPermissionService permissionService)
+        IPermissionService permissionService,
+        ILogger logger)
     {
         _workContext = workContext;
         _storeContext = storeContext;
         _shoppingCartService = shoppingCartService;
         _productService = productService;
+        _priceCalculationService = priceCalculationService;
+        _orderTotalCalculationService = orderTotalCalculationService;
+        _genericAttributeService = genericAttributeService;
         _variantMappingService = variantMappingService;
         _shopifyStorefrontService = shopifyStorefrontService;
         _orderSyncService = orderSyncService;
@@ -69,6 +83,7 @@ public class ShopifyCheckoutController : BasePluginController
         _notificationService = notificationService;
         _localizationService = localizationService;
         _permissionService = permissionService;
+        _logger = logger;
     }
 
     #endregion
@@ -142,6 +157,7 @@ public class ShopifyCheckoutController : BasePluginController
         _settings.CustomButtonText = model.CustomButtonText;
 
         await _settingService.SaveSettingAsync(_settings);
+        _adminApiService.ClearTokenCache();
 
         // Auto-generate Storefront Access Token if missing
         if (string.IsNullOrWhiteSpace(_settings.StorefrontAccessToken))
@@ -211,20 +227,24 @@ public class ShopifyCheckoutController : BasePluginController
     [IgnoreAntiforgeryToken]
     public async Task<IActionResult> InitCheckout()
     {
+        await _logger.InformationAsync("Initiating Shopify Checkout handoff...");
+
         if (string.IsNullOrWhiteSpace(_settings.StoreUrl) || string.IsNullOrWhiteSpace(_settings.StorefrontAccessToken))
         {
             if (!string.IsNullOrWhiteSpace(_settings.StoreUrl))
             {
-                var (success, token, _) = await _adminApiService.GetOrCreateStorefrontAccessTokenAsync();
-                if (success && !string.IsNullOrWhiteSpace(token))
+                var (tokenOk, token, _) = await _adminApiService.GetOrCreateStorefrontAccessTokenAsync();
+                if (tokenOk && !string.IsNullOrWhiteSpace(token))
                 {
                     _settings.StorefrontAccessToken = token;
                 }
             }
 
-            if (string.IsNullOrWhiteSpace(_settings.StoreUrl) || string.IsNullOrWhiteSpace(_settings.StorefrontAccessToken))
+            if (string.IsNullOrWhiteSpace(_settings.StoreUrl))
             {
-                _notificationService.ErrorNotification("Shopify Checkout is not configured yet. Please configure the Store URL and Storefront Access Token in Admin panel.");
+                var errMsg = "Shopify Checkout is not configured yet. Please configure the Store URL in Admin panel.";
+                await _logger.WarningAsync(errMsg);
+                _notificationService.ErrorNotification(errMsg);
                 return RedirectToRoute("ShoppingCart");
             }
         }
@@ -239,44 +259,75 @@ public class ShopifyCheckoutController : BasePluginController
             return RedirectToRoute("ShoppingCart");
         }
 
-        var lineItems = new List<(string MerchandiseId, int Quantity)>();
+        var draftItems = new List<(string VariantGid, int Quantity, decimal UnitPrice, decimal OriginalListPrice)>();
         var unmappedItems = new List<string>();
 
         foreach (var item in cart)
         {
+            var product = await _productService.GetProductByIdAsync(item.ProductId);
             var variantGid = await _variantMappingService.GetShopifyVariantGidAsync(item);
             if (string.IsNullOrWhiteSpace(variantGid))
             {
-                var product = await _productService.GetProductByIdAsync(item.ProductId);
                 unmappedItems.Add(product?.Name ?? $"Product #{item.ProductId}");
             }
             else
             {
-                lineItems.Add((variantGid, item.Quantity));
+                // Calculate original unit price without discounts
+                var (originalSubTotal, _, _, _) = await _shoppingCartService.GetSubTotalAsync(item, includeDiscounts: false);
+                var originalListPrice = item.Quantity > 0 ? originalSubTotal / item.Quantity : product.Price;
+
+                // Calculate final unit price after item-level discounts (puzzle, multi-buy, customer role, category, etc.)
+                var (itemSubTotal, _, _, _) = await _shoppingCartService.GetSubTotalAsync(item, includeDiscounts: true);
+                var unitPrice = item.Quantity > 0 ? itemSubTotal / item.Quantity : itemSubTotal;
+
+                draftItems.Add((variantGid, item.Quantity, unitPrice, originalListPrice));
             }
         }
 
         if (unmappedItems.Any())
         {
             var unmappedMsg = string.Join(", ", unmappedItems);
-            _notificationService.ErrorNotification($"The following items cannot be checked out via Shopify (missing Shopify Variant ID mapping): {unmappedMsg}");
+            var errMsg = $"The following items cannot be checked out via Shopify (missing Shopify Variant ID mapping): {unmappedMsg}";
+            await _logger.WarningAsync(errMsg);
+            _notificationService.ErrorNotification(errMsg);
             return RedirectToRoute("ShoppingCart");
         }
 
-        var (checkoutUrl, errors) = await _shopifyStorefrontService.CreateCartAsync(lineItems);
+        // Calculate overall cart/subtotal discount amounts (e.g. MultiBuy savings, coupon codes, order total discounts)
+        var (subTotalDiscount, _, _, _, _, _, _, _) = await _orderTotalCalculationService.GetShoppingCartSubTotalsAsync(cart);
+        var (_, orderTotalDiscount, _, _, _, _) = await _orderTotalCalculationService.GetShoppingCartTotalAsync(cart);
+        var totalCartDiscount = subTotalDiscount + orderTotalDiscount;
 
-        if (errors != null && errors.Any())
+        await _logger.InformationAsync($"Calling Shopify Admin API draftOrderCreate with {draftItems.Count} line items and {totalCartDiscount:C} cart discount...");
+        var (success, checkoutUrl, draftMsg) = await _adminApiService.CreateDraftOrderAsync(draftItems, customer.Email, totalCartDiscount);
+
+        if (!success || string.IsNullOrWhiteSpace(checkoutUrl))
         {
-            foreach (var err in errors)
-            {
-                _notificationService.ErrorNotification($"Shopify Checkout Error: {err}");
-            }
+            await _logger.ErrorAsync($"Shopify Draft Order Error: {draftMsg}");
+            _notificationService.ErrorNotification($"Shopify Checkout Error: {draftMsg}");
             return RedirectToRoute("ShoppingCart");
         }
 
-        // Clear local nopCommerce shopping cart session upon successful handoff
-        await _shoppingCartService.ClearShoppingCartAsync(customer, store.Id);
+        if (!string.IsNullOrWhiteSpace(checkoutUrl))
+        {
+            try
+            {
+                var returnUrl = Url.RouteUrl("ShoppingCart", null, Request.Scheme);
+                if (!string.IsNullOrWhiteSpace(returnUrl))
+                {
+                    var sep = checkoutUrl.Contains("?") ? "&" : "?";
+                    checkoutUrl = $"{checkoutUrl}{sep}return_to={Uri.EscapeDataString(returnUrl)}";
+                }
+            }
+            catch
+            {
+                // Ignore if Request.Scheme is unavailable
+            }
+        }
 
+        await _logger.InformationAsync($"Shopify Draft Order created successfully. Redirecting customer to {checkoutUrl}");
+
+        // Preserve local nopCommerce cart so items are not lost if customer abandons or navigates back
         return Redirect(checkoutUrl);
     }
 

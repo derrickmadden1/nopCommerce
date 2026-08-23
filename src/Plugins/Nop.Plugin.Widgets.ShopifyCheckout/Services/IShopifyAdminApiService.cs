@@ -42,4 +42,20 @@ public interface IShopifyAdminApiService
     /// </summary>
     /// <returns>Result containing success flag, token string, and message</returns>
     Task<(bool Success, string Token, string Message)> GetOrCreateStorefrontAccessTokenAsync();
+
+    /// <summary>
+    /// Clears any in-memory cached access token so subsequent API requests fetch a fresh token
+    /// </summary>
+    void ClearTokenCache();
+
+    /// <summary>
+    /// Creates a Shopify Draft Order with custom item prices and returns the invoice checkout URL
+    /// </summary>
+    /// <param name="items">List of items containing Variant GID, quantity, and custom unit price</param>
+    /// <param name="customerEmail">Customer email address</param>
+    /// <returns>Result containing success flag, invoice URL, and error message</returns>
+    Task<(bool Success, string InvoiceUrl, string Message)> CreateDraftOrderAsync(
+        IEnumerable<(string VariantGid, int Quantity, decimal UnitPrice, decimal OriginalListPrice)> items,
+        string customerEmail = null,
+        decimal orderDiscountAmount = 0);
 }

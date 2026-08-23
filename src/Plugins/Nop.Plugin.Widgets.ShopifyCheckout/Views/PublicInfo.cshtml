@@ -13,15 +13,12 @@
 else if (Model.IsConfigured)
 {
     <div class="shopify-checkout-container" id="shopify-checkout-container" style="margin-top: 15px; margin-bottom: 12px; width: 100%;">
-        <form action="@Model.InitCheckoutUrl" method="post" id="shopify-checkout-form" style="width: 100%;">
-            @Html.AntiForgeryToken()
-            <button type="submit" class="button-1 shopify-checkout-button" style="background-color: #008060; color: #ffffff; border: none; width: 100%; height: 46px; font-size: 15px; font-weight: 600; text-transform: uppercase; border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: background-color 0.2s ease;">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M19.5 6.5H16V5.5C16 3.01 13.99 1 11.5 1S7 3.01 7 5.5V6.5H3.5C2.67 6.5 2 7.17 2 8V19C2 20.66 3.34 22 5 22H18C19.66 22 21 20.66 21 19V8C21 7.17 20.33 6.5 19.5 6.5ZM9 5.5C9 4.12 10.12 3 11.5 3C12.88 3 14 4.12 14 5.5V6.5H9V5.5ZM19 19C19 19.55 18.55 20 18 20H5C4.45 20 4 19.55 4 19V8.5H7V10H9V8.5H14V10H16V8.5H19V19Z"/>
-                </svg>
-                <span>@Model.ButtonText</span>
-            </button>
-        </form>
+        <button type="button" id="shopify-checkout-btn" class="button-1 shopify-checkout-button" style="background-color: #008060; color: #ffffff; border: none; width: 100%; height: 46px; font-size: 15px; font-weight: 600; text-transform: uppercase; border-radius: 4px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); transition: background-color 0.2s ease;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                <path d="M19.5 6.5H16V5.5C16 3.01 13.99 1 11.5 1S7 3.01 7 5.5V6.5H3.5C2.67 6.5 2 7.17 2 8V19C2 20.66 3.34 22 5 22H18C19.66 22 21 20.66 21 19V8C21 7.17 20.33 6.5 19.5 6.5ZM9 5.5C9 4.12 10.12 3 11.5 3C12.88 3 14 4.12 14 5.5V6.5H9V5.5ZM19 19C19 19.55 18.55 20 18 20H5C4.45 20 4 19.55 4 19V8.5H7V10H9V8.5H14V10H16V8.5H19V19Z"/>
+            </svg>
+            <span>@Model.ButtonText</span>
+        </button>
     </div>
 }
 
@@ -32,5 +29,46 @@ else if (Model.IsConfigured)
         if ($container.length && $checkoutButtons.length) {
             $container.insertBefore($checkoutButtons);
         }
+
+        $(document).on('click', '#shopify-checkout-btn', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // Terms of service check
+            if ($('#termsofservice').length > 0) {
+                if (!$('#termsofservice').is(':checked')) {
+                    if ($("#terms-of-service-warning-box").length > 0 && typeof $("#terms-of-service-warning-box").dialog === 'function') {
+                        $("#terms-of-service-warning-box").dialog();
+                    } else {
+                        alert('Please accept the terms of service before the next step.');
+                    }
+                    return false;
+                }
+            }
+
+            var initUrl = '@Model.InitCheckoutUrl';
+            if (!initUrl) {
+                initUrl = '/ShopifyCheckout/InitCheckout';
+            }
+
+            var $btn = $(this);
+            $btn.prop('disabled', true).css('opacity', '0.7').text('Redirecting to Shopify...');
+
+            var $tempForm = $('<form>', {
+                'action': initUrl,
+                'method': 'post'
+            });
+
+            var token = $('input[name="__RequestVerificationToken"]').val();
+            if (token) {
+                $tempForm.append($('<input>', {
+                    'type': 'hidden',
+                    'name': '__RequestVerificationToken',
+                    'value': token
+                }));
+            }
+
+            $tempForm.appendTo('body').submit();
+        });
     });
 </script>
