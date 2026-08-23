@@ -293,11 +293,13 @@ public class ShopifyCheckoutController : BasePluginController
             return RedirectToRoute("ShoppingCart");
         }
 
-        // Calculate order-level discount amount (e.g. coupon codes, order total discounts)
+        // Calculate overall cart/subtotal discount amounts (e.g. MultiBuy savings, coupon codes, order total discounts)
+        var (subTotalDiscount, _, _, _, _, _, _, _) = await _orderTotalCalculationService.GetShoppingCartSubTotalsAsync(cart);
         var (_, orderTotalDiscount, _, _, _, _) = await _orderTotalCalculationService.GetShoppingCartTotalAsync(cart);
+        var totalCartDiscount = subTotalDiscount + orderTotalDiscount;
 
-        await _logger.InformationAsync($"Calling Shopify Admin API draftOrderCreate with {draftItems.Count} line items and {orderTotalDiscount:C} order discount...");
-        var (success, checkoutUrl, draftMsg) = await _adminApiService.CreateDraftOrderAsync(draftItems, customer.Email, orderTotalDiscount);
+        await _logger.InformationAsync($"Calling Shopify Admin API draftOrderCreate with {draftItems.Count} line items and {totalCartDiscount:C} cart discount...");
+        var (success, checkoutUrl, draftMsg) = await _adminApiService.CreateDraftOrderAsync(draftItems, customer.Email, totalCartDiscount);
 
         if (!success || string.IsNullOrWhiteSpace(checkoutUrl))
         {

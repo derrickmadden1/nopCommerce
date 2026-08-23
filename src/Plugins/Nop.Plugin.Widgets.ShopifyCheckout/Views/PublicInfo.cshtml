@@ -34,6 +34,18 @@ else if (Model.IsConfigured)
             e.preventDefault();
             e.stopPropagation();
             
+            // Terms of service check
+            if ($('#termsofservice').length > 0) {
+                if (!$('#termsofservice').is(':checked')) {
+                    if ($("#terms-of-service-warning-box").length > 0 && typeof $("#terms-of-service-warning-box").dialog === 'function') {
+                        $("#terms-of-service-warning-box").dialog();
+                    } else {
+                        alert('Please accept the terms of service before the next step.');
+                    }
+                    return false;
+                }
+            }
+
             var initUrl = '@Model.InitCheckoutUrl';
             if (!initUrl) {
                 initUrl = '/ShopifyCheckout/InitCheckout';
