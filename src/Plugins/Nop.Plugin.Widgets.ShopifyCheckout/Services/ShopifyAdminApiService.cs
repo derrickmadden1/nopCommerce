@@ -678,14 +678,24 @@ mutation productSet($input: ProductSetInput!) {
     }
 
     /// <summary>
+    /// Clears any in-memory cached access token so subsequent API requests fetch a fresh token
+    /// </summary>
+    public void ClearTokenCache()
+    {
+        _cachedAccessToken = null;
+        _tokenExpiresAt = DateTime.MinValue;
+    }
+
+    /// <summary>
     /// Creates a Shopify Draft Order with custom item prices and returns the invoice checkout URL
     /// </summary>
     /// <param name="items">List of items containing Variant GID, quantity, and custom unit price</param>
     /// <param name="customerEmail">Customer email address</param>
     /// <returns>Result containing success flag, invoice URL, and error message</returns>
     public async Task<(bool Success, string InvoiceUrl, string Message)> CreateDraftOrderAsync(
-        IEnumerable<(string VariantGid, int Quantity, decimal UnitPrice)> items,
-        string customerEmail = null)
+        IEnumerable<(string VariantGid, int Quantity, decimal UnitPrice, decimal OriginalListPrice)> items,
+        string customerEmail = null,
+        decimal orderDiscountAmount = 0)
     {
         if (items == null || !items.Any())
             return (false, null, "No items provided for draft order.");
@@ -701,11 +711,27 @@ mutation productSet($input: ProductSetInput!) {
         var apiVersion = string.IsNullOrWhiteSpace(_settings.ApiVersion) ? ShopifyCheckoutDefaults.DefaultApiVersion : _settings.ApiVersion.Trim();
         var endpoint = $"https://{storeDomain}/admin/api/{apiVersion}/graphql.json";
 
-        var lineItemsPayload = items.Select(item => new
+        var lineItemsPayload = items.Select(item =>
         {
-            variantId = item.VariantGid,
-            quantity = item.Quantity,
-            originalUnitPrice = item.UnitPrice.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)
+            var dict = new Dictionary<string, object>
+            {
+                ["variantId"] = item.VariantGid,
+                ["quantity"] = item.Quantity
+            };
+
+            var discountPerUnit = item.OriginalListPrice - item.UnitPrice;
+            if (discountPerUnit > 0.001m)
+            {
+                var totalLineDiscount = Math.Round(discountPerUnit * item.Quantity, 2);
+                dict["appliedDiscount"] = new
+                {
+                    title = "Discount",
+                    value = (double)totalLineDiscount,
+                    valueType = "FIXED_AMOUNT"
+                };
+            }
+
+            return dict;
         }).ToArray();
 
         var mutation = @"
@@ -725,13 +751,22 @@ mutation draftOrderCreate($input: DraftOrderInput!) {
 
         var inputPayload = new Dictionary<string, object>
         {
-            ["currencyCode"] = "GBP",
             ["lineItems"] = lineItemsPayload
         };
 
         if (!string.IsNullOrWhiteSpace(customerEmail))
         {
             inputPayload["email"] = customerEmail.Trim();
+        }
+
+        if (orderDiscountAmount > 0)
+        {
+            inputPayload["appliedDiscount"] = new
+            {
+                title = "Cart Discount",
+                value = (double)Math.Round(orderDiscountAmount, 2),
+                valueType = "FIXED_AMOUNT"
+            };
         }
 
         var requestPayload = new
@@ -760,15 +795,25 @@ mutation draftOrderCreate($input: DraftOrderInput!) {
             using var doc = JsonDocument.Parse(responseContent);
             var root = doc.RootElement;
 
-            if (root.TryGetProperty("data", out var data) && data.TryGetProperty("draftOrderCreate", out var draftOrderCreate))
+            if (root.TryGetProperty("errors", out var topErrors) && topErrors.ValueKind == JsonValueKind.Array && topErrors.GetArrayLength() > 0)
+            {
+                var topErrMsg = string.Join("; ", topErrors.EnumerateArray().Select(e => e.GetProperty("message").GetString()));
+                if (topErrMsg.Contains("Access denied", StringComparison.OrdinalIgnoreCase) || topErrMsg.Contains("scope", StringComparison.OrdinalIgnoreCase))
+                {
+                    ClearTokenCache();
+                }
+                return (false, null, $"Shopify GraphQL Errors: {topErrMsg}");
+            }
+
+            if (root.TryGetProperty("data", out var data) && data.ValueKind == JsonValueKind.Object && data.TryGetProperty("draftOrderCreate", out var draftOrderCreate) && draftOrderCreate.ValueKind == JsonValueKind.Object)
             {
                 if (draftOrderCreate.TryGetProperty("userErrors", out var userErrors) && userErrors.ValueKind == JsonValueKind.Array && userErrors.GetArrayLength() > 0)
                 {
                     var errMsg = string.Join("; ", userErrors.EnumerateArray().Select(e => e.GetProperty("message").GetString()));
-                    return (false, null, $"Shopify Draft Order GraphQL user errors: {errMsg}");
+                    return (false, null, $"Shopify Draft Order user errors: {errMsg}");
                 }
 
-                if (draftOrderCreate.TryGetProperty("draftOrder", out var draftOrder))
+                if (draftOrderCreate.TryGetProperty("draftOrder", out var draftOrder) && draftOrder.ValueKind == JsonValueKind.Object)
                 {
                     if (draftOrder.TryGetProperty("invoiceUrl", out var invoiceUrlProp))
                     {
@@ -781,7 +826,7 @@ mutation draftOrderCreate($input: DraftOrderInput!) {
                 }
             }
 
-            return (false, null, "Shopify Admin API did not return a valid invoice URL.");
+            return (false, null, $"Shopify Admin API did not return invoice URL. Response: {responseContent}");
         }
         catch (Exception ex)
         {
