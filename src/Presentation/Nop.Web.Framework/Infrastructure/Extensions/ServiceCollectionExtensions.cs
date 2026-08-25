@@ -116,26 +116,29 @@ public static class ServiceCollectionExtensions
         //create engine and configure service provider
         var engine = EngineContext.Create();
 
-        builder.Services.AddRateLimiter(options =>
+        var commonConfig = Singleton<AppSettings>.Instance.Get<CommonConfig>();
+
+        //add rate limiting if enabled and configured correctly
+        if (commonConfig.PermitLimit > 0)
         {
-            var settings = Singleton<AppSettings>.Instance.Get<CommonConfig>();
+            builder.Services.AddRateLimiter(options =>
+            {
+                options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
+                    RateLimitPartition.GetFixedWindowLimiter(
+                        partitionKey: httpContext.User.Identity?.Name ?? httpContext.Request.Headers.Host.ToString(),
+                        factory: partition => new FixedWindowRateLimiterOptions
+                        {
+                            AutoReplenishment = true,
+                            PermitLimit = commonConfig.PermitLimit,
+                            QueueLimit = commonConfig.QueueCount,
+                            Window = TimeSpan.FromMinutes(1)
+                        }));
 
-            options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
-                RateLimitPartition.GetFixedWindowLimiter(
-                    partitionKey: httpContext.User.Identity?.Name ?? httpContext.Request.Headers.Host.ToString(),
-                    factory: partition => new FixedWindowRateLimiterOptions
-                    {
-                        AutoReplenishment = true,
-                        PermitLimit = settings.PermitLimit,
-                        QueueLimit = settings.QueueCount,
-                        Window = TimeSpan.FromMinutes(1)
-                    }));
-
-            options.RejectionStatusCode = settings.RejectionStatusCode;
+            options.RejectionStatusCode = commonConfig.RejectionStatusCode;
 
             options.OnRejected = async (context, token) =>
             {
-                context.HttpContext.Response.StatusCode = settings.RejectionStatusCode;
+                context.HttpContext.Response.StatusCode = commonConfig.RejectionStatusCode;
 
                 var isAjax = context.HttpContext.Request.Headers.XRequestedWith == "XMLHttpRequest" ||
                              context.HttpContext.Request.Headers.Accept.ToString().Contains("application/json");
@@ -167,15 +170,16 @@ public static class ServiceCollectionExtensions
                         <body>
                             <div class="container">
                                 <h1>Too Many Requests</h1>
-                                <p>We received too many requests from your connection. Please wait a moment and refresh the page to continue browsing.</p>
+                                <p>We received too many requests from your connection. Please wait a moment and try again.</p>
                                 <a href="javascript:location.reload()" class="btn">Refresh Page</a>
                             </div>
                         </body>
                         </html>
                         """, token);
-                }
-            };
-        });
+                    }
+                };
+            });
+        }
 
         engine.ConfigureServices(services, builder.Configuration);
     }

@@ -1,4 +1,4 @@
-﻿using AwesomeAssertions;
+using AwesomeAssertions;
 using Microsoft.AspNetCore.Http;
 using Nop.Core.Domain.Catalog;
 using Nop.Core.Domain.Vendors;
@@ -282,7 +282,7 @@ public class CatalogModelFactoryBaseTests : WebTest
         await _catalogModelFactory.PrepareSortingOptionsAsync(model, command);
 
         model.AllowProductSorting.Should().BeTrue();
-        model.AvailableSortOptions.Count.Should().Be(6);
+        model.AvailableSortOptions.Count.Should().Be(7);
         command.OrderBy.Should().Be(0);
     }
 

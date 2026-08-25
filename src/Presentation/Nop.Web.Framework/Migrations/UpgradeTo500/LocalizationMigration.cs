@@ -446,6 +446,10 @@ public class LocalizationMigration : MigrationBase
             "Payment.ExpireMonth.Required",
             "Payment.ExpireYear.Required",
             "Payment.SelectCreditCard",
+
+            //#8170
+            "Admin.ConfigurationSteps.PaymentMethods.Manual.Title",
+            "Admin.ConfigurationSteps.PaymentMethods.Manual.Text",
         });
 
         #endregion
@@ -700,6 +704,8 @@ public class LocalizationMigration : MigrationBase
             ["Admin.Catalog.Products.Multimedia.Object3d.Fields.AltAttribute"] = "Alternative text",
             ["Admin.Catalog.Products.Multimedia.Object3d.Fields.AltAttribute.Hint"] = "The \"alt\" attribute for the \"model-viewer\" HTML element.",
             ["Admin.Catalog.Products.Multimedia.Object3d.Save"] = "Save",
+            ["Admin.Configuration.Settings.Vendor.AllowVendorsToUpload3dObjects"] = "Allow vendors to upload 3D models",
+            ["Admin.Configuration.Settings.Vendor.AllowVendorsToUpload3dObjects.Hint"] = "Check to allow vendors to upload product 3D models.",
 
             ["Admin.Configuration.Settings.Media.BlockTitle.Product3dObject"] = "Product 3D models",
             ["Admin.Configuration.Settings.Media.Object3dAutoRotateEnabled"] = "Auto-rotate",
