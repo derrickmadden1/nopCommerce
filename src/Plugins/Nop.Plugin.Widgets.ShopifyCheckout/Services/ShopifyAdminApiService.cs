@@ -695,7 +695,8 @@ mutation productSet($input: ProductSetInput!) {
     public async Task<(bool Success, string InvoiceUrl, string Message)> CreateDraftOrderAsync(
         IEnumerable<(string VariantGid, int Quantity, decimal UnitPrice, decimal OriginalListPrice)> items,
         string customerEmail = null,
-        decimal orderDiscountAmount = 0)
+        decimal orderDiscountAmount = 0,
+        int? nopCustomerId = null)
     {
         if (items == null || !items.Any())
             return (false, null, "No items provided for draft order.");
@@ -753,6 +754,14 @@ mutation draftOrderCreate($input: DraftOrderInput!) {
         {
             ["lineItems"] = lineItemsPayload
         };
+
+        if (nopCustomerId.HasValue)
+        {
+            inputPayload["customAttributes"] = new object[]
+            {
+                new { key = "NopCustomerId", value = nopCustomerId.Value.ToString() }
+            };
+        }
 
         if (!string.IsNullOrWhiteSpace(customerEmail))
         {

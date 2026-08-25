@@ -298,8 +298,8 @@ public class ShopifyCheckoutController : BasePluginController
         var (_, orderTotalDiscount, _, _, _, _) = await _orderTotalCalculationService.GetShoppingCartTotalAsync(cart);
         var totalCartDiscount = subTotalDiscount + orderTotalDiscount;
 
-        await _logger.InformationAsync($"Calling Shopify Admin API draftOrderCreate with {draftItems.Count} line items and {totalCartDiscount:C} cart discount...");
-        var (success, checkoutUrl, draftMsg) = await _adminApiService.CreateDraftOrderAsync(draftItems, customer.Email, totalCartDiscount);
+        await _logger.InformationAsync($"Calling Shopify Admin API draftOrderCreate with {draftItems.Count} line items and {totalCartDiscount:C} cart discount for customer ID #{customer.Id}...");
+        var (success, checkoutUrl, draftMsg) = await _adminApiService.CreateDraftOrderAsync(draftItems, customer.Email, totalCartDiscount, customer.Id);
 
         if (!success || string.IsNullOrWhiteSpace(checkoutUrl))
         {
@@ -312,7 +312,10 @@ public class ShopifyCheckoutController : BasePluginController
         {
             try
             {
-                var returnUrl = Url.RouteUrl("ShoppingCart", null, Request.Scheme);
+                var returnUrl = Url.RouteUrl("Plugin.Widgets.ShopifyCheckout.Completed", null, Request.Scheme);
+                if (string.IsNullOrWhiteSpace(returnUrl))
+                    returnUrl = Url.RouteUrl("ShoppingCart", null, Request.Scheme);
+
                 if (!string.IsNullOrWhiteSpace(returnUrl))
                 {
                     var sep = checkoutUrl.Contains("?") ? "&" : "?";
@@ -331,10 +334,34 @@ public class ShopifyCheckoutController : BasePluginController
         return Redirect(checkoutUrl);
     }
 
+    [HttpGet]
+    public async Task<IActionResult> Completed()
+    {
+        return View("~/Plugins/Widgets.ShopifyCheckout/Views/Completed.cshtml");
+    }
+
     [HttpPost]
     [IgnoreAntiforgeryToken]
-    public async Task<IActionResult> ProcessOrderWebhook([FromBody] ShopifyWebhookOrderModel model)
+    public async Task<IActionResult> ProcessOrderWebhook()
     {
+        ShopifyWebhookOrderModel model = null;
+        try
+        {
+            using var reader = new System.IO.StreamReader(Request.Body);
+            var json = await reader.ReadToEndAsync();
+            if (!string.IsNullOrWhiteSpace(json))
+            {
+                model = Newtonsoft.Json.JsonConvert.DeserializeObject<ShopifyWebhookOrderModel>(json);
+            }
+        }
+        catch (Exception ex)
+        {
+            await _logger.ErrorAsync("Error parsing Shopify order webhook JSON", ex);
+        }
+
+        if (model == null)
+            return BadRequest(new { success = false, message = "Could not parse Shopify order webhook payload." });
+
         var (success, message, count) = await _orderSyncService.ProcessShopifyOrderAsync(model);
         if (!success)
             return BadRequest(new { success = false, message });

@@ -107,26 +107,66 @@ public class ShopifyOrderSyncService : IShopifyOrderSyncService
             }
         }
 
-        // Clear customer shopping cart if customer exists by email
-        var customerEmail = order.Email ?? order.Customer?.Email;
-        if (!string.IsNullOrWhiteSpace(customerEmail))
+        // 1. Clear cart by NopCustomerId custom/note attribute (works for Guest AND Registered session customer)
+        bool cartCleared = false;
+        var allAttrs = (order.NoteAttributes ?? new List<ShopifyWebhookNoteAttributeModel>())
+            .Concat(order.CustomAttributes ?? new List<ShopifyWebhookNoteAttributeModel>());
+
+        var nopCustomerIdAttr = allAttrs.FirstOrDefault(a => 
+            string.Equals(a.Name, "NopCustomerId", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(a.Key, "NopCustomerId", StringComparison.OrdinalIgnoreCase));
+
+        if (nopCustomerIdAttr != null && int.TryParse(nopCustomerIdAttr.Value, out int nopCustomerId))
         {
             try
             {
-                var customer = await _customerService.GetCustomerByEmailAsync(customerEmail.Trim());
-                if (customer != null)
+                var sessionCustomer = await _customerService.GetCustomerByIdAsync(nopCustomerId);
+                if (sessionCustomer != null)
                 {
-                    var cart = await _shoppingCartService.GetShoppingCartAsync(customer, ShoppingCartType.ShoppingCart);
+                    var cart = await _shoppingCartService.GetShoppingCartAsync(sessionCustomer, ShoppingCartType.ShoppingCart);
                     if (cart.Any())
                     {
-                        await _shoppingCartService.ClearShoppingCartAsync(customer, cart.First().StoreId);
-                        await _logger.InformationAsync($"Shopify Order #{order.Name}: Cleared local nopCommerce shopping cart for customer '{customerEmail}'");
+                        var itemCount = cart.Count;
+                        await _shoppingCartService.ClearShoppingCartAsync(sessionCustomer, cart.First().StoreId);
+                        cartCleared = true;
+                        await _logger.InformationAsync($"Shopify Order #{order.Name}: Cleared local nopCommerce shopping cart for session customer ID #{nopCustomerId} ({itemCount} items removed).");
                     }
                 }
             }
             catch (Exception ex)
             {
-                await _logger.ErrorAsync($"Error clearing cart for customer '{customerEmail}' on Shopify order sync", ex);
+                await _logger.ErrorAsync($"Error clearing cart by session customer ID #{nopCustomerId}", ex);
+            }
+        }
+
+        // 2. Fallback to clearing cart by customer email if not already cleared
+        if (!cartCleared)
+        {
+            var customerEmail = order.Email ?? order.Customer?.Email;
+            if (!string.IsNullOrWhiteSpace(customerEmail))
+            {
+                try
+                {
+                    var customer = await _customerService.GetCustomerByEmailAsync(customerEmail.Trim());
+                    if (customer != null)
+                    {
+                        var cart = await _shoppingCartService.GetShoppingCartAsync(customer, ShoppingCartType.ShoppingCart);
+                        if (cart.Any())
+                        {
+                            var itemCount = cart.Count;
+                            await _shoppingCartService.ClearShoppingCartAsync(customer, cart.First().StoreId);
+                            await _logger.InformationAsync($"Shopify Order #{order.Name}: Cleared local nopCommerce shopping cart for customer '{customerEmail}' ({itemCount} items removed).");
+                        }
+                        else
+                        {
+                            await _logger.InformationAsync($"Shopify Order #{order.Name}: Customer '{customerEmail}' has no active items in local cart.");
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    await _logger.ErrorAsync($"Error clearing cart for customer '{customerEmail}' on Shopify order sync", ex);
+                }
             }
         }
 

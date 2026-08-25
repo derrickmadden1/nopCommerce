@@ -57,5 +57,6 @@ public interface IShopifyAdminApiService
     Task<(bool Success, string InvoiceUrl, string Message)> CreateDraftOrderAsync(
         IEnumerable<(string VariantGid, int Quantity, decimal UnitPrice, decimal OriginalListPrice)> items,
         string customerEmail = null,
-        decimal orderDiscountAmount = 0);
+        decimal orderDiscountAmount = 0,
+        int? nopCustomerId = null);
 }
