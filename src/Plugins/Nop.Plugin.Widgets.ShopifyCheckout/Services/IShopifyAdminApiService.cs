@@ -57,5 +57,16 @@ public interface IShopifyAdminApiService
     Task<(bool Success, string InvoiceUrl, string Message)> CreateDraftOrderAsync(
         IEnumerable<(string VariantGid, int Quantity, decimal UnitPrice, decimal OriginalListPrice)> items,
         string customerEmail = null,
-        decimal orderDiscountAmount = 0);
+        decimal orderDiscountAmount = 0,
+        int? nopCustomerId = null);
+
+    /// <summary>
+    /// Creates a fulfillment on Shopify with tracking information
+    /// </summary>
+    Task<(bool Success, string Message)> CreateFulfillmentAsync(
+        long shopifyOrderId,
+        string trackingNumber,
+        string trackingCompany = null,
+        string trackingUrl = null,
+        bool notifyCustomer = true);
 }

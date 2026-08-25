@@ -25,6 +25,7 @@ public class ShopifyOrderSyncService : IShopifyOrderSyncService
     private readonly IGenericAttributeService _genericAttributeService;
     private readonly ICustomerService _customerService;
     private readonly IShoppingCartService _shoppingCartService;
+    private readonly IOrderService _orderService;
     private readonly ILogger _logger;
     private readonly ShopifyCheckoutSettings _settings;
 
@@ -38,6 +39,7 @@ public class ShopifyOrderSyncService : IShopifyOrderSyncService
         IGenericAttributeService genericAttributeService,
         ICustomerService customerService,
         IShoppingCartService shoppingCartService,
+        IOrderService orderService,
         ILogger logger,
         ShopifyCheckoutSettings settings)
     {
@@ -46,6 +48,7 @@ public class ShopifyOrderSyncService : IShopifyOrderSyncService
         _genericAttributeService = genericAttributeService;
         _customerService = customerService;
         _shoppingCartService = shoppingCartService;
+        _orderService = orderService;
         _logger = logger;
         _settings = settings;
     }
@@ -107,27 +110,85 @@ public class ShopifyOrderSyncService : IShopifyOrderSyncService
             }
         }
 
-        // Clear customer shopping cart if customer exists by email
-        var customerEmail = order.Email ?? order.Customer?.Email;
-        if (!string.IsNullOrWhiteSpace(customerEmail))
+        // 1. Clear cart by NopCustomerId custom/note attribute (works for Guest AND Registered session customer)
+        bool cartCleared = false;
+        var allAttrs = (order.NoteAttributes ?? new List<ShopifyWebhookNoteAttributeModel>())
+            .Concat(order.CustomAttributes ?? new List<ShopifyWebhookNoteAttributeModel>());
+
+        var nopCustomerIdAttr = allAttrs.FirstOrDefault(a => 
+            string.Equals(a.Name, "NopCustomerId", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(a.Key, "NopCustomerId", StringComparison.OrdinalIgnoreCase));
+
+        if (nopCustomerIdAttr != null && int.TryParse(nopCustomerIdAttr.Value, out int nopCustomerId))
         {
             try
             {
-                var customer = await _customerService.GetCustomerByEmailAsync(customerEmail.Trim());
-                if (customer != null)
+                var sessionCustomer = await _customerService.GetCustomerByIdAsync(nopCustomerId);
+                if (sessionCustomer != null)
                 {
-                    var cart = await _shoppingCartService.GetShoppingCartAsync(customer, ShoppingCartType.ShoppingCart);
+                    var cart = await _shoppingCartService.GetShoppingCartAsync(sessionCustomer, ShoppingCartType.ShoppingCart);
                     if (cart.Any())
                     {
-                        await _shoppingCartService.ClearShoppingCartAsync(customer, cart.First().StoreId);
-                        await _logger.InformationAsync($"Shopify Order #{order.Name}: Cleared local nopCommerce shopping cart for customer '{customerEmail}'");
+                        var itemCount = cart.Count;
+                        await _shoppingCartService.ClearShoppingCartAsync(sessionCustomer, cart.First().StoreId);
+                        cartCleared = true;
+                        await _logger.InformationAsync($"Shopify Order #{order.Name}: Cleared local nopCommerce shopping cart for session customer ID #{nopCustomerId} ({itemCount} items removed).");
                     }
                 }
             }
             catch (Exception ex)
             {
-                await _logger.ErrorAsync($"Error clearing cart for customer '{customerEmail}' on Shopify order sync", ex);
+                await _logger.ErrorAsync($"Error clearing cart by session customer ID #{nopCustomerId}", ex);
             }
+        }
+
+        // 2. Fallback to clearing cart by customer email if not already cleared
+        if (!cartCleared)
+        {
+            var customerEmail = order.Email ?? order.Customer?.Email;
+            if (!string.IsNullOrWhiteSpace(customerEmail))
+            {
+                try
+                {
+                    var customer = await _customerService.GetCustomerByEmailAsync(customerEmail.Trim());
+                    if (customer != null)
+                    {
+                        var cart = await _shoppingCartService.GetShoppingCartAsync(customer, ShoppingCartType.ShoppingCart);
+                        if (cart.Any())
+                        {
+                            var itemCount = cart.Count;
+                            await _shoppingCartService.ClearShoppingCartAsync(customer, cart.First().StoreId);
+                            await _logger.InformationAsync($"Shopify Order #{order.Name}: Cleared local nopCommerce shopping cart for customer '{customerEmail}' ({itemCount} items removed).");
+                        }
+                        else
+                        {
+                            await _logger.InformationAsync($"Shopify Order #{order.Name}: Customer '{customerEmail}' has no active items in local cart.");
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    await _logger.ErrorAsync($"Error clearing cart for customer '{customerEmail}' on Shopify order sync", ex);
+                }
+            }
+        }
+
+        // 3. Link nopCommerce Order to ShopifyOrderId for shipment tracking sync
+        try
+        {
+            if (!string.IsNullOrWhiteSpace(order.Name))
+            {
+                var nopOrder = await _orderService.GetOrderByCustomOrderNumberAsync(order.Name.Trim());
+                if (nopOrder != null)
+                {
+                    await _genericAttributeService.SaveAttributeAsync(nopOrder, "ShopifyOrderId", order.Id);
+                    await _logger.InformationAsync($"Shopify Order #{order.Name}: Linked to nopCommerce Order #{nopOrder.Id}.");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await _logger.ErrorAsync($"Error linking nopCommerce order to Shopify order #{order.Id}", ex);
         }
 
         var message = $"Successfully processed Shopify Order #{order.Name}. Inventory updated for {syncedCount} of {order.LineItems.Count} line items.";

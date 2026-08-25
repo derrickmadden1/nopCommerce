@@ -45,6 +45,12 @@ public class RouteProvider : IRouteProvider
             "Plugin.Widgets.ShopifyCheckout.ProcessOrderWebhook",
             "ShopifyCheckout/ProcessOrderWebhook",
             new { controller = "ShopifyCheckout", action = "ProcessOrderWebhook" });
+
+        // Order completed route
+        endpointRouteBuilder.MapControllerRoute(
+            "Plugin.Widgets.ShopifyCheckout.Completed",
+            "ShopifyCheckout/Completed",
+            new { controller = "ShopifyCheckout", action = "Completed" });
     }
 
     /// <summary>
