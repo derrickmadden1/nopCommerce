@@ -138,7 +138,7 @@ public static class ServiceCollectionExtensions
 
             options.OnRejected = async (context, token) =>
             {
-                context.HttpContext.Response.StatusCode = settings.RejectionStatusCode;
+                context.HttpContext.Response.StatusCode = commonConfig.RejectionStatusCode;
 
                 var isAjax = context.HttpContext.Request.Headers.XRequestedWith == "XMLHttpRequest" ||
                              context.HttpContext.Request.Headers.Accept.ToString().Contains("application/json");
@@ -170,15 +170,16 @@ public static class ServiceCollectionExtensions
                         <body>
                             <div class="container">
                                 <h1>Too Many Requests</h1>
-                                <p>We received too many requests from your connection. Please wait a moment and refresh the page to continue browsing.</p>
+                                <p>We received too many requests from your connection. Please wait a moment and try again.</p>
                                 <a href="javascript:location.reload()" class="btn">Refresh Page</a>
                             </div>
                         </body>
                         </html>
                         """, token);
-                }
-            };
-        });
+                    }
+                };
+            });
+        }
 
         engine.ConfigureServices(services, builder.Configuration);
     }
