@@ -59,4 +59,14 @@ public interface IShopifyAdminApiService
         string customerEmail = null,
         decimal orderDiscountAmount = 0,
         int? nopCustomerId = null);
+
+    /// <summary>
+    /// Creates a fulfillment on Shopify with tracking information
+    /// </summary>
+    Task<(bool Success, string Message)> CreateFulfillmentAsync(
+        long shopifyOrderId,
+        string trackingNumber,
+        string trackingCompany = null,
+        string trackingUrl = null,
+        bool notifyCustomer = true);
 }

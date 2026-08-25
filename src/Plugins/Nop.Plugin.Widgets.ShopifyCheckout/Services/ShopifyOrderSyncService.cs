@@ -25,6 +25,7 @@ public class ShopifyOrderSyncService : IShopifyOrderSyncService
     private readonly IGenericAttributeService _genericAttributeService;
     private readonly ICustomerService _customerService;
     private readonly IShoppingCartService _shoppingCartService;
+    private readonly IOrderService _orderService;
     private readonly ILogger _logger;
     private readonly ShopifyCheckoutSettings _settings;
 
@@ -38,6 +39,7 @@ public class ShopifyOrderSyncService : IShopifyOrderSyncService
         IGenericAttributeService genericAttributeService,
         ICustomerService customerService,
         IShoppingCartService shoppingCartService,
+        IOrderService orderService,
         ILogger logger,
         ShopifyCheckoutSettings settings)
     {
@@ -46,6 +48,7 @@ public class ShopifyOrderSyncService : IShopifyOrderSyncService
         _genericAttributeService = genericAttributeService;
         _customerService = customerService;
         _shoppingCartService = shoppingCartService;
+        _orderService = orderService;
         _logger = logger;
         _settings = settings;
     }
@@ -168,6 +171,24 @@ public class ShopifyOrderSyncService : IShopifyOrderSyncService
                     await _logger.ErrorAsync($"Error clearing cart for customer '{customerEmail}' on Shopify order sync", ex);
                 }
             }
+        }
+
+        // 3. Link nopCommerce Order to ShopifyOrderId for shipment tracking sync
+        try
+        {
+            if (!string.IsNullOrWhiteSpace(order.Name))
+            {
+                var nopOrder = await _orderService.GetOrderByCustomOrderNumberAsync(order.Name.Trim());
+                if (nopOrder != null)
+                {
+                    await _genericAttributeService.SaveAttributeAsync(nopOrder, "ShopifyOrderId", order.Id);
+                    await _logger.InformationAsync($"Shopify Order #{order.Name}: Linked to nopCommerce Order #{nopOrder.Id}.");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await _logger.ErrorAsync($"Error linking nopCommerce order to Shopify order #{order.Id}", ex);
         }
 
         var message = $"Successfully processed Shopify Order #{order.Name}. Inventory updated for {syncedCount} of {order.LineItems.Count} line items.";

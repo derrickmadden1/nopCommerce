@@ -844,5 +844,158 @@ mutation draftOrderCreate($input: DraftOrderInput!) {
         }
     }
 
+    /// <summary>
+    /// Creates a fulfillment on Shopify with tracking information
+    /// </summary>
+    public async Task<(bool Success, string Message)> CreateFulfillmentAsync(
+        long shopifyOrderId,
+        string trackingNumber,
+        string trackingCompany = null,
+        string trackingUrl = null,
+        bool notifyCustomer = true)
+    {
+        if (shopifyOrderId <= 0)
+            return (false, "Invalid Shopify order ID.");
+
+        var (token, tokenErr) = await GetEffectiveAdminTokenAsync();
+        if (string.IsNullOrWhiteSpace(token))
+            return (false, $"Shopify Admin API Access Token missing: {tokenErr}");
+
+        if (string.IsNullOrWhiteSpace(_settings.StoreUrl))
+            return (false, "Shopify Store URL is not configured.");
+
+        var storeDomain = _settings.StoreUrl.Trim().Replace("https://", "").Replace("http://", "").TrimEnd('/');
+        var apiVersion = string.IsNullOrWhiteSpace(_settings.ApiVersion) ? ShopifyCheckoutDefaults.DefaultApiVersion : _settings.ApiVersion.Trim();
+
+        try
+        {
+            // 1. Try GraphQL fulfillmentCreateV2
+            var orderGid = $"gid://shopify/Order/{shopifyOrderId}";
+            var queryFulfillmentOrders = @"
+query getFulfillmentOrders($orderId: ID!) {
+  order(id: $orderId) {
+    id
+    fulfillmentOrders(first: 5) {
+      nodes {
+        id
+        status
+      }
+    }
+  }
+}";
+            var endpointGql = $"https://{storeDomain}/admin/api/{apiVersion}/graphql.json";
+            var reqGql = new HttpRequestMessage(HttpMethod.Post, endpointGql);
+            reqGql.Headers.Add("X-Shopify-Access-Token", token);
+
+            var bodyGql = new
+            {
+                query = queryFulfillmentOrders,
+                variables = new { orderId = orderGid }
+            };
+            reqGql.Content = new StringContent(System.Text.Json.JsonSerializer.Serialize(bodyGql), System.Text.Encoding.UTF8, "application/json");
+
+            var respGql = await _httpClient.SendAsync(reqGql);
+            var contentGql = await respGql.Content.ReadAsStringAsync();
+
+            string fulfillmentOrderId = null;
+            if (respGql.IsSuccessStatusCode && !string.IsNullOrWhiteSpace(contentGql))
+            {
+                using var doc = System.Text.Json.JsonDocument.Parse(contentGql);
+                if (doc.RootElement.TryGetProperty("data", out var data) &&
+                    data.TryGetProperty("order", out var orderObj) &&
+                    orderObj.ValueKind == JsonValueKind.Object &&
+                    orderObj.TryGetProperty("fulfillmentOrders", out var foObj) &&
+                    foObj.TryGetProperty("nodes", out var nodes) &&
+                    nodes.ValueKind == JsonValueKind.Array && nodes.GetArrayLength() > 0)
+                {
+                    var firstNode = nodes[0];
+                    if (firstNode.TryGetProperty("id", out var foId))
+                        fulfillmentOrderId = foId.GetString();
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(fulfillmentOrderId))
+            {
+                var mutation = @"
+mutation fulfillmentCreateV2($fulfillment: FulfillmentV2Input!) {
+  fulfillmentCreateV2(fulfillment: $fulfillment) {
+    fulfillment {
+      id
+      status
+    }
+    userErrors {
+      field
+      message
+    }
+  }
+}";
+                var fulfillmentInput = new Dictionary<string, object>
+                {
+                    ["lineItemsByFulfillmentOrder"] = new[]
+                    {
+                        new { fulfillmentOrderId = fulfillmentOrderId }
+                    },
+                    ["notifyCustomer"] = notifyCustomer
+                };
+
+                if (!string.IsNullOrWhiteSpace(trackingNumber))
+                {
+                    fulfillmentInput["trackingInfo"] = new
+                    {
+                        number = trackingNumber.Trim(),
+                        company = string.IsNullOrWhiteSpace(trackingCompany) ? "Courier" : trackingCompany.Trim(),
+                        url = string.IsNullOrWhiteSpace(trackingUrl) ? null : trackingUrl.Trim()
+                    };
+                }
+
+                var reqMut = new HttpRequestMessage(HttpMethod.Post, endpointGql);
+                reqMut.Headers.Add("X-Shopify-Access-Token", token);
+                var mutPayload = new { query = mutation, variables = new { fulfillment = fulfillmentInput } };
+                reqMut.Content = new StringContent(System.Text.Json.JsonSerializer.Serialize(mutPayload), System.Text.Encoding.UTF8, "application/json");
+
+                var respMut = await _httpClient.SendAsync(reqMut);
+
+                if (respMut.IsSuccessStatusCode)
+                {
+                    await _logger.InformationAsync($"Shopify Order #{shopifyOrderId}: Created fulfillment via GraphQL with tracking number '{trackingNumber}'.");
+                    return (true, $"Fulfillment created on Shopify for order #{shopifyOrderId}.");
+                }
+            }
+
+            // 2. Fallback to REST API fulfillment endpoint
+            var endpointRest = $"https://{storeDomain}/admin/api/{apiVersion}/orders/{shopifyOrderId}/fulfillments.json";
+            var reqRest = new HttpRequestMessage(HttpMethod.Post, endpointRest);
+            reqRest.Headers.Add("X-Shopify-Access-Token", token);
+
+            var restPayload = new
+            {
+                fulfillment = new
+                {
+                    tracking_number = trackingNumber,
+                    tracking_company = trackingCompany,
+                    tracking_url = trackingUrl,
+                    notify_customer = notifyCustomer
+                }
+            };
+            reqRest.Content = new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(restPayload), System.Text.Encoding.UTF8, "application/json");
+
+            var respRest = await _httpClient.SendAsync(reqRest);
+            if (respRest.IsSuccessStatusCode)
+            {
+                await _logger.InformationAsync($"Shopify Order #{shopifyOrderId}: Created fulfillment via REST API with tracking '{trackingNumber}'.");
+                return (true, $"Fulfillment created on Shopify for order #{shopifyOrderId}.");
+            }
+
+            var errRest = await respRest.Content.ReadAsStringAsync();
+            await _logger.WarningAsync($"Shopify Order #{shopifyOrderId}: Fulfillment API returned HTTP {(int)respRest.StatusCode}: {errRest}");
+            return (false, $"Shopify Fulfillment error: {errRest}");
+        }
+        catch (Exception ex)
+        {
+            await _logger.ErrorAsync($"Exception creating fulfillment for Shopify Order #{shopifyOrderId}: {ex.Message}", ex);
+            return (false, ex.Message);
+        }
+    }
+
     #endregion
 }
