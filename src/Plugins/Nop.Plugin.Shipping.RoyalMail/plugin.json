@@ -1,0 +1,11 @@
+{
+  "Group": "Shipping rate computation",
+  "FriendlyName": "Royal Mail Shipping & Tracking",
+  "SystemName": "Shipping.RoyalMail",
+  "Version": "1.00",
+  "SupportedVersions": [ "5.00" ],
+  "Author": "Rose Cottage Phone",
+  "DisplayOrder": 1,
+  "FileName": "Nop.Plugin.Shipping.RoyalMail.dll",
+  "Description": "Offers Royal Mail tracking URL and live API tracking events for shipments."
+}

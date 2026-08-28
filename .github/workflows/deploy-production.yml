@@ -105,7 +105,8 @@ jobs:
             { "SystemName": "ExternalAuth.Apple","Version": "5.00.4"},
             { "SystemName": "Misc.CheckoutAbandonmentTracker","Version": "1.00"},
             { "SystemName": "Misc.ReviewReward","Version": "1.00"},
-            { "SystemName": "Widgets.ShopifyCheckout","Version": "1.00"}
+            { "SystemName": "Widgets.ShopifyCheckout","Version": "1.00"},
+            { "SystemName": "Shipping.RoyalMail","Version": "1.00"}
           ],
           "PluginNamesToUninstall": [],
           "PluginNamesToDelete": [],
