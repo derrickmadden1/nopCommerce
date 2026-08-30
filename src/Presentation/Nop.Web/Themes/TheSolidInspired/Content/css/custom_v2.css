@@ -3541,12 +3541,15 @@ body {
   transition: all 0.3s ease;
 }
 
-.method-card-modern:hover {
-  border-color: var(--brand-magenta);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+@media (hover: hover) {
+  .method-card-modern:hover {
+    border-color: var(--brand-magenta);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+  }
 }
 
-.method-card-modern.selected {
+.method-card-modern.selected,
+.method-card-modern:has(input[type="radio"]:checked) {
   border-color: var(--brand-magenta);
   background: rgba(184, 29, 125, 0.02);
   box-shadow: 0 5px 15px rgba(184, 29, 125, 0.1);
@@ -3586,7 +3589,8 @@ body {
   color: var(--brand-magenta);
 }
 
-.method-card-modern.selected .method-name {
+.method-card-modern.selected .method-name,
+.method-card-modern:has(input[type="radio"]:checked) .method-name {
   color: var(--brand-magenta);
 }
 
@@ -3632,7 +3636,8 @@ body {
   transition: all 0.3s ease;
 }
 
-.method-card-modern.selected .method-select-icon {
+.method-card-modern.selected .method-select-icon,
+.method-card-modern:has(input[type="radio"]:checked) .method-select-icon {
   color: var(--brand-magenta);
 }
 
