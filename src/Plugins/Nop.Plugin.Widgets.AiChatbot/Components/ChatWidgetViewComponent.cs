@@ -20,6 +20,10 @@ public class ChatWidgetViewComponent : NopViewComponent
         if (!_settings.Enabled)
             return Content(string.Empty);
 
+        var controller = ViewContext.RouteData.Values["controller"]?.ToString();
+        if (string.Equals(controller, "Checkout", StringComparison.OrdinalIgnoreCase))
+            return Content(string.Empty);
+
         return View("~/Plugins/Widgets.AiChatbot/Views/ChatWidget.cshtml", _settings);
     }
 }

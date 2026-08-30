@@ -71,9 +71,30 @@
 
                     <script asp-location="Footer">
                         $(function() {
+                            $('#termsofservice').on('change', function () {
+                                if ($(this).is(':checked')) {
+                                    $(this).closest('.terms-of-service-modern').css({
+                                        'border': '',
+                                        'padding': '',
+                                        'background-color': ''
+                                    });
+                                }
+                            });
+
                             $('#confirm-order-form').on('submit', function () {
                                 var button = $(this).find('.confirm-order-btn-modern');
                                 if ($('#termsofservice').length > 0 && !$('#termsofservice').is(':checked')) {
+                                    var termsBox = $('#termsofservice').closest('.terms-of-service-modern');
+                                    termsBox.css({
+                                        'border': '2px solid #ef4444',
+                                        'padding': '12px 16px',
+                                        'border-radius': '8px',
+                                        'background-color': '#fef2f2',
+                                        'transition': 'all 0.3s ease'
+                                    });
+                                    $('html, body').animate({
+                                        scrollTop: termsBox.offset().top - 80
+                                    }, 300);
                                     alert('@T("Checkout.TermsOfService.PleaseAccept")');
                                     return false;
                                 }
