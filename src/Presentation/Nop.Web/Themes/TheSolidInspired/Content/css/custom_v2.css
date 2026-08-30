@@ -5599,3 +5599,51 @@ body {
     display: flex;
     justify-content: center;
 }
+
+/* --- CHECKOUT MOBILE & CONVERSION ENHANCEMENTS --- */
+/* Completely hide floating chatbot on all checkout pages */
+html.html-checkout-page #ai-chat-bubble,
+.html-checkout-page #ai-chat-bubble,
+.checkout-page #ai-chat-bubble,
+.order-confirm-page #ai-chat-bubble {
+  display: none !important;
+}
+
+/* Ensure adequate breathing room at the bottom of checkout */
+.html-checkout-page .checkout-page {
+  padding-bottom: 70px;
+}
+
+/* On mobile, ensure checkout footer buttons are full width and easy to tap */
+@media (max-width: 768px) {
+  .checkout-footer-modern {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: stretch !important;
+    align-items: stretch !important;
+    width: 100% !important;
+    margin-top: 30px !important;
+    padding-top: 25px !important;
+    gap: 15px !important;
+  }
+
+  .confirm-order-btn-modern,
+  .checkout-footer-modern .btn-primary,
+  .checkout-footer-modern .next-step-btn {
+    width: 100% !important;
+    min-width: 0 !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    text-align: center !important;
+    padding: 18px 20px !important;
+    font-size: 1.15rem !important;
+    box-sizing: border-box !important;
+  }
+
+  .terms-of-service-modern {
+    width: 100%;
+    margin-bottom: 15px;
+  }
+}
+

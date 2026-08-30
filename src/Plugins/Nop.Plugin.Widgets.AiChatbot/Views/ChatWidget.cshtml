@@ -15,6 +15,13 @@
         z-index: 999998 !important;
     }
 
+    /* Hide chatbot on all checkout pages */
+    html.html-checkout-page #ai-chat-bubble,
+    .html-checkout-page #ai-chat-bubble,
+    .checkout-page #ai-chat-bubble {
+        display: none !important;
+    }
+
     #ai-chat-bubble {
         position: fixed;
         bottom: 24px;
