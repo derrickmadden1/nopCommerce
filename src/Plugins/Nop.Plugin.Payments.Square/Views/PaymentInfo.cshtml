@@ -1,4 +1,4 @@
-﻿@model PaymentInfoModel
+@model PaymentInfoModel
 
 @{
     Layout = "";
@@ -15,6 +15,39 @@
         vertical-align: middle;
         color: #777;
         width: 100%;
+    }
+
+    /* 3DS / CardinalCommerce / Square verification modal mobile viewport fix */
+    #Cardinal-Modal,
+    .Cardinal-Modal,
+    #Cardinal-ElementContainer,
+    div[id^="Cardinal-"] {
+        position: fixed !important;
+        top: max(20px, env(safe-area-inset-top, 20px)) !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: auto !important;
+        width: 100vw !important;
+        width: 100% !important;
+        max-height: calc(100dvh - 30px) !important;
+        max-height: calc(100vh - 30px) !important;
+        z-index: 2147483647 !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: flex-start !important;
+        box-sizing: border-box !important;
+        padding-top: 8px !important;
+    }
+
+    #Cardinal-CCA-IFrame,
+    iframe[id^="Cardinal"],
+    iframe[name^="Cardinal"],
+    iframe[src*="cardinalcommerce"],
+    iframe[src*="songbird"] {
+        max-height: calc(100dvh - 40px) !important;
+        max-height: calc(100vh - 40px) !important;
+        border-radius: 8px !important;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35) !important;
     }
 </style>
 
@@ -130,6 +163,10 @@
                     postalCode: '@Model.BillingPostalCode'
                 }
             };
+
+            if (window.scrollY > 0) {
+                window.scrollTo({ top: 0, behavior: 'instant' });
+            }
 
             var verificationResults = await payments.verifyBuyer(token, verificationDetails);
 
