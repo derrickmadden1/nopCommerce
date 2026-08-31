@@ -107,7 +107,15 @@
     @NopHtml.GenerateInlineScripts(ResourceLocation.Head)
     <!--Powered by nopCommerce - https://www.nopCommerce.com-->
 
-    
+    <!-- Microsoft Clarity Consent Signal -->
+    <script>
+        window.clarity = window.clarity || function () { (window.clarity.q = window.clarity.q || []).push(arguments); };
+        window.clarity('consentv2', {
+            analytics_Storage: 'granted',
+            ad_Storage: 'granted'
+        });
+    </script>
+
     @Html.Raw(commonSettings.HeaderCustomHtml)
 </head>
 <body>

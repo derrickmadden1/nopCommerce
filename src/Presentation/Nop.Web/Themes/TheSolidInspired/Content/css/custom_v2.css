@@ -3541,12 +3541,15 @@ body {
   transition: all 0.3s ease;
 }
 
-.method-card-modern:hover {
-  border-color: var(--brand-magenta);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+@media (hover: hover) {
+  .method-card-modern:hover {
+    border-color: var(--brand-magenta);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+  }
 }
 
-.method-card-modern.selected {
+.method-card-modern.selected,
+.method-card-modern:has(input[type="radio"]:checked) {
   border-color: var(--brand-magenta);
   background: rgba(184, 29, 125, 0.02);
   box-shadow: 0 5px 15px rgba(184, 29, 125, 0.1);
@@ -3586,7 +3589,8 @@ body {
   color: var(--brand-magenta);
 }
 
-.method-card-modern.selected .method-name {
+.method-card-modern.selected .method-name,
+.method-card-modern:has(input[type="radio"]:checked) .method-name {
   color: var(--brand-magenta);
 }
 
@@ -3632,7 +3636,8 @@ body {
   transition: all 0.3s ease;
 }
 
-.method-card-modern.selected .method-select-icon {
+.method-card-modern.selected .method-select-icon,
+.method-card-modern:has(input[type="radio"]:checked) .method-select-icon {
   color: var(--brand-magenta);
 }
 
@@ -5646,4 +5651,38 @@ html.html-checkout-page #ai-chat-bubble,
     margin-bottom: 15px;
   }
 }
+
+/* --- 3D-SECURE / PAYMENT VERIFICATION (SQUARE & CARDINALCOMMERCE) MOBILE FIX --- */
+#Cardinal-Modal,
+.Cardinal-Modal,
+#Cardinal-ElementContainer,
+div[id^="Cardinal-"] {
+  position: fixed !important;
+  top: max(20px, env(safe-area-inset-top, 20px)) !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: auto !important;
+  width: 100vw !important;
+  width: 100% !important;
+  max-height: calc(100dvh - 30px) !important;
+  max-height: calc(100vh - 30px) !important;
+  z-index: 2147483647 !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: flex-start !important;
+  box-sizing: border-box !important;
+  padding-top: 8px !important;
+}
+
+#Cardinal-CCA-IFrame,
+iframe[id^="Cardinal"],
+iframe[name^="Cardinal"],
+iframe[src*="cardinalcommerce"],
+iframe[src*="songbird"] {
+  max-height: calc(100dvh - 40px) !important;
+  max-height: calc(100vh - 40px) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35) !important;
+}
+
 
