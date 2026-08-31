@@ -1,9 +1,16 @@
-﻿
+
 <script asp-location="Footer">
     $(function() {
         $('#eu-cookie-bar-notification').show();
 
         $('#eu-cookie-ok').on('click', function () {
+            if (typeof window.clarity === 'function') {
+                window.clarity('consentv2', {
+                    analytics_Storage: 'granted',
+                    ad_Storage: 'granted'
+                });
+            }
+
             var postData = {};
             addAntiForgeryToken(postData);
 
