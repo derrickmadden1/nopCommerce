@@ -92,9 +92,38 @@
     padding: .9rem 1.1rem; border-bottom: 1px solid var(--ml-parch);
     cursor: pointer; transition: background .15s;
     display: flex; gap: .75rem; align-items: flex-start;
+    -webkit-tap-highlight-color: rgba(0,0,0,0.05);
 }
 .ml-card:hover { background: #faf6f0; }
+.ml-card:active { background: #eae5dc; }
 .ml-card.is-active { background: #f0ede6; border-left: 3px solid var(--ml-moss); }
+
+.ml-card__hint {
+    display: none;
+    font-size: .74rem;
+    font-weight: 600;
+    color: var(--ml-moss);
+    margin-top: .35rem;
+    align-items: center;
+    gap: .25rem;
+}
+.ml-card__hint-arrow {
+    display: inline-block;
+    transition: transform .15s ease;
+}
+.ml-card:hover .ml-card__hint-arrow,
+.ml-card:active .ml-card__hint-arrow {
+    transform: translateX(3px);
+}
+
+.ml-btn--list-back {
+    display: none;
+    background: var(--ml-parch);
+    color: var(--ml-bark);
+}
+.ml-btn--list-back:hover {
+    background: #ddd5c0;
+}
 
 .ml-card__dot {
     width: 9px; height: 9px; border-radius: 50%; margin-top: .35rem; flex-shrink: 0;
@@ -186,6 +215,16 @@
     /* Toggling Logic */
     .market-layout:not([data-view="list"]) .market-sidebar { display: none; }
     .market-layout[data-view="list"] #market-map { display: none; }
+
+    .ml-card__hint {
+        display: flex;
+    }
+    .ml-btn--list-back {
+        display: inline-block;
+    }
+    .ml-popup__actions {
+        flex-wrap: wrap;
+    }
 }
 
 /* ── Checkout Delivery Address Picker ──────────────────── */
