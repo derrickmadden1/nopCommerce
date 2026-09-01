@@ -1659,8 +1659,14 @@ body {
     transition: color 0.2s ease !important;
   }
 
-  .mobile-nav-content .mega-menu-item:hover>a {
+  .mobile-nav-content .mega-menu-item:hover>a,
+  .mobile-nav-content .mega-menu-item.expanded>a {
     color: var(--brand-magenta) !important;
+  }
+
+  .mobile-nav-content .mega-menu-item.has-sublist>a {
+    padding-right: 56px !important;
+    cursor: pointer !important;
   }
 
   /* Toggle Button Styles - Injected by JS */

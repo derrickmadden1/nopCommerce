@@ -1,10 +1,12 @@
 using Microsoft.AspNetCore.Mvc;
+using Nop.Core.Domain.Catalog;
 using Nop.Plugin.Widgets.AiRecommendations.Models;
 using Nop.Plugin.Widgets.AiRecommendations.Services;
 using Nop.Services.Catalog;
 using Nop.Services.Media;
 using Nop.Services.Seo;
 using Nop.Web.Framework.Components;
+using Nop.Web.Framework.Mvc.Routing;
 
 namespace Nop.Plugin.Widgets.AiRecommendations.Components;
 
@@ -19,19 +21,22 @@ public class SimilarProductsViewComponent : NopViewComponent
     private readonly IUrlRecordService _urlRecordService;
     private readonly IPictureService _pictureService;
     private readonly IPriceFormatter _priceFormatter;
+    private readonly INopUrlHelper _nopUrlHelper;
 
     public SimilarProductsViewComponent(
         RecommendationService recommendationService,
         AiRecommendationsSettings settings,
         IUrlRecordService urlRecordService,
         IPictureService pictureService,
-        IPriceFormatter priceFormatter)
+        IPriceFormatter priceFormatter,
+        INopUrlHelper nopUrlHelper)
     {
         _recommendationService = recommendationService;
         _settings = settings;
         _urlRecordService = urlRecordService;
         _pictureService = pictureService;
         _priceFormatter = priceFormatter;
+        _nopUrlHelper = nopUrlHelper;
     }
 
     public async Task<IViewComponentResult> InvokeAsync(string widgetZone, object? additionalData = null)
@@ -59,13 +64,16 @@ public class SimilarProductsViewComponent : NopViewComponent
                 ? await _pictureService.GetPictureUrlAsync(picture.Id, 200)
                 : await _pictureService.GetDefaultPictureUrlAsync(200);
 
+            var productUrl = await _nopUrlHelper.RouteGenericUrlAsync<Product>(new { SeName = seName });
+
             model.Products.Add(new RecommendedProduct
             {
                 Id = product.Id,
                 Name = product.Name,
                 SeName = seName,
                 PictureUrl = pictureUrl,
-                Price = await _priceFormatter.FormatPriceAsync(product.Price)
+                Price = await _priceFormatter.FormatPriceAsync(product.Price),
+                ProductUrl = productUrl
             });
         }
 

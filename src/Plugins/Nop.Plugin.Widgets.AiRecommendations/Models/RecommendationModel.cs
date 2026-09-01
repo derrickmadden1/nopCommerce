@@ -16,4 +16,5 @@ public record RecommendedProduct
     public string SeName { get; set; } = string.Empty;
     public string? PictureUrl { get; set; }
     public string Price { get; set; } = string.Empty;
+    public string ProductUrl { get; set; } = string.Empty;
 }
