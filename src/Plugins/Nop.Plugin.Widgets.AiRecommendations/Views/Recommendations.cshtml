@@ -2,13 +2,152 @@
 
 @if (Model.Products.Any())
 {
+    <style>
+        .ai-recommendations {
+            margin: 32px 0 24px;
+            padding: 0;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .ai-recommendations .recommendations-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #1b1b1b;
+            margin-bottom: 18px;
+            margin-top: 0;
+        }
+        .ai-recommendations .recommendations-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            width: 100%;
+        }
+        .ai-recommendations .recommendation-item {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            background: #ffffff;
+            border-radius: 6px;
+            box-sizing: border-box;
+            position: relative;
+        }
+        .ai-recommendations .recommendation-link {
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            text-decoration: none !important;
+            color: #1b1b1b !important;
+            cursor: pointer;
+            outline: none;
+            -webkit-tap-highlight-color: rgba(0, 0, 0, 0.05);
+        }
+        .ai-recommendations .recommendation-link:visited {
+            color: #1b1b1b !important;
+        }
+        .ai-recommendations .recommendation-picture {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #fafafa;
+            border-radius: 6px;
+            overflow: hidden;
+            position: relative;
+        }
+        .ai-recommendations .recommendation-picture img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            transition: transform 0.25s ease;
+            pointer-events: none; /* Allows taps on image to bubble cleanly to recommendation-link */
+        }
+        .ai-recommendations .recommendation-link:hover .recommendation-picture img,
+        .ai-recommendations .recommendation-link:focus-visible .recommendation-picture img,
+        .ai-recommendations .recommendation-link:active .recommendation-picture img {
+            transform: scale(1.04);
+        }
+        .ai-recommendations .recommendation-info {
+            padding: 10px 2px 4px;
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+        }
+        .ai-recommendations .recommendation-name {
+            font-size: 0.92rem;
+            font-weight: 500;
+            line-height: 1.35;
+            color: #1b1b1b;
+            margin-bottom: 6px;
+            min-height: 2.7em;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            transition: color 0.15s ease;
+        }
+        .ai-recommendations .recommendation-link:hover .recommendation-name {
+            color: #5e8350;
+        }
+        .ai-recommendations .recommendation-price {
+            font-size: 0.98rem;
+            font-weight: 700;
+            color: #1b1b1b;
+            margin-bottom: 6px;
+        }
+        .ai-recommendations .recommendation-actions {
+            margin-top: auto;
+            padding-top: 4px;
+            text-align: center;
+            width: 100%;
+        }
+        .ai-recommendations .recommendation-actions .button-2 {
+            width: 100%;
+            min-height: 44px; /* Mobile accessible tap target */
+            cursor: pointer;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            touch-action: manipulation;
+        }
+        .ai-recommendations .recommendation-actions .button-2:active {
+            transform: scale(0.98);
+        }
+        @media (max-width: 991px) {
+            .ai-recommendations .recommendations-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 16px;
+            }
+        }
+        @media (max-width: 640px) {
+            .ai-recommendations .recommendations-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 14px;
+            }
+            .ai-recommendations .recommendation-name {
+                font-size: 0.85rem;
+            }
+            .ai-recommendations .recommendations-title {
+                font-size: 1.1rem;
+                margin-bottom: 14px;
+            }
+        }
+    </style>
+
     <div class="ai-recommendations personalised">
         <h3 class="recommendations-title">@Model.Title</h3>
         <div class="recommendations-grid">
             @foreach (var product in Model.Products)
             {
+                var productUrl = !string.IsNullOrEmpty(product.ProductUrl)
+                    ? product.ProductUrl
+                    : Url.RouteUrl(Nop.Web.Framework.Mvc.Routing.NopRoutingDefaults.RouteName.Generic.Product, new { SeName = product.SeName });
+
                 <div class="recommendation-item">
-                    <a href="@Url.RouteUrl("Product", new { SeName = product.SeName })">
+                    <a href="@productUrl" class="recommendation-link" title="@product.Name">
                         <div class="recommendation-picture">
                             <img src="@product.PictureUrl" alt="@product.Name" loading="lazy" />
                         </div>
@@ -17,12 +156,12 @@
                             <div class="recommendation-price">@product.Price</div>
                         </div>
                     </a>
-                    <div class="recommendation-actions product-actions" style="margin-top: 10px; text-align: center;">
+                    <div class="recommendation-actions product-actions">
                         <div class="buttons" style="display: flex; justify-content: center; width: 100%;">
                             @{
                                 var addtocartlink = Url.RouteUrl("AddProductToCart-Catalog", new { productId = product.Id, shoppingCartTypeId = 1, quantity = 1 });
                             }
-                            <button type="button" class="button-2 product-box-add-to-cart-button" onclick="AjaxCart.addproducttocart_catalog('@addtocartlink');return false;" style="width: 100%;">Add to cart</button>
+                            <button type="button" class="button-2 product-box-add-to-cart-button" onclick="AjaxCart.addproducttocart_catalog('@addtocartlink');return false;">Add to cart</button>
                         </div>
                     </div>
                 </div>
