@@ -3,6 +3,7 @@ using Nop.Core.Domain.Catalog;
 using Nop.Core.Events;
 using Nop.Plugin.Widgets.ShopifyCheckout.Services;
 using Nop.Services.Catalog;
+using Nop.Services.Cms;
 using Nop.Services.Events;
 
 namespace Nop.Plugin.Widgets.ShopifyCheckout.Infrastructure;
@@ -23,6 +24,7 @@ public class ProductCatalogSyncEventConsumer :
 
     private readonly IShopifyAdminApiService _adminApiService;
     private readonly IProductService _productService;
+    private readonly IWidgetPluginManager _widgetPluginManager;
     private readonly ShopifyCheckoutSettings _settings;
 
     #endregion
@@ -32,11 +34,25 @@ public class ProductCatalogSyncEventConsumer :
     public ProductCatalogSyncEventConsumer(
         IShopifyAdminApiService adminApiService,
         IProductService productService,
+        IWidgetPluginManager widgetPluginManager,
         ShopifyCheckoutSettings settings)
     {
         _adminApiService = adminApiService;
         _productService = productService;
+        _widgetPluginManager = widgetPluginManager;
         _settings = settings;
+    }
+
+    #endregion
+
+    #region Helpers
+
+    private async Task<bool> IsActiveAsync()
+    {
+        if (!_settings.EnableAutoCatalogSync)
+            return false;
+
+        return await _widgetPluginManager.IsPluginActiveAsync(ShopifyCheckoutDefaults.SystemName);
     }
 
     #endregion
@@ -45,7 +61,7 @@ public class ProductCatalogSyncEventConsumer :
 
     public async Task HandleEventAsync(EntityInsertedEvent<Product> eventMessage)
     {
-        if (!_settings.EnableAutoCatalogSync)
+        if (!await IsActiveAsync())
             return;
 
         if (eventMessage?.Entity == null || !eventMessage.Entity.Published || eventMessage.Entity.Deleted)
@@ -56,7 +72,7 @@ public class ProductCatalogSyncEventConsumer :
 
     public async Task HandleEventAsync(EntityUpdatedEvent<Product> eventMessage)
     {
-        if (!_settings.EnableAutoCatalogSync)
+        if (!await IsActiveAsync())
             return;
 
         if (eventMessage?.Entity == null)
@@ -73,7 +89,7 @@ public class ProductCatalogSyncEventConsumer :
 
     public async Task HandleEventAsync(EntityDeletedEvent<Product> eventMessage)
     {
-        if (!_settings.EnableAutoCatalogSync)
+        if (!await IsActiveAsync())
             return;
 
         if (eventMessage?.Entity == null)
@@ -84,7 +100,7 @@ public class ProductCatalogSyncEventConsumer :
 
     public async Task HandleEventAsync(EntityInsertedEvent<ProductAttributeCombination> eventMessage)
     {
-        if (!_settings.EnableAutoCatalogSync)
+        if (!await IsActiveAsync())
             return;
 
         if (eventMessage?.Entity == null)
@@ -99,7 +115,7 @@ public class ProductCatalogSyncEventConsumer :
 
     public async Task HandleEventAsync(EntityUpdatedEvent<ProductAttributeCombination> eventMessage)
     {
-        if (!_settings.EnableAutoCatalogSync)
+        if (!await IsActiveAsync())
             return;
 
         if (eventMessage?.Entity == null)
@@ -114,7 +130,7 @@ public class ProductCatalogSyncEventConsumer :
 
     public async Task HandleEventAsync(EntityDeletedEvent<ProductAttributeCombination> eventMessage)
     {
-        if (!_settings.EnableAutoCatalogSync)
+        if (!await IsActiveAsync())
             return;
 
         // No action needed for deleted combination beyond parent

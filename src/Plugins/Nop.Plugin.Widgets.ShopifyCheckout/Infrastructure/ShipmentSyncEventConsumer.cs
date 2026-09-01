@@ -5,6 +5,7 @@ using Nop.Core.Domain.Orders;
 using Nop.Core.Domain.Shipping;
 using Nop.Core.Events;
 using Nop.Plugin.Widgets.ShopifyCheckout.Services;
+using Nop.Services.Cms;
 using Nop.Services.Common;
 using Nop.Services.Events;
 using Nop.Services.Logging;
@@ -26,6 +27,7 @@ public class ShipmentSyncEventConsumer :
     private readonly IShopifyAdminApiService _adminApiService;
     private readonly IOrderService _orderService;
     private readonly IGenericAttributeService _genericAttributeService;
+    private readonly IWidgetPluginManager _widgetPluginManager;
     private readonly ILogger _logger;
     private readonly ShopifyCheckoutSettings _settings;
 
@@ -37,12 +39,14 @@ public class ShipmentSyncEventConsumer :
         IShopifyAdminApiService adminApiService,
         IOrderService orderService,
         IGenericAttributeService genericAttributeService,
+        IWidgetPluginManager widgetPluginManager,
         ILogger logger,
         ShopifyCheckoutSettings settings)
     {
         _adminApiService = adminApiService;
         _orderService = orderService;
         _genericAttributeService = genericAttributeService;
+        _widgetPluginManager = widgetPluginManager;
         _logger = logger;
         _settings = settings;
     }
@@ -75,6 +79,9 @@ public class ShipmentSyncEventConsumer :
 
     private async Task SyncShipmentToShopifyAsync(Shipment shipment)
     {
+        if (!await _widgetPluginManager.IsPluginActiveAsync(ShopifyCheckoutDefaults.SystemName))
+            return;
+
         if (shipment == null || string.IsNullOrWhiteSpace(shipment.TrackingNumber))
             return;
 
@@ -84,14 +91,6 @@ public class ShipmentSyncEventConsumer :
 
         // Retrieve linked Shopify Order ID from GenericAttribute
         long shopifyOrderId = await _genericAttributeService.GetAttributeAsync<long>(order, "ShopifyOrderId");
-
-        // Fallback: Check CustomOrderNumber or Order Notes if ShopifyOrderId attribute is not set directly
-        if (shopifyOrderId <= 0 && !string.IsNullOrWhiteSpace(order.CustomOrderNumber))
-        {
-            var cleanNum = order.CustomOrderNumber.Replace("#", "").Trim();
-            if (long.TryParse(cleanNum, out long parsedId))
-                shopifyOrderId = parsedId;
-        }
 
         if (shopifyOrderId <= 0)
             return;

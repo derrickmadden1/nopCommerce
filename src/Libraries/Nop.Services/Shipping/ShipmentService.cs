@@ -1,4 +1,6 @@
-﻿using Nop.Core;
+using System;
+using System.Linq;
+using Nop.Core;
 using Nop.Core.Domain.Catalog;
 using Nop.Core.Domain.Common;
 using Nop.Core.Domain.Orders;
@@ -417,6 +419,9 @@ public partial class ShipmentService : IShipmentService
     public virtual async Task<IShipmentTracker> GetShipmentTrackerAsync(Shipment shipment)
     {
         var order = await _orderRepository.GetByIdAsync(shipment.OrderId, cache => default, useShortTermCache: true);
+        if (order == null)
+            return null;
+
         IShipmentTracker shipmentTracker = null;
 
         if (order.PickupInStore)
@@ -434,6 +439,36 @@ public partial class ShipmentService : IShipmentService
 
             if (shippingRateComputationMethod != null)
                 shipmentTracker = await shippingRateComputationMethod.GetShipmentTrackerAsync();
+        }
+
+        if (shipmentTracker == null)
+        {
+            var activeComputationMethods = await _shippingPluginManager.LoadActivePluginsAsync();
+
+            // 1. Try to match an active tracker matching the Order's Shipping Method name (e.g. "Royal Mail")
+            if (!string.IsNullOrWhiteSpace(order.ShippingMethod))
+            {
+                var matchingMethod = activeComputationMethods.FirstOrDefault(m =>
+                    m.PluginDescriptor.FriendlyName.Contains(order.ShippingMethod, StringComparison.OrdinalIgnoreCase) ||
+                    m.PluginDescriptor.SystemName.Contains(order.ShippingMethod.Replace(" ", ""), StringComparison.OrdinalIgnoreCase));
+
+                if (matchingMethod != null)
+                    shipmentTracker = await matchingMethod.GetShipmentTrackerAsync();
+            }
+
+            // 2. Fall back to any active provider that exposes an IShipmentTracker (e.g. Shipping.RoyalMail)
+            if (shipmentTracker == null)
+            {
+                foreach (var method in activeComputationMethods)
+                {
+                    var tracker = await method.GetShipmentTrackerAsync();
+                    if (tracker != null)
+                    {
+                        shipmentTracker = tracker;
+                        break;
+                    }
+                }
+            }
         }
 
         return shipmentTracker;
