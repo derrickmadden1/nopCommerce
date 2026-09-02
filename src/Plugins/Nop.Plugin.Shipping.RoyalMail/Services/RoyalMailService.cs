@@ -1,6 +1,10 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text.Json;
-using System.Text.Json.Serialization;
+using System.Threading.Tasks;
 using Nop.Services.Logging;
 using Nop.Services.Shipping.Tracking;
 
@@ -58,11 +62,18 @@ public class RoyalMailService
                 ? RoyalMailDefaults.SandboxApiBaseUrl
                 : RoyalMailDefaults.ProductionApiBaseUrl;
 
-            var requestUrl = $"{baseUrl.TrimEnd('/')}/tracking/v2/events/{Uri.EscapeDataString(trackingNumber.Trim())}";
+            // Sanitize tracking number (alphanumeric only)
+            var cleanTrackingNumber = new string(trackingNumber.Where(char.IsLetterOrDigit).ToArray());
+            if (string.IsNullOrWhiteSpace(cleanTrackingNumber))
+                return result;
+
+            // Royal Mail Tracking API v2 endpoint: /mailpieces/v2/{mailPieceId}/events
+            var requestUrl = $"{baseUrl.TrimEnd('/')}/mailpieces/v2/{Uri.EscapeDataString(cleanTrackingNumber)}/events";
 
             using var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
             request.Headers.Add("X-IBM-Client-Id", _settings.ClientId.Trim());
             request.Headers.Add("X-IBM-Client-Secret", _settings.ClientSecret.Trim());
+            request.Headers.TryAddWithoutValidation("X-Accept-RMG-Terms", "yes");
             request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
             request.Headers.Add("User-Agent", RoyalMailDefaults.UserAgent);
 
@@ -71,53 +82,32 @@ public class RoyalMailService
             if (!response.IsSuccessStatusCode)
             {
                 var errorContent = await response.Content.ReadAsStringAsync();
-                await _logger.ErrorAsync($"Royal Mail Tracking API error ({response.StatusCode}): {errorContent}");
+                await _logger.WarningAsync($"Royal Mail Tracking API response ({response.StatusCode}) for '{trackingNumber}': {errorContent}");
                 return result;
             }
 
             var responseJson = await response.Content.ReadAsStringAsync();
-            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-            var apiResponse = JsonSerializer.Deserialize<RoyalMailTrackingResponse>(responseJson, options);
+            using var doc = JsonDocument.Parse(responseJson);
+            var root = doc.RootElement;
 
-            if (apiResponse?.MailPieces != null)
+            // Royal Mail v2 endpoint returns a "mailPieces" property that can be an object or an array of objects
+            if (root.TryGetProperty("mailPieces", out var mailPiecesProp) || root.TryGetProperty("mailpieces", out mailPiecesProp))
             {
-                foreach (var piece in apiResponse.MailPieces)
+                if (mailPiecesProp.ValueKind == JsonValueKind.Object)
                 {
-                    if (piece.Events != null)
+                    ParseMailPieceElement(mailPiecesProp, result);
+                }
+                else if (mailPiecesProp.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var piece in mailPiecesProp.EnumerateArray())
                     {
-                        foreach (var ev in piece.Events)
-                        {
-                            var statusName = !string.IsNullOrWhiteSpace(ev.EventName) ? ev.EventName : ev.EventCode ?? "Event";
-                            var statusEvent = new ShipmentStatusEvent
-                            {
-                                EventName = statusName,
-                                Status = statusName,
-                                Location = ev.LocationName ?? piece.Summary?.StatusLocation ?? string.Empty,
-                                CountryCode = "GB"
-                            };
-
-                            if (DateTime.TryParse(ev.EventDateTime, out var parsedDate))
-                                statusEvent.Date = parsedDate;
-
-                            result.Add(statusEvent);
-                        }
-                    }
-                    else if (piece.Summary != null)
-                    {
-                        var statusEvent = new ShipmentStatusEvent
-                        {
-                            EventName = piece.Summary.StatusDescription ?? "Status summary",
-                            Status = piece.Summary.StatusDescription ?? "Status summary",
-                            Location = piece.Summary.StatusLocation ?? string.Empty,
-                            CountryCode = "GB"
-                        };
-
-                        if (DateTime.TryParse(piece.Summary.StatusDateTime, out var parsedDate))
-                            statusEvent.Date = parsedDate;
-
-                        result.Add(statusEvent);
+                        ParseMailPieceElement(piece, result);
                     }
                 }
+            }
+            else if (root.TryGetProperty("events", out var eventsProp) && eventsProp.ValueKind == JsonValueKind.Array)
+            {
+                ParseEventsArray(eventsProp, null, result);
             }
         }
         catch (Exception ex)
@@ -130,51 +120,78 @@ public class RoyalMailService
 
     #endregion
 
-    #region Nested DTO Classes
+    #region Helpers
 
-    private class RoyalMailTrackingResponse
+    private static void ParseMailPieceElement(JsonElement piece, List<ShipmentStatusEvent> result)
     {
-        [JsonPropertyName("mailPieces")]
-        public List<MailPieceDto> MailPieces { get; set; }
+        string summaryLocation = null;
+        string summaryDescription = null;
+        DateTime? summaryDate = null;
+
+        if (piece.TryGetProperty("summary", out var summaryProp) && summaryProp.ValueKind == JsonValueKind.Object)
+        {
+            if (summaryProp.TryGetProperty("statusLocation", out var loc))
+                summaryLocation = loc.GetString();
+            if (summaryProp.TryGetProperty("statusDescription", out var desc))
+                summaryDescription = desc.GetString();
+            if (summaryProp.TryGetProperty("statusDateTime", out var dt) && DateTime.TryParse(dt.GetString(), out var parsedSummaryDate))
+                summaryDate = parsedSummaryDate;
+        }
+
+        bool hasEvents = false;
+        if (piece.TryGetProperty("events", out var eventsProp) && eventsProp.ValueKind == JsonValueKind.Array)
+        {
+            hasEvents = ParseEventsArray(eventsProp, summaryLocation, result);
+        }
+
+        if (!hasEvents && !string.IsNullOrWhiteSpace(summaryDescription))
+        {
+            result.Add(new ShipmentStatusEvent
+            {
+                EventName = summaryDescription,
+                Status = summaryDescription,
+                Location = summaryLocation ?? string.Empty,
+                CountryCode = "GB",
+                Date = summaryDate
+            });
+        }
     }
 
-    private class MailPieceDto
+    private static bool ParseEventsArray(JsonElement eventsProp, string fallbackLocation, List<ShipmentStatusEvent> result)
     {
-        [JsonPropertyName("mailPieceId")]
-        public string MailPieceId { get; set; }
+        bool found = false;
+        foreach (var ev in eventsProp.EnumerateArray())
+        {
+            found = true;
+            string eventName = null;
+            if (ev.TryGetProperty("eventName", out var nameProp))
+                eventName = nameProp.GetString();
+            if (string.IsNullOrWhiteSpace(eventName) && ev.TryGetProperty("eventCode", out var codeProp))
+                eventName = codeProp.GetString();
+            if (string.IsNullOrWhiteSpace(eventName))
+                eventName = "Event";
 
-        [JsonPropertyName("summary")]
-        public StatusSummaryDto Summary { get; set; }
+            string location = null;
+            if (ev.TryGetProperty("locationName", out var locProp))
+                location = locProp.GetString();
+            if (string.IsNullOrWhiteSpace(location))
+                location = fallbackLocation ?? string.Empty;
 
-        [JsonPropertyName("events")]
-        public List<TrackingEventDto> Events { get; set; }
-    }
+            DateTime? eventDate = null;
+            if (ev.TryGetProperty("eventDateTime", out var dateProp) && DateTime.TryParse(dateProp.GetString(), out var parsedDate))
+                eventDate = parsedDate;
 
-    private class StatusSummaryDto
-    {
-        [JsonPropertyName("statusDescription")]
-        public string StatusDescription { get; set; }
+            result.Add(new ShipmentStatusEvent
+            {
+                EventName = eventName,
+                Status = eventName,
+                Location = location,
+                CountryCode = "GB",
+                Date = eventDate
+            });
+        }
 
-        [JsonPropertyName("statusLocation")]
-        public string StatusLocation { get; set; }
-
-        [JsonPropertyName("statusDateTime")]
-        public string StatusDateTime { get; set; }
-    }
-
-    private class TrackingEventDto
-    {
-        [JsonPropertyName("eventCode")]
-        public string EventCode { get; set; }
-
-        [JsonPropertyName("eventName")]
-        public string EventName { get; set; }
-
-        [JsonPropertyName("eventDateTime")]
-        public string EventDateTime { get; set; }
-
-        [JsonPropertyName("locationName")]
-        public string LocationName { get; set; }
+        return found;
     }
 
     #endregion
