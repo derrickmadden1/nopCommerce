@@ -5122,9 +5122,19 @@ body {
 .product-review-links a {
     color: var(--brand-turquoise, #00c2c7);
     text-decoration: none;
+    cursor: pointer;
 }
 .product-review-links a:hover {
     text-decoration: underline;
+}
+
+.product-reviews,
+#product-reviews-section,
+#productreviews,
+#addreview,
+.write-review,
+.review-guest-prompt-card {
+    scroll-margin-top: 100px;
 }
 
 /* ========================================
