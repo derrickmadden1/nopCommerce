@@ -12,6 +12,9 @@ namespace Nop.Plugin.Misc.ReviewReward.Infrastructure
             if (eventMessage?.RootMenuItem == null)
                 return Task.CompletedTask;
 
+            if (eventMessage.RootMenuItem.GetItemBySystemName("Misc.ReviewReward") != null)
+                return Task.CompletedTask;
+
             var promotionsMenu = eventMessage.RootMenuItem.GetItemBySystemName("Promotions");
             var parentMenu = promotionsMenu ?? eventMessage.RootMenuItem;
 
