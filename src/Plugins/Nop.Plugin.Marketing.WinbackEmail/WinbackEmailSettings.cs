@@ -1,4 +1,4 @@
-﻿using Nop.Core.Configuration;
+using Nop.Core.Configuration;
 
 namespace Nop.Plugin.Marketing.WinbackEmail;
 
@@ -8,6 +8,12 @@ public class WinbackEmailSettings : ISettings
     /// Whether the winback flow is active
     /// </summary>
     public bool Enabled { get; set; } = false;
+
+    /// <summary>
+    /// If true, emails are queued but their send date is set far into the future (year 2099) so they are never actually sent.
+    /// This allows you to view the generated emails in the Message Queue without emailing real customers.
+    /// </summary>
+    public bool DryRun { get; set; } = false;
 
     /// <summary>
     /// Azure OpenAI endpoint e.g. https://yourresource.openai.azure.com

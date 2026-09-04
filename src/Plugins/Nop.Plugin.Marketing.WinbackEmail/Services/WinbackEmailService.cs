@@ -209,7 +209,8 @@ public class WinbackEmailService
             Subject = generated.Subject,
             Body = generated.HtmlBody,
             CreatedOnUtc = DateTime.UtcNow,
-            EmailAccountId = emailAccount.Id
+            EmailAccountId = emailAccount.Id,
+            DontSendBeforeDateUtc = _settings.DryRun ? DateTime.UtcNow.AddYears(100) : null
         };
 
         await _queuedEmailService.InsertQueuedEmailAsync(queuedEmail);

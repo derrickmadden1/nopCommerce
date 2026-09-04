@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Nop.Plugin.Marketing.WinbackEmail.Models;
 using Nop.Plugin.Marketing.WinbackEmail.Services;
 using Nop.Services.Configuration;
@@ -36,6 +36,7 @@ public class WinbackEmailController : BasePluginController
         var model = new ConfigurationModel
         {
             Enabled = _settings.Enabled,
+            DryRun = _settings.DryRun,
             StoreName = _settings.StoreName,
             AzureOpenAIEndpoint = _settings.AzureOpenAIEndpoint,
             AzureOpenAIApiKey = _settings.AzureOpenAIApiKey,
@@ -58,6 +59,7 @@ public class WinbackEmailController : BasePluginController
             return View("~/Plugins/Marketing.WinbackEmail/Views/Configure.cshtml", model);
 
         _settings.Enabled = model.Enabled;
+        _settings.DryRun = model.DryRun;
         _settings.StoreName = model.StoreName;
         _settings.AzureOpenAIEndpoint = model.AzureOpenAIEndpoint.Trim();
         _settings.AzureOpenAIApiKey = model.AzureOpenAIApiKey.Trim();

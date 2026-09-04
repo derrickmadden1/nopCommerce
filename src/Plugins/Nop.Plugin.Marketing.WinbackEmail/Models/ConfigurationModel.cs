@@ -1,4 +1,4 @@
-﻿using Nop.Web.Framework.Models;
+using Nop.Web.Framework.Models;
 using Nop.Web.Framework.Mvc.ModelBinding;
 
 namespace Nop.Plugin.Marketing.WinbackEmail.Models;
@@ -7,6 +7,9 @@ public record ConfigurationModel : BaseNopModel
 {
     [NopResourceDisplayName("Plugins.Marketing.WinbackEmail.Enabled")]
     public bool Enabled { get; set; }
+
+    [NopResourceDisplayName("Plugins.Marketing.WinbackEmail.DryRun")]
+    public bool DryRun { get; set; }
 
     [NopResourceDisplayName("Plugins.Marketing.WinbackEmail.StoreName")]
     public string StoreName { get; set; } = string.Empty;
