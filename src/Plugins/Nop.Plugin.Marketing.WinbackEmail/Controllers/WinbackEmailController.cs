@@ -41,6 +41,9 @@ public class WinbackEmailController : BasePluginController
             AzureOpenAIEndpoint = _settings.AzureOpenAIEndpoint,
             AzureOpenAIApiKey = _settings.AzureOpenAIApiKey,
             DeploymentName = _settings.DeploymentName,
+            UseAzureKeyVault = _settings.UseAzureKeyVault,
+            AzureKeyVaultUrl = _settings.AzureKeyVaultUrl,
+            AzureKeyVaultSecretName = _settings.AzureKeyVaultSecretName,
             FromEmail = _settings.FromEmail,
             FromName = _settings.FromName,
             Email1DaysLapsed = _settings.Email1DaysLapsed,
@@ -62,8 +65,11 @@ public class WinbackEmailController : BasePluginController
         _settings.DryRun = model.DryRun;
         _settings.StoreName = model.StoreName;
         _settings.AzureOpenAIEndpoint = model.AzureOpenAIEndpoint.Trim();
-        _settings.AzureOpenAIApiKey = model.AzureOpenAIApiKey.Trim();
+        _settings.AzureOpenAIApiKey = model.AzureOpenAIApiKey?.Trim() ?? string.Empty;
         _settings.DeploymentName = model.DeploymentName.Trim();
+        _settings.UseAzureKeyVault = model.UseAzureKeyVault;
+        _settings.AzureKeyVaultUrl = model.AzureKeyVaultUrl?.Trim() ?? string.Empty;
+        _settings.AzureKeyVaultSecretName = model.AzureKeyVaultSecretName?.Trim() ?? string.Empty;
         _settings.FromEmail = model.FromEmail.Trim();
         _settings.FromName = model.FromName.Trim();
         _settings.Email1DaysLapsed = model.Email1DaysLapsed;
