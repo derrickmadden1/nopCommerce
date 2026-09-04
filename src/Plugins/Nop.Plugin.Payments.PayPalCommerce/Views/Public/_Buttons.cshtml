@@ -354,7 +354,7 @@
                 cancel = true;
             } else {
                 if (waitingPayPal !== false)
-                    return actions.reject();
+                    return actions && typeof actions.reject === 'function' ? actions.reject() : Promise.reject();
 
                 displayAjaxLoading(true);
                 waitingPayPal = true;
@@ -392,7 +392,7 @@
         //on product pages when customer clicks the button we should first add the product in the cart
         if (isProductPage && $('#add-to-cart-button-@Model.ProductId').length > 0) {
             if (waitingPayPal !== false)
-                return actions.reject();
+                return actions && typeof actions.reject === 'function' ? actions.reject() : Promise.reject();
 
             displayAjaxLoading(true);
             waitingPayPal = true;
@@ -495,9 +495,9 @@
         }
 
         if (cancel === true) {
-            return actions.reject();
+            return actions && typeof actions.reject === 'function' ? actions.reject() : Promise.reject();
         } else {
-            return actions.resolve();
+            return actions && typeof actions.resolve === 'function' ? actions.resolve() : Promise.resolve();
         }
     }
 
@@ -637,16 +637,16 @@
                 data: postData,
                 success: function (data, textStatus, jqXHR) {
                     if (data.error) {
-                        return actions.reject(data.errors.ADDRESS_ERROR);
+                        return actions && typeof actions.reject === 'function' ? actions.reject(data.errors.ADDRESS_ERROR) : Promise.reject(data.errors?.ADDRESS_ERROR);
                     }
-                    return actions.resolve();
+                    return actions && typeof actions.resolve === 'function' ? actions.resolve() : Promise.resolve();
                 },
                 error: function (jqXHR, textStatus, errorThrown) {
-                    return actions.reject(data.errors.ADDRESS_ERROR);
+                    return actions && typeof actions.reject === 'function' ? actions.reject(data.errors.ADDRESS_ERROR) : Promise.reject(data.errors?.ADDRESS_ERROR);
                 }
             });
         } else {
-            return actions.resolve();
+            return actions && typeof actions.resolve === 'function' ? actions.resolve() : Promise.resolve();
         }
     }
 
@@ -671,16 +671,16 @@
                 data: postData,
                 success: function (data, textStatus, jqXHR) {
                     if (data.error) {
-                        return actions.reject(data.errors.METHOD_UNAVAILABLE);
+                        return actions && typeof actions.reject === 'function' ? actions.reject(data.errors.METHOD_UNAVAILABLE) : Promise.reject(data.errors?.METHOD_UNAVAILABLE);
                     }
-                    return actions.resolve();
+                    return actions && typeof actions.resolve === 'function' ? actions.resolve() : Promise.resolve();
                 },
                 error: function (jqXHR, textStatus, errorThrown) {
-                    return actions.reject(data.errors.METHOD_UNAVAILABLE);
+                    return actions && typeof actions.reject === 'function' ? actions.reject(data.errors.METHOD_UNAVAILABLE) : Promise.reject(data.errors?.METHOD_UNAVAILABLE);
                 }
             });
         } else {
-            return actions.resolve();
+            return actions && typeof actions.resolve === 'function' ? actions.resolve() : Promise.resolve();
         }
     }
 

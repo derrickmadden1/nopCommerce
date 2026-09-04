@@ -255,9 +255,9 @@
         }
 
         if (cancel === true) {
-            return actions.reject();
+            return actions && typeof actions.reject === 'function' ? actions.reject() : Promise.reject();
         } else {
-            return actions.resolve();
+            return actions && typeof actions.resolve === 'function' ? actions.resolve() : Promise.resolve();
         }
     }
 
