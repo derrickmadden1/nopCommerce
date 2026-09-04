@@ -133,12 +133,12 @@ public class WinbackEmailService
             if (customer == null || customer.Deleted || !customer.Active)
                 continue;
 
-            // GDPR — only send to marketing opt-in customers
+            // GDPR Soft Opt-in: send to existing customers unless they have explicitly opted out
             var subscriptions = await _newsletterService.GetNewsLetterSubscriptionsByEmailAsync(
                 customer.Email, storeId);
             var subscription = subscriptions.FirstOrDefault();
 
-            if (subscription == null || subscription.Active == false)
+            if (subscription != null && subscription.Active == false)
                 continue;
 
             var firstName = await _customerService.GetCustomerFullNameAsync(customer);
