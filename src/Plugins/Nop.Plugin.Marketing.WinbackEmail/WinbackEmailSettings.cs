@@ -30,6 +30,12 @@ public class WinbackEmailSettings : ISettings
     /// </summary>
     public string DeploymentName { get; set; } = "gpt-4o-mini";
 
+    public bool UseAzureKeyVault { get; set; } = false;
+
+    public string AzureKeyVaultUrl { get; set; } = string.Empty;
+
+    public string AzureKeyVaultSecretName { get; set; } = string.Empty;
+
     /// <summary>
     /// Your store name — used in email copy
     /// </summary>

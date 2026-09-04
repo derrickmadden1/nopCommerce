@@ -23,6 +23,15 @@ public record ConfigurationModel : BaseNopModel
     [NopResourceDisplayName("Plugins.Marketing.WinbackEmail.DeploymentName")]
     public string DeploymentName { get; set; } = "gpt-4o-mini";
 
+    [NopResourceDisplayName("Plugins.Marketing.WinbackEmail.UseAzureKeyVault")]
+    public bool UseAzureKeyVault { get; set; }
+
+    [NopResourceDisplayName("Plugins.Marketing.WinbackEmail.AzureKeyVaultUrl")]
+    public string AzureKeyVaultUrl { get; set; } = string.Empty;
+
+    [NopResourceDisplayName("Plugins.Marketing.WinbackEmail.AzureKeyVaultSecretName")]
+    public string AzureKeyVaultSecretName { get; set; } = string.Empty;
+
     [NopResourceDisplayName("Plugins.Marketing.WinbackEmail.FromEmail")]
     public string FromEmail { get; set; } = string.Empty;
 
