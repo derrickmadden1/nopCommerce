@@ -21,20 +21,19 @@
         @await Component.InvokeAsync("Widget", new { widgetZone = PublicWidgetZones.CheckoutConfirmTop, additionalData = Model })
         
         <div class="confirm-order-modern">
-            <form asp-route="@NopRouteNames.Standard.CHECKOUT_CONFIRM" method="post" id="confirm-order-form">
-                
-                @if (!string.IsNullOrEmpty(Model.MinOrderTotalWarning))
-                {
-                    <div class="message-error">
-                        @Model.MinOrderTotalWarning
-                    </div>
-                }
-                else
-                {
-                    <div class="order-summary-wrapper-modern">
-                        @await Component.InvokeAsync("OrderSummary", new { prepareAndDisplayOrderReviewData = true })
-                    </div>
+            @if (!string.IsNullOrEmpty(Model.MinOrderTotalWarning))
+            {
+                <div class="message-error">
+                    @Model.MinOrderTotalWarning
+                </div>
+            }
+            else
+            {
+                <div class="order-summary-wrapper-modern">
+                    @await Component.InvokeAsync("OrderSummary", new { prepareAndDisplayOrderReviewData = true })
+                </div>
 
+                <form asp-route="@NopRouteNames.Standard.CHECKOUT_CONFIRM" method="post" id="confirm-order-form">
                     <div class="confirm-actions-modern">
                         @if (Model.TermsOfServiceOnOrderConfirmPage)
                         {
@@ -111,20 +110,20 @@
                             <nop-captcha />
                         </div>
                     }
-                }
 
-                @if (Model.Warnings.Count > 0)
-                {
-                    <div class="message-error">
-                        <ul>
-                            @foreach (var warning in Model.Warnings)
-                            {
-                                <li>@warning</li>
-                            }
-                        </ul>
-                    </div>
-                }
-            </form>
+                    @if (Model.Warnings.Count > 0)
+                    {
+                        <div class="message-error">
+                            <ul>
+                                @foreach (var warning in Model.Warnings)
+                                {
+                                    <li>@warning</li>
+                                }
+                            </ul>
+                        </div>
+                    }
+                </form>
+            }
         </div>
         
         @await Component.InvokeAsync("Widget", new { widgetZone = PublicWidgetZones.CheckoutConfirmBottom, additionalData = Model })
