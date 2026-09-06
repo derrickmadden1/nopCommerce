@@ -93,4 +93,10 @@ public class WinbackEmailController : BasePluginController
         _notificationService.SuccessNotification("Winback task executed — check the email queue for results.");
         return RedirectToAction("Configure");
     }
+
+    public async Task<IActionResult> Upcoming()
+    {
+        var upcomingEmails = await _winbackEmailService.GetUpcomingEmailsAsync();
+        return View("~/Plugins/Marketing.WinbackEmail/Views/Upcoming.cshtml", upcomingEmails);
+    }
 }

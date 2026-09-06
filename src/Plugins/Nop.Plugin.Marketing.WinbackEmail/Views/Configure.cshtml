@@ -95,13 +95,16 @@
 <form asp-controller="WinbackEmail" asp-action="RunNow" method="post" style="margin-top: 20px;">
     <div class="cards-group">
         <div class="card card-default">
-            <div class="card-header">Manual Execution</div>
+            <div class="card-header">Manual Execution & Upcoming Emails</div>
             <div class="card-body">
                 <div class="form-group row">
                     <div class="col-md-9 offset-md-3">
                         <button type="submit" name="run-now" class="btn btn-info">
                             <i class="fas fa-play"></i> Run Winback Task Now
                         </button>
+                        <a asp-action="Upcoming" asp-controller="WinbackEmail" class="btn btn-primary" style="margin-left: 10px;">
+                            <i class="fas fa-calendar-alt"></i> View Upcoming Emails
+                        </a>
                     </div>
                 </div>
             </div>
