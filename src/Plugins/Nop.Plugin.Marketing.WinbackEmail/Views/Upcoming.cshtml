@@ -1,0 +1,59 @@
+@model List<Nop.Plugin.Marketing.WinbackEmail.Models.UpcomingEmailModel>
+@{
+    Layout = "_AdminLayout";
+    ViewBag.PageTitle = "Upcoming Winback Emails - AI Winback Email";
+}
+
+<div class="content-header clearfix">
+    <h1 class="float-left">
+        Upcoming Winback Emails
+        <small>
+            <i class="fas fa-arrow-circle-left"></i>
+            <a asp-action="Configure" asp-controller="WinbackEmail">Back to Settings</a>
+        </small>
+    </h1>
+</div>
+
+<section class="content">
+    <div class="container-fluid">
+        <div class="cards-group">
+            <div class="card card-default">
+                <div class="card-body">
+                    <p>The following customers are currently scheduled to receive winback emails, assuming they do not place another order before the scheduled date.</p>
+                    
+                    @if (Model.Count > 0)
+                    {
+                        <table class="table table-bordered table-hover table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Customer Name</th>
+                                    <th>Email Address</th>
+                                    <th>Sequence #</th>
+                                    <th>Scheduled Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Model)
+                                {
+                                    <tr>
+                                        <td>@item.CustomerName</td>
+                                        <td>@item.CustomerEmail</td>
+                                        <td>Email @item.EmailSequenceNumber</td>
+                                        <td>@item.ScheduledDateUtc.ToString("dd MMM yyyy")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info">
+                            There are currently no upcoming winback emails scheduled. Wait for customers to reach the lapsed day thresholds.
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
