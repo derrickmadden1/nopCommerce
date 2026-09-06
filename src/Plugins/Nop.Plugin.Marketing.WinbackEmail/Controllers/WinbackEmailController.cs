@@ -63,19 +63,19 @@ public class WinbackEmailController : BasePluginController
 
         _settings.Enabled = model.Enabled;
         _settings.DryRun = model.DryRun;
-        _settings.StoreName = model.StoreName;
-        _settings.AzureOpenAIEndpoint = model.AzureOpenAIEndpoint.Trim();
+        _settings.StoreName = model.StoreName ?? string.Empty;
+        _settings.AzureOpenAIEndpoint = model.AzureOpenAIEndpoint?.Trim() ?? string.Empty;
         _settings.AzureOpenAIApiKey = model.AzureOpenAIApiKey?.Trim() ?? string.Empty;
-        _settings.DeploymentName = model.DeploymentName.Trim();
+        _settings.DeploymentName = model.DeploymentName?.Trim() ?? string.Empty;
         _settings.UseAzureKeyVault = model.UseAzureKeyVault;
         _settings.AzureKeyVaultUrl = model.AzureKeyVaultUrl?.Trim() ?? string.Empty;
         _settings.AzureKeyVaultSecretName = model.AzureKeyVaultSecretName?.Trim() ?? string.Empty;
-        _settings.FromEmail = model.FromEmail.Trim();
-        _settings.FromName = model.FromName.Trim();
+        _settings.FromEmail = model.FromEmail?.Trim() ?? string.Empty;
+        _settings.FromName = model.FromName?.Trim() ?? string.Empty;
         _settings.Email1DaysLapsed = model.Email1DaysLapsed;
         _settings.Email2DaysLapsed = model.Email2DaysLapsed;
         _settings.Email3DaysLapsed = model.Email3DaysLapsed;
-        _settings.Email3DiscountCode = model.Email3DiscountCode.Trim();
+        _settings.Email3DiscountCode = model.Email3DiscountCode?.Trim() ?? string.Empty;
 
         await _settingService.SaveSettingAsync(_settings);
         _notificationService.SuccessNotification("Winback email settings saved.");
