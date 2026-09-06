@@ -7,10 +7,11 @@ using Nop.Services.Localization;
 using Nop.Services.Plugins;
 using Nop.Services.ScheduleTasks;
 using System.Collections.Generic;
+using Nop.Services.Common;
 
 namespace Nop.Plugin.Marketing.WinbackEmail;
 
-public class WinbackEmailPlugin : BasePlugin
+public class WinbackEmailPlugin : BasePlugin, IMiscPlugin
 {
     private readonly ISettingService _settingService;
     private readonly IScheduleTaskService _scheduleTaskService;
