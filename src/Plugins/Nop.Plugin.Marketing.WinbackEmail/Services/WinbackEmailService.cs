@@ -1,12 +1,18 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Nop.Core;
 using Nop.Core.Domain.Messages;
 using Nop.Core.Domain.Orders;
+using Nop.Core.Domain.Customers;
 using Nop.Plugin.Marketing.WinbackEmail.Models;
 using Nop.Services.Catalog;
 using Nop.Services.Customers;
 using Nop.Services.Messages;
 using Nop.Services.Orders;
+using Nop.Services.Common;
 
 namespace Nop.Plugin.Marketing.WinbackEmail.Services;
 
@@ -21,6 +27,8 @@ public class WinbackEmailService
     private readonly IQueuedEmailService _queuedEmailService;
     private readonly INewsLetterSubscriptionService _newsletterService;
     private readonly IStoreContext _storeContext;
+    private readonly IAddressService _addressService;
+    private readonly IGenericAttributeService _genericAttributeService;
     private readonly ILogger<WinbackEmailService> _logger;
 
     public WinbackEmailService(
@@ -33,6 +41,8 @@ public class WinbackEmailService
         IQueuedEmailService queuedEmailService,
         INewsLetterSubscriptionService newsletterService,
         IStoreContext storeContext,
+        IAddressService addressService,
+        IGenericAttributeService genericAttributeService,
         ILogger<WinbackEmailService> logger)
     {
         _settings = settings;
@@ -44,12 +54,11 @@ public class WinbackEmailService
         _queuedEmailService = queuedEmailService;
         _newsletterService = newsletterService;
         _storeContext = storeContext;
+        _addressService = addressService;
+        _genericAttributeService = genericAttributeService;
         _logger = logger;
     }
 
-    /// <summary>
-    /// Called by the scheduled task — finds lapsed customers and queues winback emails
-    /// </summary>
     public async Task ProcessWinbacksAsync()
     {
         if (!_settings.Enabled)
@@ -60,47 +69,39 @@ public class WinbackEmailService
 
         if (emailAccount == null)
         {
-            _logger.LogWarning("Winback: No matching email account found for {FromEmail}", _settings.FromEmail);
+            _logger.LogError("WinbackEmail: Configured FromEmail not found.");
             return;
         }
 
-        // Process each email in the sequence
-        await ProcessEmailStepAsync(emailAccount, store.Id, _settings.Email1DaysLapsed, 1);
-        await ProcessEmailStepAsync(emailAccount, store.Id, _settings.Email2DaysLapsed, 2);
-        await ProcessEmailStepAsync(emailAccount, store.Id, _settings.Email3DaysLapsed, 3);
-    }
+        var states = await GetWinbackStatesAsync(store.Id);
+        var dueStates = states.Where(s => s.IsDueToday).ToList();
 
-    private async Task ProcessEmailStepAsync(EmailAccount emailAccount, int storeId, int daysLapsed, int emailNumber)
-    {
-        var targetDate = DateTime.UtcNow.Date.AddDays(-daysLapsed);
-
-        // Find customers whose most recent order was exactly on targetDate
-        // and who are subscribed to marketing emails
-        var customers = await GetLapsedCustomersAsync(targetDate, storeId);
-
-        _logger.LogInformation("Winback email {EmailNumber}: found {Count} customers lapsed on {Date}",
-            emailNumber, customers.Count, targetDate.ToShortDateString());
-
-        foreach (var (customerId, customerEmail, firstName) in customers)
+        foreach (var state in dueStates)
         {
             try
             {
-                var context = await BuildContextAsync(customerId, customerEmail, firstName, emailNumber, daysLapsed);
-                var generated = await _generator.GenerateAsync(context);
+                var context = await BuildContextAsync(state.Customer.Id, state.Email, state.FirstName, state.NextEmailSequence, (int)(DateTime.UtcNow - state.Order.CreatedOnUtc).TotalDays);
+                var generated = await _generator.GenerateEmailAsync(context);
 
                 if (generated == null)
                 {
-                    _logger.LogWarning("Winback: Failed to generate email for customer {CustomerId}", customerId);
+                    _logger.LogWarning($"WinbackEmail: Generation failed for {state.Email}");
                     continue;
                 }
 
-                await QueueEmailAsync(emailAccount, customerEmail, firstName, generated);
+                await QueueEmailAsync(emailAccount, state.Email, state.FirstName, generated);
 
-                _logger.LogInformation("Winback email {EmailNumber} queued for {Email}", emailNumber, customerEmail);
+                // Update state attributes
+                if (state.NextEmailSequence == 1)
+                    await _genericAttributeService.SaveAttributeAsync(state.Customer, "Winback_Email1SentDateUtc", (DateTime?)DateTime.UtcNow.Date);
+                else if (state.NextEmailSequence == 2)
+                    await _genericAttributeService.SaveAttributeAsync(state.Customer, "Winback_Email2SentDateUtc", (DateTime?)DateTime.UtcNow.Date);
+                else if (state.NextEmailSequence == 3)
+                    await _genericAttributeService.SaveAttributeAsync(state.Customer, "Winback_Email3SentDateUtc", (DateTime?)DateTime.UtcNow.Date);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Winback: Error processing customer {CustomerId}", customerId);
+                _logger.LogError(ex, $"WinbackEmail: Error processing {state.Email}");
             }
         }
     }
@@ -108,26 +109,57 @@ public class WinbackEmailService
     public async Task<List<UpcomingEmailModel>> GetUpcomingEmailsAsync()
     {
         var result = new List<UpcomingEmailModel>();
+        var states = await GetWinbackStatesAsync(0);
 
-        // Search orders from max days lapsed until today across all stores (storeId: 0)
-        var maxDays = Math.Max(_settings.Email1DaysLapsed, Math.Max(_settings.Email2DaysLapsed, _settings.Email3DaysLapsed));
-        var fromDate = DateTime.UtcNow.Date.AddDays(-maxDays);
+        foreach (var state in states)
+        {
+            result.Add(new UpcomingEmailModel
+            {
+                CustomerEmail = state.Email,
+                CustomerName = state.FirstName,
+                EmailSequenceNumber = state.NextEmailSequence,
+                ScheduledDateUtc = state.NextEmailDateUtc
+            });
+        }
+
+        return result.OrderBy(x => x.ScheduledDateUtc).ThenBy(x => x.EmailSequenceNumber).ToList();
+    }
+
+    private class WinbackCustomerState
+    {
+        public Customer Customer { get; set; } = null!;
+        public Order Order { get; set; } = null!;
+        public string Email { get; set; } = string.Empty;
+        public string FirstName { get; set; } = string.Empty;
+        public int NextEmailSequence { get; set; }
+        public DateTime NextEmailDateUtc { get; set; }
+        public bool IsDueToday { get; set; }
+    }
+
+    private async Task<List<WinbackCustomerState>> GetWinbackStatesAsync(int storeId)
+    {
+        var result = new List<WinbackCustomerState>();
+        var maxDays = _settings.MaxDaysLapsed > 0 ? _settings.MaxDaysLapsed : 365;
         
-        var recentOrders = await _orderService.SearchOrdersAsync(
-            storeId: 0,
-            createdFromUtc: fromDate
+        var fromDate = DateTime.UtcNow.Date.AddDays(-maxDays);
+        var toDate = DateTime.UtcNow.Date.AddDays(-_settings.Email1DaysLapsed).AddDays(1).AddSeconds(-1);
+        
+        var orders = await _orderService.SearchOrdersAsync(
+            storeId: storeId,
+            createdFromUtc: fromDate,
+            createdToUtc: toDate
         );
 
-        // Group by customer to find their most recent order
-        var latestCustomerOrders = recentOrders
+        var latestCustomerOrders = orders
             .GroupBy(o => o.CustomerId)
             .Select(g => g.OrderByDescending(o => o.CreatedOnUtc).First())
             .ToList();
 
+        var today = DateTime.UtcNow.Date;
+
         foreach (var order in latestCustomerOrders)
         {
-            // Check if they have an even more recent order outside our filtered store/date (unlikely but safe)
-            var allOrders = await _orderService.SearchOrdersAsync(customerId: order.CustomerId, storeId: 0);
+            var allOrders = await _orderService.SearchOrdersAsync(customerId: order.CustomerId, storeId: storeId);
             var actualMostRecent = allOrders.OrderByDescending(o => o.CreatedOnUtc).FirstOrDefault();
             if (actualMostRecent?.Id != order.Id)
                 continue;
@@ -136,84 +168,84 @@ public class WinbackEmailService
             if (customer == null || customer.Deleted || !customer.Active)
                 continue;
 
-            // GDPR Soft Opt-in check (pass storeId 0 to check any active subscription)
-            var subscriptions = await _newsletterService.GetNewsLetterSubscriptionsByEmailAsync(customer.Email, storeId: 0);
+            var (email, firstName) = await GetCustomerContactInfoAsync(customer, order);
+            if (string.IsNullOrEmpty(email))
+                continue;
+
+            var subscriptions = await _newsletterService.GetNewsLetterSubscriptionsByEmailAsync(email, storeId: storeId);
             var subscription = subscriptions.FirstOrDefault();
             if (subscription != null && subscription.Active == false)
                 continue;
 
-            var firstName = await _customerService.GetCustomerFullNameAsync(customer);
-            firstName = firstName?.Split(' ').FirstOrDefault() ?? "there";
-            
-            var orderDate = order.CreatedOnUtc.Date;
-            var today = DateTime.UtcNow.Date;
-
-            // Check which emails are upcoming
-            var email1Date = orderDate.AddDays(_settings.Email1DaysLapsed);
-            if (email1Date >= today)
+            var lastOrderId = await _genericAttributeService.GetAttributeAsync<int>(customer, "Winback_LastOrderId");
+            if (lastOrderId != order.Id)
             {
-                result.Add(new UpcomingEmailModel { CustomerEmail = customer.Email, CustomerName = firstName, EmailSequenceNumber = 1, ScheduledDateUtc = email1Date });
-            }
-            
-            var email2Date = orderDate.AddDays(_settings.Email2DaysLapsed);
-            if (email2Date >= today)
-            {
-                result.Add(new UpcomingEmailModel { CustomerEmail = customer.Email, CustomerName = firstName, EmailSequenceNumber = 2, ScheduledDateUtc = email2Date });
+                await _genericAttributeService.SaveAttributeAsync(customer, "Winback_Email1SentDateUtc", (DateTime?)null);
+                await _genericAttributeService.SaveAttributeAsync(customer, "Winback_Email2SentDateUtc", (DateTime?)null);
+                await _genericAttributeService.SaveAttributeAsync(customer, "Winback_Email3SentDateUtc", (DateTime?)null);
+                await _genericAttributeService.SaveAttributeAsync(customer, "Winback_LastOrderId", order.Id);
             }
 
-            var email3Date = orderDate.AddDays(_settings.Email3DaysLapsed);
-            if (email3Date >= today)
+            var email1Sent = await _genericAttributeService.GetAttributeAsync<DateTime?>(customer, "Winback_Email1SentDateUtc");
+            var email2Sent = await _genericAttributeService.GetAttributeAsync<DateTime?>(customer, "Winback_Email2SentDateUtc");
+            var email3Sent = await _genericAttributeService.GetAttributeAsync<DateTime?>(customer, "Winback_Email3SentDateUtc");
+
+            int nextSeq = 0;
+            DateTime nextDate = DateTime.MinValue;
+
+            if (email1Sent == null)
             {
-                result.Add(new UpcomingEmailModel { CustomerEmail = customer.Email, CustomerName = firstName, EmailSequenceNumber = 3, ScheduledDateUtc = email3Date });
+                nextSeq = 1;
+                var eligibleDate = order.CreatedOnUtc.Date.AddDays(_settings.Email1DaysLapsed);
+                nextDate = eligibleDate < today ? today : eligibleDate; 
             }
-        }
+            else if (email2Sent == null)
+            {
+                nextSeq = 2;
+                nextDate = email1Sent.Value.Date.AddDays(_settings.DaysBetweenEmail1And2);
+            }
+            else if (email3Sent == null)
+            {
+                nextSeq = 3;
+                nextDate = email2Sent.Value.Date.AddDays(_settings.DaysBetweenEmail2And3);
+            }
+            else
+            {
+                continue; // Sequence complete
+            }
 
-        return result.OrderBy(x => x.ScheduledDateUtc).ThenBy(x => x.EmailSequenceNumber).ToList();
-    }
-
-    private async Task<List<(int CustomerId, string Email, string FirstName)>> GetLapsedCustomersAsync(
-        DateTime lastOrderDate, int storeId)
-    {
-        var result = new List<(int, string, string)>();
-
-        // Get orders placed on the target date
-        var orders = await _orderService.SearchOrdersAsync(
-            storeId: storeId,
-            createdFromUtc: lastOrderDate,
-            createdToUtc: lastOrderDate.AddDays(1).AddSeconds(-1)
-        );
-
-        foreach (var order in orders)
-        {
-            // Check this is the customer's most recent order
-            var allOrders = await _orderService.SearchOrdersAsync(
-                customerId: order.CustomerId,
-                storeId: storeId
-            );
-
-            var mostRecent = allOrders.OrderByDescending(o => o.CreatedOnUtc).FirstOrDefault();
-            if (mostRecent?.Id != order.Id)
-                continue; // They've ordered since — skip
-
-            var customer = await _customerService.GetCustomerByIdAsync(order.CustomerId);
-            if (customer == null || customer.Deleted || !customer.Active)
-                continue;
-
-            // GDPR Soft Opt-in: send to existing customers unless they have explicitly opted out
-            var subscriptions = await _newsletterService.GetNewsLetterSubscriptionsByEmailAsync(
-                customer.Email, storeId);
-            var subscription = subscriptions.FirstOrDefault();
-
-            if (subscription != null && subscription.Active == false)
-                continue;
-
-            var firstName = await _customerService.GetCustomerFullNameAsync(customer);
-            firstName = firstName?.Split(' ').FirstOrDefault() ?? "there";
-
-            result.Add((customer.Id, customer.Email, firstName));
+            result.Add(new WinbackCustomerState
+            {
+                Customer = customer,
+                Order = order,
+                Email = email,
+                FirstName = firstName,
+                NextEmailSequence = nextSeq,
+                NextEmailDateUtc = nextDate,
+                IsDueToday = nextDate.Date <= today
+            });
         }
 
         return result;
+    }
+
+    private async Task<(string Email, string FirstName)> GetCustomerContactInfoAsync(Customer customer, Order order)
+    {
+        var email = customer.Email;
+        var firstName = await _customerService.GetCustomerFullNameAsync(customer);
+        firstName = firstName?.Split(' ').FirstOrDefault();
+
+        if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(firstName))
+        {
+            var billingAddress = await _addressService.GetAddressByIdAsync(order.BillingAddressId);
+            if (billingAddress != null)
+            {
+                if (string.IsNullOrEmpty(email)) email = billingAddress.Email;
+                if (string.IsNullOrEmpty(firstName)) firstName = billingAddress.FirstName;
+            }
+        }
+        
+        return (email, firstName ?? "there");
     }
 
     private async Task<WinbackCustomerContext> BuildContextAsync(
@@ -265,6 +297,12 @@ public class WinbackEmailService
         string toName,
         GeneratedEmail generated)
     {
+        // Secondary safety net for Dry Run: invalidate the email address
+        if (_settings.DryRun)
+        {
+            toEmail = $"{toEmail}.test";
+        }
+
         var queuedEmail = new QueuedEmail
         {
             Priority = QueuedEmailPriority.High,
