@@ -297,6 +297,12 @@ public class WinbackEmailService
         string toName,
         GeneratedEmail generated)
     {
+        // Secondary safety net for Dry Run: invalidate the email address
+        if (_settings.DryRun)
+        {
+            toEmail = $"{toEmail}.test";
+        }
+
         var queuedEmail = new QueuedEmail
         {
             Priority = QueuedEmailPriority.High,
