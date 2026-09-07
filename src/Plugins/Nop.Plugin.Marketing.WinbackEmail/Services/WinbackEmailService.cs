@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using Nop.Core;
 using Nop.Core.Domain.Messages;
 using Nop.Core.Domain.Orders;
+using Nop.Core.Domain.Customers;
 using Nop.Plugin.Marketing.WinbackEmail.Models;
 using Nop.Services.Catalog;
 using Nop.Services.Customers;
@@ -21,6 +22,7 @@ public class WinbackEmailService
     private readonly IQueuedEmailService _queuedEmailService;
     private readonly INewsLetterSubscriptionService _newsletterService;
     private readonly IStoreContext _storeContext;
+    private readonly Nop.Services.Common.IAddressService _addressService;
     private readonly ILogger<WinbackEmailService> _logger;
 
     public WinbackEmailService(
@@ -33,6 +35,7 @@ public class WinbackEmailService
         IQueuedEmailService queuedEmailService,
         INewsLetterSubscriptionService newsletterService,
         IStoreContext storeContext,
+        Nop.Services.Common.IAddressService addressService,
         ILogger<WinbackEmailService> logger)
     {
         _settings = settings;
@@ -44,6 +47,7 @@ public class WinbackEmailService
         _queuedEmailService = queuedEmailService;
         _newsletterService = newsletterService;
         _storeContext = storeContext;
+        _addressService = addressService;
         _logger = logger;
     }
 
@@ -136,14 +140,15 @@ public class WinbackEmailService
             if (customer == null || customer.Deleted || !customer.Active)
                 continue;
 
+            var (email, firstName) = await GetCustomerContactInfoAsync(customer, order);
+            if (string.IsNullOrEmpty(email))
+                continue;
+
             // GDPR Soft Opt-in check (pass storeId 0 to check any active subscription)
-            var subscriptions = await _newsletterService.GetNewsLetterSubscriptionsByEmailAsync(customer.Email, storeId: 0);
+            var subscriptions = await _newsletterService.GetNewsLetterSubscriptionsByEmailAsync(email, storeId: 0);
             var subscription = subscriptions.FirstOrDefault();
             if (subscription != null && subscription.Active == false)
                 continue;
-
-            var firstName = await _customerService.GetCustomerFullNameAsync(customer);
-            firstName = firstName?.Split(' ').FirstOrDefault() ?? "there";
             
             var orderDate = order.CreatedOnUtc.Date;
             var today = DateTime.UtcNow.Date;
@@ -152,19 +157,19 @@ public class WinbackEmailService
             var email1Date = orderDate.AddDays(_settings.Email1DaysLapsed);
             if (email1Date >= today)
             {
-                result.Add(new UpcomingEmailModel { CustomerEmail = customer.Email, CustomerName = firstName, EmailSequenceNumber = 1, ScheduledDateUtc = email1Date });
+                result.Add(new UpcomingEmailModel { CustomerEmail = email, CustomerName = firstName, EmailSequenceNumber = 1, ScheduledDateUtc = email1Date });
             }
             
             var email2Date = orderDate.AddDays(_settings.Email2DaysLapsed);
             if (email2Date >= today)
             {
-                result.Add(new UpcomingEmailModel { CustomerEmail = customer.Email, CustomerName = firstName, EmailSequenceNumber = 2, ScheduledDateUtc = email2Date });
+                result.Add(new UpcomingEmailModel { CustomerEmail = email, CustomerName = firstName, EmailSequenceNumber = 2, ScheduledDateUtc = email2Date });
             }
 
             var email3Date = orderDate.AddDays(_settings.Email3DaysLapsed);
             if (email3Date >= today)
             {
-                result.Add(new UpcomingEmailModel { CustomerEmail = customer.Email, CustomerName = firstName, EmailSequenceNumber = 3, ScheduledDateUtc = email3Date });
+                result.Add(new UpcomingEmailModel { CustomerEmail = email, CustomerName = firstName, EmailSequenceNumber = 3, ScheduledDateUtc = email3Date });
             }
         }
 
@@ -199,21 +204,40 @@ public class WinbackEmailService
             if (customer == null || customer.Deleted || !customer.Active)
                 continue;
 
+            var (email, firstName) = await GetCustomerContactInfoAsync(customer, order);
+            if (string.IsNullOrEmpty(email))
+                continue;
+
             // GDPR Soft Opt-in: send to existing customers unless they have explicitly opted out
-            var subscriptions = await _newsletterService.GetNewsLetterSubscriptionsByEmailAsync(
-                customer.Email, storeId);
+            var subscriptions = await _newsletterService.GetNewsLetterSubscriptionsByEmailAsync(email, storeId);
             var subscription = subscriptions.FirstOrDefault();
 
             if (subscription != null && subscription.Active == false)
                 continue;
 
-            var firstName = await _customerService.GetCustomerFullNameAsync(customer);
-            firstName = firstName?.Split(' ').FirstOrDefault() ?? "there";
-
-            result.Add((customer.Id, customer.Email, firstName));
+            result.Add((customer.Id, email, firstName));
         }
 
         return result;
+    }
+
+    private async Task<(string Email, string FirstName)> GetCustomerContactInfoAsync(Customer customer, Order order)
+    {
+        var email = customer.Email;
+        var firstName = await _customerService.GetCustomerFullNameAsync(customer);
+        firstName = firstName?.Split(' ').FirstOrDefault();
+
+        if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(firstName))
+        {
+            var billingAddress = await _addressService.GetAddressByIdAsync(order.BillingAddressId);
+            if (billingAddress != null)
+            {
+                if (string.IsNullOrEmpty(email)) email = billingAddress.Email;
+                if (string.IsNullOrEmpty(firstName)) firstName = billingAddress.FirstName;
+            }
+        }
+        
+        return (email, firstName ?? "there");
     }
 
     private async Task<WinbackCustomerContext> BuildContextAsync(
