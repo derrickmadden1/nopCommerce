@@ -47,14 +47,19 @@ public class WinbackEmailSettings : ISettings
     public int Email1DaysLapsed { get; set; } = 60;
 
     /// <summary>
-    /// Days since last order before email 2 is sent
+    /// Days to wait after Email 1 before sending Email 2
     /// </summary>
-    public int Email2DaysLapsed { get; set; } = 67;
+    public int DaysBetweenEmail1And2 { get; set; } = 7;
 
     /// <summary>
-    /// Days since last order before email 3 is sent
+    /// Days to wait after Email 2 before sending Email 3
     /// </summary>
-    public int Email3DaysLapsed { get; set; } = 74;
+    public int DaysBetweenEmail2And3 { get; set; } = 7;
+
+    /// <summary>
+    /// Maximum days since last order to consider a customer for winback emails
+    /// </summary>
+    public int MaxDaysLapsed { get; set; } = 365;
 
     /// <summary>
     /// Optional discount code to include in email 3

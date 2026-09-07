@@ -43,11 +43,14 @@ public record ConfigurationModel : BaseNopModel
     [NopResourceDisplayName("Plugins.Marketing.WinbackEmail.Email1DaysLapsed")]
     public int Email1DaysLapsed { get; set; } = 60;
 
-    [NopResourceDisplayName("Plugins.Marketing.WinbackEmail.Email2DaysLapsed")]
-    public int Email2DaysLapsed { get; set; } = 67;
+    [NopResourceDisplayName("Plugins.Marketing.WinbackEmail.DaysBetweenEmail1And2")]
+    public int DaysBetweenEmail1And2 { get; set; } = 7;
 
-    [NopResourceDisplayName("Plugins.Marketing.WinbackEmail.Email3DaysLapsed")]
-    public int Email3DaysLapsed { get; set; } = 74;
+    [NopResourceDisplayName("Plugins.Marketing.WinbackEmail.DaysBetweenEmail2And3")]
+    public int DaysBetweenEmail2And3 { get; set; } = 7;
+
+    [NopResourceDisplayName("Plugins.Marketing.WinbackEmail.MaxDaysLapsed")]
+    public int MaxDaysLapsed { get; set; } = 365;
 
     [NopResourceDisplayName("Plugins.Marketing.WinbackEmail.Email3DiscountCode")]
     public string Email3DiscountCode { get; set; } = string.Empty;
