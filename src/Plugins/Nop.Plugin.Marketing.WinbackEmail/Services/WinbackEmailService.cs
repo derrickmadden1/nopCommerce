@@ -81,7 +81,7 @@ public class WinbackEmailService
             try
             {
                 var context = await BuildContextAsync(state.Customer.Id, state.Email, state.FirstName, state.NextEmailSequence, (int)(DateTime.UtcNow - state.Order.CreatedOnUtc).TotalDays);
-                var generated = await _generator.GenerateEmailAsync(context);
+                var generated = await _generator.GenerateAsync(context);
 
                 if (generated == null)
                 {
