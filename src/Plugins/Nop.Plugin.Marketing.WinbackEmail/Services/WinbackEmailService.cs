@@ -108,16 +108,13 @@ public class WinbackEmailService
     public async Task<List<UpcomingEmailModel>> GetUpcomingEmailsAsync()
     {
         var result = new List<UpcomingEmailModel>();
-        if (!_settings.Enabled) return result;
 
-        var store = await _storeContext.GetCurrentStoreAsync();
-        
-        // Search orders from max days lapsed until today
+        // Search orders from max days lapsed until today across all stores (storeId: 0)
         var maxDays = Math.Max(_settings.Email1DaysLapsed, Math.Max(_settings.Email2DaysLapsed, _settings.Email3DaysLapsed));
         var fromDate = DateTime.UtcNow.Date.AddDays(-maxDays);
         
         var recentOrders = await _orderService.SearchOrdersAsync(
-            storeId: store.Id,
+            storeId: 0,
             createdFromUtc: fromDate
         );
 
@@ -130,7 +127,7 @@ public class WinbackEmailService
         foreach (var order in latestCustomerOrders)
         {
             // Check if they have an even more recent order outside our filtered store/date (unlikely but safe)
-            var allOrders = await _orderService.SearchOrdersAsync(customerId: order.CustomerId, storeId: store.Id);
+            var allOrders = await _orderService.SearchOrdersAsync(customerId: order.CustomerId, storeId: 0);
             var actualMostRecent = allOrders.OrderByDescending(o => o.CreatedOnUtc).FirstOrDefault();
             if (actualMostRecent?.Id != order.Id)
                 continue;
@@ -139,8 +136,8 @@ public class WinbackEmailService
             if (customer == null || customer.Deleted || !customer.Active)
                 continue;
 
-            // GDPR Soft Opt-in check
-            var subscriptions = await _newsletterService.GetNewsLetterSubscriptionsByEmailAsync(customer.Email, store.Id);
+            // GDPR Soft Opt-in check (pass storeId 0 to check any active subscription)
+            var subscriptions = await _newsletterService.GetNewsLetterSubscriptionsByEmailAsync(customer.Email, storeId: 0);
             var subscription = subscriptions.FirstOrDefault();
             if (subscription != null && subscription.Active == false)
                 continue;
@@ -153,19 +150,19 @@ public class WinbackEmailService
 
             // Check which emails are upcoming
             var email1Date = orderDate.AddDays(_settings.Email1DaysLapsed);
-            if (email1Date > today)
+            if (email1Date >= today)
             {
                 result.Add(new UpcomingEmailModel { CustomerEmail = customer.Email, CustomerName = firstName, EmailSequenceNumber = 1, ScheduledDateUtc = email1Date });
             }
             
             var email2Date = orderDate.AddDays(_settings.Email2DaysLapsed);
-            if (email2Date > today)
+            if (email2Date >= today)
             {
                 result.Add(new UpcomingEmailModel { CustomerEmail = customer.Email, CustomerName = firstName, EmailSequenceNumber = 2, ScheduledDateUtc = email2Date });
             }
 
             var email3Date = orderDate.AddDays(_settings.Email3DaysLapsed);
-            if (email3Date > today)
+            if (email3Date >= today)
             {
                 result.Add(new UpcomingEmailModel { CustomerEmail = customer.Email, CustomerName = firstName, EmailSequenceNumber = 3, ScheduledDateUtc = email3Date });
             }
