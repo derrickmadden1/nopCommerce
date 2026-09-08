@@ -64,7 +64,6 @@ public class WinbackEmailService
         if (!_settings.Enabled)
             return;
 
-        var store = await _storeContext.GetCurrentStoreAsync();
         var emailAccount = await GetEmailAccountAsync();
 
         if (emailAccount == null)
@@ -73,7 +72,7 @@ public class WinbackEmailService
             return;
         }
 
-        var states = await GetWinbackStatesAsync(store.Id);
+        var states = await GetWinbackStatesAsync(0);
         var dueStates = states.Where(s => s.IsDueToday).ToList();
 
         foreach (var state in dueStates)
