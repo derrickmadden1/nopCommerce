@@ -157,19 +157,45 @@ public class WinbackEmailService
 
         var today = DateTime.UtcNow.Date;
 
+        // Collect resolved email candidates
+        var candidates = new List<(Order Order, Customer Customer, string Email, string FirstName)>();
+
         foreach (var order in latestCustomerOrders)
         {
-            var allOrders = await _orderService.SearchOrdersAsync(customerId: order.CustomerId, storeId: storeId);
-            var actualMostRecent = allOrders.OrderByDescending(o => o.CreatedOnUtc).FirstOrDefault();
-            if (actualMostRecent?.Id != order.Id)
-                continue;
-
             var customer = await _customerService.GetCustomerByIdAsync(order.CustomerId);
             if (customer == null || customer.Deleted || !customer.Active)
                 continue;
 
             var (email, firstName) = await GetCustomerContactInfoAsync(customer, order);
             if (string.IsNullOrEmpty(email))
+                continue;
+
+            candidates.Add((order, customer, email, firstName));
+        }
+
+        // Group by email to ensure we only process the absolute most recent order per email address
+        var latestEmailCandidates = candidates
+            .GroupBy(c => c.Email, StringComparer.OrdinalIgnoreCase)
+            .Select(g => g.OrderByDescending(c => c.Order.CreatedOnUtc).First())
+            .ToList();
+
+        foreach (var candidate in latestEmailCandidates)
+        {
+            var order = candidate.Order;
+            var customer = candidate.Customer;
+            var email = candidate.Email;
+            var firstName = candidate.FirstName;
+
+            // Verify there is no newer order for this specific CustomerId
+            var allCustomerOrders = await _orderService.SearchOrdersAsync(customerId: order.CustomerId, storeId: storeId);
+            var actualMostRecentByCustomer = allCustomerOrders.OrderByDescending(o => o.CreatedOnUtc).FirstOrDefault();
+            if (actualMostRecentByCustomer != null && actualMostRecentByCustomer.Id != order.Id && actualMostRecentByCustomer.CreatedOnUtc > order.CreatedOnUtc)
+                continue;
+
+            // Verify there is no newer order that used this email as the billing email (e.g. a recent guest checkout)
+            var ordersByBillingEmail = await _orderService.SearchOrdersAsync(billingEmail: email, storeId: storeId);
+            var actualMostRecentByBilling = ordersByBillingEmail.OrderByDescending(o => o.CreatedOnUtc).FirstOrDefault();
+            if (actualMostRecentByBilling != null && actualMostRecentByBilling.Id != order.Id && actualMostRecentByBilling.CreatedOnUtc > order.CreatedOnUtc)
                 continue;
 
             var subscriptions = await _newsletterService.GetNewsLetterSubscriptionsByEmailAsync(email, storeId: storeId);
