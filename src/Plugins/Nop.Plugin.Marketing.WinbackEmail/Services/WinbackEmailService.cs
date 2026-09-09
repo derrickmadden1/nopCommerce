@@ -61,11 +61,12 @@ public class WinbackEmailService
 
     public async Task ProcessWinbacksAsync()
     {
+        _logger.LogInformation($"WinbackEmail: Task triggered. Enabled={_settings.Enabled}");
+
         if (!_settings.Enabled)
             return;
 
         var emailAccount = await GetEmailAccountAsync();
-
         if (emailAccount == null)
         {
             _logger.LogError("WinbackEmail: Configured FromEmail not found.");
@@ -74,6 +75,8 @@ public class WinbackEmailService
 
         var states = await GetWinbackStatesAsync(0);
         var dueStates = states.Where(s => s.IsDueToday).ToList();
+        
+        _logger.LogInformation($"WinbackEmail: Found {states.Count} total states, {dueStates.Count} are due today.");
 
         foreach (var state in dueStates)
         {
