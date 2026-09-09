@@ -61,7 +61,7 @@ public class WinbackEmailService
 
     public async Task ProcessWinbacksAsync()
     {
-        _logger.LogInformation($"WinbackEmail: Task triggered. Enabled={_settings.Enabled}");
+        _logger.LogError($"WinbackEmail: Task triggered. Enabled={_settings.Enabled}");
 
         if (!_settings.Enabled)
             return;
@@ -76,7 +76,7 @@ public class WinbackEmailService
         var states = await GetWinbackStatesAsync(0);
         var dueStates = states.Where(s => s.IsDueToday).ToList();
         
-        _logger.LogInformation($"WinbackEmail: Found {states.Count} total states, {dueStates.Count} are due today.");
+        _logger.LogError($"WinbackEmail: Found {states.Count} total states, {dueStates.Count} are due today.");
 
         foreach (var state in dueStates)
         {
