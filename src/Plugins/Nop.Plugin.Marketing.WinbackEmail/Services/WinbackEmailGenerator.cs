@@ -119,26 +119,33 @@ public class WinbackEmailGenerator
             """;
     }
 
-    private static GeneratedEmail? ParseResponse(string content)
+    private class EmailResponse
+    {
+        public string? Subject { get; set; }
+        public string? HtmlBody { get; set; }
+    }
+
+    private GeneratedEmail? ParseResponse(string content)
     {
         try
         {
-            // Strip markdown code fences if present
             var cleaned = content
                 .Replace("```json", "")
                 .Replace("```", "")
                 .Trim();
 
-            var result = JsonSerializer.Deserialize<JsonElement>(cleaned);
+            var result = JsonSerializer.Deserialize<EmailResponse>(cleaned, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            if (result == null) return null;
 
             return new GeneratedEmail
             {
-                Subject = result.GetProperty("subject").GetString() ?? string.Empty,
-                HtmlBody = result.GetProperty("htmlBody").GetString() ?? string.Empty
+                Subject = result.Subject ?? string.Empty,
+                HtmlBody = result.HtmlBody ?? string.Empty
             };
         }
-        catch
+        catch (Exception ex)
         {
+            _logger.LogError(ex, $"WinbackEmail: Failed to parse JSON. Raw content: {content}");
             return null;
         }
     }

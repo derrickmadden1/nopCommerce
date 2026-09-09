@@ -87,7 +87,7 @@ public class WinbackEmailService
 
                 if (generated == null)
                 {
-                    _logger.LogWarning($"WinbackEmail: Generation failed for {state.Email}");
+                    _logger.LogError($"WinbackEmail: Generation failed for {state.Email}");
                     continue;
                 }
 
