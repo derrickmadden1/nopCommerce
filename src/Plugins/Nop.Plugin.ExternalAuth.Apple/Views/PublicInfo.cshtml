@@ -1,0 +1,9 @@
+@{
+    Layout = ""; 
+}
+<link rel="stylesheet" href="~/Plugins/ExternalAuth.Apple/Content/Applestyles.css" />
+<div class="Apple-login-block">
+    <div class="buttons">
+        <a asp-controller="Appleauthentication" asp-action="login" asp-route-returnurl="@Context.Request.Query["ReturnUrl"]" class="Apple-btn"></a>
+    </div>
+</div>

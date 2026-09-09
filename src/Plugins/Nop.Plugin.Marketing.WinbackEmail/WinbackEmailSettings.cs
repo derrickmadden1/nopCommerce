@@ -1,4 +1,4 @@
-﻿using Nop.Core.Configuration;
+using Nop.Core.Configuration;
 
 namespace Nop.Plugin.Marketing.WinbackEmail;
 
@@ -8,6 +8,12 @@ public class WinbackEmailSettings : ISettings
     /// Whether the winback flow is active
     /// </summary>
     public bool Enabled { get; set; } = false;
+
+    /// <summary>
+    /// If true, emails are queued but their send date is set far into the future (year 2099) so they are never actually sent.
+    /// This allows you to view the generated emails in the Message Queue without emailing real customers.
+    /// </summary>
+    public bool DryRun { get; set; } = false;
 
     /// <summary>
     /// Azure OpenAI endpoint e.g. https://yourresource.openai.azure.com
@@ -24,6 +30,12 @@ public class WinbackEmailSettings : ISettings
     /// </summary>
     public string DeploymentName { get; set; } = "gpt-4o-mini";
 
+    public bool UseAzureKeyVault { get; set; } = false;
+
+    public string AzureKeyVaultUrl { get; set; } = string.Empty;
+
+    public string AzureKeyVaultSecretName { get; set; } = string.Empty;
+
     /// <summary>
     /// Your store name — used in email copy
     /// </summary>
@@ -35,14 +47,19 @@ public class WinbackEmailSettings : ISettings
     public int Email1DaysLapsed { get; set; } = 60;
 
     /// <summary>
-    /// Days since last order before email 2 is sent
+    /// Days to wait after Email 1 before sending Email 2
     /// </summary>
-    public int Email2DaysLapsed { get; set; } = 67;
+    public int DaysBetweenEmail1And2 { get; set; } = 7;
 
     /// <summary>
-    /// Days since last order before email 3 is sent
+    /// Days to wait after Email 2 before sending Email 3
     /// </summary>
-    public int Email3DaysLapsed { get; set; } = 74;
+    public int DaysBetweenEmail2And3 { get; set; } = 7;
+
+    /// <summary>
+    /// Maximum days since last order to consider a customer for winback emails
+    /// </summary>
+    public int MaxDaysLapsed { get; set; } = 365;
 
     /// <summary>
     /// Optional discount code to include in email 3

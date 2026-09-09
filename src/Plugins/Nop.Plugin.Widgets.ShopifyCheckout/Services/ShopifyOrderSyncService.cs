@@ -1,0 +1,201 @@
+using System;
+using System.Linq;
+using System.Threading.Tasks;
+using Nop.Core.Domain.Catalog;
+using Nop.Core.Domain.Logging;
+using Nop.Core.Domain.Orders;
+using Nop.Plugin.Widgets.ShopifyCheckout.Models;
+using Nop.Services.Catalog;
+using Nop.Services.Common;
+using Nop.Services.Customers;
+using Nop.Services.Logging;
+using Nop.Services.Orders;
+
+namespace Nop.Plugin.Widgets.ShopifyCheckout.Services;
+
+/// <summary>
+/// Represents the Shopify order and inventory sync service
+/// </summary>
+public class ShopifyOrderSyncService : IShopifyOrderSyncService
+{
+    #region Fields
+
+    private readonly IProductService _productService;
+    private readonly IProductAttributeService _productAttributeService;
+    private readonly IGenericAttributeService _genericAttributeService;
+    private readonly ICustomerService _customerService;
+    private readonly IShoppingCartService _shoppingCartService;
+    private readonly IOrderService _orderService;
+    private readonly ILogger _logger;
+    private readonly ShopifyCheckoutSettings _settings;
+
+    #endregion
+
+    #region Ctor
+
+    public ShopifyOrderSyncService(
+        IProductService productService,
+        IProductAttributeService productAttributeService,
+        IGenericAttributeService genericAttributeService,
+        ICustomerService customerService,
+        IShoppingCartService shoppingCartService,
+        IOrderService orderService,
+        ILogger logger,
+        ShopifyCheckoutSettings settings)
+    {
+        _productService = productService;
+        _productAttributeService = productAttributeService;
+        _genericAttributeService = genericAttributeService;
+        _customerService = customerService;
+        _shoppingCartService = shoppingCartService;
+        _orderService = orderService;
+        _logger = logger;
+        _settings = settings;
+    }
+
+    #endregion
+
+    #region Methods
+
+    /// <summary>
+    /// Syncs a Shopify order and decrements local nopCommerce product/combination inventory
+    /// </summary>
+    /// <param name="order">Shopify order payload</param>
+    /// <returns>Result containing success flag and log message</returns>
+    public async Task<(bool Success, string Message, int SyncedItemsCount)> ProcessShopifyOrderAsync(ShopifyWebhookOrderModel order)
+    {
+        if (order == null || order.LineItems == null)
+            return (false, "Order payload is empty.", 0);
+
+        int syncedCount = 0;
+
+        foreach (var item in order.LineItems)
+        {
+            if (item.Quantity <= 0)
+                continue;
+
+            string variantGid = item.VariantId.HasValue ? $"gid://shopify/ProductVariant/{item.VariantId.Value}" : null;
+            bool matched = false;
+
+            // 1. Check ProductAttributeCombination by SKU
+            if (!string.IsNullOrWhiteSpace(item.Sku))
+            {
+                var combination = await _productAttributeService.GetProductAttributeCombinationBySkuAsync(item.Sku.Trim());
+                if (combination != null)
+                {
+                    combination.StockQuantity -= item.Quantity;
+                    await _productAttributeService.UpdateProductAttributeCombinationAsync(combination);
+                    syncedCount++;
+                    matched = true;
+                    await _logger.InformationAsync($"Shopify Order #{order.Name}: Decremented combination SKU '{combination.Sku}' stock by {item.Quantity}. New stock: {combination.StockQuantity}");
+                }
+            }
+
+            // 2. Check Product by SKU if combination not found
+            if (!matched && !string.IsNullOrWhiteSpace(item.Sku))
+            {
+                var product = await _productService.GetProductBySkuAsync(item.Sku.Trim());
+                if (product != null)
+                {
+                    await _productService.AdjustInventoryAsync(product, -item.Quantity, message: $"Shopify Order #{order.Name}");
+                    syncedCount++;
+                    matched = true;
+                    await _logger.InformationAsync($"Shopify Order #{order.Name}: Decremented product '{product.Name}' (SKU: '{product.Sku}') stock by {item.Quantity}. New stock: {product.StockQuantity}");
+                }
+            }
+
+            if (!matched)
+            {
+                await _logger.WarningAsync($"Shopify Order #{order.Name}: Could not match item '{item.Title}' (SKU: '{item.Sku}', Variant ID: '{item.VariantId}') to nopCommerce catalog.");
+            }
+        }
+
+        // 1. Clear cart by NopCustomerId custom/note attribute (works for Guest AND Registered session customer)
+        bool cartCleared = false;
+        var allAttrs = (order.NoteAttributes ?? new List<ShopifyWebhookNoteAttributeModel>())
+            .Concat(order.CustomAttributes ?? new List<ShopifyWebhookNoteAttributeModel>());
+
+        var nopCustomerIdAttr = allAttrs.FirstOrDefault(a => 
+            string.Equals(a.Name, "NopCustomerId", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(a.Key, "NopCustomerId", StringComparison.OrdinalIgnoreCase));
+
+        if (nopCustomerIdAttr != null && int.TryParse(nopCustomerIdAttr.Value, out int nopCustomerId))
+        {
+            try
+            {
+                var sessionCustomer = await _customerService.GetCustomerByIdAsync(nopCustomerId);
+                if (sessionCustomer != null)
+                {
+                    var cart = await _shoppingCartService.GetShoppingCartAsync(sessionCustomer, ShoppingCartType.ShoppingCart);
+                    if (cart.Any())
+                    {
+                        var itemCount = cart.Count;
+                        await _shoppingCartService.ClearShoppingCartAsync(sessionCustomer, cart.First().StoreId);
+                        cartCleared = true;
+                        await _logger.InformationAsync($"Shopify Order #{order.Name}: Cleared local nopCommerce shopping cart for session customer ID #{nopCustomerId} ({itemCount} items removed).");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                await _logger.ErrorAsync($"Error clearing cart by session customer ID #{nopCustomerId}", ex);
+            }
+        }
+
+        // 2. Fallback to clearing cart by customer email if not already cleared
+        if (!cartCleared)
+        {
+            var customerEmail = order.Email ?? order.Customer?.Email;
+            if (!string.IsNullOrWhiteSpace(customerEmail))
+            {
+                try
+                {
+                    var customer = await _customerService.GetCustomerByEmailAsync(customerEmail.Trim());
+                    if (customer != null)
+                    {
+                        var cart = await _shoppingCartService.GetShoppingCartAsync(customer, ShoppingCartType.ShoppingCart);
+                        if (cart.Any())
+                        {
+                            var itemCount = cart.Count;
+                            await _shoppingCartService.ClearShoppingCartAsync(customer, cart.First().StoreId);
+                            await _logger.InformationAsync($"Shopify Order #{order.Name}: Cleared local nopCommerce shopping cart for customer '{customerEmail}' ({itemCount} items removed).");
+                        }
+                        else
+                        {
+                            await _logger.InformationAsync($"Shopify Order #{order.Name}: Customer '{customerEmail}' has no active items in local cart.");
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    await _logger.ErrorAsync($"Error clearing cart for customer '{customerEmail}' on Shopify order sync", ex);
+                }
+            }
+        }
+
+        // 3. Link nopCommerce Order to ShopifyOrderId for shipment tracking sync
+        try
+        {
+            if (!string.IsNullOrWhiteSpace(order.Name))
+            {
+                var nopOrder = await _orderService.GetOrderByCustomOrderNumberAsync(order.Name.Trim());
+                if (nopOrder != null)
+                {
+                    await _genericAttributeService.SaveAttributeAsync(nopOrder, "ShopifyOrderId", order.Id);
+                    await _logger.InformationAsync($"Shopify Order #{order.Name}: Linked to nopCommerce Order #{nopOrder.Id}.");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await _logger.ErrorAsync($"Error linking nopCommerce order to Shopify order #{order.Id}", ex);
+        }
+
+        var message = $"Successfully processed Shopify Order #{order.Name}. Inventory updated for {syncedCount} of {order.LineItems.Count} line items.";
+        await _logger.InformationAsync(message);
+
+        return (true, message, syncedCount);
+    }
+
+    #endregion
+}

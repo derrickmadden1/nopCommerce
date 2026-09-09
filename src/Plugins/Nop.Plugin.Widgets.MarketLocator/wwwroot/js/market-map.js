@@ -116,6 +116,7 @@ function initMarketMap() {
                 <a href="${icsUrl}" class="ml-btn ml-btn--primary" title="Download calendar file">Download ICS</a>
                 <a href="${webcalUrl}" class="ml-btn ml-btn--primary" title="Subscribe to live feed">Subscribe</a>
                 <a href="${mapsUrl}" target="_blank" class="ml-btn ml-btn--secondary">Directions</a>
+                <button type="button" class="ml-btn ml-btn--list-back" onclick="window.MarketLocatorSetView && window.MarketLocatorSetView('list')">☰ Back to List</button>
             </div>
         </div>`;
     }
@@ -135,7 +136,7 @@ function initMarketMap() {
             wireFilters();
             
             if (cfg.selectedId) {
-                selectMarket(+cfg.selectedId);
+                selectMarket(+cfg.selectedId, false);
             }
 
             // Force Leaflet to recalculate its viewport in case the 
@@ -151,7 +152,7 @@ function initMarketMap() {
             .addTo(map)
             .bindPopup(popupHTML(m), { maxWidth: 300 });
 
-        marker.on('click', () => selectMarket(m.Id));
+        marker.on('click', () => selectMarket(m.Id, false));
         markers[m.Id] = marker;
     }
 
@@ -174,17 +175,18 @@ function initMarketMap() {
                     <div class="ml-card__name">${m.Name}</div>
                     <div class="ml-card__date">📅 ${nextDate}${extra}</div>
                     <div class="ml-card__meta">🕗 ${m.Hours} · 📍 ${m.City}</div>
+                    <div class="ml-card__hint"><span>View on map</span> <span class="ml-card__hint-arrow">→</span></div>
                 </div>
                 <span class="ml-card__badge ${badge}">${label}</span>
             </div>`;
         }).join('');
 
         el.querySelectorAll('.ml-card').forEach(card => {
-            card.addEventListener('click', () => selectMarket(+card.dataset.id));
+            card.addEventListener('click', () => selectMarket(+card.dataset.id, true));
         });
     }
 
-    function selectMarket(id) {
+    function selectMarket(id, fromCard = false) {
         activeId = id;
         const m = allMarkets.find(x => x.Id === id);
         if (!m) return;
@@ -195,8 +197,27 @@ function initMarketMap() {
             card.classList.add('is-active');
             card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
-        map.flyTo([m.Latitude, m.Longitude], 14, { duration: 0.7 });
-        markers[id]?.openPopup();
+
+        const isMobile = window.innerWidth <= 700;
+        if (isMobile && fromCard) {
+            setView('map');
+            setTimeout(() => {
+                if (map) {
+                    map.invalidateSize();
+                    map.flyTo([m.Latitude, m.Longitude], 14, { duration: 0.5 });
+                }
+                markers[id]?.openPopup();
+                const mapEl = document.getElementById('market-map');
+                if (mapEl) {
+                    mapEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }, 80);
+        } else {
+            if (map) {
+                map.flyTo([m.Latitude, m.Longitude], 14, { duration: 0.7 });
+            }
+            markers[id]?.openPopup();
+        }
     }
 
     // ── Filters ───────────────────────────────────────────────────────────────
@@ -229,13 +250,27 @@ function initMarketMap() {
     }
 
     function setView(mode) {
-        document.getElementById('btn-map').classList.toggle('active', mode === 'map');
-        document.getElementById('btn-list').classList.toggle('active', mode === 'list');
+        const btnMap = document.getElementById('btn-map');
+        const btnList = document.getElementById('btn-list');
+        if (btnMap) btnMap.classList.toggle('active', mode === 'map');
+        if (btnList) btnList.classList.toggle('active', mode === 'list');
         const layout = document.getElementById('market-layout');
         if (layout) {
             layout.dataset.view = mode;
         }
+        if (mode === 'map' && map) {
+            setTimeout(() => map.invalidateSize(), 50);
+        } else if (mode === 'list' && activeId) {
+            setTimeout(() => {
+                const card = document.getElementById(`ml-card-${activeId}`);
+                if (card) {
+                    card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            }, 50);
+        }
     }
+
+    window.MarketLocatorSetView = setView;
 }
 
 if (document.readyState === 'loading') {

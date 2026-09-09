@@ -678,20 +678,20 @@ public class PayPalCommerceServiceManager
         }
 
         var (shippingOptions, pickupPoints) = await PrepareShippingOptionsAsync(details);
-        if ((!shippingOptions?.Any() ?? true) && details.ShippingAddress is not null)
+        if ((!shippingOptions?.Any() ?? true) && details.ShippingAddress is not null && details.Placement == ButtonPlacement.PaymentMethod)
             throw new NopException("No available shipping options");
 
-        var selectedShippingOption = shippingOptions.FirstOrDefault();
-        if (!string.IsNullOrEmpty(selectedOptionId))
+        var selectedShippingOption = shippingOptions?.FirstOrDefault();
+        if (!string.IsNullOrEmpty(selectedOptionId) && shippingOptions?.Any() == true)
         {
             var existingOption = shippingOptions
-                .FirstOrDefault(option => string.Equals(option.Name, selectedOptionId, StringComparison.InvariantCultureIgnoreCase))
-                ?? throw new NopException("Selected shipping option is unavailable");
+                .FirstOrDefault(option => string.Equals(option.Name, selectedOptionId, StringComparison.InvariantCultureIgnoreCase));
 
-            selectedShippingOption = existingOption;
+            if (existingOption is not null)
+                selectedShippingOption = existingOption;
         }
 
-        if (selectedShippingOption is null)
+        if (selectedShippingOption is null && details.Placement == ButtonPlacement.PaymentMethod)
             throw new NopException("Selected shipping option is unavailable");
 
         PickupPoint pickupPoint = null;
@@ -932,8 +932,9 @@ public class PayPalCommerceServiceManager
     /// Prepare patches to update an order
     /// </summary>
     /// <param name="purchaseUnit">Purchase unit details</param>
+    /// <param name="existingPurchaseUnit">Existing purchase unit from PayPal</param>
     /// <returns>List of patch objects</returns>
-    private static List<Patch<object>> PreparePatches(PurchaseUnit purchaseUnit)
+    private static List<Patch<object>> PreparePatches(PurchaseUnit purchaseUnit, PurchaseUnit existingPurchaseUnit = null)
     {
         var patches = new List<Patch<object>>
         {
@@ -942,53 +943,56 @@ public class PayPalCommerceServiceManager
                 Op = PatchOpType.REPLACE.ToString().ToLower(),
                 Path = "/purchase_units/@reference_id=='default'/amount",
                 Value = purchaseUnit.Amount
-            },
-            new()
-            {
-                Op = PatchOpType.REPLACE.ToString().ToLower(),
-                Path = "/purchase_units/@reference_id=='default'/items",
-                Value = purchaseUnit.Items
-            },
-            new()
-            {
-                Op = PatchOpType.REPLACE.ToString().ToLower(),
-                Path = "/purchase_units/@reference_id=='default'/supplementary_data/card",
-                Value = purchaseUnit.SupplementaryData.Card
             }
         };
 
-        if (purchaseUnit.Shipping?.Name is not null)
+        if (purchaseUnit.Items?.Any() == true)
         {
+            var op = existingPurchaseUnit?.Items is not null ? PatchOpType.REPLACE : PatchOpType.ADD;
             patches.Add(new()
             {
-                Op = PatchOpType.REPLACE.ToString().ToLower(),
+                Op = op.ToString().ToLower(),
+                Path = "/purchase_units/@reference_id=='default'/items",
+                Value = purchaseUnit.Items
+            });
+        }
+
+        if (purchaseUnit.Shipping?.Name is not null)
+        {
+            var op = existingPurchaseUnit?.Shipping?.Name is not null ? PatchOpType.REPLACE : PatchOpType.ADD;
+            patches.Add(new()
+            {
+                Op = op.ToString().ToLower(),
                 Path = "/purchase_units/@reference_id=='default'/shipping/name",
                 Value = purchaseUnit.Shipping.Name
             });
         }
         if (purchaseUnit.Shipping?.Address is not null)
         {
+            var op = existingPurchaseUnit?.Shipping?.Address is not null ? PatchOpType.REPLACE : PatchOpType.ADD;
             patches.Add(new()
             {
-                Op = PatchOpType.REPLACE.ToString().ToLower(),
+                Op = op.ToString().ToLower(),
                 Path = "/purchase_units/@reference_id=='default'/shipping/address",
                 Value = purchaseUnit.Shipping.Address
             });
         }
         if (purchaseUnit.Shipping?.Options is not null)
         {
+            var op = existingPurchaseUnit?.Shipping?.Options is not null ? PatchOpType.REPLACE : PatchOpType.ADD;
             patches.Add(new()
             {
-                Op = PatchOpType.REPLACE.ToString().ToLower(),
+                Op = op.ToString().ToLower(),
                 Path = "/purchase_units/@reference_id=='default'/shipping/options",
                 Value = purchaseUnit.Shipping.Options
             });
         }
         if (!string.IsNullOrEmpty(purchaseUnit.Shipping?.Type))
         {
+            var op = !string.IsNullOrEmpty(existingPurchaseUnit?.Shipping?.Type) ? PatchOpType.REPLACE : PatchOpType.ADD;
             patches.Add(new()
             {
-                Op = PatchOpType.REPLACE.ToString().ToLower(),
+                Op = op.ToString().ToLower(),
                 Path = "/purchase_units/@reference_id=='default'/shipping/type",
                 Value = purchaseUnit.Shipping.Type
             });
@@ -1700,8 +1704,8 @@ public class PayPalCommerceServiceManager
                 var context = PrepareOrderContext(settings, details, paymentRequest.OrderGuid.ToString(), isApplepay);
                 var payer = await PrepareBillingDetailsAsync(settings, details);
 
-                //only registered customers can save payment tokens
-                var vault = !settings.UseVault || isGuest ? null : new VaultInstruction
+                //only registered customers can save payment tokens if saveCard is requested or recurring item
+                var vault = !settings.UseVault || isGuest || (!saveCard && !isRecurring) ? null : new VaultInstruction
                 {
                     UsageType = VaultUsageType.MERCHANT.ToString().ToUpper(),
                     CustomerType = VaultUsageType.CONSUMER.ToString().ToUpper(),
@@ -1784,7 +1788,7 @@ public class PayPalCommerceServiceManager
             else
             {
                 //order exists, so just update some details
-                var patches = PreparePatches(purchaseUnit);
+                var patches = PreparePatches(purchaseUnit, order?.PurchaseUnits?.FirstOrDefault());
                 patches.Add(new()
                 {
                     Op = PatchOpType.REPLACE.ToString().ToLower(),
@@ -1892,7 +1896,12 @@ public class PayPalCommerceServiceManager
                 CurrencyCode = currencyCode,
                 ShippingIsRequired = shippingIsRequired
             };
-            var shipping = await PrepareUpdatedShippingAsync(details, order.Payer?.EmailAddress, selectedAddress, selectedOption);
+            var payerEmail = order.Payer?.EmailAddress 
+                ?? order.PaymentSource?.PayPal?.EmailAddress 
+                ?? order.PaymentSource?.Venmo?.EmailAddress 
+                ?? order.PaymentSource?.GooglePay?.EmailAddress 
+                ?? order.PaymentSource?.ApplePay?.EmailAddress;
+            var shipping = await PrepareUpdatedShippingAsync(details, payerEmail, selectedAddress, selectedOption);
             if (shipping is null)
                 return false;
 
@@ -1927,7 +1936,7 @@ public class PayPalCommerceServiceManager
                 Items = items,
                 Amount = orderAmount,
                 SupplementaryData = new() { Card = cardData }
-            });
+            }, unit);
             var updateRequest = new UpdateOrderRequest<object>(patches) { OrderId = order.Id };
             await _httpClient.RequestAsync<UpdateOrderRequest<object>, EmptyResponse>(updateRequest, settings);
 
@@ -2065,39 +2074,52 @@ public class PayPalCommerceServiceManager
                 Items = items,
                 Amount = orderAmount,
                 SupplementaryData = new() { Card = cardData }
-            });
+            }, unit);
             var updateRequest = new UpdateOrderRequest<object>(patches) { OrderId = order.Id };
             await _httpClient.RequestAsync<UpdateOrderRequest<object>, EmptyResponse>(updateRequest, settings);
 
-            //place order immediately, if the appropriate setting is enabled
-            if (placement == ButtonPlacement.PaymentMethod)
-                return (order, settings.SkipOrderConfirmPage);
-
-            var fallbackEmail = order.Payer?.EmailAddress 
+            var payer = order.Payer ?? (Payer)order.PaymentSource?.PayPal ?? (Payer)order.PaymentSource?.Venmo;
+            var payerAddress = payer?.Address ?? order.PaymentSource?.Card?.BillingAddress;
+            var payerEmail = payer?.EmailAddress 
+                ?? order.PaymentSource?.PayPal?.EmailAddress 
+                ?? order.PaymentSource?.Venmo?.EmailAddress 
                 ?? order.PaymentSource?.GooglePay?.EmailAddress 
-                ?? order.PaymentSource?.ApplePay?.EmailAddress 
-                ?? customer.Email;
+                ?? order.PaymentSource?.ApplePay?.EmailAddress;
+
+            var fallbackEmail = payerEmail ?? customer.Email;
 
             if (string.IsNullOrEmpty(fallbackEmail) || !CommonHelper.IsValidEmail(fallbackEmail))
             {
                 fallbackEmail = $"guest_{Guid.NewGuid():N}@noemail.com";
             }
 
+            var payerFirstName = payer?.Name?.GivenName 
+                ?? order.PaymentSource?.GooglePay?.Name 
+                ?? order.PaymentSource?.ApplePay?.Name 
+                ?? (order.PaymentSource?.Card?.Name?.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault())
+                ?? customer.FirstName;
+
+            var payerLastName = payer?.Name?.Surname 
+                ?? (order.PaymentSource?.Card?.Name?.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length > 1 
+                    ? string.Join(" ", order.PaymentSource.Card.Name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Skip(1)) 
+                    : null)
+                ?? customer.LastName;
+
             //or update billing details and redirect customer to the confirmation page
-            if (order.Payer is not null)
+            if (payer is not null || payerAddress is not null)
             {
-                var billingCountry = await _countryService.GetCountryByTwoLetterIsoCodeAsync(order.Payer.Address?.CountryCode);
+                var billingCountry = await _countryService.GetCountryByTwoLetterIsoCodeAsync(payerAddress?.CountryCode);
                 var billingState = await _stateProvinceService
-                    .GetStateProvinceByAbbreviationAsync(order.Payer.Address?.AdminArea1, billingCountry?.Id);
+                    .GetStateProvinceByAbbreviationAsync(payerAddress?.AdminArea1, billingCountry?.Id);
                 var billingAddress = await PrepareCustomerAddressAsync(customer, new()
                 {
                     Email = fallbackEmail,
-                    FirstName = order.Payer.Name?.GivenName ?? order.PaymentSource?.GooglePay?.Name ?? order.PaymentSource?.ApplePay?.Name ?? customer.FirstName,
-                    LastName = order.Payer.Name?.Surname ?? customer.LastName,
-                    Address1 = order.Payer.Address?.AddressLine1,
-                    Address2 = order.Payer.Address?.AddressLine2,
-                    City = order.Payer.Address?.AdminArea2,
-                    ZipPostalCode = order.Payer.Address?.PostalCode,
+                    FirstName = payerFirstName,
+                    LastName = payerLastName,
+                    Address1 = payerAddress?.AddressLine1,
+                    Address2 = payerAddress?.AddressLine2,
+                    City = payerAddress?.AdminArea2,
+                    ZipPostalCode = payerAddress?.PostalCode,
                     StateProvinceId = billingState?.Id,
                     CountryId = billingCountry?.Id
                 });
@@ -2116,11 +2138,22 @@ public class PayPalCommerceServiceManager
                 var shippingCountry = await _countryService.GetCountryByTwoLetterIsoCodeAsync(shippingAddress.CountryCode);
                 var shippingState = await _stateProvinceService
                     .GetStateProvinceByAbbreviationAsync(shippingAddress.AdminArea1, shippingCountry?.Id);
+
+                var shippingName = shipping.Name?.FullName;
+                var shippingFirstName = payerFirstName 
+                    ?? (shippingName?.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault()) 
+                    ?? customer.FirstName;
+                var shippingLastName = payerLastName 
+                    ?? (shippingName?.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length > 1 
+                        ? string.Join(" ", shippingName.Split(' ', StringSplitOptions.RemoveEmptyEntries).Skip(1)) 
+                        : null) 
+                    ?? customer.LastName;
+
                 var newShippingAddress = await PrepareCustomerAddressAsync(customer, new()
                 {
                     Email = fallbackEmail,
-                    FirstName = order.Payer?.Name?.GivenName ?? order.PaymentSource?.GooglePay?.Name ?? order.PaymentSource?.ApplePay?.Name ?? customer.FirstName,
-                    LastName = order.Payer?.Name?.Surname ?? customer.LastName,
+                    FirstName = shippingFirstName,
+                    LastName = shippingLastName,
                     Address1 = shippingAddress.AddressLine1,
                     Address2 = shippingAddress.AddressLine2,
                     City = shippingAddress.AdminArea2,
@@ -2148,7 +2181,16 @@ public class PayPalCommerceServiceManager
                 await _addressService.UpdateAddressAsync(finalBilling);
             }
 
+            if (string.IsNullOrEmpty(customer.Email) && CommonHelper.IsValidEmail(fallbackEmail) && !fallbackEmail.EndsWith("@noemail.com", StringComparison.OrdinalIgnoreCase))
+            {
+                customer.Email = fallbackEmail;
+            }
+
             await _customerService.UpdateCustomerAsync(customer);
+
+            //place order immediately, if the appropriate setting is enabled
+            if (placement == ButtonPlacement.PaymentMethod)
+                return (order, settings.SkipOrderConfirmPage);
 
             return (order, settings.SkipOrderConfirmPage);
         });

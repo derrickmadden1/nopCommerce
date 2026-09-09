@@ -1,4 +1,4 @@
-﻿using FluentMigrator;
+using FluentMigrator;
 using Nop.Data;
 using Nop.Data.Mapping;
 using Nop.Data.Migrations;
@@ -21,6 +21,9 @@ public class ConversionsApiMigration : MigrationBase
             return;
 
         var facebookPixelConfigurationTableName = NameCompatibilityManager.GetTableName(typeof(FacebookPixelConfiguration));
+
+        if (!Schema.Table(facebookPixelConfigurationTableName).Exists())
+            return;
 
         //add ConversionsApiEnabled column if not exists
         if (!Schema.Table(facebookPixelConfigurationTableName).Column(nameof(FacebookPixelConfiguration.ConversionsApiEnabled)).Exists())

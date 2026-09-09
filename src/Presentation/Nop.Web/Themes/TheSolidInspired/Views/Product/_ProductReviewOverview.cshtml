@@ -46,17 +46,49 @@
         
         <script asp-location="Footer">
             document.addEventListener("DOMContentLoaded", function() {
+                function scrollToReviews(targetId) {
+                    const targetElement = document.getElementById(targetId) || 
+                                          document.querySelector(`[name="${targetId}"]`) || 
+                                          document.getElementById('addreview') || 
+                                          document.getElementById('productreviews') || 
+                                          document.getElementById('product-reviews-section') || 
+                                          document.querySelector('.product-reviews');
+                    if (targetElement) {
+                        const header = document.querySelector('.header-modern') || document.querySelector('header');
+                        const headerOffset = header ? header.offsetHeight + 20 : 80;
+                        const elementPosition = targetElement.getBoundingClientRect().top;
+                        const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
+                        window.scrollTo({
+                            top: Math.max(0, offsetPosition),
+                            behavior: 'smooth'
+                        });
+
+                        const firstInput = targetElement.querySelector('input[type="text"]:not([type="hidden"]), textarea') || 
+                                           document.querySelector('#AddProductReview_Title');
+                        if (firstInput) {
+                            setTimeout(function() {
+                                firstInput.focus({ preventScroll: true });
+                            }, 500);
+                        }
+                    }
+                }
+
                 const reviewLinks = document.querySelectorAll('.review-scroll-link');
-                reviewLinks.forEach(link => {
+                reviewLinks.forEach(function(link) {
                     link.addEventListener('click', function(e) {
                         e.preventDefault();
-                        const targetId = this.getAttribute('href').substring(1);
-                        const targetElement = document.getElementById(targetId);
-                        if (targetElement) {
-                            targetElement.scrollIntoView({ behavior: 'smooth' });
-                        }
+                        const href = this.getAttribute('href');
+                        const targetId = (href && href.startsWith('#')) ? href.substring(1) : 'addreview';
+                        scrollToReviews(targetId);
                     });
                 });
+
+                if (window.location.hash === '#addreview' || window.location.hash === '#productreviews') {
+                    setTimeout(function() {
+                        scrollToReviews(window.location.hash.substring(1));
+                    }, 300);
+                }
             });
         </script>
     </div>

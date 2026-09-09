@@ -1,6 +1,8 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using Azure;
 using Azure.AI.OpenAI;
+using Azure.Identity;
+using Azure.Security.KeyVault.Secrets;
 using Microsoft.Extensions.Logging;
 using Nop.Plugin.Marketing.WinbackEmail.Models;
 
@@ -23,9 +25,24 @@ public class WinbackEmailGenerator
     {
         try
         {
+            var apiKey = _settings.AzureOpenAIApiKey;
+            
+            if (_settings.UseAzureKeyVault)
+            {
+                if (string.IsNullOrWhiteSpace(_settings.AzureKeyVaultUrl) || string.IsNullOrWhiteSpace(_settings.AzureKeyVaultSecretName))
+                {
+                    _logger.LogError("WinbackEmail: Azure Key Vault is enabled but URL or Secret Name is missing.");
+                    return null;
+                }
+
+                var secretClient = new SecretClient(new Uri(_settings.AzureKeyVaultUrl), new DefaultAzureCredential());
+                var secretResponse = await secretClient.GetSecretAsync(_settings.AzureKeyVaultSecretName);
+                apiKey = secretResponse.Value.Value;
+            }
+
             var client = new OpenAIClient(
                 new Uri(_settings.AzureOpenAIEndpoint),
-                new AzureKeyCredential(_settings.AzureOpenAIApiKey)
+                new AzureKeyCredential(apiKey)
             );
 
             var systemPrompt = BuildSystemPrompt();

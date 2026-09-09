@@ -1,0 +1,42 @@
+using Nop.Core.Configuration;
+
+namespace Nop.Plugin.Widgets.AiChatbot;
+
+public class AiChatbotSettings : ISettings
+{
+    public bool Enabled { get; set; } = false;
+
+    // Azure OpenAI
+    public string AzureOpenAIEndpoint { get; set; } = string.Empty;
+    public string AzureOpenAIApiKey { get; set; } = string.Empty;
+    public string DeploymentName { get; set; } = "gpt-4o-mini";
+
+    // Azure Key Vault
+    public bool UseAzureKeyVault { get; set; } = false;
+    public string AzureKeyVaultUrl { get; set; } = string.Empty;
+    public string AzureKeyVaultSecretName { get; set; } = string.Empty;
+
+    // Azure AI Search (for product Q&A — reuses existing index)
+    public string AzureSearchEndpoint { get; set; } = string.Empty;
+    public string AzureSearchQueryKey { get; set; } = string.Empty;
+    public string AzureSearchIndexName { get; set; } = "products";
+
+    // Chatbot persona & appearance
+    public string BotName { get; set; } = "Store Assistant";
+    public string StoreName { get; set; } = string.Empty;
+    public string WelcomeMessage { get; set; } = "Hi! How can I help you today?";
+    public string BubbleColour { get; set; } = "#4A90D9";
+    public bool EnablePulseEffect { get; set; } = true;
+    public bool EnableTeaserBubble { get; set; } = true;
+    public string TeaserText { get; set; } = "👋 Hi! Need help finding anything?";
+
+    // Store policies — pasted as plain text, injected into system prompt
+    public string ReturnsPolicy { get; set; } = string.Empty;
+    public string ShippingPolicy { get; set; } = string.Empty;
+
+    // Limits
+    public int MaxConversationTurns { get; set; } = 10;
+    public int MaxSearchResults { get; set; } = 3;
+    public int? MaxTokens { get; set; }
+    public float? Temperature { get; set; }
+}

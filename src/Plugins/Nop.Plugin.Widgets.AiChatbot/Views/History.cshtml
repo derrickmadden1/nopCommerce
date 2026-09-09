@@ -1,0 +1,113 @@
+@model Nop.Core.IPagedList<Nop.Plugin.Widgets.AiChatbot.Models.ChatSessionItemModel>
+
+@{
+    Layout = "_AdminLayout";
+    ViewBag.Title = "AI Chatbot - Chat History";
+}
+
+<div class="content-header clearfix">
+    <h1 class="float-left">
+        Chatbot Conversation History
+        <small>
+            <i class="fas fa-arrow-circle-left"></i>
+            <a asp-action="Configure" asp-controller="AiChatbot">Back to Configuration</a>
+        </small>
+    </h1>
+</div>
+
+<section class="content">
+    <div class="container-fluid">
+        <div class="cards-group">
+            <div class="card card-default">
+                <div class="card-header">
+                    <h3 class="card-title">Saved Chat Sessions</h3>
+                </div>
+                <div class="card-body">
+                    @if (!Model.Any())
+                    {
+                        <div class="alert alert-info">
+                            No chat history sessions recorded yet.
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Session GUID</th>
+                                        <th>Customer</th>
+                                        <th>Email</th>
+                                        <th>Messages</th>
+                                        <th>Created (UTC)</th>
+                                        <th>Last Updated (UTC)</th>
+                                        <th class="text-center" style="width: 150px;">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <small class="text-monospace">@item.SessionGuid</small>
+                                            </td>
+                                            <td>
+                                                @if (item.CustomerId > 0)
+                                                {
+                                                    <a href="@Url.Action("Edit", "Customer", new { id = item.CustomerId, area = Nop.Web.Framework.AreaNames.ADMIN })">
+                                                        <i class="fas fa-user text-primary"></i> @item.CustomerName
+                                                    </a>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge badge-secondary"><i class="fas fa-user-secret"></i> Guest</span>
+                                                }
+                                            </td>
+                                            <td>@item.CustomerEmail</td>
+                                            <td>
+                                                <span class="badge badge-info">@item.MessageCount turns</span>
+                                            </td>
+                                            <td>@item.CreatedOnUtc.ToString("d MMM yyyy HH:mm")</td>
+                                            <td>@item.UpdatedOnUtc.ToString("d MMM yyyy HH:mm")</td>
+                                            <td class="text-center">
+                                                <a asp-action="HistoryDetails" asp-controller="AiChatbot" asp-route-id="@item.Id"
+                                                   class="btn btn-sm btn-info" title="View Transcript">
+                                                    <i class="fas fa-eye"></i> View
+                                                </a>
+                                                <form asp-action="DeleteHistory" asp-controller="AiChatbot" asp-route-id="@item.Id"
+                                                      method="post" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this chat session?');">
+                                                    <button type="submit" class="btn btn-sm btn-danger" title="Delete">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Basic Pagination -->
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <div>
+                                Page @(Model.PageIndex + 1) of @Model.TotalPages (Total: @Model.TotalCount)
+                            </div>
+                            <div>
+                                @if (Model.HasPreviousPage)
+                                {
+                                    <a asp-action="History" asp-controller="AiChatbot" asp-route-pageIndex="@(Model.PageIndex - 1)"
+                                       class="btn btn-outline-secondary btn-sm">&laquo; Previous</a>
+                                }
+                                @if (Model.HasNextPage)
+                                {
+                                    <a asp-action="History" asp-controller="AiChatbot" asp-route-pageIndex="@(Model.PageIndex + 1)"
+                                       class="btn btn-outline-secondary btn-sm">Next &raquo;</a>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

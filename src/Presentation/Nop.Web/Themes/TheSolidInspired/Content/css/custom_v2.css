@@ -1659,8 +1659,14 @@ body {
     transition: color 0.2s ease !important;
   }
 
-  .mobile-nav-content .mega-menu-item:hover>a {
+  .mobile-nav-content .mega-menu-item:hover>a,
+  .mobile-nav-content .mega-menu-item.expanded>a {
     color: var(--brand-magenta) !important;
+  }
+
+  .mobile-nav-content .mega-menu-item.has-sublist>a {
+    padding-right: 56px !important;
+    cursor: pointer !important;
   }
 
   /* Toggle Button Styles - Injected by JS */
@@ -3541,12 +3547,15 @@ body {
   transition: all 0.3s ease;
 }
 
-.method-card-modern:hover {
-  border-color: var(--brand-magenta);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+@media (hover: hover) {
+  .method-card-modern:hover {
+    border-color: var(--brand-magenta);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+  }
 }
 
-.method-card-modern.selected {
+.method-card-modern.selected,
+.method-card-modern:has(input[type="radio"]:checked) {
   border-color: var(--brand-magenta);
   background: rgba(184, 29, 125, 0.02);
   box-shadow: 0 5px 15px rgba(184, 29, 125, 0.1);
@@ -3586,7 +3595,8 @@ body {
   color: var(--brand-magenta);
 }
 
-.method-card-modern.selected .method-name {
+.method-card-modern.selected .method-name,
+.method-card-modern:has(input[type="radio"]:checked) .method-name {
   color: var(--brand-magenta);
 }
 
@@ -3632,7 +3642,8 @@ body {
   transition: all 0.3s ease;
 }
 
-.method-card-modern.selected .method-select-icon {
+.method-card-modern.selected .method-select-icon,
+.method-card-modern:has(input[type="radio"]:checked) .method-select-icon {
   color: var(--brand-magenta);
 }
 
@@ -5111,9 +5122,19 @@ body {
 .product-review-links a {
     color: var(--brand-turquoise, #00c2c7);
     text-decoration: none;
+    cursor: pointer;
 }
 .product-review-links a:hover {
     text-decoration: underline;
+}
+
+.product-reviews,
+#product-reviews-section,
+#productreviews,
+#addreview,
+.write-review,
+.review-guest-prompt-card {
+    scroll-margin-top: 100px;
 }
 
 /* ========================================
@@ -5426,4 +5447,258 @@ body {
     margin: 0 10px 0 0 !important;
   }
 }
+
+
+/* --- REGISTRATION FORM MODERN --- */
+.registration-wrapper-modern {
+  max-width: 800px;
+  margin: 40px auto;
+  background: #fff;
+  padding: 40px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.05);
+  border-radius: 8px;
+}
+
+.fieldset-modern {
+  margin-bottom: 40px;
+}
+
+.fieldset-modern .fieldset-title h2 {
+  font-size: 1.2rem;
+  border-bottom: 2px solid var(--border-color);
+  padding-bottom: 10px;
+  margin-bottom: 20px;
+  color: var(--dark-grey);
+}
+
+.form-group-modern {
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.form-row-modern {
+  display: flex;
+  gap: 20px;
+}
+
+.form-row-modern .form-group-modern {
+  flex: 1;
+}
+
+.form-group-modern label {
+  font-weight: 600;
+  margin-bottom: 8px;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.form-group-modern input.form-control,
+.form-group-modern select.form-control {
+  padding: 12px 15px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  font-family: var(--body-font);
+  font-size: 1rem;
+  transition: border-color 0.3s ease;
+}
+
+.form-group-modern input.form-control:focus,
+.form-group-modern select.form-control:focus {
+  outline: none;
+  border-color: var(--brand-magenta);
+}
+
+.gender-options-modern,
+.dob-selectors-modern {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+}
+
+.gender-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.checkbox-item-modern {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.checkbox-item-modern label {
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.registration-footer-modern {
+  margin-top: 40px;
+  text-align: center;
+}
+
+.register-btn-modern {
+  background: var(--brand-turquoise);
+  color: #fff;
+  border: none;
+  padding: 15px 40px;
+  font-family: var(--heading-font);
+  font-size: 1rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.register-btn-modern:hover {
+  background: var(--brand-magenta);
+}
+
+.captcha-modern {
+  margin-top: 20px;
+}
+
+/* --- REGISTRATION FORM MOBILE STYLES --- */
+@media (max-width: 768px) {
+  .registration-wrapper-modern {
+    margin: 20px 15px;
+    padding: 20px;
+  }
+  
+  .form-row-modern {
+    flex-direction: column;
+    gap: 0;
+  }
+  
+  .dob-selectors-modern {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  
+  .dob-selectors-modern select {
+    width: 100%;
+  }
+
+  .gender-options-modern {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+}
+
+/* External Auth Buttons List Styling */
+.external-auth-wrapper-modern {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.external-auth-wrapper-modern .title {
+    color: #666;
+    font-size: 14px;
+    margin-bottom: 5px;
+}
+
+/* Base styles for all auth blocks to ensure neat stacking */
+.facebook-login-block, .Google-login-block, .Apple-login-block {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
+.facebook-login-block .buttons, .Google-login-block .buttons, .Apple-login-block .buttons {
+    display: flex;
+    justify-content: center;
+}
+
+/* --- CHECKOUT MOBILE & CONVERSION ENHANCEMENTS --- */
+/* Completely hide floating chatbot on all checkout pages */
+html.html-checkout-page #ai-chat-bubble,
+.html-checkout-page #ai-chat-bubble,
+.checkout-page #ai-chat-bubble,
+.order-confirm-page #ai-chat-bubble {
+  display: none !important;
+}
+
+/* Ensure adequate breathing room at the bottom of checkout */
+.html-checkout-page .checkout-page {
+  padding-bottom: 70px;
+}
+
+/* On mobile, ensure checkout footer buttons are full width and easy to tap */
+@media (max-width: 768px) {
+  .checkout-footer-modern {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: stretch !important;
+    align-items: stretch !important;
+    width: 100% !important;
+    margin-top: 30px !important;
+    padding-top: 25px !important;
+    gap: 15px !important;
+  }
+
+  .confirm-order-btn-modern,
+  .checkout-footer-modern .btn-primary,
+  .checkout-footer-modern .next-step-btn {
+    width: 100% !important;
+    min-width: 0 !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    text-align: center !important;
+    padding: 18px 20px !important;
+    font-size: 1.15rem !important;
+    box-sizing: border-box !important;
+  }
+
+  .terms-of-service-modern {
+    width: 100%;
+    margin-bottom: 15px;
+  }
+}
+
+/* --- 3D-SECURE / PAYMENT VERIFICATION (SQUARE & CARDINALCOMMERCE) MOBILE FIX --- */
+#Cardinal-Modal,
+.Cardinal-Modal,
+#Cardinal-ElementContainer,
+div[id^="Cardinal-"] {
+  position: fixed !important;
+  top: max(20px, env(safe-area-inset-top, 20px)) !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: auto !important;
+  width: 100vw !important;
+  width: 100% !important;
+  max-height: calc(100dvh - 30px) !important;
+  max-height: calc(100vh - 30px) !important;
+  z-index: 2147483647 !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: flex-start !important;
+  box-sizing: border-box !important;
+  padding-top: 8px !important;
+}
+
+#Cardinal-CCA-IFrame,
+iframe[id^="Cardinal"],
+iframe[name^="Cardinal"],
+iframe[src*="cardinalcommerce"],
+iframe[src*="songbird"] {
+  max-height: calc(100dvh - 40px) !important;
+  max-height: calc(100vh - 40px) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35) !important;
+}
+
 

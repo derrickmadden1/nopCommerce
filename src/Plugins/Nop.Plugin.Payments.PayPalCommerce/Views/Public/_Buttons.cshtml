@@ -354,7 +354,7 @@
                 cancel = true;
             } else {
                 if (waitingPayPal !== false)
-                    return actions.reject();
+                    return actions && typeof actions.reject === 'function' ? actions.reject() : Promise.reject();
 
                 displayAjaxLoading(true);
                 waitingPayPal = true;
@@ -392,7 +392,7 @@
         //on product pages when customer clicks the button we should first add the product in the cart
         if (isProductPage && $('#add-to-cart-button-@Model.ProductId').length > 0) {
             if (waitingPayPal !== false)
-                return actions.reject();
+                return actions && typeof actions.reject === 'function' ? actions.reject() : Promise.reject();
 
             displayAjaxLoading(true);
             waitingPayPal = true;
@@ -495,9 +495,9 @@
         }
 
         if (cancel === true) {
-            return actions.reject();
+            return actions && typeof actions.reject === 'function' ? actions.reject() : Promise.reject();
         } else {
-            return actions.resolve();
+            return actions && typeof actions.resolve === 'function' ? actions.resolve() : Promise.resolve();
         }
     }
 
@@ -531,9 +531,12 @@
                 } else if (data.redirect) {
                     setLocation(data.redirect);
                     orderId = null;
-                } else {
+                } else if (data.orderId) {
                     orderId = data.orderId;
                     status = data.status;
+                } else {
+                    displayBarNotification('Failed to create PayPal order. Please try again.', 'error', 0);
+                    orderId = null;
                 }
             },
             complete: function (jqXHR, textStatus) {
@@ -553,6 +556,19 @@
 
         return orderId;
     }
+
+    function cancelCallback(data) {
+        if (isProductPage) {
+            setLocation('@Url.RouteUrl(NopRouteNames.General.CART)');
+        }
+    }
+
+    function errorCallback(err) {
+        if (err && err.message && err.message.indexOf('Expected an order id to be passed') !== -1) {
+            return;
+        }
+        displayBarNotification(err.message, 'error', 0);
+    };
 
     function approveCallback(data, actions) {
         var redirectUrl = '';
@@ -599,15 +615,7 @@
         setLocation(redirectUrl);
     }
 
-    function cancelCallback(data) {
-        if (isProductPage) {
-            setLocation('@Url.RouteUrl(NopRouteNames.General.CART)');
-        }
-    }
 
-    function errorCallback(err) {
-        displayBarNotification(err.message, 'error', 0);
-    }
 
     function shippingAddressChangeCallback(data, actions) {
         //shipping address was changed on the PayPal's side, we should update it here as well
@@ -629,16 +637,16 @@
                 data: postData,
                 success: function (data, textStatus, jqXHR) {
                     if (data.error) {
-                        return actions.reject(data.errors.ADDRESS_ERROR);
+                        return actions && typeof actions.reject === 'function' ? actions.reject(data.errors.ADDRESS_ERROR) : Promise.reject(data.errors?.ADDRESS_ERROR);
                     }
-                    return actions.resolve();
+                    return actions && typeof actions.resolve === 'function' ? actions.resolve() : Promise.resolve();
                 },
                 error: function (jqXHR, textStatus, errorThrown) {
-                    return actions.reject(data.errors.ADDRESS_ERROR);
+                    return actions && typeof actions.reject === 'function' ? actions.reject(data.errors.ADDRESS_ERROR) : Promise.reject(data.errors?.ADDRESS_ERROR);
                 }
             });
         } else {
-            return actions.resolve();
+            return actions && typeof actions.resolve === 'function' ? actions.resolve() : Promise.resolve();
         }
     }
 
@@ -663,16 +671,16 @@
                 data: postData,
                 success: function (data, textStatus, jqXHR) {
                     if (data.error) {
-                        return actions.reject(data.errors.METHOD_UNAVAILABLE);
+                        return actions && typeof actions.reject === 'function' ? actions.reject(data.errors.METHOD_UNAVAILABLE) : Promise.reject(data.errors?.METHOD_UNAVAILABLE);
                     }
-                    return actions.resolve();
+                    return actions && typeof actions.resolve === 'function' ? actions.resolve() : Promise.resolve();
                 },
                 error: function (jqXHR, textStatus, errorThrown) {
-                    return actions.reject(data.errors.METHOD_UNAVAILABLE);
+                    return actions && typeof actions.reject === 'function' ? actions.reject(data.errors.METHOD_UNAVAILABLE) : Promise.reject(data.errors?.METHOD_UNAVAILABLE);
                 }
             });
         } else {
-            return actions.resolve();
+            return actions && typeof actions.resolve === 'function' ? actions.resolve() : Promise.resolve();
         }
     }
 

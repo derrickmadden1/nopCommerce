@@ -1,4 +1,4 @@
-﻿using FluentMigrator;
+using FluentMigrator;
 using Nop.Data;
 using Nop.Data.Migrations;
 using Nop.Plugin.Misc.Zettle.Domain;
@@ -17,6 +17,9 @@ public class InventoryBalanceMigration : MigrationBase
     public override void Up()
     {
         if (!DataSettingsManager.IsDatabaseInstalled())
+            return;
+
+        if (!Schema.Table(nameof(ZettleRecord)).Exists())
             return;
 
         //add column

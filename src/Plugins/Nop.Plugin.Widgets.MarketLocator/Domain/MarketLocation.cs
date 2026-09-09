@@ -43,6 +43,9 @@ public class MarketLocation : BaseEntity
     /// <summary>Controls sidebar sort order.</summary>
     public int DisplayOrder { get; set; }
     
+    /// <summary>The ID of the picture representing the market.</summary>
+    public int PictureId { get; set; }
+
     /// <summary>A short description for social media posts and map popups.</summary>
     public string Description { get; set; } = string.Empty;
 

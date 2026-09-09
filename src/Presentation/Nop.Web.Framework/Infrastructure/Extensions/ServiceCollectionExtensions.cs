@@ -116,23 +116,70 @@ public static class ServiceCollectionExtensions
         //create engine and configure service provider
         var engine = EngineContext.Create();
 
-        builder.Services.AddRateLimiter(options =>
+        var commonConfig = Singleton<AppSettings>.Instance.Get<CommonConfig>();
+
+        //add rate limiting if enabled and configured correctly
+        if (commonConfig.PermitLimit > 0)
         {
-            var settings = Singleton<AppSettings>.Instance.Get<CommonConfig>();
+            builder.Services.AddRateLimiter(options =>
+            {
+                options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
+                    RateLimitPartition.GetFixedWindowLimiter(
+                        partitionKey: httpContext.User.Identity?.Name ?? httpContext.Request.Headers.Host.ToString(),
+                        factory: partition => new FixedWindowRateLimiterOptions
+                        {
+                            AutoReplenishment = true,
+                            PermitLimit = commonConfig.PermitLimit,
+                            QueueLimit = commonConfig.QueueCount,
+                            Window = TimeSpan.FromMinutes(1)
+                        }));
 
-            options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
-                RateLimitPartition.GetFixedWindowLimiter(
-                    partitionKey: httpContext.User.Identity?.Name ?? httpContext.Request.Headers.Host.ToString(),
-                    factory: partition => new FixedWindowRateLimiterOptions
-                    {
-                        AutoReplenishment = true,
-                        PermitLimit = settings.PermitLimit,
-                        QueueLimit = settings.QueueCount,
-                        Window = TimeSpan.FromMinutes(1)
-                    }));
+            options.RejectionStatusCode = commonConfig.RejectionStatusCode;
 
-            options.RejectionStatusCode = settings.RejectionStatusCode;
-        });
+            options.OnRejected = async (context, token) =>
+            {
+                context.HttpContext.Response.StatusCode = commonConfig.RejectionStatusCode;
+
+                var isAjax = context.HttpContext.Request.Headers.XRequestedWith == "XMLHttpRequest" ||
+                             context.HttpContext.Request.Headers.Accept.ToString().Contains("application/json");
+
+                if (isAjax)
+                {
+                    context.HttpContext.Response.ContentType = "application/json";
+                    await context.HttpContext.Response.WriteAsync("{\"success\":false,\"error\":\"Rate limit exceeded. Please wait a moment and try again.\"}", token);
+                }
+                else
+                {
+                    context.HttpContext.Response.ContentType = "text/html";
+                    await context.HttpContext.Response.WriteAsync($$"""
+                        <!DOCTYPE html>
+                        <html lang="en">
+                        <head>
+                            <meta charset="utf-8" />
+                            <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+                            <title>Too Many Requests</title>
+                            <style>
+                                body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; background-color: #f8f9fa; color: #343a40; text-align: center; padding: 15% 5%; margin: 0; }
+                                .container { max-width: 500px; margin: 0 auto; background: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+                                h1 { color: #dc3545; font-size: 24px; margin-bottom: 20px; }
+                                p { font-size: 16px; line-height: 1.5; color: #6c757d; margin-bottom: 30px; }
+                                .btn { display: inline-block; background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 4px; font-weight: 500; font-size: 14px; }
+                                .btn:hover { background-color: #0069d9; }
+                            </style>
+                        </head>
+                        <body>
+                            <div class="container">
+                                <h1>Too Many Requests</h1>
+                                <p>We received too many requests from your connection. Please wait a moment and try again.</p>
+                                <a href="javascript:location.reload()" class="btn">Refresh Page</a>
+                            </div>
+                        </body>
+                        </html>
+                        """, token);
+                    }
+                };
+            });
+        }
 
         engine.ConfigureServices(services, builder.Configuration);
     }

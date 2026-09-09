@@ -272,18 +272,17 @@ namespace Nop.Plugin.Misc.UniversalCommerce.Tests
         public void GetManifest_ReturnsManifest_WhenEnabled()
         {
             _ucpSettings.Enabled = true;
-            _ucpSettings.ProtocolVersion = "1.0";
-            _ucpSettings.AllowAutonomousCheckout = true;
 
             var result = _controller.GetManifest() as JsonResult;
 
             Assert.NotNull(result);
-            dynamic data = result!.Value!;
-            Assert.Equal("1.0", (string)data.GetType().GetProperty("ucp_version")!.GetValue(data, null)!);
-            
-            var capabilities = data.GetType().GetProperty("capabilities")!.GetValue(data, null)!;
-            Assert.True((bool)capabilities.GetType().GetProperty("agent_checkout")!.GetValue(capabilities, null)!);
-            
+            var manifest = Assert.IsType<Dictionary<string, object>>(result!.Value);
+            Assert.True(manifest.ContainsKey("ucp"));
+
+            var ucp = Assert.IsType<Dictionary<string, object>>(manifest["ucp"]);
+            Assert.Equal("2026-04-08", ucp["version"]);
+            Assert.True(ucp.ContainsKey("capabilities"));
+
             Assert.Equal("*", _controller.Response.Headers["Access-Control-Allow-Origin"]);
             Assert.Equal("public, max-age=86400", _controller.Response.Headers["Cache-Control"]);
         }

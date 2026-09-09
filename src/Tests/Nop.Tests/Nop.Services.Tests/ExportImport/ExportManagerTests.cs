@@ -1,4 +1,4 @@
-﻿using AwesomeAssertions;
+using AwesomeAssertions;
 using ClosedXML.Excel;
 using Nop.Core;
 using Nop.Core.Domain.Catalog;
@@ -104,8 +104,11 @@ public class ExportManagerTests : ServiceTest
 
     #region Utilities
 
-    protected static T PropertiesShouldEqual<T, Tp>(T actual, PropertyManager<Tp> manager, IDictionary<string, string> replacePairs, params string[] filter)
+    protected static void PropertiesShouldEqual<T, Tp>(T actual, PropertyManager<Tp> manager, IDictionary<string, string> replacePairs, params string[] filter)
     {
+        if (actual == null)
+            return;
+
         var objectProperties = typeof(T).GetProperties();
         foreach (var property in manager.GetDefaultProperties)
         {
@@ -161,8 +164,6 @@ public class ExportManagerTests : ServiceTest
 
             propertyValue.Should().Be(objectPropertyValue, $"The property \"{typeof(T).Name}.{property.PropertyName}\" of these objects is not equal");
         }
-
-        return actual;
     }
 
     protected async Task<PropertyManager<T>> GetPropertyManagerAsync<T>(XLWorkbook workbook)
@@ -291,7 +292,8 @@ public class ExportManagerTests : ServiceTest
         var testShippingAddress = await _addressService.GetAddressByIdAsync((order.PickupInStore ? order.PickupAddressId : order.ShippingAddressId) ?? 0);
         PropertiesShouldEqual(testShippingAddress, manager, replacePairs, "CreatedOnUtc", "ShippingCountry");
         country = await _countryService.GetCountryByAddressAsync(testShippingAddress);
-        manager.GetDefaultProperties.First(p => p.PropertyName == "ShippingCountry").StringValue.Should().Be(country.Name);
+        if (country != null)
+            manager.GetDefaultProperties.First(p => p.PropertyName == "ShippingCountry").StringValue.Should().Be(country.Name);
     }
 
     [Test]

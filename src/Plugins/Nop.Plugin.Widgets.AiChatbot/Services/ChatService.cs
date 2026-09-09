@@ -1,0 +1,420 @@
+using System.Text.Json;
+using Azure;
+using Azure.AI.OpenAI;
+using Azure.Identity;
+using Azure.Security.KeyVault.Secrets;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Nop.Plugin.Widgets.AiChatbot.Models;
+using Nop.Plugin.Widgets.MarketLocator.Services;
+
+namespace Nop.Plugin.Widgets.AiChatbot.Services;
+
+public class ChatService
+{
+    private readonly AiChatbotSettings _settings;
+    private readonly CustomerContextService _customerContextService;
+    private readonly ProductSearchService _productSearchService;
+    private readonly IMarketLocationService? _marketLocationService;
+    private readonly ILogger<ChatService> _logger;
+    private readonly Nop.Services.Logging.ILogger? _nopLogger;
+
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+    };
+
+    public ChatService(
+        AiChatbotSettings settings,
+        CustomerContextService customerContextService,
+        ProductSearchService productSearchService,
+        IServiceProvider serviceProvider,
+        ILogger<ChatService> logger)
+    {
+        _settings = settings;
+        _customerContextService = customerContextService;
+        _productSearchService = productSearchService;
+        _marketLocationService = serviceProvider.GetService<IMarketLocationService>();
+        _nopLogger = serviceProvider.GetService<Nop.Services.Logging.ILogger>();
+        _logger = logger;
+    }
+
+    public async Task<ChatResponse> GetResponseAsync(ChatRequest request)
+    {
+        // Programmatic Guardrail: Pre-filter query for prompt injections and jailbreak keywords
+        var jailbreakKeywords = new[] { "ignore previous", "system prompt", "developer mode", "jailbreak", "dan mode" };
+        if (jailbreakKeywords.Any(k => request.Message.Contains(k, StringComparison.OrdinalIgnoreCase)))
+        {
+            return new ChatResponse
+            {
+                Response = "I can only assist you with store-related enquiries, orders, and products.",
+                Success = true
+            };
+        }
+
+        if (string.IsNullOrWhiteSpace(_settings.AzureOpenAIEndpoint))
+        {
+            const string msg = "AI Chatbot Error: Azure OpenAI Endpoint is not configured in Admin settings.";
+            if (_nopLogger != null) await _nopLogger.ErrorAsync(msg);
+            return new ChatResponse { Success = false, Error = msg };
+        }
+
+        try
+        {
+            var apiKey = _settings.AzureOpenAIApiKey;
+            if (_settings.UseAzureKeyVault)
+            {
+                var secretClient = new SecretClient(new Uri(_settings.AzureKeyVaultUrl), new DefaultAzureCredential());
+                var secretResponse = await secretClient.GetSecretAsync(_settings.AzureKeyVaultSecretName);
+                apiKey = secretResponse.Value.Value;
+            }
+
+            var client = new OpenAIClient(
+                new Uri(_settings.AzureOpenAIEndpoint),
+                new AzureKeyCredential(apiKey)
+            );
+
+            // Build context in parallel with fault tolerance
+            var customerContextTask = SafeGetCustomerContextAsync();
+            var relevantProductsTask = SafeSearchProductsAsync(request.Message);
+            var marketsTask = SafeGetMarketsAsync();
+
+            await Task.WhenAll(customerContextTask, relevantProductsTask, marketsTask);
+
+            var customerContext = customerContextTask.Result;
+            var relevantProductsList = relevantProductsTask.Result;
+            var relevantProducts = ProductSearchService.FormatForPrompt(relevantProductsList);
+            var marketsList = marketsTask.Result;
+
+            var systemPrompt = BuildSystemPrompt(customerContext, relevantProducts, marketsList);
+
+            // Build messages — system prompt + capped history + new message
+            var messages = new List<ChatRequestMessage>
+            {
+                new ChatRequestSystemMessage(systemPrompt)
+            };
+
+            // Cap history to avoid exceeding context window
+            var cappedHistory = request.History
+                .TakeLast(_settings.MaxConversationTurns * 2)
+                .ToList();
+
+            foreach (var turn in cappedHistory)
+            {
+                if (turn.Role == "user")
+                    messages.Add(new ChatRequestUserMessage(turn.Content));
+                else if (turn.Role == "assistant")
+                    messages.Add(new ChatRequestAssistantMessage(turn.Content));
+            }
+
+            messages.Add(new ChatRequestUserMessage(request.Message));
+
+            var options = new ChatCompletionsOptions
+            {
+                DeploymentName = _settings.DeploymentName,
+                ResponseFormat = ChatCompletionsResponseFormat.JsonObject
+            };
+
+            if (_settings.MaxTokens.HasValue)
+                options.MaxTokens = _settings.MaxTokens.Value;
+
+            if (_settings.Temperature.HasValue)
+                options.Temperature = _settings.Temperature.Value;
+
+            foreach (var message in messages)
+                options.Messages.Add(message);
+
+            Azure.Response<ChatCompletions> response;
+            try
+            {
+                response = await client.GetChatCompletionsAsync(options);
+            }
+            catch (RequestFailedException ex) when (options.Temperature.HasValue && ex.Message.Contains("temperature", StringComparison.OrdinalIgnoreCase))
+            {
+                _logger.LogWarning(ex, "Temperature setting {Temp} is unsupported by deployment '{Deployment}'. Retrying with default model temperature.", options.Temperature, _settings.DeploymentName);
+                options.Temperature = null;
+                response = await client.GetChatCompletionsAsync(options);
+            }
+
+            var reply = response.Value.Choices[0].Message.Content;
+
+            return ParseStructuredResponse(reply);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Chat completion failed for message: {Message}", request.Message);
+            if (_nopLogger != null)
+            {
+                await _nopLogger.ErrorAsync($"AI Chatbot error processing message '{request.Message}': {ex.Message}", ex);
+            }
+
+            return new ChatResponse
+            {
+                Success = false,
+                Error = "Sorry, I'm having trouble responding right now. Please try again in a moment."
+            };
+        }
+    }
+
+    private async Task<CustomerContext> SafeGetCustomerContextAsync()
+    {
+        try
+        {
+            return await _customerContextService.GetCurrentCustomerContextAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to load customer context for chatbot");
+            return new CustomerContext();
+        }
+    }
+
+    private async Task<List<ProductSearchResult>> SafeSearchProductsAsync(string query)
+    {
+        try
+        {
+            return await _productSearchService.SearchAsync(query);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to perform product search for chatbot query: {Query}", query);
+            return new List<ProductSearchResult>();
+        }
+    }
+
+    private async Task<IList<MarketLocationDto>> SafeGetMarketsAsync()
+    {
+        try
+        {
+            if (_marketLocationService == null)
+                return new List<MarketLocationDto>();
+
+            return await _marketLocationService.GetPublishedDtosAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to load published market locations for chatbot");
+            return new List<MarketLocationDto>();
+        }
+    }
+
+    private ChatResponse ParseStructuredResponse(string content)
+    {
+        try
+        {
+            // Strip markdown fences if present
+            var cleaned = content
+                .Replace("```json", "")
+                .Replace("```", "")
+                .Trim();
+
+            var structured = JsonSerializer.Deserialize<AiStructuredResponse>(cleaned, JsonOptions);
+
+            if (structured == null)
+                return new ChatResponse { Response = content, Success = true };
+
+            var chatResponse = new ChatResponse
+            {
+                Response = structured.Message,
+                Success = true
+            };
+
+            var actionsList = new List<ChatAction>();
+
+            if (structured.Actions != null && structured.Actions.Any())
+            {
+                foreach (var act in structured.Actions)
+                {
+                    actionsList.Add(new ChatAction
+                    {
+                        Type = act.Type,
+                        Url = act.Url,
+                        ProductId = act.ProductId,
+                        Quantity = act.Quantity > 0 ? act.Quantity : 1,
+                        Label = act.Label
+                    });
+                }
+            }
+
+            if (structured.Action != null && !actionsList.Any(a => a.ProductId == structured.Action.ProductId && a.Type == structured.Action.Type))
+            {
+                actionsList.Add(new ChatAction
+                {
+                    Type = structured.Action.Type,
+                    Url = structured.Action.Url,
+                    ProductId = structured.Action.ProductId,
+                    Quantity = structured.Action.Quantity > 0 ? structured.Action.Quantity : 1,
+                    Label = structured.Action.Label
+                });
+            }
+
+            chatResponse.Actions = actionsList;
+            chatResponse.Action = actionsList.FirstOrDefault();
+
+            return chatResponse;
+        }
+        catch
+        {
+            // If JSON parsing fails, treat the whole response as plain text
+            // This handles cases where the AI doesn't return JSON
+            return new ChatResponse { Response = content, Success = true };
+        }
+    }
+
+    private string BuildSystemPrompt(CustomerContext customer, string relevantProducts, IList<MarketLocationDto> markets)
+    {
+        var sb = new System.Text.StringBuilder();
+
+        sb.AppendLine($$"""
+            You are {{_settings.BotName}}, a helpful and friendly shopping assistant for {{_settings.StoreName}}.
+            You help customers with order status, product questions, and store policies.
+            
+            CRITICAL: You are strictly limited to store operations and informational assistance. Do not write code, tell stories, answer general-knowledge questions, or perform tasks unrelated to {{_settings.StoreName}}. If the customer's query is off-topic, politely decline and redirect them back to store products, policies, or order status. You cannot programmatically modify past orders or process payments. If a customer asks to add items to the basket or go to checkout, you can trigger these actions by returning the structured action JSON. Make sure to describe the action in your message response.
+            Only recommend or discuss products that are listed in the 'Products relevant to their query' section below, or have already been mentioned in the conversation history. If a product is not listed and has not been mentioned, explain that you don't carry that item.
+            
+            Always be warm, concise, and use British English spelling.
+            Never make up information — if you don't know something, say so and offer to help another way. Never promise to contact the workshop, human staff, or follow up with the customer later (as you do not have the ability to send emails or create support tickets). If you don't know the answer, advise them to use the 'Contact Us' page or contact support directly.
+            Keep responses short and conversational — 2-3 sentences where possible.
+            Use plain text only — no markdown, no bullet points, no bold text.
+            IMPORTANT: You must ALWAYS respond with a valid JSON object in this exact format:
+            {
+              "message": "Your friendly response here",
+              "action": null,
+              "actions": []
+            }
+
+            Or if an action or multiple actions are needed:
+            {
+              "message": "Your friendly response here",
+              "actions": [
+                {
+                  "type": "addToCart",
+                  "productId": 42,
+                  "quantity": 1,
+                  "label": "Product Name"
+                },
+                {
+                  "type": "addToCart",
+                  "productId": 88,
+                  "quantity": 1,
+                  "label": "Second Product Name"
+                }
+              ]
+            }
+
+            Available action types:
+            - addToCart: { "type": "addToCart", "productId": 123, "quantity": 1, "label": "Product name" }
+            - navigate: { "type": "navigate", "url": "/checkout", "label": "checkout" }
+            - viewCart: { "type": "navigate", "url": "/cart", "label": "cart" }
+
+            Navigation URLs:
+            - Cart: /cart
+            - Checkout: /checkout
+            - Search results: /search?q=QUERY (url-encode the query)
+            - Product page: /PRODUCT-SENAME (use the product's URL if known)
+
+            Rules:
+            - For questions about product ingredients, benefits, or common wellness uses (e.g., magnesium for cramps or muscle tension, lavender for sleep, oatmeal for dry skin), provide helpful, balanced general wellness information and common customer experiences, while gently noting that customers should check with a GP for persistent health concerns. Do not decline or claim you lack information simply because a question asks about general ingredient benefits.
+            - For market questions (e.g., "When is your next market?", "When are you next in Thurso?"):
+              * Check the 'Today's Date' and the 'Upcoming Markets & Event Locations' listed below.
+              * If asked about a specific town or city (e.g. Thurso, Lairg, Wick, etc.), filter by that town/city name and provide the upcoming dates, operating hours, and address for that market.
+              * If asked for the next market, identify the earliest upcoming market date relative to today's date and report the market name, town/city, date, and hours.
+              * Always inform customers asking about markets, delivery, or pickup options that they can select 'Market Pickup' during checkout (at the shipping step) to collect their order in person at any upcoming market for free without paying shipping fees!
+              * When mentioning a specific market, link directly to its specific URL: /market-locations?id=ID (or /market-locations for all markets).
+              * CRITICAL: Do NOT return an automatic navigate action for general informational market questions. Only return a navigate action if the user explicitly asks to be taken to the page (e.g. "take me to the map" or "open the market page").
+            - If the customer asks to add one or MULTIPLE items to their basket, include an addToCart action for EACH requested item in the "actions" array so all requested items are added to their basket at once in a single turn! State in your message response that you have added all requested items (e.g. "Done — I've added Slainte Mhath candle and Rosemary & Nettle shampoo bar to your basket.").
+            - Only trigger navigation if the customer explicitly asks to go somewhere. Since this action is executed automatically in the background, write your message stating that you are redirecting them (e.g., "Sure, I'm opening your cart/checkout for you now.").
+            - The shopping cart context is always the exact, real-time, up-to-date state of the user's basket (which already reflects all items added in previous turns). Do not perform manual calculations, additions, or adjustments to the basket total or items. Always trust and report the exact items and total value provided in the current context.
+            - For product pages use /search?q=PRODUCTNAME if you don't know the exact URL
+            - Keep the message short — 1-3 sentences
+            - Do not include markdown in the message field
+            - Do not output any text outside the JSON object
+            """);
+
+        // Customer context
+        if (customer.IsLoggedIn && customer.FirstName != null)
+        {
+            sb.AppendLine($"\nThe customer's name is {customer.FirstName}.");
+
+            if (customer.RecentOrders.Any())
+            {
+                sb.AppendLine("\nTheir recent orders:");
+                foreach (var order in customer.RecentOrders)
+                {
+                    sb.AppendLine($"- Order {order.OrderNumber} placed on {order.OrderDate:d MMM yyyy}: " +
+                                  $"{string.Join(", ", order.Products)} — " +
+                                  $"Status: {order.Status} — Total: £{order.OrderTotal:F2}" +
+                                  (order.TrackingNumber != null ? $" — Tracking: {order.TrackingNumber}" : ""));
+                }
+            }
+            else
+            {
+                sb.AppendLine("\nThis customer has no previous orders.");
+            }
+        }
+        else
+        {
+            sb.AppendLine("\nThe customer is not logged in. You do not have access to their order history.");
+            sb.AppendLine("If they ask about an order, politely ask them to log in for order details.");
+        }
+
+        // Shopping cart context
+        if (customer.Cart != null && customer.Cart.Items.Any())
+        {
+            sb.AppendLine("\nThe customer's current shopping cart contains:");
+            foreach (var item in customer.Cart.Items)
+            {
+                sb.AppendLine($"- {item.ProductName} (Qty: {item.Quantity}) — Unit Price: £{item.UnitPrice:F2} — Subtotal: £{item.SubTotal:F2}");
+            }
+            sb.AppendLine($"Total Basket Value: £{customer.Cart.Total:F2}");
+        }
+        else
+        {
+            sb.AppendLine("\nThe customer's shopping cart is currently empty.");
+        }
+
+        // Upcoming Markets & Event Locations
+        if (markets != null && markets.Any())
+        {
+            sb.AppendLine(FormatMarketLocationsForPrompt(markets));
+        }
+
+        // Relevant products from search
+        if (!string.IsNullOrWhiteSpace(relevantProducts))
+        {
+            sb.AppendLine($"\nProducts relevant to their query:");
+            sb.AppendLine(relevantProducts);
+        }
+
+        // Store policies
+        if (!string.IsNullOrWhiteSpace(_settings.ReturnsPolicy))
+        {
+            sb.AppendLine($"\nReturns policy:\n{_settings.ReturnsPolicy}");
+        }
+
+        if (!string.IsNullOrWhiteSpace(_settings.ShippingPolicy))
+        {
+            sb.AppendLine($"\nShipping policy:\n{_settings.ShippingPolicy}");
+        }
+
+        return sb.ToString();
+    }
+
+    private string FormatMarketLocationsForPrompt(IList<MarketLocationDto> markets)
+    {
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine($"\nToday's Date: {DateTime.UtcNow:dddd, d MMMM yyyy}");
+        sb.AppendLine("Upcoming Markets & Event Locations:");
+
+        foreach (var m in markets)
+        {
+            var datesText = m.Dates != null && m.Dates.Any()
+                ? string.Join(", ", m.Dates)
+                : "Dates vary — see market locator page";
+
+            sb.AppendLine($"- ID: {m.Id} — {m.Name} ({m.City}) — Address: {m.Address} — Operating Hours: {m.Hours} — Upcoming Dates: {datesText} — Market URL: /market-locations?id={m.Id}");
+        }
+
+        return sb.ToString();
+    }
+}

@@ -22,6 +22,9 @@ public class AddUseShortDescriptionMigration : MigrationBase
 
         var tableName = NameCompatibilityManager.GetTableName(typeof(GoogleProductRecord));
 
+        if (!Schema.Table(tableName).Exists())
+            return;
+
         // add UseShortDescription column if not exists
         if (!Schema.Table(tableName).Column(nameof(GoogleProductRecord.UseShortDescription)).Exists())
         {

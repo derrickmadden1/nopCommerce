@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Nop.Plugin.Marketing.WinbackEmail.Models;
 using Nop.Plugin.Marketing.WinbackEmail.Services;
 using Nop.Services.Configuration;
@@ -36,15 +36,20 @@ public class WinbackEmailController : BasePluginController
         var model = new ConfigurationModel
         {
             Enabled = _settings.Enabled,
+            DryRun = _settings.DryRun,
             StoreName = _settings.StoreName,
             AzureOpenAIEndpoint = _settings.AzureOpenAIEndpoint,
             AzureOpenAIApiKey = _settings.AzureOpenAIApiKey,
             DeploymentName = _settings.DeploymentName,
+            UseAzureKeyVault = _settings.UseAzureKeyVault,
+            AzureKeyVaultUrl = _settings.AzureKeyVaultUrl,
+            AzureKeyVaultSecretName = _settings.AzureKeyVaultSecretName,
             FromEmail = _settings.FromEmail,
             FromName = _settings.FromName,
             Email1DaysLapsed = _settings.Email1DaysLapsed,
-            Email2DaysLapsed = _settings.Email2DaysLapsed,
-            Email3DaysLapsed = _settings.Email3DaysLapsed,
+            DaysBetweenEmail1And2 = _settings.DaysBetweenEmail1And2,
+            DaysBetweenEmail2And3 = _settings.DaysBetweenEmail2And3,
+            MaxDaysLapsed = _settings.MaxDaysLapsed,
             Email3DiscountCode = _settings.Email3DiscountCode
         };
 
@@ -58,16 +63,21 @@ public class WinbackEmailController : BasePluginController
             return View("~/Plugins/Marketing.WinbackEmail/Views/Configure.cshtml", model);
 
         _settings.Enabled = model.Enabled;
-        _settings.StoreName = model.StoreName;
-        _settings.AzureOpenAIEndpoint = model.AzureOpenAIEndpoint.Trim();
-        _settings.AzureOpenAIApiKey = model.AzureOpenAIApiKey.Trim();
-        _settings.DeploymentName = model.DeploymentName.Trim();
-        _settings.FromEmail = model.FromEmail.Trim();
-        _settings.FromName = model.FromName.Trim();
+        _settings.DryRun = model.DryRun;
+        _settings.StoreName = model.StoreName ?? string.Empty;
+        _settings.AzureOpenAIEndpoint = model.AzureOpenAIEndpoint?.Trim() ?? string.Empty;
+        _settings.AzureOpenAIApiKey = model.AzureOpenAIApiKey?.Trim() ?? string.Empty;
+        _settings.DeploymentName = model.DeploymentName?.Trim() ?? string.Empty;
+        _settings.UseAzureKeyVault = model.UseAzureKeyVault;
+        _settings.AzureKeyVaultUrl = model.AzureKeyVaultUrl?.Trim() ?? string.Empty;
+        _settings.AzureKeyVaultSecretName = model.AzureKeyVaultSecretName?.Trim() ?? string.Empty;
+        _settings.FromEmail = model.FromEmail?.Trim() ?? string.Empty;
+        _settings.FromName = model.FromName?.Trim() ?? string.Empty;
         _settings.Email1DaysLapsed = model.Email1DaysLapsed;
-        _settings.Email2DaysLapsed = model.Email2DaysLapsed;
-        _settings.Email3DaysLapsed = model.Email3DaysLapsed;
-        _settings.Email3DiscountCode = model.Email3DiscountCode.Trim();
+        _settings.DaysBetweenEmail1And2 = model.DaysBetweenEmail1And2;
+        _settings.DaysBetweenEmail2And3 = model.DaysBetweenEmail2And3;
+        _settings.MaxDaysLapsed = model.MaxDaysLapsed;
+        _settings.Email3DiscountCode = model.Email3DiscountCode?.Trim() ?? string.Empty;
 
         await _settingService.SaveSettingAsync(_settings);
         _notificationService.SuccessNotification("Winback email settings saved.");
@@ -84,5 +94,11 @@ public class WinbackEmailController : BasePluginController
         await _winbackEmailService.ProcessWinbacksAsync();
         _notificationService.SuccessNotification("Winback task executed — check the email queue for results.");
         return RedirectToAction("Configure");
+    }
+
+    public async Task<IActionResult> Upcoming()
+    {
+        var upcomingEmails = await _winbackEmailService.GetUpcomingEmailsAsync();
+        return View("~/Plugins/Marketing.WinbackEmail/Views/Upcoming.cshtml", upcomingEmails);
     }
 }

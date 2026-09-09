@@ -7,10 +7,11 @@ using Nop.Services.Localization;
 using Nop.Services.Plugins;
 using Nop.Services.ScheduleTasks;
 using System.Collections.Generic;
+using Nop.Services.Common;
 
 namespace Nop.Plugin.Marketing.WinbackEmail;
 
-public class WinbackEmailPlugin : BasePlugin
+public class WinbackEmailPlugin : BasePlugin, IMiscPlugin
 {
     private readonly ISettingService _settingService;
     private readonly IScheduleTaskService _scheduleTaskService;
@@ -39,8 +40,9 @@ public class WinbackEmailPlugin : BasePlugin
             Enabled = false,
             DeploymentName = "gpt-4o-mini",
             Email1DaysLapsed = 60,
-            Email2DaysLapsed = 67,
-            Email3DaysLapsed = 74
+            DaysBetweenEmail1And2 = 7,
+            DaysBetweenEmail2And3 = 7,
+            MaxDaysLapsed = 365
         });
 
         // Register the nightly scheduled task
@@ -69,8 +71,9 @@ public class WinbackEmailPlugin : BasePlugin
             ["Plugins.Marketing.WinbackEmail.FromEmail"] = "From Email Address",
             ["Plugins.Marketing.WinbackEmail.FromName"] = "From Name",
             ["Plugins.Marketing.WinbackEmail.Email1DaysLapsed"] = "Days lapsed for Email 1",
-            ["Plugins.Marketing.WinbackEmail.Email2DaysLapsed"] = "Days lapsed for Email 2",
-            ["Plugins.Marketing.WinbackEmail.Email3DaysLapsed"] = "Days lapsed for Email 3",
+            ["Plugins.Marketing.WinbackEmail.DaysBetweenEmail1And2"] = "Days to wait before Email 2",
+            ["Plugins.Marketing.WinbackEmail.DaysBetweenEmail2And3"] = "Days to wait before Email 3",
+            ["Plugins.Marketing.WinbackEmail.MaxDaysLapsed"] = "Maximum days lapsed to consider",
             ["Plugins.Marketing.WinbackEmail.Email3DiscountCode"] = "Discount Code for Email 3"
         });
 

@@ -1,0 +1,1072 @@
+@model Nop.Plugin.Widgets.AiChatbot.AiChatbotSettings
+
+<style>
+    :root {
+        --chat-colour: @Model.BubbleColour;
+    }
+
+    /* Ensure flyout cart drawer & overlay stay above chatbot */
+    body #mini-cart-panel,
+    body .mini-cart-panel {
+        z-index: 999999 !important;
+    }
+    body #mini-cart-overlay,
+    body .mini-cart-overlay {
+        z-index: 999998 !important;
+    }
+
+    /* Hide chatbot on all checkout pages */
+    html.html-checkout-page #ai-chat-bubble,
+    .html-checkout-page #ai-chat-bubble,
+    .checkout-page #ai-chat-bubble {
+        display: none !important;
+    }
+
+    #ai-chat-bubble {
+        position: fixed;
+        bottom: 24px;
+        right: 24px;
+        z-index: 500000;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        font-size: 14px;
+    }
+
+    /* ── Toggle Button ──────────────────────────────────────────────────────── */
+    #ai-chat-toggle {
+        position: relative;
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--chat-colour), var(--chat-colour));
+        border: none;
+        cursor: pointer;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.22);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: auto;
+        transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.25s ease;
+        outline: none;
+    }
+
+    #ai-chat-toggle:hover {
+        transform: scale(1.08);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+    }
+
+    #ai-chat-toggle:active {
+        transform: scale(0.95);
+    }
+
+    #ai-chat-toggle svg {
+        fill: white;
+        width: 26px;
+        height: 26px;
+        transition: transform 0.3s ease;
+    }
+
+    #ai-chat-toggle.active svg {
+        transform: rotate(90deg) scale(0.85);
+    }
+
+    /* Pulse Ripple Effect */
+    @if (Model.EnablePulseEffect)
+    {
+        <text>
+        #ai-chat-toggle.has-pulse::after {
+            content: '';
+            position: absolute;
+            top: -4px;
+            left: -4px;
+            right: -4px;
+            bottom: -4px;
+            border-radius: 50%;
+            border: 2.5px solid var(--chat-colour);
+            z-index: -1;
+            animation: ai-chat-pulse-wave 2.4s infinite cubic-bezier(0.215, 0.61, 0.355, 1);
+            pointer-events: none;
+        }
+
+        #ai-chat-toggle.has-pulse::before {
+            content: '';
+            position: absolute;
+            top: -4px;
+            left: -4px;
+            right: -4px;
+            bottom: -4px;
+            border-radius: 50%;
+            border: 2.5px solid var(--chat-colour);
+            z-index: -1;
+            animation: ai-chat-pulse-wave 2.4s infinite cubic-bezier(0.215, 0.61, 0.355, 1);
+            animation-delay: 1.2s;
+            pointer-events: none;
+        }
+        </text>
+    }
+
+    @@keyframes ai-chat-pulse-wave {
+        0% { transform: scale(0.95); opacity: 0.85; }
+        50% { transform: scale(1.35); opacity: 0.4; }
+        100% { transform: scale(1.7); opacity: 0; }
+    }
+
+    /* Page Load Wiggle Animation */
+    .ai-chat-wiggle {
+        animation: ai-chat-attention-wiggle 1.2s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+    }
+
+    @@keyframes ai-chat-attention-wiggle {
+        0%, 100% { transform: scale(1) rotate(0deg); }
+        15% { transform: scale(1.12) rotate(-10deg); }
+        30% { transform: scale(1.12) rotate(10deg); }
+        45% { transform: scale(1.1) rotate(-6deg); }
+        60% { transform: scale(1.05) rotate(6deg); }
+        75% { transform: scale(1.02) rotate(-2deg); }
+    }
+
+    /* Notification Badge / Sparkle Dot */
+    .ai-chat-badge {
+        position: absolute;
+        top: 2px;
+        right: 2px;
+        width: 14px;
+        height: 14px;
+        background: #22c55e;
+        border: 2.5px solid #ffffff;
+        border-radius: 50%;
+        box-shadow: 0 0 0 1px rgba(0,0,0,0.1);
+    }
+
+    /* ── Proactive Teaser Speech Bubble ──────────────────────────────────────── */
+    #ai-chat-teaser {
+        position: absolute;
+        bottom: 74px;
+        right: 0;
+        background: #ffffff;
+        color: #1f2937;
+        padding: 10px 14px 10px 16px;
+        border-radius: 14px;
+        box-shadow: 0 10px 25px -5px rgba(0,0,0,0.18), 0 8px 10px -6px rgba(0,0,0,0.1);
+        border: 1px solid #e5e7eb;
+        font-size: 13.5px;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        white-space: nowrap;
+        max-width: 280px;
+        cursor: pointer;
+        opacity: 0;
+        transform: translateY(10px) scale(0.95);
+        pointer-events: none;
+        transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        z-index: 499999;
+    }
+
+    #ai-chat-teaser.visible {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+        pointer-events: auto;
+    }
+
+    #ai-chat-teaser .ai-teaser-arrow {
+        position: absolute;
+        bottom: -6px;
+        right: 22px;
+        width: 12px;
+        height: 12px;
+        background: #ffffff;
+        border-right: 1px solid #e5e7eb;
+        border-bottom: 1px solid #e5e7eb;
+        transform: rotate(45deg);
+    }
+
+    #ai-teaser-text {
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    #ai-teaser-close {
+        background: none;
+        border: none;
+        color: #9ca3af;
+        cursor: pointer;
+        font-size: 16px;
+        line-height: 1;
+        padding: 2px 4px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: color 0.15s ease, background 0.15s ease;
+    }
+
+    #ai-teaser-close:hover {
+        color: #374151;
+        background: #f3f4f6;
+    }
+
+    /* ── Chat Panel Window ─────────────────────────────────────────────────── */
+    #ai-chat-panel {
+        display: flex;
+        position: absolute;
+        bottom: 74px;
+        right: 0;
+        width: 360px;
+        background: #ffffff;
+        border-radius: 20px;
+        box-shadow: 0 12px 40px rgba(0,0,0,0.18), 0 4px 12px rgba(0,0,0,0.08);
+        overflow: hidden;
+        flex-direction: column;
+        opacity: 0;
+        transform: scale(0.92) translateY(20px);
+        transform-origin: bottom right;
+        pointer-events: none;
+        visibility: hidden;
+        transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), 
+                    transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+                    visibility 0.25s;
+    }
+
+    #ai-chat-panel.open {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+        pointer-events: auto;
+        visibility: visible;
+    }
+
+    /* Header */
+    #ai-chat-header {
+        background: linear-gradient(135deg, var(--chat-colour), var(--chat-colour));
+        color: white;
+        padding: 14px 18px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-shrink: 0;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .ai-header-info {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .ai-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.22);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .ai-bot-name {
+        font-weight: 600;
+        font-size: 15px;
+        line-height: 1.2;
+    }
+
+    .ai-bot-status {
+        font-size: 11px;
+        opacity: 0.9;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        margin-top: 2px;
+    }
+
+    .ai-status-dot {
+        width: 7px;
+        height: 7px;
+        background: #4ade80;
+        border-radius: 50%;
+        display: inline-block;
+        box-shadow: 0 0 6px #4ade80;
+    }
+
+    #ai-chat-close {
+        background: rgba(255,255,255,0.15);
+        border: none;
+        color: white;
+        cursor: pointer;
+        font-size: 18px;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.2s ease;
+    }
+
+    #ai-chat-close:hover { background: rgba(255,255,255,0.3); }
+
+    /* Messages Container */
+    #ai-chat-messages {
+        padding: 16px;
+        height: 340px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        background: #f8fafc;
+    }
+
+    .ai-msg {
+        max-width: 84%;
+        padding: 10px 14px;
+        border-radius: 14px;
+        line-height: 1.48;
+        word-break: break-word;
+        font-size: 13.5px;
+    }
+
+    .ai-msg.bot {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        color: #1e293b;
+        align-self: flex-start;
+        border-bottom-left-radius: 4px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+
+    .ai-msg.user {
+        background: var(--chat-colour);
+        color: white;
+        align-self: flex-end;
+        border-bottom-right-radius: 4px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .ai-msg.typing {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        align-self: flex-start;
+        border-bottom-left-radius: 4px;
+        color: #94a3b8;
+        font-style: italic;
+    }
+
+    /* Quick Starter Chips */
+    .ai-starter-container {
+        margin-top: 8px;
+        margin-bottom: 4px;
+    }
+
+    .ai-starter-title {
+        font-size: 12px;
+        font-weight: 600;
+        color: #64748b;
+        margin-bottom: 8px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .ai-starter-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .ai-chip {
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-radius: 18px;
+        padding: 6px 12px;
+        font-size: 12.5px;
+        color: #334155;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-align: left;
+    }
+
+    .ai-chip:hover {
+        background: var(--chat-colour);
+        color: #ffffff;
+        border-color: var(--chat-colour);
+        transform: translateY(-1px);
+        box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+    }
+
+    /* Action button rendered in chat */
+    .ai-action-btn {
+        display: inline-block;
+        margin-top: 8px;
+        padding: 7px 16px;
+        background: var(--chat-colour);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 500;
+        text-decoration: none;
+        transition: opacity 0.2s ease;
+    }
+
+    .ai-action-btn:hover { opacity: 0.9; }
+
+    .ai-action-success {
+        font-size: 12px;
+        color: #16a34a;
+        margin-top: 6px;
+        display: none;
+    }
+
+    /* Inline chat links */
+    .ai-chat-link {
+        color: #2563eb !important;
+        font-weight: 600 !important;
+        text-decoration: underline !important;
+        word-break: break-word;
+        transition: color 0.15s ease;
+    }
+    .ai-chat-link:hover {
+        color: #1d4ed8 !important;
+        text-decoration: underline !important;
+    }
+
+    /* Input Area */
+    #ai-chat-input-row {
+        display: flex;
+        padding: 12px;
+        gap: 8px;
+        border-top: 1px solid #e2e8f0;
+        background: #ffffff;
+        flex-shrink: 0;
+    }
+
+    #ai-chat-input {
+        flex: 1;
+        border: 1px solid #cbd5e1;
+        border-radius: 10px;
+        padding: 9px 13px;
+        font-size: 13.5px;
+        outline: none;
+        resize: none;
+        height: 40px;
+        line-height: 1.4;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    #ai-chat-input:focus {
+        border-color: var(--chat-colour);
+        box-shadow: 0 0 0 3px rgba(74, 144, 217, 0.15);
+    }
+
+    #ai-chat-send {
+        background: var(--chat-colour);
+        border: none;
+        border-radius: 10px;
+        color: white;
+        cursor: pointer;
+        padding: 0 14px;
+        font-size: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: opacity 0.2s ease, transform 0.15s ease;
+    }
+
+    #ai-chat-send:hover { opacity: 0.9; transform: scale(1.04); }
+    #ai-chat-send:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+    @@media (max-width: 600px) {
+        #ai-chat-bubble {
+            bottom: 16px;
+            right: 16px;
+        }
+
+        #ai-chat-teaser {
+            max-width: 220px;
+            bottom: 70px;
+        }
+
+        #ai-chat-panel {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            width: 100%;
+            height: 100vh;
+            height: 100dvh;
+            bottom: 0;
+            right: 0;
+            border-radius: 0;
+            box-shadow: none;
+            box-sizing: border-box;
+        }
+
+        #ai-chat-messages {
+            flex: 1;
+            height: auto;
+            min-height: 0;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        #ai-chat-input {
+            font-size: 16px;
+        }
+
+        #ai-chat-panel.open ~ #ai-chat-toggle {
+            display: none;
+        }
+    }
+</style>
+
+<div id="ai-chat-bubble">
+    @if (Model.EnableTeaserBubble)
+    {
+        <div id="ai-chat-teaser" role="tooltip" aria-live="polite">
+            <span id="ai-teaser-text">@Model.TeaserText</span>
+            <button id="ai-teaser-close" aria-label="Dismiss speech bubble">&times;</button>
+            <div class="ai-teaser-arrow"></div>
+        </div>
+    }
+
+    <div id="ai-chat-panel" role="dialog" aria-label="Chat with @Model.BotName">
+        <div id="ai-chat-header">
+            <div class="ai-header-info">
+                <div class="ai-avatar">
+                    <svg viewBox="0 0 24 24" fill="white" width="18" height="18">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                    </svg>
+                </div>
+                <div>
+                    <div class="ai-bot-name">@Model.BotName</div>
+                    <div class="ai-bot-status"><span class="ai-status-dot"></span> Online</div>
+                </div>
+            </div>
+            <button id="ai-chat-close" aria-label="Close chat">&#x2715;</button>
+        </div>
+        <div id="ai-chat-messages" aria-live="polite"></div>
+        <div id="ai-chat-input-row">
+            <input id="ai-chat-input" type="text" placeholder="Ask me anything..."
+                   maxlength="500" autocomplete="off" aria-label="Chat message" />
+            <button id="ai-chat-send" aria-label="Send message">&#x27A4;</button>
+        </div>
+    </div>
+
+    <button id="ai-chat-toggle" class="@(Model.EnablePulseEffect ? "has-pulse" : "")" aria-label="Open chat">
+        <span class="ai-chat-badge"></span>
+        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/>
+        </svg>
+    </button>
+</div>
+
+<script>
+(function () {
+    const botName = '@Html.Raw(Model.BotName)';
+    const welcomeMessage = '@Html.Raw(Model.WelcomeMessage)';
+    const chatEndpoint = '/AiChatbot/Chat';
+    const enableTeaser = @(Model.EnableTeaserBubble ? "true" : "false");
+
+    const panel = document.getElementById('ai-chat-panel');
+    const toggle = document.getElementById('ai-chat-toggle');
+    const closeBtn = document.getElementById('ai-chat-close');
+    const messagesEl = document.getElementById('ai-chat-messages');
+    const input = document.getElementById('ai-chat-input');
+    const sendBtn = document.getElementById('ai-chat-send');
+    const teaser = document.getElementById('ai-chat-teaser');
+    const teaserClose = document.getElementById('ai-teaser-close');
+
+    let history = [];
+    let sessionGuid = null;
+    let isOpen = false;
+    let initialised = false;
+
+    // Load sessionGuid and history from sessionStorage
+    try {
+        const storedGuid = sessionStorage.getItem('ai_chat_session_guid');
+        if (storedGuid) {
+            sessionGuid = storedGuid;
+        }
+
+        const storedHistory = sessionStorage.getItem('ai_chat_history');
+        if (storedHistory) {
+            history = JSON.parse(storedHistory);
+            if (history && history.length > 0) {
+                initialised = true;
+                history.forEach(turn => {
+                    if (turn.role === 'user') {
+                        appendUserMessage(turn.content);
+                    } else {
+                        appendBotMessage(turn.content, null);
+                    }
+                });
+            }
+        }
+    } catch (e) {
+        console.error('Failed to load chat history', e);
+    }
+
+    // ── Mobile Viewport & Virtual Keyboard Handler ───────────────────────────
+    function updateMobileViewport() {
+        if (!isOpen) return;
+        if (window.innerWidth <= 600) {
+            if (window.visualViewport) {
+                panel.style.height = window.visualViewport.height + 'px';
+                panel.style.top = window.visualViewport.offsetTop + 'px';
+            } else {
+                panel.style.height = '100dvh';
+                panel.style.top = '0px';
+            }
+            scrollBottom();
+        } else {
+            panel.style.height = '';
+            panel.style.top = '';
+        }
+    }
+
+    if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', updateMobileViewport);
+        window.visualViewport.addEventListener('scroll', updateMobileViewport);
+    }
+    window.addEventListener('resize', updateMobileViewport);
+
+    // Load open state
+    try {
+        const storedOpen = sessionStorage.getItem('ai_chat_open');
+        if (storedOpen === 'true') {
+            isOpen = true;
+            panel.classList.add('open');
+            toggle.classList.add('active');
+            updateMobileViewport();
+            if (!initialised) {
+                initialised = true;
+                appendBotMessage(welcomeMessage, null);
+                showStarterChips();
+            }
+        }
+    } catch (e) {}
+
+    // ── Entry Wiggle & Teaser Callout Popup Logic ──────────────────────────────
+    window.addEventListener('load', () => {
+        if (!isOpen) {
+            // Trigger eye-catching wiggle animation on load
+            setTimeout(() => {
+                if (!isOpen) {
+                    toggle.classList.add('ai-chat-wiggle');
+                    setTimeout(() => toggle.classList.remove('ai-chat-wiggle'), 1200);
+                }
+            }, 1200);
+
+            // Trigger teaser speech bubble after 2.8s
+            if (teaser && enableTeaser) {
+                setTimeout(() => {
+                    const teaserDismissed = sessionStorage.getItem('ai_chat_teaser_dismissed');
+                    if (!isOpen && teaserDismissed !== 'true') {
+                        teaser.classList.add('visible');
+                    }
+                }, 2800);
+            }
+        }
+    });
+
+    function hideTeaser() {
+        if (teaser) {
+            teaser.classList.remove('visible');
+        }
+    }
+
+    function dismissTeaser(e) {
+        if (e) e.stopPropagation();
+        hideTeaser();
+        try { sessionStorage.setItem('ai_chat_teaser_dismissed', 'true'); } catch (e) {}
+    }
+
+    if (teaser) {
+        teaser.addEventListener('click', (e) => {
+            if (e.target === teaserClose || teaserClose.contains(e.target)) {
+                dismissTeaser(e);
+            } else {
+                dismissTeaser(e);
+                openChat();
+            }
+        });
+    }
+
+    // ── Panel open/close ─────────────────────────────────────────────────────
+    function openChat() {
+        isOpen = true;
+        hideTeaser();
+        try { sessionStorage.setItem('ai_chat_open', 'true'); } catch (e) {}
+        panel.classList.add('open');
+        toggle.classList.add('active');
+        toggle.classList.remove('has-pulse');
+        updateMobileViewport();
+        input.focus();
+
+        if (!initialised) {
+            initialised = true;
+            appendBotMessage(welcomeMessage, null);
+            showStarterChips();
+        }
+    }
+
+    function closeChat() {
+        isOpen = false;
+        try { sessionStorage.setItem('ai_chat_open', 'false'); } catch (e) {}
+        panel.classList.remove('open');
+        toggle.classList.remove('active');
+        @if (Model.EnablePulseEffect) {
+            <text>toggle.classList.add('has-pulse');</text>
+        }
+        panel.style.height = '';
+        panel.style.top = '';
+    }
+
+    toggle.addEventListener('click', () => isOpen ? closeChat() : openChat());
+    closeBtn.addEventListener('click', closeChat);
+
+    input.addEventListener('focus', () => {
+        setTimeout(() => {
+            updateMobileViewport();
+            scrollBottom();
+        }, 100);
+        setTimeout(() => {
+            updateMobileViewport();
+            scrollBottom();
+        }, 300);
+    });
+
+    input.addEventListener('blur', () => {
+        setTimeout(() => {
+            updateMobileViewport();
+        }, 100);
+    });
+
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+
+    sendBtn.addEventListener('click', sendMessage);
+
+    // ── Rendering & Starter Chips ─────────────────────────────────────────────
+    function showStarterChips() {
+        if (history.length > 0) return; // Only show on fresh conversation
+
+        const container = document.createElement('div');
+        container.className = 'ai-starter-container';
+        container.id = 'ai-starter-chips';
+
+        container.innerHTML = `
+            <div class="ai-starter-title">Suggested questions:</div>
+            <div class="ai-starter-chips">
+                <button class="ai-chip" data-prompt="When is your next market?">🗓️ Upcoming markets</button>
+                <button class="ai-chip" data-prompt="What is your return policy?">↩️ Returns policy</button>
+                <button class="ai-chip" data-prompt="What are your shipping and delivery options?">🚚 Shipping & delivery</button>
+                <button class="ai-chip" data-prompt="Can you recommend popular products?">🔍 Product advice</button>
+                <button class="ai-chip" data-prompt="How do I track my order?">📦 Track order</button>
+            </div>
+        `;
+
+        container.querySelectorAll('.ai-chip').forEach(chip => {
+            chip.addEventListener('click', () => {
+                const promptText = chip.getAttribute('data-prompt');
+                input.value = promptText;
+                removeStarterChips();
+                sendMessage();
+            });
+        });
+
+        messagesEl.appendChild(container);
+        scrollBottom();
+    }
+
+    function removeStarterChips() {
+        const chipsEl = document.getElementById('ai-starter-chips');
+        if (chipsEl) chipsEl.remove();
+    }
+
+    function appendUserMessage(text) {
+        removeStarterChips();
+        const div = document.createElement('div');
+        div.className = 'ai-msg user';
+        div.textContent = text;
+        messagesEl.appendChild(div);
+        scrollBottom();
+    }
+
+    function formatMessageHtml(rawText) {
+        if (!rawText) return '';
+
+        // Escape HTML special characters
+        let safe = rawText
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+
+        // Correct legacy /marketlocator paths to /market-locations
+        safe = safe.replace(/\/marketlocator/g, '/market-locations');
+
+        // Format HTTP/HTTPS URLs
+        safe = safe.replace(/(https?:\/\/[^\s<]+)/g, function(url) {
+            return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="ai-chat-link">${url}</a>`;
+        });
+
+        // Format relative paths starting with / (e.g. /market-locations?id=5, /cart, /checkout, /contactus)
+        safe = safe.replace(/(^|\s|[\(\[\{])(\/([a-zA-Z0-9_\-\/\?=&%]+))/g, function(match, prefix, path) {
+            let label = path;
+            if (path.startsWith('/market-locations')) label = 'Market Locator Map 🗺️';
+            else if (path === '/cart') label = 'View Cart 🛒';
+            else if (path === '/checkout') label = 'Checkout 💳';
+            else if (path === '/contactus') label = 'Contact Us 📬';
+            return `${prefix}<a href="${path}" class="ai-chat-link">${label}</a>`;
+        });
+
+        return safe;
+    }
+
+    // Handle clicks on inline links to close chat before navigating
+    messagesEl.addEventListener('click', (e) => {
+        const link = e.target.closest('a.ai-chat-link');
+        if (link && link.getAttribute('href')) {
+            const href = link.getAttribute('href');
+            if (!href.startsWith('http')) {
+                try { sessionStorage.setItem('ai_chat_open', 'false'); } catch (err) {}
+            }
+        }
+    });
+
+    function appendBotMessage(text, actions) {
+        const wrapper = document.createElement('div');
+        wrapper.style.cssText = 'align-self: flex-start; max-width: 90%;';
+
+        const msg = document.createElement('div');
+        msg.className = 'ai-msg bot';
+        msg.innerHTML = formatMessageHtml(text);
+        wrapper.appendChild(msg);
+
+        // Render action buttons if present
+        const actionList = Array.isArray(actions) ? actions : (actions ? [actions] : []);
+        actionList.forEach(act => {
+            const btn = buildActionButton(act);
+            if (btn) wrapper.appendChild(btn);
+        });
+
+        messagesEl.appendChild(wrapper);
+        scrollBottom();
+    }
+
+    function buildActionButton(action) {
+        const container = document.createElement('div');
+
+        const btn = document.createElement('button');
+        btn.className = 'ai-action-btn';
+        btn.textContent = getActionLabel(action);
+
+        const success = document.createElement('div');
+        success.className = 'ai-action-success';
+
+        btn.addEventListener('click', async () => {
+            btn.disabled = true;
+            const result = await executeAction(action);
+            if (result.navigate) return; // Page is navigating — no feedback needed
+            if (result.ok) {
+                success.textContent = result.message || 'Done!';
+                success.style.display = 'block';
+                btn.style.display = 'none';
+            } else {
+                btn.disabled = false;
+                success.textContent = result.message || 'Something went wrong.';
+                success.style.color = '#dc2626';
+                success.style.display = 'block';
+            }
+        });
+
+        container.appendChild(btn);
+        container.appendChild(success);
+        return container;
+    }
+
+    function getActionLabel(action) {
+        switch (action.type) {
+            case 'addToCart': return action.label ? `Add "${action.label}" to cart` : 'Add to cart';
+            case 'navigate':
+                if (action.url && action.url.includes('market')) return '🗺️ Open Market Locator Map';
+                if (action.url === '/cart') return '🛒 View Cart';
+                if (action.url && action.url.includes('checkout')) return '💳 Go to Checkout';
+                return action.label ? `Go to ${action.label}` : 'Open Page';
+            default: return 'Do it';
+        }
+    }
+
+    function showTyping() {
+        const div = document.createElement('div');
+        div.className = 'ai-msg typing';
+        div.id = 'ai-typing';
+        div.textContent = botName + ' is typing...';
+        messagesEl.appendChild(div);
+        scrollBottom();
+    }
+
+    function removeTyping() {
+        const el = document.getElementById('ai-typing');
+        if (el) el.remove();
+    }
+
+    function scrollBottom() {
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    // ── Action execution ─────────────────────────────────────────────────────
+    async function executeAction(action) {
+        switch (action.type) {
+            case 'addToCart':
+                return await addToCart(action.productId, action.quantity || 1);
+            case 'navigate':
+                if (action.url) {
+                    let navUrl = action.url === '/marketlocator' ? '/market-locations' : action.url;
+                    try { sessionStorage.setItem('ai_chat_open', 'false'); } catch (e) {}
+                    window.location.href = navUrl;
+                    return { ok: true, navigate: true };
+                }
+                return { ok: false, message: 'No URL provided.' };
+            default:
+                return { ok: false, message: 'Unknown action.' };
+        }
+    }
+
+    async function addToCart(productId, quantity) {
+        if (!productId) return { ok: false, message: 'Product not found.' };
+
+        const url = `/addproducttocart/catalog/${productId}/1/${quantity}`;
+
+        if (typeof AjaxCart !== 'undefined') {
+            AjaxCart.addproducttocart_catalog(url);
+            return { ok: true, navigate: true };
+        }
+
+        try {
+            const formData = new URLSearchParams();
+            const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+            if (tokenInput) {
+                formData.append('__RequestVerificationToken', tokenInput.value);
+            }
+
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: formData.toString()
+            });
+
+            const data = await response.json();
+
+            if (data.redirect) {
+                window.location.href = data.redirect;
+                return { ok: true, navigate: true };
+            }
+
+            if (data.success) {
+                return { ok: true, message: 'Added to cart!' };
+            } else {
+                return { ok: false, message: data.message || 'Could not add to cart.' };
+            }
+        } catch (err) {
+            return { ok: false, message: 'Could not add to cart — please try manually.' };
+        }
+    }
+
+    async function executeActions(actionList) {
+        for (let i = 0; i < actionList.length; i++) {
+            await executeAction(actionList[i]);
+            if (i < actionList.length - 1) {
+                await new Promise(r => setTimeout(r, 350));
+            }
+        }
+    }
+
+    // ── Send message ─────────────────────────────────────────────────────────
+    async function sendMessage() {
+        const text = input.value.trim();
+        if (!text || sendBtn.disabled) return;
+
+        input.value = '';
+        sendBtn.disabled = true;
+
+        appendUserMessage(text);
+        showTyping();
+
+        try {
+            const response = await fetch(chatEndpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: text, history: history, sessionGuid: sessionGuid })
+            });
+
+            const data = await response.json();
+            removeTyping();
+
+            const returnedGuid = data.sessionGuid !== undefined ? data.sessionGuid : data.SessionGuid;
+            if (returnedGuid) {
+                sessionGuid = returnedGuid;
+                try { sessionStorage.setItem('ai_chat_session_guid', sessionGuid); } catch (e) {}
+            }
+
+            const success = data.success !== undefined ? data.success : data.Success;
+            const responseText = data.response !== undefined ? data.response : data.Response;
+            const errorText = data.error !== undefined ? data.error : data.Error;
+
+            const reply = success ? responseText : (errorText || 'Sorry, something went wrong.');
+
+            const rawActions = data.actions !== undefined ? data.actions : (data.Actions !== undefined ? data.Actions : null);
+            let actionList = [];
+
+            if (Array.isArray(rawActions) && rawActions.length > 0) {
+                actionList = rawActions.map(a => ({
+                    type: a.type !== undefined ? a.type : a.Type,
+                    url: a.url !== undefined ? a.url : a.Url,
+                    productId: a.productId !== undefined ? a.productId : a.ProductId,
+                    quantity: a.quantity !== undefined ? a.quantity : a.Quantity,
+                    label: a.label !== undefined ? a.label : a.Label
+                }));
+            } else {
+                let singleAction = data.action !== undefined ? data.action : data.Action;
+                if (singleAction) {
+                    actionList.push({
+                        type: singleAction.type !== undefined ? singleAction.type : singleAction.Type,
+                        url: singleAction.url !== undefined ? singleAction.url : singleAction.Url,
+                        productId: singleAction.productId !== undefined ? singleAction.productId : singleAction.ProductId,
+                        quantity: singleAction.quantity !== undefined ? singleAction.quantity : singleAction.Quantity,
+                        label: singleAction.label !== undefined ? singleAction.label : singleAction.Label
+                    });
+                }
+            }
+
+            appendBotMessage(reply, actionList);
+
+            if (success) {
+                history.push({ role: 'user', content: text });
+                history.push({ role: 'assistant', content: reply });
+
+                // Keep history bounded
+                if (history.length > @Model.MaxConversationTurns * 2)
+                    history = history.slice(-@Model.MaxConversationTurns * 2);
+
+                try { sessionStorage.setItem('ai_chat_history', JSON.stringify(history)); } catch (e) {}
+
+                if (actionList.length > 0) {
+                    executeActions(actionList);
+                }
+            }
+        } catch (err) {
+            removeTyping();
+            appendBotMessage('Sorry, I could not connect. Please try again.', null);
+        } finally {
+            sendBtn.disabled = false;
+            input.focus();
+        }
+    }
+})();
+</script>

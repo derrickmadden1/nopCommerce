@@ -82,6 +82,22 @@
                         }
                     </div>
 
+                    <script asp-location="Footer">
+                        $(function() {
+                            $('.method-grid-modern').on('change', 'input[type="radio"]', function() {
+                                var $grid = $(this).closest('.method-grid-modern');
+                                $grid.find('.method-card-modern').removeClass('selected');
+                                $(this).closest('.method-card-modern').addClass('selected');
+                            });
+                            $('.method-grid-modern').on('click', '.method-card-modern', function() {
+                                var $radio = $(this).find('input[type="radio"]');
+                                if (!$radio.prop('checked')) {
+                                    $radio.prop('checked', true).trigger('change');
+                                }
+                            });
+                        });
+                    </script>
+
                     <div class="checkout-footer-modern">
                         <button type="submit" name="nextstep" class="btn-primary next-step-btn">
                             @T("Checkout.NextButton") <i class="fas fa-arrow-right"></i>

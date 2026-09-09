@@ -13,6 +13,10 @@
                     <div class="col-md-9"><nop-editor asp-for="Enabled" /></div>
                 </div>
                 <div class="form-group row">
+                    <div class="col-md-3"><nop-label asp-for="DryRun" /></div>
+                    <div class="col-md-9"><nop-editor asp-for="DryRun" /></div>
+                </div>
+                <div class="form-group row">
                     <div class="col-md-3"><nop-label asp-for="StoreName" /></div>
                     <div class="col-md-9"><nop-editor asp-for="StoreName" /></div>
                 </div>
@@ -42,6 +46,18 @@
                     <div class="col-md-3"><nop-label asp-for="DeploymentName" /></div>
                     <div class="col-md-9"><nop-editor asp-for="DeploymentName" /></div>
                 </div>
+                <div class="form-group row">
+                    <div class="col-md-3"><nop-label asp-for="UseAzureKeyVault" /></div>
+                    <div class="col-md-9"><nop-editor asp-for="UseAzureKeyVault" /></div>
+                </div>
+                <div class="form-group row">
+                    <div class="col-md-3"><nop-label asp-for="AzureKeyVaultUrl" /></div>
+                    <div class="col-md-9"><nop-editor asp-for="AzureKeyVaultUrl" /></div>
+                </div>
+                <div class="form-group row">
+                    <div class="col-md-3"><nop-label asp-for="AzureKeyVaultSecretName" /></div>
+                    <div class="col-md-9"><nop-editor asp-for="AzureKeyVaultSecretName" /></div>
+                </div>
             </div>
         </div>
 
@@ -53,12 +69,16 @@
                     <div class="col-md-9"><nop-editor asp-for="Email1DaysLapsed" /></div>
                 </div>
                 <div class="form-group row">
-                    <div class="col-md-3"><nop-label asp-for="Email2DaysLapsed" /></div>
-                    <div class="col-md-9"><nop-editor asp-for="Email2DaysLapsed" /></div>
+                    <div class="col-md-3"><nop-label asp-for="DaysBetweenEmail1And2" /></div>
+                    <div class="col-md-9"><nop-editor asp-for="DaysBetweenEmail1And2" /></div>
                 </div>
                 <div class="form-group row">
-                    <div class="col-md-3"><nop-label asp-for="Email3DaysLapsed" /></div>
-                    <div class="col-md-9"><nop-editor asp-for="Email3DaysLapsed" /></div>
+                    <div class="col-md-3"><nop-label asp-for="DaysBetweenEmail2And3" /></div>
+                    <div class="col-md-9"><nop-editor asp-for="DaysBetweenEmail2And3" /></div>
+                </div>
+                <div class="form-group row">
+                    <div class="col-md-3"><nop-label asp-for="MaxDaysLapsed" /></div>
+                    <div class="col-md-9"><nop-editor asp-for="MaxDaysLapsed" /></div>
                 </div>
                 <div class="form-group row">
                     <div class="col-md-3"><nop-label asp-for="Email3DiscountCode" /></div>
@@ -79,13 +99,16 @@
 <form asp-controller="WinbackEmail" asp-action="RunNow" method="post" style="margin-top: 20px;">
     <div class="cards-group">
         <div class="card card-default">
-            <div class="card-header">Manual Execution</div>
+            <div class="card-header">Manual Execution & Upcoming Emails</div>
             <div class="card-body">
                 <div class="form-group row">
                     <div class="col-md-9 offset-md-3">
                         <button type="submit" name="run-now" class="btn btn-info">
                             <i class="fas fa-play"></i> Run Winback Task Now
                         </button>
+                        <a asp-action="Upcoming" asp-controller="WinbackEmail" class="btn btn-primary" style="margin-left: 10px;">
+                            <i class="fas fa-calendar-alt"></i> View Upcoming Emails
+                        </a>
                     </div>
                 </div>
             </div>

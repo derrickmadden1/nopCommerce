@@ -9,5 +9,6 @@ namespace Nop.Plugin.Widgets.MarketLocator.Messaging.Messages
         public DateTime? EndDate { get; set; }
         public string? Description { get; set; }
         public string MapUrl { get; set; } = string.Empty;
+        public string? ImageUrl { get; set; }
     }
 }

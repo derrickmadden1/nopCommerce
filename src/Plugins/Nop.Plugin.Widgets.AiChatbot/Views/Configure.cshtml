@@ -1,0 +1,241 @@
+@model Nop.Plugin.Widgets.AiChatbot.Models.ConfigurationModel
+
+@{
+    Layout = "_AdminLayout";
+    ViewBag.Title = "AI Chatbot Configuration";
+}
+
+<div class="content-header clearfix">
+    <h1 class="float-left">
+        AI Chatbot
+        <small>
+            <i class="fas fa-arrow-circle-left"></i>
+            <a asp-action="List" asp-controller="Plugin">@T("Admin.Configuration.Plugins.Misc.BackToList")</a>
+        </small>
+    </h1>
+    <div class="float-right">
+        <a asp-action="History" asp-controller="AiChatbot" class="btn btn-info">
+            <i class="fas fa-comments"></i> View Chat History
+        </a>
+    </div>
+</div>
+
+<section class="content">
+    <div class="container-fluid">
+        <div class="form-horizontal">
+            <div class="cards-group">
+                <div class="card card-default">
+                    <div class="card-body">
+                        <form asp-controller="AiChatbot" asp-action="Configure" method="post">
+                            <div asp-validation-summary="All" class="text-danger"></div>
+
+                            <h4>General</h4>
+
+                            <div class="form-group row">
+                                <div class="col-md-3"><nop-label asp-for="Enabled" /></div>
+                                <div class="col-md-9">
+                                    <nop-editor asp-for="Enabled" />
+                                    <p class="text-muted">Show the chat bubble on all pages.</p>
+                                </div>
+                            </div>
+
+                            <div class="form-group row">
+                                <div class="col-md-3"><nop-label asp-for="StoreName" /></div>
+                                <div class="col-md-9"><nop-editor asp-for="StoreName" /></div>
+                            </div>
+
+                            <div class="form-group row">
+                                <div class="col-md-3"><nop-label asp-for="BotName" /></div>
+                                <div class="col-md-9">
+                                    <nop-editor asp-for="BotName" />
+                                    <p class="text-muted">Displayed in the chat header and used in responses.</p>
+                                </div>
+                            </div>
+
+                            <div class="form-group row">
+                                <div class="col-md-3"><nop-label asp-for="WelcomeMessage" /></div>
+                                <div class="col-md-9"><nop-editor asp-for="WelcomeMessage" /></div>
+                            </div>
+
+                            <div class="form-group row">
+                                <div class="col-md-3"><nop-label asp-for="BubbleColour" /></div>
+                                <div class="col-md-9">
+                                    <nop-editor asp-for="BubbleColour" html-attributes="@(new { type = "color" })" />
+                                    <p class="text-muted">Colour of the chat bubble and header.</p>
+                                </div>
+                            </div>
+
+                            <div class="form-group row">
+                                <div class="col-md-3"><nop-label asp-for="EnablePulseEffect" /></div>
+                                <div class="col-md-9">
+                                    <nop-editor asp-for="EnablePulseEffect" />
+                                    <p class="text-muted">Display an animated glowing pulse around the chat bubble when closed to attract user attention.</p>
+                                </div>
+                            </div>
+
+                            <div class="form-group row">
+                                <div class="col-md-3"><nop-label asp-for="EnableTeaserBubble" /></div>
+                                <div class="col-md-9">
+                                    <nop-editor asp-for="EnableTeaserBubble" />
+                                    <p class="text-muted">Show a proactive greeting speech bubble next to the chat button on page load.</p>
+                                </div>
+                            </div>
+
+                            <div class="form-group row">
+                                <div class="col-md-3"><nop-label asp-for="TeaserText" /></div>
+                                <div class="col-md-9">
+                                    <nop-editor asp-for="TeaserText" />
+                                    <p class="text-muted">Message shown inside the proactive teaser bubble (e.g. "👋 Hi! Need help finding anything?").</p>
+                                </div>
+                            </div>
+
+                            <h4>Azure OpenAI</h4>
+
+                            <div class="form-group row">
+                                <div class="col-md-3"><nop-label asp-for="AzureOpenAIEndpoint" /></div>
+                                <div class="col-md-9"><nop-editor asp-for="AzureOpenAIEndpoint" /></div>
+                            </div>
+
+                            <div class="form-group row" id="pnlAzureOpenAIApiKey">
+                                <div class="col-md-3"><nop-label asp-for="AzureOpenAIApiKey" /></div>
+                                <div class="col-md-9">
+                                    <nop-editor asp-for="AzureOpenAIApiKey" html-attributes="@(new { type = "password", autocomplete = "off" })" />
+                                </div>
+                            </div>
+
+                            <div class="form-group row">
+                                <div class="col-md-3"><nop-label asp-for="UseAzureKeyVault" /></div>
+                                <div class="col-md-9">
+                                    <nop-editor asp-for="UseAzureKeyVault" />
+                                </div>
+                            </div>
+
+                            <div class="form-group row" id="pnlKeyVaultUrl">
+                                <div class="col-md-3"><nop-label asp-for="AzureKeyVaultUrl" /></div>
+                                <div class="col-md-9">
+                                    <nop-editor asp-for="AzureKeyVaultUrl" />
+                                    <p class="text-muted">e.g. https://your-vault.vault.azure.net/</p>
+                                </div>
+                            </div>
+
+                            <div class="form-group row" id="pnlKeyVaultSecretName">
+                                <div class="col-md-3"><nop-label asp-for="AzureKeyVaultSecretName" /></div>
+                                <div class="col-md-9">
+                                    <nop-editor asp-for="AzureKeyVaultSecretName" />
+                                    <p class="text-muted">Name of the secret storing your Azure OpenAI API Key</p>
+                                </div>
+                            </div>
+
+                            <div class="form-group row">
+                                <div class="col-md-3"><nop-label asp-for="DeploymentName" /></div>
+                                <div class="col-md-9">
+                                    <nop-editor asp-for="DeploymentName" />
+                                    <p class="text-muted">e.g. gpt-4o-mini</p>
+                                </div>
+                            </div>
+
+                            <h4>Product Search (Azure AI Search)</h4>
+                            <p class="text-muted">Reuses your existing product index from the Azure AI Search plugin.</p>
+
+                            <div class="form-group row">
+                                <div class="col-md-3"><nop-label asp-for="AzureSearchEndpoint" /></div>
+                                <div class="col-md-9"><nop-editor asp-for="AzureSearchEndpoint" /></div>
+                            </div>
+
+                            <div class="form-group row">
+                                <div class="col-md-3"><nop-label asp-for="AzureSearchQueryKey" /></div>
+                                <div class="col-md-9">
+                                    <nop-editor asp-for="AzureSearchQueryKey" html-attributes="@(new { type = "password", autocomplete = "off" })" />
+                                </div>
+                            </div>
+
+                            <div class="form-group row">
+                                <div class="col-md-3"><nop-label asp-for="AzureSearchIndexName" /></div>
+                                <div class="col-md-9"><nop-editor asp-for="AzureSearchIndexName" /></div>
+                            </div>
+
+                            <h4>Store Policies</h4>
+                            <p class="text-muted">Paste your policy text here — it is injected into the chatbot's system prompt so it can answer customer questions accurately.</p>
+
+                            <div class="form-group row">
+                                <div class="col-md-3"><nop-label asp-for="ReturnsPolicy" /></div>
+                                <div class="col-md-9">
+                                    <textarea asp-for="ReturnsPolicy" class="form-control" rows="5"
+                                              placeholder="e.g. We accept returns within 30 days of purchase..."></textarea>
+                                </div>
+                            </div>
+
+                            <div class="form-group row">
+                                <div class="col-md-3"><nop-label asp-for="ShippingPolicy" /></div>
+                                <div class="col-md-9">
+                                    <textarea asp-for="ShippingPolicy" class="form-control" rows="5"
+                                              placeholder="e.g. We ship via Royal Mail. Standard delivery takes 3-5 working days..."></textarea>
+                                </div>
+                            </div>
+
+                            <h4>Limits</h4>
+
+                            <div class="form-group row">
+                                <div class="col-md-3"><nop-label asp-for="MaxConversationTurns" /></div>
+                                <div class="col-md-9">
+                                    <nop-editor asp-for="MaxConversationTurns" />
+                                    <p class="text-muted">Maximum number of back-and-forth exchanges kept in context. Higher = more coherent but more tokens used.</p>
+                                </div>
+                            </div>
+
+                            <div class="form-group row">
+                                <div class="col-md-3"><nop-label asp-for="MaxSearchResults" /></div>
+                                <div class="col-md-9">
+                                    <nop-editor asp-for="MaxSearchResults" />
+                                    <p class="text-muted">Maximum number of product search results injected into the chatbot's system prompt.</p>
+                                </div>
+                            </div>
+
+                            <div class="form-group row">
+                                <div class="col-md-3"><nop-label asp-for="MaxTokens" /></div>
+                                <div class="col-md-9">
+                                    <input asp-for="MaxTokens" type="number" class="form-control" />
+                                    <p class="text-muted">Maximum number of tokens to generate in response. Leave empty to use model default (required for reasoning models like gpt-5-mini/o1/o3-mini).</p>
+                                </div>
+                            </div>
+
+                            <div class="form-group row">
+                                <div class="col-md-3"><nop-label asp-for="Temperature" /></div>
+                                <div class="col-md-9">
+                                    <input asp-for="Temperature" type="number" step="0.1" class="form-control" />
+                                    <p class="text-muted">Controls response randomness (e.g. 0.5 for factual, 1.0 for creative). Leave empty to use model default (required for reasoning models like gpt-5-mini/o1/o3-mini).</p>
+                                </div>
+                            </div>
+
+                            <div class="form-group row">
+                                <div class="col-md-9 offset-md-3">
+                                    <button type="submit" class="btn btn-primary">Save</button>
+                                </div>
+                            </div>
+
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+    $(document).ready(function () {
+        $("#UseAzureKeyVault").click(toggleKeyVault);
+        toggleKeyVault();
+    });
+
+    function toggleKeyVault() {
+        if ($('#UseAzureKeyVault').is(':checked')) {
+            $('#pnlKeyVaultUrl').show();
+            $('#pnlKeyVaultSecretName').show();
+            $('#pnlAzureOpenAIApiKey').hide();
+        } else {
+            $('#pnlKeyVaultUrl').hide();
+            $('#pnlKeyVaultSecretName').hide();
+            $('#pnlAzureOpenAIApiKey').show();
+        }
+    }
+</script>

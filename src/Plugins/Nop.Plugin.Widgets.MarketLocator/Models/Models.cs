@@ -52,6 +52,10 @@ public record MarketLocationModel : BaseNopEntityModel
     [NopResourceDisplayName("Plugins.Widgets.MarketLocator.Fields.DisplayOrder")]
     public int DisplayOrder { get; set; }
 
+    [NopResourceDisplayName("Plugins.Widgets.MarketLocator.Fields.Picture")]
+    [UIHint("Picture")]
+    public int PictureId { get; set; }
+
     public IList<SelectListItem> AvailableFrequencies { get; set; } = new List<SelectListItem>
     {
         new("Weekly",     "Weekly"),

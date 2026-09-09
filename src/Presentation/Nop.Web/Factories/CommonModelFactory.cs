@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using System.Text;
 using Microsoft.Extensions.Primitives;
 using Nop.Core;
@@ -800,7 +800,17 @@ public partial class CommonModelFactory : ICommonModelFactory
             }
 
             foreach (var additionsRule in _robotsTxtSettings.AdditionsRules)
-                sb.AppendLine(additionsRule);
+            {
+                var ruleText = additionsRule.Replace("[[COMMA]]", ",");
+                if (string.IsNullOrEmpty(ruleText))
+                {
+                    sb.AppendLine();
+                    continue;
+                }
+
+                foreach (var line in ruleText.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None))
+                    sb.AppendLine(line);
+            }
 
             //load and add robots.txt additions to the end of file.
             var robotsAdditionsFile = _fileProvider.Combine(_fileProvider.MapPath("~/wwwroot"), RobotsTxtDefaults.RobotsAdditionsFileName);

@@ -1,0 +1,11 @@
+{
+  "Group": "Widgets",
+  "FriendlyName": "Checkout with Shopify",
+  "SystemName": "Widgets.ShopifyCheckout",
+  "Version": "1.00",
+  "SupportedVersions": [ "5.00" ],
+  "Author": "Rose Cottage Croft",
+  "DisplayOrder": 1,
+  "FileName": "Nop.Plugin.Widgets.ShopifyCheckout.dll",
+  "Description": "Allows customers to checkout using Shopify Storefront GraphQL API while keeping catalog and cart on nopCommerce."
+}

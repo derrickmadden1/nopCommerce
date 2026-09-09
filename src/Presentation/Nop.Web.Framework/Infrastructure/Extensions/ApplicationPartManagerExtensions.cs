@@ -250,6 +250,36 @@ public static partial class ApplicationPartManagerExtensions
                 var pluginsDirectory = _fileProvider.MapPath(NopPluginDefaults.Path);
                 _fileProvider.CreateDirectory(pluginsDirectory);
 
+                ResolveEventHandler resolveHandler = (sender, args) =>
+                {
+                    try
+                    {
+                        var assemblyName = new AssemblyName(args.Name).Name;
+                        if (string.IsNullOrEmpty(assemblyName))
+                            return null;
+
+                        var loaded = AppDomain.CurrentDomain.GetAssemblies()
+                            .FirstOrDefault(a => string.Equals(a.GetName().Name, assemblyName, StringComparison.OrdinalIgnoreCase));
+                        if (loaded != null)
+                            return loaded;
+
+                        var matchingFiles = _fileProvider.GetFiles(pluginsDirectory, $"{assemblyName}.dll", false);
+                        if (matchingFiles.Any())
+                        {
+                            var fileToDeploy = matchingFiles.First();
+                            return applicationPartManager.PerformFileDeploy(fileToDeploy, pluginConfig, _fileProvider);
+                        }
+                    }
+                    catch
+                    {
+                        // ignore
+                    }
+
+                    return null;
+                };
+
+                AppDomain.CurrentDomain.AssemblyResolve += resolveHandler;
+
                 //ensure uploaded directory is created
                 var uploadedPath = _fileProvider.MapPath(NopPluginDefaults.UploadedPath);
                 _fileProvider.CreateDirectory(uploadedPath);

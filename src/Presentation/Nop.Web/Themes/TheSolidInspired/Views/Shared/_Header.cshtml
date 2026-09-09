@@ -373,19 +373,37 @@
             menuItems.forEach(item => {
                 const subPanel = item.querySelector(".mega-menu-panel");
                 if (subPanel) {
+                    item.classList.add("has-sublist");
+
                     // Create toggle button
                     const toggleBtn = document.createElement("button");
                     toggleBtn.type = "button";
                     toggleBtn.className = "mobile-menu-toggle-btn";
                     toggleBtn.innerHTML = '<i class="fas fa-chevron-down"></i>';
                     toggleBtn.setAttribute("aria-label", "Toggle sub-menu");
+                    toggleBtn.setAttribute("aria-expanded", "false");
                     
-                    // Prevent clicking the button from following the parent link
-                    toggleBtn.addEventListener("click", function(e) {
+                    const parentLink = Array.from(item.children).find(el => el.tagName && el.tagName.toLowerCase() === 'a');
+                    if (parentLink) {
+                        parentLink.setAttribute("role", "button");
+                        parentLink.setAttribute("aria-expanded", "false");
+                    }
+
+                    function toggleSubMenu(e) {
                         e.preventDefault();
                         e.stopPropagation();
-                        item.classList.toggle("expanded");
-                    });
+                        const isExpanded = item.classList.toggle("expanded");
+                        toggleBtn.setAttribute("aria-expanded", isExpanded.toString());
+                        if (parentLink) {
+                            parentLink.setAttribute("aria-expanded", isExpanded.toString());
+                        }
+                    }
+
+                    // Clicking either the arrow button or the parent title toggles the sub-menu
+                    toggleBtn.addEventListener("click", toggleSubMenu);
+                    if (parentLink) {
+                        parentLink.addEventListener("click", toggleSubMenu);
+                    }
                     
                     item.appendChild(toggleBtn);
                 }

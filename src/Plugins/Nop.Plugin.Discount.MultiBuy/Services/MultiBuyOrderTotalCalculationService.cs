@@ -100,7 +100,9 @@ namespace Nop.Plugin.DiscountRules.MultiBuy.Services
             if (_catalogSettings.IgnoreDiscounts)
                 return (discountAmount, appliedDiscounts);
 
-            var allDiscounts = await _discountService.GetAllDiscountsAsync();
+            var allDiscounts = (await _discountService.GetAllDiscountsAsync())
+                .Where(d => d.DiscountType == DiscountType.AssignedToOrderSubTotal || d.DiscountType == DiscountType.AssignedToOrderTotal)
+                .ToList();
             var couponCodesToValidate = await _customerService.ParseAppliedDiscountCouponCodesAsync(customer);
             
             var allowedDiscounts = new List<Nop.Core.Domain.Discounts.Discount>();
