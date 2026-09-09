@@ -11,11 +11,11 @@ namespace Nop.Plugin.Marketing.WinbackEmail.Services;
 public class WinbackEmailGenerator
 {
     private readonly WinbackEmailSettings _settings;
-    private readonly ILogger<WinbackEmailGenerator> _logger;
+    private readonly Nop.Services.Logging.ILogger _logger;
 
     public WinbackEmailGenerator(
         WinbackEmailSettings settings,
-        ILogger<WinbackEmailGenerator> logger)
+        Nop.Services.Logging.ILogger logger)
     {
         _settings = settings;
         _logger = logger;
@@ -31,7 +31,7 @@ public class WinbackEmailGenerator
             {
                 if (string.IsNullOrWhiteSpace(_settings.AzureKeyVaultUrl) || string.IsNullOrWhiteSpace(_settings.AzureKeyVaultSecretName))
                 {
-                    _logger.LogError("WinbackEmail: Azure Key Vault is enabled but URL or Secret Name is missing.");
+                    await _logger.ErrorAsync("WinbackEmail: Azure Key Vault is enabled but URL or Secret Name is missing.");
                     return null;
                 }
 
@@ -63,11 +63,11 @@ public class WinbackEmailGenerator
             var response = await client.GetChatCompletionsAsync(options);
             var content = response.Value.Choices[0].Message.Content;
 
-            return ParseResponse(content);
+            return await ParseResponseAsync(content);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to generate winback email for {Email}", context.CustomerEmail);
+            await _logger.ErrorAsync($"Failed to generate winback email for {context.CustomerEmail}", ex);
             return null;
         }
     }
@@ -125,7 +125,7 @@ public class WinbackEmailGenerator
         public string? HtmlBody { get; set; }
     }
 
-    private GeneratedEmail? ParseResponse(string content)
+    private async Task<GeneratedEmail?> ParseResponseAsync(string content)
     {
         try
         {
@@ -145,7 +145,7 @@ public class WinbackEmailGenerator
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"WinbackEmail: Failed to parse JSON. Raw content: {content}");
+            await _logger.ErrorAsync($"WinbackEmail: Failed to parse JSON. Raw content: {content}", ex);
             return null;
         }
     }

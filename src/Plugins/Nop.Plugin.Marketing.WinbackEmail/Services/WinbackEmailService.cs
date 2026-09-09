@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Nop.Services.Logging;
+using Nop.Services.Stores;
 using Nop.Core;
 using Nop.Core.Domain.Messages;
 using Nop.Core.Domain.Orders;
@@ -29,7 +31,7 @@ public class WinbackEmailService
     private readonly IStoreContext _storeContext;
     private readonly IAddressService _addressService;
     private readonly IGenericAttributeService _genericAttributeService;
-    private readonly ILogger<WinbackEmailService> _logger;
+    private readonly Nop.Services.Logging.ILogger _logger;
 
     public WinbackEmailService(
         WinbackEmailSettings settings,
@@ -43,7 +45,7 @@ public class WinbackEmailService
         IStoreContext storeContext,
         IAddressService addressService,
         IGenericAttributeService genericAttributeService,
-        ILogger<WinbackEmailService> logger)
+        Nop.Services.Logging.ILogger logger)
     {
         _settings = settings;
         _generator = generator;
@@ -61,7 +63,7 @@ public class WinbackEmailService
 
     public async Task ProcessWinbacksAsync()
     {
-        _logger.LogError($"WinbackEmail: Task triggered. Enabled={_settings.Enabled}");
+        await _logger.ErrorAsync($"WinbackEmail: Task triggered. Enabled={_settings.Enabled}");
 
         if (!_settings.Enabled)
             return;
@@ -69,14 +71,14 @@ public class WinbackEmailService
         var emailAccount = await GetEmailAccountAsync();
         if (emailAccount == null)
         {
-            _logger.LogError("WinbackEmail: Configured FromEmail not found.");
+            await _logger.ErrorAsync("WinbackEmail: Configured FromEmail not found.");
             return;
         }
 
         var states = await GetWinbackStatesAsync(0);
         var dueStates = states.Where(s => s.IsDueToday).ToList();
         
-        _logger.LogError($"WinbackEmail: Found {states.Count} total states, {dueStates.Count} are due today.");
+        await _logger.ErrorAsync($"WinbackEmail: Found {states.Count} total states, {dueStates.Count} are due today.");
 
         foreach (var state in dueStates)
         {
@@ -87,7 +89,7 @@ public class WinbackEmailService
 
                 if (generated == null)
                 {
-                    _logger.LogError($"WinbackEmail: Generation failed for {state.Email}");
+                    await _logger.ErrorAsync($"WinbackEmail: Generation failed for {state.Email}");
                     continue;
                 }
 
@@ -103,7 +105,7 @@ public class WinbackEmailService
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"WinbackEmail: Error processing {state.Email}");
+                await _logger.ErrorAsync($"WinbackEmail: Error processing {state.Email}", ex);
             }
         }
     }
