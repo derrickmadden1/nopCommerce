@@ -55,9 +55,7 @@ public class WinbackEmailGenerator
                 {
                     new ChatRequestSystemMessage(systemPrompt),
                     new ChatRequestUserMessage(userPrompt)
-                },
-                MaxTokens = 800,
-                Temperature = 0.7f
+                }
             };
 
             var response = await client.GetChatCompletionsAsync(options);
