@@ -1,15 +1,10 @@
 @model ShoppingCartModel
 
 @using Nop.Core
-@using Nop.Core.Domain.Catalog
-@using Nop.Core.Domain.Media
 @using Nop.Core.Domain.Orders
 @using Nop.Core.Domain.Tax
-@using Nop.Services.Helpers
 
-@inject IWebHelper webHelper
 @inject IWorkContext workContext
-@inject MediaSettings mediaSettings
 @inject OrderSettings orderSettings
 
 @{
@@ -205,61 +200,14 @@
                                                         }
                                                     })
 
-                                                });
+                            $('#shopping-cart-form').trigger('submit');
+                        });
+                    })
+                </script>
+            }
 
-                                                function changeQuantity_@(item.Id)(amount, triggerChange) {
-                                                    var input = $(document).find('#itemquantity@(item.Id)');
-                                                    var oldValue = parseInt(input.val());
-                                                    var amountValue = parseInt(amount);
-                                                    var newVal = oldValue + amountValue;
-                                                    input.val(newVal > 0 ? newVal.toString() : '0');
+            @await Html.PartialAsync("_ShoppingCartItems", Model)
 
-                                                    if(triggerChange)
-                                                        input.trigger("change");
-                                                }
-                                            </script>
-                                        }
-                                    }
-                                    else
-                                    {
-                                        <span class="product-quantity">@item.Quantity</span>
-                                    }
-                                </td>
-                                <td class="subtotal">
-                                    <label class="td-title">@T("ShoppingCart.ItemTotal"):</label>
-                                    <span class="product-subtotal">@item.SubTotal</span>
-                                    @if (!string.IsNullOrEmpty(item.Discount))
-                                    {
-                                        <div class="discount">
-                                            @T("ShoppingCart.ItemYouSave", item.Discount)
-                                        </div>
-                                        if (item.MaximumDiscountedQty.HasValue)
-                                        {
-                                            <div class="discount-additional-info">
-                                                @T("ShoppingCart.MaximumDiscountedQty", item.MaximumDiscountedQty.Value)
-                                            </div>
-                                        }
-                                    }
-                                </td>
-                                @if (Model.IsEditable)
-                                {
-                                    <td class="remove-from-cart">
-                                        @if (item.DisableRemoval)
-                                        {
-                                            <text>&nbsp;</text>
-                                        }
-                                        else
-                                        {
-                                            <input type="checkbox" name="removefromcart" id="removefromcart@(item.Id)" value="@(item.Id)" aria-label="@T("ShoppingCart.Remove")" />
-                                            <button type="button" name="updatecart" class="remove-btn" aria-labelledby="removefromcart@(item.Id)" onclick="$('#removefromcart@(item.Id)').attr('checked', true); $('#updatecart').trigger('click');"></button>
-                                        }
-                                    </td>
-                                }
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
             @if (Model.IsEditable && Model.Items.Count > 0 && Model.DisplayTaxShippingInfo)
             {
                 var inclTax = await workContext.GetTaxDisplayTypeAsync() == TaxDisplayType.IncludingTax;
