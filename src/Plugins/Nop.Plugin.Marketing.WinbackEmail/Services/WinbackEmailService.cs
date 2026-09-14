@@ -137,6 +137,37 @@ public class WinbackEmailService
         return result.OrderBy(x => x.ScheduledDateUtc).ThenBy(x => x.EmailSequenceNumber).ToList();
     }
 
+    public async Task ResetWinbackHistoryAsync()
+    {
+        // 1. Clear generic tracking attributes for all customers
+        await _genericAttributeService.DeleteAttributesAsync<Customer>("Winback_Email1SentDateUtc");
+        await _genericAttributeService.DeleteAttributesAsync<Customer>("Winback_Email2SentDateUtc");
+        await _genericAttributeService.DeleteAttributesAsync<Customer>("Winback_Email3SentDateUtc");
+        await _genericAttributeService.DeleteAttributesAsync<Customer>("Winback_LastOrderId");
+
+        // 2. Clear unsent dry-run emails from Message Queue
+        var queuedEmails = await _queuedEmailService.SearchEmailsAsync(
+            fromEmail: _settings.FromEmail,
+            toEmail: string.Empty,
+            createdFromUtc: null,
+            createdToUtc: null,
+            loadNotSentItemsOnly: true,
+            loadOnlyItemsToBeSent: false,
+            maxSendTries: 10,
+            loadNewest: true,
+            pageIndex: 0,
+            pageSize: 1000);
+
+        var dryRunEmails = queuedEmails
+            .Where(e => e.DontSendBeforeDateUtc.HasValue && e.DontSendBeforeDateUtc.Value > DateTime.UtcNow.AddYears(1))
+            .ToList();
+
+        if (dryRunEmails.Any())
+        {
+            await _queuedEmailService.DeleteQueuedEmailsAsync(dryRunEmails);
+        }
+    }
+
     private class WinbackCustomerState
     {
         public Customer Customer { get; set; } = null!;
