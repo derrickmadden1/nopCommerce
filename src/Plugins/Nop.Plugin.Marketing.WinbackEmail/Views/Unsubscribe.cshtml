@@ -1,0 +1,17 @@
+@{
+    Layout = "_ColumnsOne";
+}
+<div class="page unsubscribe-page">
+    <div class="page-title">
+        <h1>Unsubscribed</h1>
+    </div>
+    <div class="page-body" style="padding: 20px 0;">
+        <div class="result alert alert-success" style="padding: 15px; background-color: #d4edda; color: #155724; border-radius: 4px; margin-bottom: 20px;">
+            <p style="margin: 0;"><strong>Success:</strong> You have been successfully unsubscribed from winback and marketing emails (@ViewBag.Email).</p>
+        </div>
+        <p>If you ever change your mind, you can update your email preferences or subscribe again at any time.</p>
+        <p style="margin-top: 20px;">
+            <a href="@Url.RouteUrl("Homepage")" class="button-1">Return to Store</a>
+        </p>
+    </div>
+</div>
