@@ -96,6 +96,18 @@ public class WinbackEmailController : BasePluginController
         return RedirectToAction("Configure");
     }
 
+    /// <summary>
+    /// Clear dry-run email queue items and reset customer winback sent dates, then regenerate emails
+    /// </summary>
+    [HttpPost]
+    public async Task<IActionResult> ResetAndRun()
+    {
+        await _winbackEmailService.ResetWinbackHistoryAsync();
+        await _winbackEmailService.ProcessWinbacksAsync();
+        _notificationService.SuccessNotification("Winback history reset and emails regenerated into the Message Queue.");
+        return RedirectToAction("Configure");
+    }
+
     public async Task<IActionResult> Upcoming()
     {
         var upcomingEmails = await _winbackEmailService.GetUpcomingEmailsAsync();
