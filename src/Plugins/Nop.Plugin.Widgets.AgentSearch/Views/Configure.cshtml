@@ -1,0 +1,91 @@
+@model Nop.Plugin.Widgets.AgentSearch.Models.AgentSearchConfigurationModel
+
+@{
+    Layout = "_ConfigurePlugin";
+}
+
+<form asp-controller="AgentSearch" asp-action="Configure" method="post">
+    <nop-antiforgery-token />
+    <div class="cards-group">
+        <div class="card card-default">
+            <div class="card-header">
+                Agent Search API Settings
+            </div>
+            <div class="card-body">
+                <div class="form-group row">
+                    <div class="col-md-3">
+                        <nop-label asp-for="Enabled" />
+                    </div>
+                    <div class="col-md-9">
+                        <nop-editor asp-for="Enabled" />
+                        <span asp-validation-for="Enabled"></span>
+                        <p class="text-muted">Master on/off switch for the Agent Search API endpoint (POST /api/agent/search).</p>
+                    </div>
+                </div>
+
+                <div class="form-group row">
+                    <div class="col-md-3">
+                        <nop-label asp-for="MaxResultsDefault" />
+                    </div>
+                    <div class="col-md-9">
+                        <nop-editor asp-for="MaxResultsDefault" />
+                        <span asp-validation-for="MaxResultsDefault"></span>
+                        <p class="text-muted">Default number of search results returned when caller does not specify max_results.</p>
+                    </div>
+                </div>
+
+                <div class="form-group row">
+                    <div class="col-md-3">
+                        <nop-label asp-for="MaxResultsCap" />
+                    </div>
+                    <div class="col-md-9">
+                        <nop-editor asp-for="MaxResultsCap" />
+                        <span asp-validation-for="MaxResultsCap"></span>
+                        <p class="text-muted">Hard ceiling on max results returned per query regardless of caller request.</p>
+                    </div>
+                </div>
+
+                <div class="form-group row">
+                    <div class="col-md-3">
+                        <nop-label asp-for="RequireApiKey" />
+                    </div>
+                    <div class="col-md-9">
+                        <nop-editor asp-for="RequireApiKey" />
+                        <span asp-validation-for="RequireApiKey"></span>
+                        <p class="text-muted">If enabled, callers must provide a valid API Key in the X-Api-Key HTTP header.</p>
+                    </div>
+                </div>
+
+                <div class="form-group row">
+                    <div class="col-md-3">
+                        <nop-label asp-for="ApiKey" />
+                    </div>
+                    <div class="col-md-9">
+                        <nop-editor asp-for="ApiKey" html-attributes="@(new { type = "password", autocomplete = "off" })" />
+                        <span asp-validation-for="ApiKey"></span>
+                        <p class="text-muted">Secret API Key required when Require API Key is enabled.</p>
+                    </div>
+                </div>
+
+                <div class="form-group row">
+                    <div class="col-md-3">
+                        <nop-label asp-for="UseQueryUnderstanding" />
+                    </div>
+                    <div class="col-md-9">
+                        <nop-editor asp-for="UseQueryUnderstanding" />
+                        <span asp-validation-for="UseQueryUnderstanding"></span>
+                        <p class="text-muted">Enable natural-language constraint extraction pass prior to hitting Azure AI Search.</p>
+                    </div>
+                </div>
+
+                <div class="form-group row">
+                    <div class="col-md-9 offset-md-3">
+                        <button type="submit" name="save" class="btn btn-primary">
+                            @T("Admin.Common.Save")
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>

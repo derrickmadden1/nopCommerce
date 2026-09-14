@@ -1,0 +1,11 @@
+{
+  "Group": "Widgets",
+  "FriendlyName": "Agent Search API",
+  "SystemName": "Widgets.AgentSearch",
+  "Version": "1.0.0",
+  "SupportedVersions": [ "5.00" ],
+  "Author": "Rose Cottage Croft",
+  "DisplayOrder": 1,
+  "FileName": "Nop.Plugin.Widgets.AgentSearch.dll",
+  "Description": "Exposes the store's Azure AI Search index to AI agents via a structured JSON search API (POST /api/agent/search)."
+}

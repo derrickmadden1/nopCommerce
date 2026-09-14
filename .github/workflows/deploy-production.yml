@@ -106,7 +106,8 @@ jobs:
             { "SystemName": "Misc.CheckoutAbandonmentTracker","Version": "1.00"},
             { "SystemName": "Misc.ReviewReward","Version": "1.00"},
             { "SystemName": "Widgets.ShopifyCheckout","Version": "1.00"},
-            { "SystemName": "Shipping.RoyalMail","Version": "1.00"}
+            { "SystemName": "Shipping.RoyalMail","Version": "1.00"},
+            { "SystemName": "Widgets.AgentSearch","Version": "1.00"}
           ],
           "PluginNamesToUninstall": [],
           "PluginNamesToDelete": [],
