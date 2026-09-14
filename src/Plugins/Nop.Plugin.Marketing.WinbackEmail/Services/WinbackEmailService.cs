@@ -15,6 +15,8 @@ using Nop.Services.Customers;
 using Nop.Services.Messages;
 using Nop.Services.Orders;
 using Nop.Services.Common;
+using Nop.Services.Helpers;
+using Nop.Services.Seo;
 
 namespace Nop.Plugin.Marketing.WinbackEmail.Services;
 
@@ -31,6 +33,8 @@ public class WinbackEmailService
     private readonly IStoreContext _storeContext;
     private readonly IAddressService _addressService;
     private readonly IGenericAttributeService _genericAttributeService;
+    private readonly IWebHelper _webHelper;
+    private readonly IUrlRecordService _urlRecordService;
     private readonly Nop.Services.Logging.ILogger _logger;
 
     public WinbackEmailService(
@@ -45,6 +49,8 @@ public class WinbackEmailService
         IStoreContext storeContext,
         IAddressService addressService,
         IGenericAttributeService genericAttributeService,
+        IWebHelper webHelper,
+        IUrlRecordService urlRecordService,
         Nop.Services.Logging.ILogger logger)
     {
         _settings = settings;
@@ -58,6 +64,8 @@ public class WinbackEmailService
         _storeContext = storeContext;
         _addressService = addressService;
         _genericAttributeService = genericAttributeService;
+        _webHelper = webHelper;
+        _urlRecordService = urlRecordService;
         _logger = logger;
     }
 
@@ -202,6 +210,10 @@ public class WinbackEmailService
             if (actualMostRecentByBilling != null && actualMostRecentByBilling.Id != order.Id && actualMostRecentByBilling.CreatedOnUtc > order.CreatedOnUtc)
                 continue;
 
+            var isUnsubscribed = await _genericAttributeService.GetAttributeAsync<bool>(customer, "Winback_Unsubscribed");
+            if (isUnsubscribed)
+                continue;
+
             var subscriptions = await _newsletterService.GetNewsLetterSubscriptionsByEmailAsync(email, storeId: storeId);
             var subscription = subscriptions.FirstOrDefault();
             if (subscription != null && subscription.Active == false)
@@ -281,6 +293,14 @@ public class WinbackEmailService
     private async Task<WinbackCustomerContext> BuildContextAsync(
         int customerId, string email, string firstName, int emailNumber, int daysLapsed)
     {
+        var storeLocation = _webHelper.GetStoreLocation();
+        var customer = await _customerService.GetCustomerByIdAsync(customerId);
+
+        var subscriptions = await _newsletterService.GetNewsLetterSubscriptionsByEmailAsync(email);
+        var sub = subscriptions.FirstOrDefault();
+        var unsubscribeToken = sub?.NewsLetterSubscriptionGuid.ToString() ?? customer?.CustomerGuid.ToString() ?? customerId.ToString();
+        var unsubscribeUrl = $"{storeLocation}winback/unsubscribe?email={Uri.EscapeDataString(email)}&token={Uri.EscapeDataString(unsubscribeToken)}";
+
         var orders = await _orderService.SearchOrdersAsync(customerId: customerId);
         var recentOrders = orders
             .OrderByDescending(o => o.CreatedOnUtc)
@@ -293,19 +313,34 @@ public class WinbackEmailService
         {
             var items = await _orderService.GetOrderItemsAsync(order.Id);
             var productNames = new List<string>();
+            var purchasedProducts = new List<PurchasedProductInfo>();
 
             foreach (var item in items)
             {
                 var product = await _productService.GetProductByIdAsync(item.ProductId);
                 if (product != null)
+                {
                     productNames.Add(product.Name);
+
+                    var seName = await _urlRecordService.GetSeNameAsync(product);
+                    var productUrl = !string.IsNullOrWhiteSpace(seName)
+                        ? $"{storeLocation}{seName}"
+                        : string.Empty;
+
+                    purchasedProducts.Add(new PurchasedProductInfo
+                    {
+                        ProductName = product.Name,
+                        ProductUrl = productUrl
+                    });
+                }
             }
 
             orderSummaries.Add(new OrderSummary
             {
                 OrderDate = order.CreatedOnUtc,
                 OrderTotal = order.OrderTotal,
-                ProductNames = productNames
+                ProductNames = productNames,
+                Products = purchasedProducts
             });
         }
 
@@ -317,7 +352,9 @@ public class WinbackEmailService
             DaysSinceLastOrder = daysLapsed,
             RecentOrders = orderSummaries,
             DiscountCode = emailNumber == 3 ? _settings.Email3DiscountCode : null,
-            StoreName = _settings.StoreName
+            StoreName = _settings.StoreName,
+            StoreUrl = storeLocation,
+            UnsubscribeUrl = unsubscribeUrl
         };
     }
 

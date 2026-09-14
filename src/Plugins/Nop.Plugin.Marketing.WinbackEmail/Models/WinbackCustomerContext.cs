@@ -1,4 +1,4 @@
-﻿namespace Nop.Plugin.Marketing.WinbackEmail.Models;
+namespace Nop.Plugin.Marketing.WinbackEmail.Models;
 
 /// <summary>
 /// Everything Azure OpenAI needs to generate a personalised winback email
@@ -12,6 +12,14 @@ public class WinbackCustomerContext
     public List<OrderSummary> RecentOrders { get; set; } = new();
     public string? DiscountCode { get; set; }
     public string StoreName { get; set; } = string.Empty;
+    public string StoreUrl { get; set; } = string.Empty;
+    public string UnsubscribeUrl { get; set; } = string.Empty;
+}
+
+public class PurchasedProductInfo
+{
+    public string ProductName { get; set; } = string.Empty;
+    public string ProductUrl { get; set; } = string.Empty;
 }
 
 public class OrderSummary
@@ -19,6 +27,7 @@ public class OrderSummary
     public DateTime OrderDate { get; set; }
     public decimal OrderTotal { get; set; }
     public List<string> ProductNames { get; set; } = new();
+    public List<PurchasedProductInfo> Products { get; set; } = new();
 }
 
 public class GeneratedEmail

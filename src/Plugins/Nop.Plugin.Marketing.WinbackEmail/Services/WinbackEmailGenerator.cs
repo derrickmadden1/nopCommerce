@@ -79,6 +79,8 @@ public class WinbackEmailGenerator
           "htmlBody": "full html email body here"
         }
         The HTML body should be clean, simple, mobile-friendly HTML.
+        Include clickable HTML anchor links (<a href="...">) for products and store links where relevant.
+        Always include an unsubscribe link in the footer using the provided Unsubscribe URL.
         Use British English spelling throughout.
         Do not include any text outside the JSON object.
         """;
@@ -87,8 +89,22 @@ public class WinbackEmailGenerator
     {
         var orderHistory = context.RecentOrders.Any()
             ? string.Join("\n", context.RecentOrders.Select(o =>
-                $"- {o.OrderDate:d MMM yyyy}: {string.Join(", ", o.ProductNames)} (£{o.OrderTotal:F2})"))
+            {
+                var items = o.Products.Any()
+                    ? string.Join(", ", o.Products.Select(p => string.IsNullOrWhiteSpace(p.ProductUrl) ? p.ProductName : $"<a href=\"{p.ProductUrl}\">{p.ProductName}</a>"))
+                    : string.Join(", ", o.ProductNames);
+                return $"- {o.OrderDate:d MMM yyyy}: {items} (£{o.OrderTotal:F2})";
+            }))
             : "No order history available";
+
+        var productLinksList = context.RecentOrders.SelectMany(o => o.Products)
+            .Where(p => !string.IsNullOrWhiteSpace(p.ProductUrl))
+            .DistinctBy(p => p.ProductUrl)
+            .ToList();
+
+        var formattedProductLinks = productLinksList.Any()
+            ? string.Join("\n", productLinksList.Select(p => $"- {p.ProductName}: {p.ProductUrl}"))
+            : "No direct product links available";
 
         var emailAngle = context.EmailNumber switch
         {
@@ -98,22 +114,38 @@ public class WinbackEmailGenerator
             _ => "A warm re-engagement message."
         };
 
+        var storeLinkText = !string.IsNullOrWhiteSpace(context.StoreUrl)
+            ? $"Store website URL: {context.StoreUrl}"
+            : string.Empty;
+
+        var unsubscribeLinkText = !string.IsNullOrWhiteSpace(context.UnsubscribeUrl)
+            ? $"Unsubscribe URL: {context.UnsubscribeUrl}"
+            : string.Empty;
+
         return $"""
             Write winback email #{context.EmailNumber} of 3 for this customer:
 
             Customer name: {context.CustomerFirstName}
             Days since last order: {context.DaysSinceLastOrder}
             Store name: {context.StoreName}
+            {storeLinkText}
+            {unsubscribeLinkText}
             Discount code (email 3 only, may be empty): {context.DiscountCode ?? "none"}
 
-            Their order history:
+            Their order history (with product URLs):
             {orderHistory}
+
+            Available product links to feature or link to in body:
+            {formattedProductLinks}
 
             Email angle: {emailAngle}
 
-            Keep the subject line under 50 characters.
-            Keep the body concise — 3 to 5 short paragraphs maximum.
-            Sign off warmly from the {context.StoreName} team.
+            Formatting requirements:
+            - Keep the subject line under 50 characters.
+            - Keep the body concise — 3 to 5 short paragraphs maximum.
+            - Where products or store pages are referenced, format them as clickable HTML hyperlinks using valid <a href="URL">Title</a> tags.
+            - At the very bottom of the email body, include an unsubscribe footer: <p style="font-size:12px;color:#777;">If you no longer wish to receive winback emails, <a href="{context.UnsubscribeUrl}">unsubscribe here</a>.</p>
+            - Sign off warmly from the {context.StoreName} team.
             """;
     }
 
