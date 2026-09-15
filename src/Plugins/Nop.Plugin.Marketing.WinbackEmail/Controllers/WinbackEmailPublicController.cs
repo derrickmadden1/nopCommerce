@@ -28,7 +28,20 @@ public class WinbackEmailPublicController : BasePublicController
     }
 
     [HttpGet]
-    public async Task<IActionResult> Unsubscribe(string email, string token)
+    public IActionResult Unsubscribe(string email, string token)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+            return RedirectToRoute("Homepage");
+
+        ViewBag.Email = email;
+        ViewBag.Token = token;
+        ViewBag.IsConfirmed = false;
+
+        return View("~/Plugins/Marketing.WinbackEmail/Views/Unsubscribe.cshtml");
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> Unsubscribe(string email, string token, bool confirm = true)
     {
         if (string.IsNullOrWhiteSpace(email))
             return RedirectToRoute("Homepage");
@@ -54,6 +67,8 @@ public class WinbackEmailPublicController : BasePublicController
         }
 
         ViewBag.Email = email;
+        ViewBag.IsConfirmed = true;
+
         return View("~/Plugins/Marketing.WinbackEmail/Views/Unsubscribe.cshtml");
     }
 }
