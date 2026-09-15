@@ -8595,3 +8595,18 @@ a.skip:hover {
 }
 
 /* End Derrick tabs for products */
+
+/* Dark mode header logo visibility */
+.header-logo img,
+.header-lower .header-logo img,
+.logo img {
+  filter: drop-shadow(0 0 1px rgba(255, 255, 255, 0.8)) drop-shadow(0 0 3px rgba(255, 255, 255, 0.6));
+}
+
+@media (prefers-color-scheme: dark) {
+  .header-logo img,
+  .header-lower .header-logo img,
+  .logo img {
+    filter: brightness(0) invert(1) !important;
+  }
+}
