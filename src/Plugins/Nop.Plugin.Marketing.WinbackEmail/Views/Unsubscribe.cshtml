@@ -1,17 +1,39 @@
 @{
     Layout = "_ColumnsOne";
+    bool isConfirmed = ViewBag.IsConfirmed != null && (bool)ViewBag.IsConfirmed;
 }
 <div class="page unsubscribe-page">
     <div class="page-title">
-        <h1>Unsubscribed</h1>
+        <h1>Unsubscribe Preferences</h1>
     </div>
     <div class="page-body" style="padding: 20px 0;">
-        <div class="result alert alert-success" style="padding: 15px; background-color: #d4edda; color: #155724; border-radius: 4px; margin-bottom: 20px;">
-            <p style="margin: 0;"><strong>Success:</strong> You have been successfully unsubscribed from winback and marketing emails (@ViewBag.Email).</p>
-        </div>
-        <p>If you ever change your mind, you can update your email preferences or subscribe again at any time.</p>
-        <p style="margin-top: 20px;">
-            <a href="@Url.RouteUrl("Homepage")" class="button-1">Return to Store</a>
-        </p>
+        @if (!isConfirmed)
+        {
+            <div class="card card-default" style="padding: 24px; border: 1px solid #e0e0e0; border-radius: 6px; max-width: 600px; margin: 0 auto; background: #fff; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                <h3 style="margin-top: 0; color: #333;">Are you sure?</h3>
+                <p style="font-size: 15px; color: #555; margin-bottom: 24px;">
+                    Are you sure you want to unsubscribe <strong>@ViewBag.Email</strong> from all winback and marketing emails?
+                </p>
+                <form asp-controller="WinbackEmailPublic" asp-action="Unsubscribe" method="post">
+                    <input type="hidden" name="email" value="@ViewBag.Email" />
+                    <input type="hidden" name="token" value="@ViewBag.Token" />
+                    <button type="submit" class="button-1" style="background-color: #dc3545; border-color: #dc3545; color: #fff; padding: 10px 24px; font-size: 15px; cursor: pointer; border-radius: 4px;">
+                        Yes, Unsubscribe Me
+                    </button>
+                    <a href="@Url.RouteUrl("Homepage")" class="button-2" style="margin-left: 15px; text-decoration: none; padding: 10px 24px; font-size: 15px; border-radius: 4px; display: inline-block;">
+                        Cancel &amp; Return to Store
+                    </a>
+                </form>
+            </div>
+        }
+        else
+        {
+            <div class="result alert alert-success" style="padding: 15px; background-color: #d4edda; color: #155724; border-radius: 4px; margin-bottom: 20px; max-width: 600px; margin: 0 auto;">
+                <p style="margin: 0;"><strong>Successfully Unsubscribed:</strong> <strong>@ViewBag.Email</strong> has been unsubscribed from winback and marketing emails.</p>
+            </div>
+            <p style="text-align: center; margin-top: 20px;">
+                <a href="@Url.RouteUrl("Homepage")" class="button-1">Return to Store</a>
+            </p>
+        }
     </div>
 </div>
