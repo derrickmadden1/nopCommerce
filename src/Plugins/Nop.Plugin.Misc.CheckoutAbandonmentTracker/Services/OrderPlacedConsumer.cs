@@ -16,7 +16,7 @@ namespace Nop.Plugin.Misc.CheckoutAbandonmentTracker.Services
         public async Task HandleEventAsync(OrderPlacedEvent eventMessage)
         {
             var order = eventMessage.Order;
-            await _checkoutAttemptService.MarkCompletedAsync(order.CustomerId, order.Id);
+            await _checkoutAttemptService.MarkCompletedAsync(order.CustomerId, order.Id, order.OrderTotal);
         }
     }
 }

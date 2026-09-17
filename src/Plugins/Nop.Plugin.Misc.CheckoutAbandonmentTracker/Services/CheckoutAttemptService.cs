@@ -41,7 +41,7 @@ namespace Nop.Plugin.Misc.CheckoutAbandonmentTracker.Services
                     StartedOnUtc = nowUtc,
                     LastActivityUtc = nowUtc,
                     LastStepReached = step,
-                    CartTotal = cartTotal,
+                    CartTotal = cartTotal.HasValue && cartTotal.Value > 0 ? cartTotal : null,
                     IsAbandoned = false
                 };
                 await _checkoutAttemptRepository.InsertAsync(attempt);
@@ -55,7 +55,7 @@ namespace Nop.Plugin.Misc.CheckoutAbandonmentTracker.Services
                     attempt.LastStepReached = step;
 
                 attempt.LastActivityUtc = nowUtc;
-                if (cartTotal.HasValue)
+                if (cartTotal.HasValue && cartTotal.Value > 0)
                     attempt.CartTotal = cartTotal;
 
                 await _checkoutAttemptRepository.UpdateAsync(attempt);
@@ -64,7 +64,7 @@ namespace Nop.Plugin.Misc.CheckoutAbandonmentTracker.Services
             return attempt;
         }
 
-        public async Task MarkCompletedAsync(int customerId, int orderId)
+        public async Task MarkCompletedAsync(int customerId, int orderId, decimal? orderTotal = null)
         {
             // Match on CustomerId here rather than CustomerGuid, since by the time
             // OrderPlacedEvent fires the customer may have been converted from
@@ -79,6 +79,9 @@ namespace Nop.Plugin.Misc.CheckoutAbandonmentTracker.Services
                 return; // nothing open to reconcile — fine, not every order needs a matching attempt
 
             attempt.OrderId = orderId;
+            attempt.LastStepReached = CheckoutStep.Confirmed;
+            if (orderTotal.HasValue && orderTotal.Value > 0)
+                attempt.CartTotal = orderTotal.Value;
             attempt.LastActivityUtc = DateTime.UtcNow;
             await _checkoutAttemptRepository.UpdateAsync(attempt);
         }

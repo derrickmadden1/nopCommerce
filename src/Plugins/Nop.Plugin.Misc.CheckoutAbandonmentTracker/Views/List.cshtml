@@ -31,7 +31,7 @@
                             Render = new RenderCustom("renderCustomerColumn")
                         },
                         new ColumnProperty(nameof(CheckoutAttemptModel.LastStepReached)) { Title = "Last Step" },
-                        new ColumnProperty(nameof(CheckoutAttemptModel.CartTotal)) 
+                        new ColumnProperty(nameof(CheckoutAttemptModel.CartTotalFormatted)) 
                         { 
                             Title = "Cart Total",
                             Render = new RenderCustom("renderCartColumn")
@@ -55,7 +55,7 @@
     }
 
     function renderCartColumn(data, type, row, meta) {
-        var cartText = data !== null && data !== undefined ? ('$' + parseFloat(data).toFixed(2)) : '-';
+        var cartText = data || '-';
         if (row.CustomerId && row.CustomerId > 0) {
             var cartUrl = '@Url.Content("~/Admin/Customer/Edit/")' + row.CustomerId + '#customer-cart';
             return '<a href="' + cartUrl + '" target="_blank" title="View Customer Cart">' + cartText + '</a>';

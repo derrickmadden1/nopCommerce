@@ -17,6 +17,7 @@ namespace Nop.Plugin.Misc.CheckoutAbandonmentTracker.Models
         public DateTime StartedOnUtc { get; set; }
         public DateTime LastActivityUtc { get; set; }
         public decimal? CartTotal { get; set; }
+        public string CartTotalFormatted { get; set; } = string.Empty;
         public bool IsAbandoned { get; set; }
         public int? OrderId { get; set; }
     }
