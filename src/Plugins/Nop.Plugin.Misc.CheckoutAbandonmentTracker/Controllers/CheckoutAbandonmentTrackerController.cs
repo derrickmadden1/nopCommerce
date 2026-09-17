@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Nop.Core;
 using Nop.Plugin.Misc.CheckoutAbandonmentTracker.Models;
 using Nop.Plugin.Misc.CheckoutAbandonmentTracker.Services;
+using Nop.Services.Catalog;
 using Nop.Services.Customers;
 using Nop.Services.Security;
 using Nop.Web.Framework;
@@ -22,17 +23,20 @@ namespace Nop.Plugin.Misc.CheckoutAbandonmentTracker.Controllers
         private readonly ICustomerService _customerService;
         private readonly IStoreContext _storeContext;
         private readonly IPermissionService _permissionService;
+        private readonly IPriceFormatter _priceFormatter;
 
         public CheckoutAbandonmentTrackerController(
             ICheckoutAttemptService checkoutAttemptService,
             ICustomerService customerService,
             IStoreContext storeContext,
-            IPermissionService permissionService)
+            IPermissionService permissionService,
+            IPriceFormatter priceFormatter)
         {
             _checkoutAttemptService = checkoutAttemptService;
             _customerService = customerService;
             _storeContext = storeContext;
             _permissionService = permissionService;
+            _priceFormatter = priceFormatter;
         }
 
         public async Task<IActionResult> List()
@@ -66,6 +70,10 @@ namespace Nop.Plugin.Misc.CheckoutAbandonmentTracker.Controllers
 
                     var isGuest = customer == null || !await _customerService.IsRegisteredAsync(customer);
 
+                    var cartTotalFormatted = attempt.CartTotal.HasValue
+                        ? await _priceFormatter.FormatPriceAsync(attempt.CartTotal.Value)
+                        : "-";
+
                     return new CheckoutAttemptModel
                     {
                         Id = attempt.Id,
@@ -76,6 +84,7 @@ namespace Nop.Plugin.Misc.CheckoutAbandonmentTracker.Controllers
                         StartedOnUtc = attempt.StartedOnUtc,
                         LastActivityUtc = attempt.LastActivityUtc,
                         CartTotal = attempt.CartTotal,
+                        CartTotalFormatted = cartTotalFormatted,
                         IsAbandoned = attempt.IsAbandoned,
                         OrderId = attempt.OrderId
                     };

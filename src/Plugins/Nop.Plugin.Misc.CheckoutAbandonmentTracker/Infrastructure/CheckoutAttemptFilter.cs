@@ -59,7 +59,18 @@ namespace Nop.Plugin.Misc.CheckoutAbandonmentTracker.Infrastructure
             decimal? cartTotal = null;
             try
             {
-                cartTotal = (await _orderTotalCalculationService.GetShoppingCartTotalAsync(cart)).shoppingCartTotal;
+                var (shoppingCartTotal, _, _, _, _, _) = await _orderTotalCalculationService.GetShoppingCartTotalAsync(cart);
+                if (shoppingCartTotal.HasValue && shoppingCartTotal.Value > 0)
+                {
+                    cartTotal = shoppingCartTotal.Value;
+                }
+                else
+                {
+                    // Fallback to shopping cart subtotal (with discount and tax) at time of entry if full total (e.g. shipping) isn't calculated yet
+                    var (_, _, _, subTotalWithDiscount, _) = await _orderTotalCalculationService.GetShoppingCartSubTotalAsync(cart, true);
+                    if (subTotalWithDiscount > 0)
+                        cartTotal = subTotalWithDiscount;
+                }
             }
             catch
             {

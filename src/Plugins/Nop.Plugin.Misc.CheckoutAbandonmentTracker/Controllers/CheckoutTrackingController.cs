@@ -64,7 +64,17 @@ namespace Nop.Plugin.Misc.CheckoutAbandonmentTracker.Controllers
             try
             {
                 var cart = await _shoppingCartService.GetShoppingCartAsync(customer, ShoppingCartType.ShoppingCart, store.Id);
-                cartTotal = (await _orderTotalCalculationService.GetShoppingCartTotalAsync(cart)).shoppingCartTotal;
+                var (shoppingCartTotal, _, _, _, _, _) = await _orderTotalCalculationService.GetShoppingCartTotalAsync(cart);
+                if (shoppingCartTotal.HasValue && shoppingCartTotal.Value > 0)
+                {
+                    cartTotal = shoppingCartTotal.Value;
+                }
+                else
+                {
+                    var (_, _, _, subTotalWithDiscount, _) = await _orderTotalCalculationService.GetShoppingCartSubTotalAsync(cart, true);
+                    if (subTotalWithDiscount > 0)
+                        cartTotal = subTotalWithDiscount;
+                }
             }
             catch
             {
