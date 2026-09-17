@@ -38,14 +38,15 @@
                     <tbody>
                         @foreach (var loc in Model.Data)
                         {
-                            var firstDate = loc.UpcomingDatesRaw.Split('\n').FirstOrDefault() ?? "—";
+                            var futureDates = Nop.Plugin.Widgets.MarketLocator.Services.MarketDateHelper.GetFutureDates((loc.UpcomingDatesRaw ?? string.Empty).Replace('\n', '|'));
+                            var nextDate = futureDates.FirstOrDefault() ?? loc.UpcomingDatesRaw.Split('\n', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? "—";
                             <tr>
                                 <td><strong>@loc.Name</strong></td>
                                 <td>@loc.City</td>
                                 <td>
                                     <span class="badge badge-secondary">@loc.Frequency</span>
                                 </td>
-                                <td>@firstDate</td>
+                                <td>@nextDate</td>
                                 <td>
                                     @if (loc.Published)
                                     {
