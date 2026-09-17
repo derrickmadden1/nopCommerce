@@ -19,7 +19,7 @@
         <div class="card-body">
             <form asp-action="@(isEdit ? "Edit" : "Create")" method="post">
                 <input type="hidden" asp-for="Id" />
-                <div asp-validation-summary="All" class="alert alert-danger"></div>
+                <div asp-validation-summary="All"></div>
 
                 <div class="row">
                     <div class="col-md-8">

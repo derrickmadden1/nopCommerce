@@ -21,6 +21,9 @@ public static class MarketDateHelper
         var cleaned = System.Text.RegularExpressions.Regex.Replace(
             raw.Trim(), @"^\w+,\s*", "");
 
+        cleaned = System.Text.RegularExpressions.Regex.Replace(
+            cleaned, @"(?<=\b\d+)(st|nd|rd|th)\b", "", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
         return DateTime.TryParse($"{cleaned} {assumedYear}", out result)
             || DateTime.TryParse(cleaned, out result);
     }
