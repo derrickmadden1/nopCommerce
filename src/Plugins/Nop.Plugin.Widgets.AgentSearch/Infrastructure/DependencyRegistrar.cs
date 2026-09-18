@@ -13,8 +13,22 @@ namespace Nop.Plugin.Widgets.AgentSearch.Infrastructure
         public void ConfigureServices(IServiceCollection services, IConfiguration configuration)
         {
             services.AddSingleton(provider =>
-                configuration.GetSection("AzureSearch").Get<AzureSearchServiceOptions>()
-                ?? new AzureSearchServiceOptions());
+            {
+                var appSettings = provider.GetService<Nop.Core.Configuration.AppSettings>();
+                var config = appSettings?.Get<AzureSearchConfig>();
+                if (config != null && !string.IsNullOrWhiteSpace(config.ServiceEndpoint))
+                {
+                    return new AzureSearchServiceOptions
+                    {
+                        ServiceEndpoint = config.ServiceEndpoint,
+                        IndexName = config.IndexName,
+                        ApiKey = config.ApiKey
+                    };
+                }
+
+                return configuration.GetSection("AzureSearch").Get<AzureSearchServiceOptions>()
+                       ?? new AzureSearchServiceOptions();
+            });
 
             services.AddScoped<IAzureProductSearchClient, AzureProductSearchClient>();
             services.AddScoped<IQueryUnderstandingService, PassthroughQueryUnderstandingService>();
