@@ -14,18 +14,40 @@ namespace Nop.Plugin.Widgets.AgentSearch.Services
     /// </summary>
     public class AzureProductSearchClient : IAzureProductSearchClient
     {
-        private readonly SearchClient _searchClient;
+        private readonly AzureSearchServiceOptions _options;
+        private readonly Nop.Services.Configuration.ISettingService _settingService;
 
-        public AzureProductSearchClient(AzureSearchServiceOptions options)
+        public AzureProductSearchClient(
+            AzureSearchServiceOptions options,
+            Nop.Services.Configuration.ISettingService settingService)
         {
-            var endpoint = string.IsNullOrWhiteSpace(options.ServiceEndpoint) ? "https://localhost" : options.ServiceEndpoint;
-            var indexName = string.IsNullOrWhiteSpace(options.IndexName) ? "products" : options.IndexName;
-            var apiKey = string.IsNullOrWhiteSpace(options.ApiKey) ? "placeholder" : options.ApiKey;
+            _options = options;
+            _settingService = settingService;
+        }
 
-            _searchClient = new SearchClient(
-                new Uri(endpoint),
-                indexName,
-                new AzureKeyCredential(apiKey));
+        private async Task<SearchClient> GetClientAsync()
+        {
+            var endpoint = _options.ServiceEndpoint;
+            var indexName = _options.IndexName;
+            var apiKey = _options.ApiKey;
+
+            if (string.IsNullOrWhiteSpace(endpoint))
+            {
+                endpoint = await _settingService.GetSettingByKeyAsync<string>("azureaisearchsettings.endpoint");
+                apiKey = await _settingService.GetSettingByKeyAsync<string>("azureaisearchsettings.queryapikey");
+                var dbIndex = await _settingService.GetSettingByKeyAsync<string>("azureaisearchsettings.indexname");
+                if (!string.IsNullOrWhiteSpace(dbIndex))
+                    indexName = dbIndex;
+            }
+
+            if (string.IsNullOrWhiteSpace(endpoint))
+                endpoint = "https://localhost";
+            if (string.IsNullOrWhiteSpace(indexName))
+                indexName = "products";
+            if (string.IsNullOrWhiteSpace(apiKey))
+                apiKey = "placeholder";
+
+            return new SearchClient(new Uri(endpoint), indexName, new AzureKeyCredential(apiKey));
         }
 
         public async Task<AzureSearchQueryResult> SearchAsync(
@@ -37,7 +59,8 @@ namespace Nop.Plugin.Widgets.AgentSearch.Services
             {
                 Size = top,
                 IncludeTotalCount = true,
-                QueryType = SearchQueryType.Simple
+                QueryType = SearchQueryType.Simple,
+                SearchMode = SearchMode.All
             };
 
             var filterClauses = BuildFilterClauses(filters);
@@ -54,7 +77,8 @@ namespace Nop.Plugin.Widgets.AgentSearch.Services
             options.Select.Add("manufacturerNames");
 
             var searchText = string.IsNullOrWhiteSpace(query) ? "*" : query;
-            var response = await _searchClient.SearchAsync<SearchDocument>(searchText, options);
+            var searchClient = await GetClientAsync();
+            var response = await searchClient.SearchAsync<SearchDocument>(searchText, options);
 
             var result = new AzureSearchQueryResult
             {
