@@ -30,6 +30,12 @@ Exposes your existing Azure AI Search index (indexed by `Nop.Plugin.Search.Azure
 - **API Key Authentication**: Controlled via `RequireApiKey` and `ApiKey` in plugin settings. When enabled, clients must provide the key via the `X-Api-Key` HTTP header.
 - **Published Filtering**: Automatically enforces `published eq true` so unlisted products are hidden from search results.
 
-## Next Steps for Agent Discoverability
+## Agent Discoverability
 
-Register a `service-desc` entry in `/.well-known/api-catalog` referencing an OpenAPI specification for `/api/agent/search` so AI agents can discover the endpoint automatically.
+The plugin automatically serves discovery endpoints for autonomous AI agents:
+
+1. **API Catalog (`GET /.well-known/api-catalog`)**:
+   Standard IETF linkset declaring the `service-desc` for the Agent Search API.
+2. **OpenAPI Specification (`GET /.well-known/openapi-agent-search.json`)**:
+   OpenAPI 3.0 specification defining the `/api/agent/search` endpoint schema, parameters (`query`, `max_results`, `filters`), and response payloads.
+
