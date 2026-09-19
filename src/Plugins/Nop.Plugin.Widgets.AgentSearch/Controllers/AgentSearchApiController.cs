@@ -21,6 +21,24 @@ namespace Nop.Plugin.Widgets.AgentSearch.Controllers
             _settingService = settingService;
         }
 
+        [HttpGet]
+        public async Task<IActionResult> GetInfo()
+        {
+            var settings = await _settingService.LoadSettingAsync<AgentSearchSettings>();
+            if (!settings.Enabled)
+                return NotFound();
+
+            var host = $"{Request.Scheme}://{Request.Host}";
+            return Ok(new
+            {
+                status = "online",
+                endpoint = $"{host}/api/agent/search",
+                method = "POST",
+                description = "Agent Search API for Rose Cottage Croft. Send a POST request with JSON body containing 'query'.",
+                openApi = $"{host}/.well-known/openapi-agent-search.json"
+            });
+        }
+
         [HttpPost]
         public async Task<IActionResult> Search([FromBody] AgentSearchRequest request)
         {
