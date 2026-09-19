@@ -144,7 +144,7 @@ public class WinbackEmailGenerator
             - Keep the subject line under 50 characters.
             - Keep the body concise — 3 to 5 short paragraphs maximum.
             - Where products or store pages are referenced, format them as clickable HTML hyperlinks using valid <a href="URL">Title</a> tags.
-            - At the very bottom of the email body, include an unsubscribe footer: <p style="font-size:12px;color:#777;">If you no longer wish to receive winback emails, <a href="{context.UnsubscribeUrl}">unsubscribe here</a>.</p>
+            - At the very bottom of the email body, include an unsubscribe footer: <p style="font-size:12px;color:#777;">If you no longer wish to receive marketing emails, <a href="{context.UnsubscribeUrl}">unsubscribe here</a>.</p>
             - Sign off warmly from the {context.StoreName} team.
             """;
     }
