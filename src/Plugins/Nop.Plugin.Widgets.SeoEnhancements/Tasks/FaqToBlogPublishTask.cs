@@ -78,12 +78,11 @@ public class FaqToBlogPublishTask : IScheduleTask
                 LanguageId = languageId,
                 Title = title,
                 Body = sb.ToString(),
-                BodyOverview = $"Weekly FAQ for {product.Name}",
                 AllowComments = true,
                 CreatedOnUtc = DateTime.UtcNow,
                 StartDateUtc = DateTime.UtcNow,
                 IncludeInSitemap = true,
-                Tags = "FAQ, " + product.Name
+                Tags = $"FAQ,{product.Name}"
             };
 
             await _blogService.InsertBlogPostAsync(blogPost);
