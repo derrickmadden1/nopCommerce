@@ -5704,3 +5704,13 @@ iframe[src*="songbird"] {
 }
 
 
+
+/* Fix for blog tags displaying as block list items */
+.tags ul li {
+    display: inline-block;
+    list-style-type: none;
+}
+.tags ul {
+    padding-left: 0;
+}
+
