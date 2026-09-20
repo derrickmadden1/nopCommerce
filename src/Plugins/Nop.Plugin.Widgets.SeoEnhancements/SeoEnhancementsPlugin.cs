@@ -6,6 +6,7 @@ using Nop.Services.Helpers;
 using Nop.Services.Localization;
 using Nop.Services.Plugins;
 using Nop.Web.Framework.Infrastructure;
+using Nop.Services.ScheduleTasks;
 
 namespace Nop.Plugin.Widgets.SeoEnhancements;
 
@@ -14,17 +15,20 @@ public class SeoEnhancementsPlugin : BasePlugin, IWidgetPlugin
     private readonly ISettingService _settingService;
     private readonly ILocalizationService _localizationService;
     private readonly IWebHelper _webHelper;
+    private readonly IScheduleTaskService _scheduleTaskService;
 
     public bool HideInWidgetList => false;
 
     public SeoEnhancementsPlugin(
         ISettingService settingService,
         ILocalizationService localizationService,
-        IWebHelper webHelper)
+        IWebHelper webHelper,
+        IScheduleTaskService scheduleTaskService)
     {
         _settingService = settingService;
         _localizationService = localizationService;
         _webHelper = webHelper;
+        _scheduleTaskService = scheduleTaskService;
     }
 
     /// <summary>
@@ -80,11 +84,26 @@ public class SeoEnhancementsPlugin : BasePlugin, IWidgetPlugin
             ["Plugins.Widgets.SeoEnhancements.FAQ.BackToList"] = "Back to FAQ list",
         });
 
+        if (await _scheduleTaskService.GetTaskByTypeAsync("Nop.Plugin.Widgets.SeoEnhancements.Tasks.FaqToBlogPublishTask") == null)
+        {
+            await _scheduleTaskService.InsertTaskAsync(new Nop.Core.Domain.ScheduleTasks.ScheduleTask
+            {
+                Enabled = true,
+                Seconds = 604800, // 7 days in seconds
+                Name = "Publish weekly FAQ blog post",
+                Type = "Nop.Plugin.Widgets.SeoEnhancements.Tasks.FaqToBlogPublishTask",
+            });
+        }
+
         await base.InstallAsync();
     }
 
     public override async Task UninstallAsync()
     {
+        var task = await _scheduleTaskService.GetTaskByTypeAsync("Nop.Plugin.Widgets.SeoEnhancements.Tasks.FaqToBlogPublishTask");
+        if (task != null)
+            await _scheduleTaskService.DeleteTaskAsync(task);
+
         await _settingService.DeleteSettingAsync<SeoEnhancementsSettings>();
         await _localizationService.DeleteLocaleResourcesAsync("Plugins.Widgets.SeoEnhancements");
         await base.UninstallAsync();
