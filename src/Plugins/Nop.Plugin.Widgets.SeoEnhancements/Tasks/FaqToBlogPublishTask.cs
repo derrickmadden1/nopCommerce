@@ -18,19 +18,25 @@ public class FaqToBlogPublishTask : IScheduleTask
     private readonly IProductService _productService;
     private readonly ILanguageService _languageService;
     private readonly ILogger _logger;
+    private readonly Nop.Services.Seo.IUrlRecordService _urlRecordService;
+    private readonly Nop.Core.IStoreContext _storeContext;
 
     public FaqToBlogPublishTask(
         IFaqService faqService,
         IBlogService blogService,
         IProductService productService,
         ILanguageService languageService,
-        ILogger logger)
+        ILogger logger,
+        Nop.Services.Seo.IUrlRecordService urlRecordService,
+        Nop.Core.IStoreContext storeContext)
     {
         _faqService = faqService;
         _blogService = blogService;
         _productService = productService;
         _languageService = languageService;
         _logger = logger;
+        _urlRecordService = urlRecordService;
+        _storeContext = storeContext;
     }
 
     public async Task ExecuteAsync()
@@ -72,6 +78,12 @@ public class FaqToBlogPublishTask : IScheduleTask
                 sb.AppendLine($"<dd>A: {faq.Answer}</dd>");
             }
             sb.AppendLine("</dl>");
+
+            var seName = await _urlRecordService.GetSeNameAsync(product);
+            var store = await _storeContext.GetCurrentStoreAsync();
+            var productUrl = $"{store.Url.TrimEnd('/')}/{seName}";
+            
+            sb.AppendLine($"<p>Check out the <a href=\"{productUrl}\">{product.Name}</a> in our store!</p>");
 
             var blogPost = new BlogPost
             {
