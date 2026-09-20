@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
 using Nop.Plugin.Marketing.WinbackEmail.Models;
 using Nop.Plugin.Marketing.WinbackEmail.Services;
 using Nop.Services.Configuration;
+using Nop.Services.Logging;
 using Nop.Services.Messages;
 using Nop.Web.Framework;
 using Nop.Web.Framework.Controllers;
@@ -18,17 +20,20 @@ public class WinbackEmailController : BasePluginController
     private readonly ISettingService _settingService;
     private readonly INotificationService _notificationService;
     private readonly WinbackEmailService _winbackEmailService;
+    private readonly IServiceScopeFactory _serviceScopeFactory;
 
     public WinbackEmailController(
         WinbackEmailSettings settings,
         ISettingService settingService,
         INotificationService notificationService,
-        WinbackEmailService winbackEmailService)
+        WinbackEmailService winbackEmailService,
+        IServiceScopeFactory serviceScopeFactory)
     {
         _settings = settings;
         _settingService = settingService;
         _notificationService = notificationService;
         _winbackEmailService = winbackEmailService;
+        _serviceScopeFactory = serviceScopeFactory;
     }
 
     public IActionResult Configure()
@@ -86,25 +91,53 @@ public class WinbackEmailController : BasePluginController
     }
 
     /// <summary>
-    /// Manually trigger the winback task from the admin UI for testing
+    /// Manually trigger the winback task from the admin UI in background
     /// </summary>
     [HttpPost]
-    public async Task<IActionResult> RunNow()
+    public IActionResult RunNow()
     {
-        await _winbackEmailService.ProcessWinbacksAsync();
-        _notificationService.SuccessNotification("Winback task executed — check the email queue for results.");
+        _ = Task.Run(async () =>
+        {
+            using var scope = _serviceScopeFactory.CreateScope();
+            var winbackEmailService = scope.ServiceProvider.GetRequiredService<WinbackEmailService>();
+            var logger = scope.ServiceProvider.GetRequiredService<ILogger>();
+            try
+            {
+                await winbackEmailService.ProcessWinbacksAsync();
+            }
+            catch (Exception ex)
+            {
+                await logger.ErrorAsync("WinbackEmail: Error executing manual RunNow task in background", ex);
+            }
+        });
+
+        _notificationService.SuccessNotification("Winback task started in the background — check the email queue for results as emails generate.");
         return RedirectToAction("Configure");
     }
 
     /// <summary>
-    /// Clear dry-run email queue items and reset customer winback sent dates, then regenerate emails
+    /// Clear dry-run email queue items and reset customer winback sent dates, then regenerate emails in background
     /// </summary>
     [HttpPost]
-    public async Task<IActionResult> ResetAndRun()
+    public IActionResult ResetAndRun()
     {
-        await _winbackEmailService.ResetWinbackHistoryAsync();
-        await _winbackEmailService.ProcessWinbacksAsync();
-        _notificationService.SuccessNotification("Winback history reset and emails regenerated into the Message Queue.");
+        _ = Task.Run(async () =>
+        {
+            using var scope = _serviceScopeFactory.CreateScope();
+            var winbackEmailService = scope.ServiceProvider.GetRequiredService<WinbackEmailService>();
+            var logger = scope.ServiceProvider.GetRequiredService<ILogger>();
+            try
+            {
+                await winbackEmailService.ResetWinbackHistoryAsync();
+                await winbackEmailService.ProcessWinbacksAsync();
+            }
+            catch (Exception ex)
+            {
+                await logger.ErrorAsync("WinbackEmail: Error executing ResetAndRun in background", ex);
+            }
+        });
+
+        _notificationService.SuccessNotification("Winback history reset initiated and emails are being generated in the background — check the email queue for results.");
         return RedirectToAction("Configure");
     }
 
