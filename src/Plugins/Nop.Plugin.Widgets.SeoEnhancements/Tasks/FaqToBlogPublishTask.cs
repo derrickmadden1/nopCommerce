@@ -98,6 +98,11 @@ public class FaqToBlogPublishTask : IScheduleTask
             };
 
             await _blogService.InsertBlogPostAsync(blogPost);
+
+            //search engine name
+            var blogSeName = await _urlRecordService.ValidateSeNameAsync(blogPost, string.Empty, blogPost.Title, true);
+            await _urlRecordService.SaveSlugAsync(blogPost, blogSeName, blogPost.LanguageId);
+
             await _logger.InformationAsync($"Created weekly FAQ blog post for product: {product.Name}");
             
             // Only create one post per run

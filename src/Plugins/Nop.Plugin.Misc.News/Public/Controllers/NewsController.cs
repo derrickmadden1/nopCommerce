@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Nop.Core;
 using Nop.Core.Domain.Localization;
 using Nop.Core.Domain.Security;
@@ -107,7 +107,8 @@ public class NewsController : BasePublicController
         foreach (var n in newsItems)
         {
             var newsUrl = await _nopUrlHelper.RouteGenericUrlAsync(n, _webHelper.GetCurrentRequestProtocol(), languageId: n.LanguageId, ensureTwoPublishedLanguages: false);
-            items.Add(new RssItem(n.Title, n.Short, new Uri(newsUrl), $"urn:store:{store.Id}:news:blog:{n.Id}", n.CreatedOnUtc));
+            if (!string.IsNullOrEmpty(newsUrl) && Uri.TryCreate(newsUrl, UriKind.Absolute, out var newsUri))
+                items.Add(new RssItem(n.Title, n.Short, newsUri, $"urn:store:{store.Id}:news:blog:{n.Id}", n.CreatedOnUtc));
         }
         feed.Items = items;
         return new RssActionResult(feed, _webHelper.GetThisPageUrl(false));
