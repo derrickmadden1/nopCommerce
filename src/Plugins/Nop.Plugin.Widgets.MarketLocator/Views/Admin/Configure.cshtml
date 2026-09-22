@@ -13,6 +13,11 @@
         </small>
     </h1>
     <div class="float-right">
+        <form asp-action="SyncSocialPosts" method="post" class="d-inline">
+            <button type="submit" class="btn btn-warning mr-1" onclick="return confirm('Are you sure you want to recalculate and reschedule social media posts for all market locations?');">
+                <i class="fas fa-sync"></i> Reschedule All Social Posts
+            </button>
+        </form>
         <a asp-action="List" class="btn btn-info">
             <i class="fas fa-map-marker-alt"></i> Manage Locations
         </a>
@@ -102,7 +107,27 @@
                     </div>
                     <div class="col-md-9">
                         <nop-editor asp-for="QueueName" />
-                        <span class="hint">The Service Bus queue name for social posts (e.g. market-social-posts).</span>
+                        <span class="hint">The Service Bus queue name for Facebook posts (default: market-social-posts).</span>
+                    </div>
+                </div>
+
+                <div class="form-group row">
+                    <div class="col-md-3">
+                        <nop-label asp-for="InstagramQueueName" />
+                    </div>
+                    <div class="col-md-9">
+                        <nop-editor asp-for="InstagramQueueName" />
+                        <span class="hint">The Service Bus queue name for Instagram posts (default: market-instagram-posts).</span>
+                    </div>
+                </div>
+
+                <div class="form-group row">
+                    <div class="col-md-3">
+                        <nop-label asp-for="InstagramServiceBusConnectionString" />
+                    </div>
+                    <div class="col-md-9">
+                        <nop-editor asp-for="InstagramServiceBusConnectionString" />
+                        <span class="hint">Optional connection string for Instagram queue. If left blank, automatically derived from the main ServiceBusConnectionString.</span>
                     </div>
                 </div>
 

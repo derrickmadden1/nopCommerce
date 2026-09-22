@@ -9,6 +9,8 @@ using Nop.Services.Configuration;
 using Nop.Services.Localization;
 using Nop.Services.Messages;
 using Nop.Services.Security;
+using Nop.Core.Events;
+using Nop.Services.Events;
 using Nop.Web.Framework;
 using Nop.Web.Framework.Controllers;
 using Nop.Web.Framework.Mvc.Filters;
@@ -28,6 +30,7 @@ public class MarketLocatorAdminController : BasePluginController
     private readonly IStoreContext _storeContext;
     private readonly AppSettings _appSettings;
     private readonly Nop.Core.Infrastructure.INopFileProvider _fileProvider;
+    private readonly IEventPublisher _eventPublisher;
 
     public MarketLocatorAdminController(
         IMarketLocationService locationService,
@@ -37,7 +40,8 @@ public class MarketLocatorAdminController : BasePluginController
         IPermissionService permissionService,
         IStoreContext storeContext,
         AppSettings appSettings,
-        Nop.Core.Infrastructure.INopFileProvider fileProvider)
+        Nop.Core.Infrastructure.INopFileProvider fileProvider,
+        IEventPublisher eventPublisher)
     {
         _locationService = locationService;
         _settingService = settingService;
@@ -47,6 +51,7 @@ public class MarketLocatorAdminController : BasePluginController
         _storeContext = storeContext;
         _appSettings = appSettings;
         _fileProvider = fileProvider;
+        _eventPublisher = eventPublisher;
     }
 
     // ── Settings ─────────────────────────────────────────────────────────────
@@ -71,6 +76,8 @@ public class MarketLocatorAdminController : BasePluginController
             SocialPublishDaysBeforeMarket = settings.SocialPublishDaysBeforeMarket,
             StoreUrl = settings.StoreUrl,
             QueueName = config.QueueName,
+            InstagramQueueName = config.InstagramQueueName,
+            InstagramServiceBusConnectionString = config.InstagramServiceBusConnectionString,
         };
 
         // Automatically derive StoreUrl if it hasn't been set yet 
@@ -107,11 +114,32 @@ public class MarketLocatorAdminController : BasePluginController
 
         var config = _appSettings.Get<MarketLocatorConfig>() ?? new MarketLocatorConfig();
         config.QueueName = model.QueueName;
+        config.InstagramQueueName = model.InstagramQueueName;
+        config.InstagramServiceBusConnectionString = model.InstagramServiceBusConnectionString;
         Nop.Core.Configuration.AppSettingsHelper.SaveAppSettings(new List<Nop.Core.Configuration.IConfig> { config }, _fileProvider);
 
         _notificationService.SuccessNotification(
             await _localizationService.GetResourceAsync("Admin.Plugins.Saved"));
 
+        return RedirectToAction(nameof(Configure));
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> SyncSocialPosts()
+    {
+        if (!await _permissionService.AuthorizeAsync(StandardPermission.Configuration.MANAGE_PLUGINS))
+            return AccessDeniedView();
+
+        var locations = await _locationService.GetAllAsync(showUnpublished: true);
+        var count = 0;
+
+        foreach (var location in locations)
+        {
+            await _eventPublisher.EntityUpdatedAsync(location);
+            count++;
+        }
+
+        _notificationService.SuccessNotification($"Rescheduled social posts for {count} market locations.");
         return RedirectToAction(nameof(Configure));
     }
 
@@ -268,25 +296,49 @@ public class MarketLocatorAdminController : BasePluginController
         Published = e.Published,
         DisplayOrder = e.DisplayOrder,
         PictureId = e.PictureId,
+        Description = e.Description,
+        PublishToFacebook = e.PublishToFacebook,
+        PublishToInstagram = e.PublishToInstagram,
+        SocialCardRevision = e.SocialCardRevision,
     };
 
     private static MarketLocation MapToEntity(MarketLocationModel m, MarketLocation e)
     {
+        var newUpcomingDates = string.Join("|",
+            (m.UpcomingDatesRaw ?? string.Empty)
+                .Split('\n', StringSplitOptions.RemoveEmptyEntries)
+                .Select(d => d.Trim()));
+
+        if (e.Id > 0)
+        {
+            var cardAffectingChanged =
+                e.Name != m.Name ||
+                e.Address != m.Address ||
+                e.City != m.City ||
+                e.Hours != m.Hours ||
+                e.UpcomingDates != newUpcomingDates ||
+                e.Description != (m.Description ?? string.Empty);
+
+            if (cardAffectingChanged)
+            {
+                e.SocialCardRevision++;
+            }
+        }
+
         e.Name = m.Name;
         e.Address = m.Address;
         e.City = m.City;
         e.Latitude = m.Latitude;
         e.Longitude = m.Longitude;
         e.Hours = m.Hours;
-        // Convert textarea newlines → pipe-delimited storage
-        e.UpcomingDates = string.Join("|",
-            (m.UpcomingDatesRaw ?? string.Empty)
-                .Split('\n', StringSplitOptions.RemoveEmptyEntries)
-                .Select(d => d.Trim()));
+        e.UpcomingDates = newUpcomingDates;
         e.Frequency = m.Frequency;
         e.Published = m.Published;
         e.DisplayOrder = m.DisplayOrder;
         e.PictureId = m.PictureId;
+        e.Description = m.Description ?? string.Empty;
+        e.PublishToFacebook = m.PublishToFacebook;
+        e.PublishToInstagram = m.PublishToInstagram;
         return e;
     }
 }

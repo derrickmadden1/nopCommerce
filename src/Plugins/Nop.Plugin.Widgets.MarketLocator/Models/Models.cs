@@ -56,6 +56,18 @@ public record MarketLocationModel : BaseNopEntityModel
     [UIHint("Picture")]
     public int PictureId { get; set; }
 
+    [NopResourceDisplayName("Plugins.Widgets.MarketLocator.Fields.Description")]
+    public string Description { get; set; } = string.Empty;
+
+    [NopResourceDisplayName("Plugins.Widgets.MarketLocator.Fields.PublishToFacebook")]
+    public bool PublishToFacebook { get; set; } = true;
+
+    [NopResourceDisplayName("Plugins.Widgets.MarketLocator.Fields.PublishToInstagram")]
+    public bool PublishToInstagram { get; set; } = false;
+
+    [NopResourceDisplayName("Plugins.Widgets.MarketLocator.Fields.SocialCardRevision")]
+    public int SocialCardRevision { get; set; }
+
     public IList<SelectListItem> AvailableFrequencies { get; set; } = new List<SelectListItem>
     {
         new("Weekly",     "Weekly"),
@@ -116,4 +128,10 @@ public record MarketLocatorSettingsModel : BaseNopModel
 
     [NopResourceDisplayName("Plugins.Widgets.MarketLocator.Settings.QueueName")]
     public string QueueName { get; set; } = string.Empty;
+
+    [NopResourceDisplayName("Plugins.Widgets.MarketLocator.Settings.InstagramQueueName")]
+    public string InstagramQueueName { get; set; } = string.Empty;
+
+    [NopResourceDisplayName("Plugins.Widgets.MarketLocator.Settings.InstagramServiceBusConnectionString")]
+    public string InstagramServiceBusConnectionString { get; set; } = string.Empty;
 }

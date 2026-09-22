@@ -29,6 +29,15 @@ public class MarketLocationEventConsumer :
         }
     }
 
+    private string InstagramQueueName
+    {
+        get
+        {
+            var config = _appSettings.Get<MarketLocatorConfig>();
+            return config == null || string.IsNullOrEmpty(config.InstagramQueueName) ? "market-instagram-posts" : config.InstagramQueueName;
+        }
+    }
+
     private int DaysBeforeMarket => _settings.SocialPublishDaysBeforeMarket;
 
     public MarketLocationEventConsumer(
@@ -71,26 +80,39 @@ public class MarketLocationEventConsumer :
             if (!ShouldPublish(market))
                 return;
 
+            var targetQueues = GetTargetQueues(market);
+            if (targetQueues.Count == 0)
+                return;
+
             try
             {
                 var schedules = await BuildMessagesAndTimesAsync(market, "Created");
-                var sequenceNumbers = new List<long>();
+                var sequenceEntries = new List<string>();
 
-                foreach (var (message, scheduledTime) in schedules)
+                foreach (var queue in targetQueues)
                 {
-                    if (scheduledTime.HasValue)
+                    foreach (var (message, scheduledTime) in schedules)
                     {
-                        var seq = await _publisher!.ScheduleAsync(QueueName, message, scheduledTime.Value);
-                        sequenceNumbers.Add(seq);
-                    }
-                    else
-                    {
-                        await _publisher!.PublishAsync(QueueName, message);
+                        if (scheduledTime.HasValue)
+                        {
+                            var seq = await _publisher!.ScheduleAsync(queue, message, scheduledTime.Value);
+                            sequenceEntries.Add($"{queue}:{seq}");
+                            _logger.LogInformation(
+                                "Scheduled social post for {MarketName} on queue {Queue} — sequence {SequenceNumber}",
+                                market.Name, queue, seq);
+                        }
+                        else
+                        {
+                            await _publisher!.PublishAsync(queue, message);
+                            _logger.LogInformation(
+                                "Published immediate social post for {MarketName} on queue {Queue}",
+                                market.Name, queue);
+                        }
                     }
                 }
 
-                // Persist the sequence numbers so we can cancel later if needed
-                market.PendingSocialPostSequenceNumbers = string.Join(",", sequenceNumbers);
+                // Persist sequence entries (queue:seq) so we can cancel later if needed
+                market.PendingSocialPostSequenceNumbers = string.Join(",", sequenceEntries);
                 await _marketLocationService.UpdateAsync(market);
             }
             catch (ServiceBusException ex) when (ex.IsTransient)
@@ -120,9 +142,11 @@ public class MarketLocationEventConsumer :
 
         try
         {
-            if (!ShouldPublish(market))
+            var targetQueues = GetTargetQueues(market);
+
+            if (!ShouldPublish(market) || targetQueues.Count == 0)
             {
-                // Market has been unpublished — cancel any pending post
+                // Market is unpublished or has no active social targets — cancel any pending post
                 await TryCancelPendingAsync(market, saveToDb: true);
                 return;
             }
@@ -132,28 +156,34 @@ public class MarketLocationEventConsumer :
                 // Cancel the existing scheduled messages if they exist (don't save DB yet)
                 await TryCancelPendingAsync(market, saveToDb: false);
 
-                // Re-schedule with the (potentially new) dates
+                // Re-schedule with the (potentially new) dates/content
                 var schedules = await BuildMessagesAndTimesAsync(market, "Updated");
-                var sequenceNumbers = new List<long>();
+                var sequenceEntries = new List<string>();
 
-                foreach (var (message, scheduledTime) in schedules)
+                foreach (var queue in targetQueues)
                 {
-                    if (scheduledTime.HasValue)
+                    foreach (var (message, scheduledTime) in schedules)
                     {
-                        var seq = await _publisher!.ScheduleAsync(QueueName, message, scheduledTime.Value);
-                        sequenceNumbers.Add(seq);
-                        _logger.LogInformation(
-                            "Rescheduled social post for {MarketName} — new sequence {SequenceNumber}",
-                            market.Name, seq);
-                    }
-                    else
-                    {
-                        // Market is imminent — post immediately
-                        await _publisher!.PublishAsync(QueueName, message);
+                        if (scheduledTime.HasValue)
+                        {
+                            var seq = await _publisher!.ScheduleAsync(queue, message, scheduledTime.Value);
+                            sequenceEntries.Add($"{queue}:{seq}");
+                            _logger.LogInformation(
+                                "Rescheduled social post for {MarketName} on queue {Queue} — new sequence {SequenceNumber}",
+                                market.Name, queue, seq);
+                        }
+                        else
+                        {
+                            // Market is imminent — post immediately
+                            await _publisher!.PublishAsync(queue, message);
+                            _logger.LogInformation(
+                                "Published immediate social post update for {MarketName} on queue {Queue}",
+                                market.Name, queue);
+                        }
                     }
                 }
 
-                market.PendingSocialPostSequenceNumbers = string.Join(",", sequenceNumbers);
+                market.PendingSocialPostSequenceNumbers = string.Join(",", sequenceEntries);
                 await _marketLocationService.UpdateAsync(market);
             }
             catch (ServiceBusException ex) when (ex.IsTransient)
@@ -181,6 +211,20 @@ public class MarketLocationEventConsumer :
 
     // --- Helpers ---
 
+    private List<string> GetTargetQueues(MarketLocation market)
+    {
+        var queues = new List<string>();
+        if (market.PublishToFacebook && !string.IsNullOrWhiteSpace(QueueName))
+        {
+            queues.Add(QueueName);
+        }
+        if (market.PublishToInstagram && !string.IsNullOrWhiteSpace(InstagramQueueName))
+        {
+            queues.Add(InstagramQueueName);
+        }
+        return queues;
+    }
+
     private async Task TryCancelPendingAsync(MarketLocation market, bool saveToDb)
     {
         if (_publisher == null || string.IsNullOrEmpty(market.PendingSocialPostSequenceNumbers))
@@ -188,25 +232,38 @@ public class MarketLocationEventConsumer :
 
         try
         {
-            var sequences = market.PendingSocialPostSequenceNumbers
-                .Split(',')
-                .Where(s => long.TryParse(s.Trim(), out _))
-                .Select(s => long.Parse(s.Trim()))
-                .ToList();
+            var rawEntries = market.PendingSocialPostSequenceNumbers.Split(',', StringSplitOptions.RemoveEmptyEntries);
 
-            foreach (var seq in sequences)
+            foreach (var rawEntry in rawEntries)
             {
-                try
+                var entry = rawEntry.Trim();
+                string targetQueue = QueueName;
+                string seqStr = entry;
+
+                if (entry.Contains(':'))
                 {
-                    await _publisher.CancelScheduledAsync(QueueName, seq);
+                    var parts = entry.Split(':');
+                    targetQueue = parts[0];
+                    seqStr = parts[1];
                 }
-                catch (ServiceBusException ex) when (ex.IsTransient)
+
+                if (long.TryParse(seqStr, out var seq))
                 {
-                    _logger.LogWarning(ex, "Transient error cancelling sequence {SequenceNumber} for {MarketName}", seq, market.Name);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error cancelling sequence {SequenceNumber} for {MarketName}", seq, market.Name);
+                    try
+                    {
+                        await _publisher.CancelScheduledAsync(targetQueue, seq);
+                        _logger.LogInformation(
+                            "Cancelled scheduled social post sequence {SequenceNumber} on queue {Queue} for {MarketName}",
+                            seq, targetQueue, market.Name);
+                    }
+                    catch (ServiceBusException ex) when (ex.IsTransient)
+                    {
+                        _logger.LogWarning(ex, "Transient error cancelling sequence {SequenceNumber} on queue {Queue} for {MarketName}", seq, targetQueue, market.Name);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error cancelling sequence {SequenceNumber} on queue {Queue} for {MarketName}", seq, targetQueue, market.Name);
+                    }
                 }
             }
 
