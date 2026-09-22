@@ -11,5 +11,6 @@ public class MarketLocatorConfig : IConfig
 {
     public string ServiceBusConnectionString { get; set; } = string.Empty;
     public string QueueName { get; set; } = string.Empty;
+    public string InstagramServiceBusConnectionString { get; set; } = string.Empty;
     public string InstagramQueueName { get; set; } = string.Empty;
 }

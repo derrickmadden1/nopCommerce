@@ -7,21 +7,49 @@ namespace Nop.Services.Messaging;
 
 public class ServiceBusPublisher : IServiceBusPublisher, IAsyncDisposable
 {
-    private readonly ServiceBusClient _client;
+    private readonly ServiceBusClient? _defaultClient;
     private readonly ILogger<ServiceBusPublisher> _logger;
-
-    // Cache senders per topic/queue to avoid recreating them
+    private readonly IDictionary<string, string>? _connectionStringMap;
+    private readonly ConcurrentDictionary<string, ServiceBusClient> _clients = new();
     private readonly ConcurrentDictionary<string, ServiceBusSender> _senders = new();
 
     public ServiceBusPublisher(ServiceBusClient client, ILogger<ServiceBusPublisher> logger)
     {
-        _client = client;
+        _defaultClient = client;
         _logger = logger;
+    }
+
+    public ServiceBusPublisher(ILogger<ServiceBusPublisher> logger, IDictionary<string, string> connectionStringMap)
+    {
+        _logger = logger;
+        _connectionStringMap = connectionStringMap;
+    }
+
+    private ServiceBusSender GetSender(string topicOrQueue)
+    {
+        return _senders.GetOrAdd(topicOrQueue, queue =>
+        {
+            if (_connectionStringMap != null && _connectionStringMap.TryGetValue(queue, out var connStr) && !string.IsNullOrEmpty(connStr))
+            {
+                var client = _clients.GetOrAdd(queue, q => new ServiceBusClient(connStr, new ServiceBusClientOptions
+                {
+                    TransportType = ServiceBusTransportType.AmqpWebSockets
+                }));
+                return client.CreateSender(queue);
+            }
+
+            if (_defaultClient != null)
+            {
+                return _defaultClient.CreateSender(queue);
+            }
+
+            throw new InvalidOperationException($"No ServiceBusClient or connection string found for destination queue '{queue}'.");
+        });
     }
 
     public async Task PublishAsync<T>(string topicOrQueue, T message, CancellationToken cancellationToken = default)
     {
-        var sender = _senders.GetOrAdd(topicOrQueue, _client.CreateSender);
+        var sender = GetSender(topicOrQueue);
 
         var payload = JsonSerializer.Serialize(message, new JsonSerializerOptions
         {
@@ -53,12 +81,12 @@ public class ServiceBusPublisher : IServiceBusPublisher, IAsyncDisposable
     }
 
     public async Task<long> ScheduleAsync<T>(
-    string topicOrQueue,
-    T message,
-    DateTimeOffset scheduledEnqueueTime,
-    CancellationToken cancellationToken = default)
+        string topicOrQueue,
+        T message,
+        DateTimeOffset scheduledEnqueueTime,
+        CancellationToken cancellationToken = default)
     {
-        var sender = _senders.GetOrAdd(topicOrQueue, _client.CreateSender);
+        var sender = GetSender(topicOrQueue);
 
         var payload = JsonSerializer.Serialize(message, new JsonSerializerOptions
         {
@@ -71,10 +99,10 @@ public class ServiceBusPublisher : IServiceBusPublisher, IAsyncDisposable
             Subject = typeof(T).Name,
             MessageId = Guid.NewGuid().ToString(),
             ApplicationProperties =
-        {
-            ["MessageType"] = typeof(T).Name,
-            ["PublishedAt"] = DateTimeOffset.UtcNow.ToString("O")
-        }
+            {
+                ["MessageType"] = typeof(T).Name,
+                ["PublishedAt"] = DateTimeOffset.UtcNow.ToString("O")
+            }
         };
 
         try
@@ -101,7 +129,7 @@ public class ServiceBusPublisher : IServiceBusPublisher, IAsyncDisposable
         long sequenceNumber,
         CancellationToken cancellationToken = default)
     {
-        var sender = _senders.GetOrAdd(topicOrQueue, _client.CreateSender);
+        var sender = GetSender(topicOrQueue);
 
         try
         {
@@ -131,6 +159,10 @@ public class ServiceBusPublisher : IServiceBusPublisher, IAsyncDisposable
         foreach (var sender in _senders.Values)
             await sender.DisposeAsync();
 
-        await _client.DisposeAsync();
+        foreach (var client in _clients.Values)
+            await client.DisposeAsync();
+
+        if (_defaultClient != null)
+            await _defaultClient.DisposeAsync();
     }
 }

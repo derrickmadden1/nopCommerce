@@ -77,6 +77,7 @@ public class MarketLocatorAdminController : BasePluginController
             StoreUrl = settings.StoreUrl,
             QueueName = config.QueueName,
             InstagramQueueName = config.InstagramQueueName,
+            InstagramServiceBusConnectionString = config.InstagramServiceBusConnectionString,
         };
 
         // Automatically derive StoreUrl if it hasn't been set yet 
@@ -114,6 +115,7 @@ public class MarketLocatorAdminController : BasePluginController
         var config = _appSettings.Get<MarketLocatorConfig>() ?? new MarketLocatorConfig();
         config.QueueName = model.QueueName;
         config.InstagramQueueName = model.InstagramQueueName;
+        config.InstagramServiceBusConnectionString = model.InstagramServiceBusConnectionString;
         Nop.Core.Configuration.AppSettingsHelper.SaveAppSettings(new List<Nop.Core.Configuration.IConfig> { config }, _fileProvider);
 
         _notificationService.SuccessNotification(

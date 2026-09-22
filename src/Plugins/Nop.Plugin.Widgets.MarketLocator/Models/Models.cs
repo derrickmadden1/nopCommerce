@@ -131,4 +131,7 @@ public record MarketLocatorSettingsModel : BaseNopModel
 
     [NopResourceDisplayName("Plugins.Widgets.MarketLocator.Settings.InstagramQueueName")]
     public string InstagramQueueName { get; set; } = string.Empty;
+
+    [NopResourceDisplayName("Plugins.Widgets.MarketLocator.Settings.InstagramServiceBusConnectionString")]
+    public string InstagramServiceBusConnectionString { get; set; } = string.Empty;
 }
