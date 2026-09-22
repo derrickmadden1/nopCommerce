@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Nop.Core;
 using Nop.Core.Domain.Blogs;
 using Nop.Core.Domain.Localization;
@@ -133,7 +133,8 @@ public partial class BlogController : BasePublicController
         foreach (var blogPost in blogPosts)
         {
             var blogPostUrl = await _nopUrlHelper.RouteGenericUrlAsync(blogPost, _webHelper.GetCurrentRequestProtocol(), languageId: blogPost.LanguageId, ensureTwoPublishedLanguages: false);
-            items.Add(new RssItem(blogPost.Title, blogPost.Body, new Uri(blogPostUrl), $"urn:store:{store.Id}:blog:post:{blogPost.Id}", blogPost.CreatedOnUtc));
+            if (!string.IsNullOrEmpty(blogPostUrl) && Uri.TryCreate(blogPostUrl, UriKind.Absolute, out var blogPostUri))
+                items.Add(new RssItem(blogPost.Title, blogPost.Body, blogPostUri, $"urn:store:{store.Id}:blog:post:{blogPost.Id}", blogPost.CreatedOnUtc));
         }
         feed.Items = items;
         return new RssActionResult(feed, _webHelper.GetThisPageUrl(false));
