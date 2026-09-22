@@ -9,6 +9,8 @@ using Nop.Services.Configuration;
 using Nop.Services.Localization;
 using Nop.Services.Messages;
 using Nop.Services.Security;
+using Nop.Core.Events;
+using Nop.Services.Events;
 using Nop.Web.Framework;
 using Nop.Web.Framework.Controllers;
 using Nop.Web.Framework.Mvc.Filters;
@@ -28,6 +30,7 @@ public class MarketLocatorAdminController : BasePluginController
     private readonly IStoreContext _storeContext;
     private readonly AppSettings _appSettings;
     private readonly Nop.Core.Infrastructure.INopFileProvider _fileProvider;
+    private readonly IEventPublisher _eventPublisher;
 
     public MarketLocatorAdminController(
         IMarketLocationService locationService,
@@ -37,7 +40,8 @@ public class MarketLocatorAdminController : BasePluginController
         IPermissionService permissionService,
         IStoreContext storeContext,
         AppSettings appSettings,
-        Nop.Core.Infrastructure.INopFileProvider fileProvider)
+        Nop.Core.Infrastructure.INopFileProvider fileProvider,
+        IEventPublisher eventPublisher)
     {
         _locationService = locationService;
         _settingService = settingService;
@@ -47,6 +51,7 @@ public class MarketLocatorAdminController : BasePluginController
         _storeContext = storeContext;
         _appSettings = appSettings;
         _fileProvider = fileProvider;
+        _eventPublisher = eventPublisher;
     }
 
     // ── Settings ─────────────────────────────────────────────────────────────
@@ -114,6 +119,25 @@ public class MarketLocatorAdminController : BasePluginController
         _notificationService.SuccessNotification(
             await _localizationService.GetResourceAsync("Admin.Plugins.Saved"));
 
+        return RedirectToAction(nameof(Configure));
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> SyncSocialPosts()
+    {
+        if (!await _permissionService.AuthorizeAsync(StandardPermission.Configuration.MANAGE_PLUGINS))
+            return AccessDeniedView();
+
+        var locations = await _locationService.GetAllAsync(showUnpublished: true);
+        var count = 0;
+
+        foreach (var location in locations)
+        {
+            await _eventPublisher.EntityUpdatedAsync(location);
+            count++;
+        }
+
+        _notificationService.SuccessNotification($"Rescheduled social posts for {count} market locations.");
         return RedirectToAction(nameof(Configure));
     }
 
