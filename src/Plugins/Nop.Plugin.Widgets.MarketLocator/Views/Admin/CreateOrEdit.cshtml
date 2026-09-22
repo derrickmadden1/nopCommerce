@@ -67,6 +67,51 @@
                             </div>
                         </div>
 
+                        <div class="form-group row">
+                            <div class="col-md-3"><nop-label asp-for="Description" /></div>
+                            <div class="col-md-9">
+                                <textarea asp-for="Description" class="form-control" rows="3"
+                                          placeholder="Short market description for social posts and popups..."></textarea>
+                                <span asp-validation-for="Description" class="text-danger"></span>
+                                <span class="hint">Included in Facebook & Instagram post captions.</span>
+                            </div>
+                        </div>
+
+                        <hr />
+                        <h5><i class="fas fa-share-alt"></i> Social Media Publishing</h5>
+
+                        <div class="form-group row">
+                            <div class="col-md-3"><nop-label asp-for="PublishToFacebook" /></div>
+                            <div class="col-md-9">
+                                <nop-editor asp-for="PublishToFacebook" />
+                                <span asp-validation-for="PublishToFacebook" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <div class="form-group row">
+                            <div class="col-md-3"><nop-label asp-for="PublishToInstagram" /></div>
+                            <div class="col-md-9">
+                                <nop-editor asp-for="PublishToInstagram" />
+                                <span asp-validation-for="PublishToInstagram" class="text-danger"></span>
+                                <small class="form-text text-muted">
+                                    Posts a rendered flyer image to Instagram.
+                                </small>
+                            </div>
+                        </div>
+
+                        @if (isEdit)
+                        {
+                            <div class="form-group row">
+                                <div class="col-md-3"><nop-label asp-for="SocialCardRevision" /></div>
+                                <div class="col-md-9">
+                                    <div class="form-control-plaintext"><strong>@Model.SocialCardRevision</strong></div>
+                                    <small class="form-text text-muted">
+                                        Increments automatically when name, dates, hours, location, or description change.
+                                    </small>
+                                </div>
+                            </div>
+                        }
+
                     </div>
                     <div class="col-md-4">
 

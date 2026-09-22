@@ -52,8 +52,29 @@ public class MarketLocation : BaseEntity
     /// <summary>
     /// Service Bus sequence numbers of the pending scheduled social posts, comma separated.
     /// Null or empty if no messages are currently scheduled.
+    /// </summary>
     public string PendingSocialPostSequenceNumbers { get; set; } = string.Empty;
+
+    /// <summary>Whether to publish upcoming market events to Facebook.</summary>
+    public bool PublishToFacebook { get; set; } = true;
+
+    /// <summary>Whether to publish upcoming market events to Instagram.</summary>
+    public bool PublishToInstagram { get; set; } = false;
+
+    /// <summary>Incremented automatically when card-affecting fields change.</summary>
+    public int SocialCardRevision { get; set; }
 
     /// <summary>Last modified timestamp for ICS feed DTSTAMP.</summary>
     public DateTime LastModifiedUtc { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// Computed target list for messaging payloads.
+    /// </summary>
+    public string[] GetSocialPublishTargets()
+    {
+        var targets = new List<string>();
+        if (PublishToFacebook) targets.Add("Facebook");
+        if (PublishToInstagram) targets.Add("Instagram");
+        return targets.ToArray();
+    }
 }

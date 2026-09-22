@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -10,5 +10,6 @@ namespace Nop.Plugin.Widgets.MarketLocator;
 public class MarketLocatorConfig : IConfig
 {
     public string ServiceBusConnectionString { get; set; } = string.Empty;
-    public string QueueName {  get; set; } = string.Empty;
+    public string QueueName { get; set; } = string.Empty;
+    public string InstagramQueueName { get; set; } = string.Empty;
 }

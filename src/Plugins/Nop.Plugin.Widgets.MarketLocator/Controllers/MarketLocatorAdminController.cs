@@ -71,6 +71,7 @@ public class MarketLocatorAdminController : BasePluginController
             SocialPublishDaysBeforeMarket = settings.SocialPublishDaysBeforeMarket,
             StoreUrl = settings.StoreUrl,
             QueueName = config.QueueName,
+            InstagramQueueName = config.InstagramQueueName,
         };
 
         // Automatically derive StoreUrl if it hasn't been set yet 
@@ -107,6 +108,7 @@ public class MarketLocatorAdminController : BasePluginController
 
         var config = _appSettings.Get<MarketLocatorConfig>() ?? new MarketLocatorConfig();
         config.QueueName = model.QueueName;
+        config.InstagramQueueName = model.InstagramQueueName;
         Nop.Core.Configuration.AppSettingsHelper.SaveAppSettings(new List<Nop.Core.Configuration.IConfig> { config }, _fileProvider);
 
         _notificationService.SuccessNotification(
@@ -268,25 +270,49 @@ public class MarketLocatorAdminController : BasePluginController
         Published = e.Published,
         DisplayOrder = e.DisplayOrder,
         PictureId = e.PictureId,
+        Description = e.Description,
+        PublishToFacebook = e.PublishToFacebook,
+        PublishToInstagram = e.PublishToInstagram,
+        SocialCardRevision = e.SocialCardRevision,
     };
 
     private static MarketLocation MapToEntity(MarketLocationModel m, MarketLocation e)
     {
+        var newUpcomingDates = string.Join("|",
+            (m.UpcomingDatesRaw ?? string.Empty)
+                .Split('\n', StringSplitOptions.RemoveEmptyEntries)
+                .Select(d => d.Trim()));
+
+        if (e.Id > 0)
+        {
+            var cardAffectingChanged =
+                e.Name != m.Name ||
+                e.Address != m.Address ||
+                e.City != m.City ||
+                e.Hours != m.Hours ||
+                e.UpcomingDates != newUpcomingDates ||
+                e.Description != (m.Description ?? string.Empty);
+
+            if (cardAffectingChanged)
+            {
+                e.SocialCardRevision++;
+            }
+        }
+
         e.Name = m.Name;
         e.Address = m.Address;
         e.City = m.City;
         e.Latitude = m.Latitude;
         e.Longitude = m.Longitude;
         e.Hours = m.Hours;
-        // Convert textarea newlines → pipe-delimited storage
-        e.UpcomingDates = string.Join("|",
-            (m.UpcomingDatesRaw ?? string.Empty)
-                .Split('\n', StringSplitOptions.RemoveEmptyEntries)
-                .Select(d => d.Trim()));
+        e.UpcomingDates = newUpcomingDates;
         e.Frequency = m.Frequency;
         e.Published = m.Published;
         e.DisplayOrder = m.DisplayOrder;
         e.PictureId = m.PictureId;
+        e.Description = m.Description ?? string.Empty;
+        e.PublishToFacebook = m.PublishToFacebook;
+        e.PublishToInstagram = m.PublishToInstagram;
         return e;
     }
 }
