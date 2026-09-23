@@ -299,7 +299,7 @@ public class MarketLocationEventConsumer :
         foreach (var (startDate, endDate) in occurrences)
         {
             var scheduledTime = CalculateScheduledTime(startDate);
-            var messageChangeType = scheduledTime.HasValue ? "Created" : changeType;
+            var messageChangeType = "Created";
 
             var message = new MarketEventMessage
             {
