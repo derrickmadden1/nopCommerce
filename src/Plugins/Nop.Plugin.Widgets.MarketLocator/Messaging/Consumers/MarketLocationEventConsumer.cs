@@ -86,6 +86,8 @@ public class MarketLocationEventConsumer :
 
             try
             {
+                // Cancel any pre-existing scheduled messages on Service Bus before creating new ones
+                await TryCancelPendingAsync(market, saveToDb: false);
                 var schedules = await BuildMessagesAndTimesAsync(market, "Created");
                 var sequenceEntries = new List<string>();
 
