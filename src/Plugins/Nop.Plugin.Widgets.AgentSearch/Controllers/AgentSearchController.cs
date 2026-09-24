@@ -1,6 +1,7 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Nop.Plugin.Widgets.AgentSearch.Models;
+using Nop.Plugin.Widgets.AgentSearch.Services;
 using Nop.Services.Configuration;
 using Nop.Services.Localization;
 using Nop.Services.Messages;
@@ -19,21 +20,26 @@ public class AgentSearchController : BasePluginController
     private readonly ISettingService _settingService;
     private readonly INotificationService _notificationService;
     private readonly ILocalizationService _localizationService;
+    private readonly IAgentKeyService _agentKeyService;
 
     public AgentSearchController(
         AgentSearchSettings settings,
         ISettingService settingService,
         INotificationService notificationService,
-        ILocalizationService localizationService)
+        ILocalizationService localizationService,
+        IAgentKeyService agentKeyService)
     {
         _settings = settings;
         _settingService = settingService;
         _notificationService = notificationService;
         _localizationService = localizationService;
+        _agentKeyService = agentKeyService;
     }
 
-    public IActionResult Configure()
+    public async Task<IActionResult> Configure()
     {
+        var keys = await _agentKeyService.GetAllKeysAsync();
+
         var model = new AgentSearchConfigurationModel
         {
             Enabled = _settings.Enabled,
@@ -41,7 +47,8 @@ public class AgentSearchController : BasePluginController
             MaxResultsCap = _settings.MaxResultsCap,
             RequireApiKey = _settings.RequireApiKey,
             ApiKey = _settings.ApiKey,
-            UseQueryUnderstanding = _settings.UseQueryUnderstanding
+            UseQueryUnderstanding = _settings.UseQueryUnderstanding,
+            ExistingKeys = keys
         };
 
         return View("~/Plugins/Widgets.AgentSearch/Views/Configure.cshtml", model);
@@ -51,7 +58,7 @@ public class AgentSearchController : BasePluginController
     public async Task<IActionResult> Configure(AgentSearchConfigurationModel model)
     {
         if (!ModelState.IsValid)
-            return Configure();
+            return await Configure();
 
         _settings.Enabled = model.Enabled;
         _settings.MaxResultsDefault = model.MaxResultsDefault;
@@ -64,6 +71,41 @@ public class AgentSearchController : BasePluginController
 
         _notificationService.SuccessNotification(await _localizationService.GetResourceAsync("Admin.Plugins.Saved"));
 
-        return Configure();
+        return await Configure();
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> CreateKey(AgentSearchConfigurationModel model)
+    {
+        if (string.IsNullOrWhiteSpace(model.NewAgentName))
+        {
+            _notificationService.ErrorNotification("Agent Name is required when generating a new API Key.");
+            return await Configure();
+        }
+
+        var (keyEntity, rawKey) = await _agentKeyService.CreateKeyAsync(
+            model.NewAgentName,
+            model.NewRateLimitPerMinute > 0 ? model.NewRateLimitPerMinute : 600,
+            model.NewAllowedScopes);
+
+        _notificationService.SuccessNotification($"Agent API Key generated successfully for '{keyEntity.AgentName}'! RAW SECRET KEY (copy now, it will not be shown again): {rawKey}");
+
+        return await Configure();
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> ToggleKeyStatus(int id)
+    {
+        await _agentKeyService.ToggleKeyStatusAsync(id);
+        _notificationService.SuccessNotification("Agent API Key status toggled successfully.");
+        return await Configure();
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> DeleteKey(int id)
+    {
+        await _agentKeyService.DeleteKeyAsync(id);
+        _notificationService.SuccessNotification("Agent API Key deleted successfully.");
+        return await Configure();
     }
 }

@@ -33,6 +33,7 @@ namespace Nop.Plugin.Widgets.AgentSearch.Infrastructure
             services.AddScoped<IAzureProductSearchClient, AzureProductSearchClient>();
             services.AddScoped<IQueryUnderstandingService, PassthroughQueryUnderstandingService>();
             services.AddScoped<IAgentSearchService, AgentSearchService>();
+            services.AddScoped<IAgentKeyService, AgentKeyService>();
         }
 
         public void Configure(IApplicationBuilder application)
