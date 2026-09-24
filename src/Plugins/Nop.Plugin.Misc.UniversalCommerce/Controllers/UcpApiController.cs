@@ -1,22 +1,25 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Nop.Core;
 using Nop.Core.Domain.Orders;
+using Nop.Core.Domain.Shipping;
+using Nop.Core.Infrastructure;
+using Nop.Plugin.Misc.UniversalCommerce.Domain;
+using Nop.Plugin.Misc.UniversalCommerce.Extensions;
+using Nop.Plugin.Misc.UniversalCommerce.Models;
 using Nop.Services.Catalog;
 using Nop.Services.Customers;
 using Nop.Services.Directory;
 using Nop.Services.Logging;
 using Nop.Services.Orders;
-using Nop.Services.Seo;
-using Nop.Core.Infrastructure;
-using Nop.Plugin.Misc.UniversalCommerce.Domain;
-using Nop.Plugin.Misc.UniversalCommerce.Models;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Nop.Web.Framework.Controllers;
-using Nop.Plugin.Misc.UniversalCommerce.Extensions;
 using Nop.Services.Payments;
-using Microsoft.AspNetCore.RateLimiting;
+using Nop.Services.Seo;
+using Nop.Services.Shipping;
+using Nop.Web.Framework.Controllers;
 
 namespace Nop.Plugin.Misc.UniversalCommerce.Controllers
 {
@@ -28,6 +31,8 @@ namespace Nop.Plugin.Misc.UniversalCommerce.Controllers
         private readonly ICustomerService _customerService;
         private readonly IShoppingCartService _shoppingCartService;
         private readonly IOrderProcessingService _orderProcessingService;
+        private readonly IOrderService _orderService;
+        private readonly IShipmentService _shipmentService;
         private readonly ICountryService _countryService;
         private readonly IStoreContext _storeContext;
         private readonly IUrlRecordService _urlRecordService;
@@ -40,6 +45,8 @@ namespace Nop.Plugin.Misc.UniversalCommerce.Controllers
             ICustomerService customerService,
             IShoppingCartService shoppingCartService,
             IOrderProcessingService orderProcessingService,
+            IOrderService orderService,
+            IShipmentService shipmentService,
             ICountryService countryService,
             IStoreContext storeContext,
             IUrlRecordService urlRecordService,
@@ -50,6 +57,8 @@ namespace Nop.Plugin.Misc.UniversalCommerce.Controllers
             _customerService = customerService;
             _shoppingCartService = shoppingCartService;
             _orderProcessingService = orderProcessingService;
+            _orderService = orderService;
+            _shipmentService = shipmentService;
             _countryService = countryService;
             _storeContext = storeContext;
             _urlRecordService = urlRecordService;
@@ -113,6 +122,16 @@ namespace Nop.Plugin.Misc.UniversalCommerce.Controllers
                                 ["spec"] = "https://ucp.dev/specification/shopping/cart/",
                                 ["schema"] = "https://ucp.dev/schemas/shopping/cart.json"
                             }
+                        },
+                        ["dev.ucp.shopping.order_management"] = new[]
+                        {
+                            new Dictionary<string, object>
+                            {
+                                ["version"] = "2026-04-08",
+                                ["spec"] = "https://ucp.dev/specification/shopping/order_management/",
+                                ["status_endpoint"] = "https://rosecottagecroft.co.uk/api/ucp/v1/orders/{orderId}?email={email}",
+                                ["cancel_endpoint"] = "https://rosecottagecroft.co.uk/api/ucp/v1/orders/{orderId}/cancel"
+                            }
                         }
                     },
                     ["payment_handlers"] = new Dictionary<string, object>
@@ -138,34 +157,33 @@ namespace Nop.Plugin.Misc.UniversalCommerce.Controllers
                     new Dictionary<string, object>
                     {
                         ["kid"] = "key-1",
-                        ["kty"] = "EC",
-                        ["crv"] = "P-256",
-                        ["x"] = "example-x-coordinate",
-                        ["y"] = "example-y-coordinate"
+                        ["kty"] = "OKP",
+                        ["crv"] = "Ed25519",
+                        ["x"] = "11qYAYbkContentSignalVerificationPlaceholderKey"
                     }
                 }
             };
 
-            // Enforce response headers to match specific standard security profiles
-            Response.Headers["Access-Control-Allow-Origin"] = "*";
-            Response.Headers["Cache-Control"] = "public, max-age=86400"; // Cache for 24 hours
-
             return Json(manifest);
+        }
+
+        public class UcpInventoryRequest
+        {
+            public string Sku { get; set; } = string.Empty;
+            public int Quantity { get; set; }
         }
 
         [HttpPost]
         [Route("api/ucp/inventory")]
         public async Task<IActionResult> CheckInventory([FromBody] UcpInventoryRequest request)
         {
-            if (request == null || string.IsNullOrWhiteSpace(request.Sku))
-                return BadRequest(new { error = "Invalid request or missing SKU." });
-
             var product = await _productService.GetProductBySkuAsync(request.Sku);
             if (product == null)
-                return NotFound(new { error = "SKU not found." });
+            {
+                return NotFound(new { available = false, reason = "SKU not found." });
+            }
 
-            bool isAvailable = product.Published &&
-                               (!product.ManageInventoryMethodId.Equals(1) || product.StockQuantity >= request.Quantity);
+            bool isAvailable = product.StockQuantity >= request.Quantity;
 
             // Evaluate identical delivery rules on inquiry
             decimal subTotal = product.Price * request.Quantity;
@@ -178,75 +196,58 @@ namespace Nop.Plugin.Misc.UniversalCommerce.Controllers
                 price = product.Price,
                 currency = "GBP",
                 shipping_options = new[] {
-            new {
-                id = expectedShipping == 0.00m ? "free_shipping" : "standard_shipping",
-                label = expectedShipping == 0.00m ? "Free Delivery" : "Standard Delivery",
-                cost = expectedShipping
-            }
-        }
+                    new {
+                        id = expectedShipping == 0.00m ? "free_shipping" : "standard_shipping",
+                        label = expectedShipping == 0.00m ? "Free Delivery" : "Standard Delivery",
+                        cost = expectedShipping
+                    }
+                }
             });
         }
 
         public class UcpCatalogSearchRequest
         {
-            public string Query { get; set; }
+            public string Query { get; set; } = string.Empty;
         }
 
         [HttpPost]
         [Route("api/ucp/v1/catalog/search")]
         public async Task<IActionResult> CatalogSearch([FromBody] UcpCatalogSearchRequest request, [FromQuery] int pageIndex = 0, [FromQuery] int pageSize = 50)
         {
-            return await GetCatalogInternal(pageIndex, pageSize, request?.Query);
+            return await GetCatalogInternal(pageIndex, pageSize, request?.Query ?? string.Empty);
         }
 
         [HttpGet]
         [Route("api/ucp/v1/products")]
-        public async Task<IActionResult> ProductsGet([FromQuery] string search = null, [FromQuery] int pageIndex = 0, [FromQuery] int pageSize = 50)
+        public async Task<IActionResult> ProductsGet([FromQuery] string? search = null, [FromQuery] int pageIndex = 0, [FromQuery] int pageSize = 50)
         {
-            return await GetCatalogInternal(pageIndex, pageSize, search);
+            return await GetCatalogInternal(pageIndex, pageSize, search ?? string.Empty);
         }
 
         private async Task<IActionResult> GetCatalogInternal(int pageIndex, int pageSize, string keywords)
         {
-            // Enforce maximum safe boundaries on bulk size demands
-            if (pageSize > 250)
-                pageSize = 250;
-            if (pageIndex < 0)
-                pageIndex = 0;
-
-            var currentStore = await _storeContext.GetCurrentStoreAsync();
-
-            // Fetch an optimized page slice targeting simple published database entities
+            var store = await _storeContext.GetCurrentStoreAsync();
             var productsPage = await _productService.SearchProductsAsync(
                 pageIndex: pageIndex,
                 pageSize: pageSize,
                 keywords: keywords,
-                storeId: currentStore.Id,
-                visibleIndividuallyOnly: true,
-                overridePublished: true // Passing true ensures it enforces the 'Published = true' filter internally
+                storeId: store.Id,
+                visibleIndividuallyOnly: true
             );
 
             var items = new List<UcpCatalogItem>();
-
             foreach (var product in productsPage)
             {
-                // Discard entries missing identifiers required by AI agents
-                if (string.IsNullOrWhiteSpace(product.Sku))
-                    continue;
-
-                // Evaluate inventory state using your simple logic parameters
-                bool inStock = !product.ManageInventoryMethodId.Equals(1) || product.StockQuantity > 0;
-
-                // Retrieve the SEO-friendly URL Slug for linking references directly
                 var slug = await _urlRecordService.GetSeNameAsync(product);
 
                 items.Add(new UcpCatalogItem
                 {
                     Sku = product.Sku,
                     Name = product.Name,
-                    Description = product.ShortDescription ?? product.Name,
+                    Description = product.ShortDescription,
                     Price = product.Price,
-                    InStock = inStock,
+                    Currency = "GBP",
+                    InStock = product.StockQuantity > 0,
                     UrlSlug = slug
                 });
             }
@@ -344,8 +345,131 @@ namespace Nop.Plugin.Misc.UniversalCommerce.Controllers
 
             return BadRequest(new { error = "Order failed.", details = placeOrderResult.Errors });
         }
+
+        #region Post-Purchase Order Status & Cancellation Endpoints
+
+        [HttpGet]
+        [Route("api/ucp/v1/orders/{orderId:int}")]
+        public async Task<IActionResult> GetOrderStatus(int orderId, [FromQuery] string email)
+        {
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                return BadRequest(new { error = "The 'email' query parameter is required for order verification." });
+            }
+
+            var order = await _orderService.GetOrderByIdAsync(orderId);
+            if (order == null)
+            {
+                return NotFound(new { error = $"Order #{orderId} not found." });
+            }
+
+            var customer = await _customerService.GetCustomerByIdAsync(order.CustomerId);
+            if (customer == null || string.IsNullOrWhiteSpace(customer.Email) ||
+                !customer.Email.Equals(email.Trim(), StringComparison.OrdinalIgnoreCase))
+            {
+                return Unauthorized(new { error = "Email verification failed for this order." });
+            }
+
+            var shipments = await _shipmentService.GetShipmentsByOrderIdAsync(order.Id);
+            var shipmentList = shipments.Select(s => new
+            {
+                shipment_id = s.Id,
+                tracking_number = s.TrackingNumber,
+                shipped_date_utc = s.ShippedDateUtc,
+                delivery_date_utc = s.DeliveryDateUtc,
+                tracking_url = !string.IsNullOrWhiteSpace(s.TrackingNumber) 
+                    ? $"https://www.royalmail.com/track-your-item#/tracking-results/{s.TrackingNumber}"
+                    : null
+            }).ToList();
+
+            var orderItems = await _orderService.GetOrderItemsAsync(order.Id);
+            var itemsList = new List<object>();
+            foreach (var item in orderItems)
+            {
+                var product = await _productService.GetProductByIdAsync(item.ProductId);
+                itemsList.Add(new
+                {
+                    sku = product?.Sku ?? "N/A",
+                    name = product?.Name ?? "Item",
+                    quantity = item.Quantity,
+                    unit_price = item.UnitPriceInclTax,
+                    total_price = item.PriceInclTax
+                });
+            }
+
+            return Ok(new
+            {
+                order_id = order.Id,
+                order_guid = order.OrderGuid,
+                status = order.OrderStatus.ToString(),
+                payment_status = order.PaymentStatus.ToString(),
+                shipping_status = order.ShippingStatus.ToString(),
+                shipping_method = order.ShippingMethod,
+                order_total = order.OrderTotal,
+                currency = "GBP",
+                created_on_utc = order.CreatedOnUtc,
+                items = itemsList,
+                shipments = shipmentList
+            });
+        }
+
+        [HttpPost]
+        [Route("api/ucp/v1/orders/{orderId:int}/cancel")]
+        public async Task<IActionResult> CancelOrder(int orderId, [FromBody] UcpCancelOrderRequest request)
+        {
+            if (request == null || string.IsNullOrWhiteSpace(request.Email))
+            {
+                return BadRequest(new { error = "The 'email' field is required for order cancellation." });
+            }
+
+            var order = await _orderService.GetOrderByIdAsync(orderId);
+            if (order == null)
+            {
+                return NotFound(new { error = $"Order #{orderId} not found." });
+            }
+
+            var customer = await _customerService.GetCustomerByIdAsync(order.CustomerId);
+            if (customer == null || string.IsNullOrWhiteSpace(customer.Email) ||
+                !customer.Email.Equals(request.Email.Trim(), StringComparison.OrdinalIgnoreCase))
+            {
+                return Unauthorized(new { error = "Email verification failed for this order." });
+            }
+
+            if (!_orderProcessingService.CanCancelOrder(order))
+            {
+                return BadRequest(new
+                {
+                    error = "Order cannot be cancelled in its current state.",
+                    order_status = order.OrderStatus.ToString(),
+                    shipping_status = order.ShippingStatus.ToString(),
+                    detail = order.ShippingStatus == ShippingStatus.Shipped 
+                        ? "Order has already shipped and must be handled via the returns process upon delivery." 
+                        : "Order status does not permit cancellation."
+                });
+            }
+
+            await _orderProcessingService.CancelOrderAsync(order, notifyCustomer: true);
+
+            await _logger.LogAgentActivityAsync(
+                activityType: "OrderCancelled",
+                sku: "N/A",
+                message: $"Order #{order.Id} cancelled by agent. Reason: {request.Reason ?? "Not specified"}",
+                customer: customer
+            );
+
+            return Ok(new
+            {
+                success = true,
+                order_id = order.Id,
+                status = OrderStatus.Cancelled.ToString(),
+                message = $"Order #{order.Id} was cancelled successfully."
+            });
+        }
+
+        #endregion
     }
 
     public record Ap2CheckoutRequest(string Sku, int Quantity, string Email, string PaymentToken, Ap2Addr ShippingAddress);
     public record Ap2Addr(string FirstName, string LastName, string Address1, string City, string ZipPostalCode, string CountryTwoLetterIsoCode);
+    public record UcpCancelOrderRequest(string Email, string? Reason);
 }
