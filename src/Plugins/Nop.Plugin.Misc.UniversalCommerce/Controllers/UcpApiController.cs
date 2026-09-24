@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Nop.Core;
+using Nop.Core.Domain.Catalog;
 using Nop.Core.Domain.Orders;
 using Nop.Core.Domain.Shipping;
 using Nop.Core.Infrastructure;
@@ -164,13 +165,10 @@ namespace Nop.Plugin.Misc.UniversalCommerce.Controllers
                 }
             };
 
-            return Json(manifest);
-        }
+            Response.Headers["Access-Control-Allow-Origin"] = "*";
+            Response.Headers["Cache-Control"] = "public, max-age=86400";
 
-        public class UcpInventoryRequest
-        {
-            public string Sku { get; set; } = string.Empty;
-            public int Quantity { get; set; }
+            return Json(manifest);
         }
 
         [HttpPost]
@@ -180,10 +178,10 @@ namespace Nop.Plugin.Misc.UniversalCommerce.Controllers
             var product = await _productService.GetProductBySkuAsync(request.Sku);
             if (product == null)
             {
-                return NotFound(new { available = false, reason = "SKU not found." });
+                return NotFound(new { error = "SKU not found.", available = false, reason = "SKU not found." });
             }
 
-            bool isAvailable = product.StockQuantity >= request.Quantity;
+            bool isAvailable = product.Published && (product.ManageInventoryMethod == ManageInventoryMethod.DontManageStock || product.StockQuantity >= request.Quantity);
 
             // Evaluate identical delivery rules on inquiry
             decimal subTotal = product.Price * request.Quantity;
