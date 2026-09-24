@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Nop.Plugin.Widgets.AgentSearch.Infrastructure;
 using Nop.Plugin.Widgets.AgentSearch.Models;
 using Nop.Plugin.Widgets.AgentSearch.Services;
 using Nop.Services.Configuration;
@@ -40,25 +41,10 @@ namespace Nop.Plugin.Widgets.AgentSearch.Controllers
         }
 
         [HttpPost]
+        [AgentApiKeyAuth("Search.Read")]
         public async Task<IActionResult> Search([FromBody] AgentSearchRequest request)
         {
             var settings = await _settingService.LoadSettingAsync<AgentSearchSettings>();
-
-            if (!settings.Enabled)
-                return NotFound();
-
-            if (settings.RequireApiKey)
-            {
-                var providedKey = Request.Headers["X-Api-Key"].ToString();
-                if (string.IsNullOrEmpty(providedKey) || providedKey != settings.ApiKey)
-                {
-                    return Unauthorized(new AgentSearchErrorResponse
-                    {
-                        Error = "unauthorized",
-                        Detail = "Missing or invalid X-Api-Key header."
-                    });
-                }
-            }
 
             if (request == null || string.IsNullOrWhiteSpace(request.Query))
             {
