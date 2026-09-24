@@ -93,7 +93,7 @@ public class MarketLocationEventConsumer :
 
                 foreach (var queue in targetQueues)
                 {
-                    foreach (var (message, scheduledTime) in schedules)
+                    foreach (var (message, scheduledTime, isPastScheduledDate) in schedules)
                     {
                         if (scheduledTime.HasValue)
                         {
@@ -103,11 +103,18 @@ public class MarketLocationEventConsumer :
                                 "Scheduled social post for {MarketName} on queue {Queue} — sequence {SequenceNumber}",
                                 market.Name, queue, seq);
                         }
-                        else
+                        else if (!isPastScheduledDate || (message.StartDate.HasValue && message.StartDate.Value >= DateTime.UtcNow))
                         {
+                            // Brand new market created for an upcoming occurrence whose postDate has passed
                             await _publisher!.PublishAsync(queue, message);
                             _logger.LogInformation(
-                                "Published immediate social post for {MarketName} on queue {Queue}",
+                                "Published immediate social post for newly created {MarketName} on queue {Queue}",
+                                market.Name, queue);
+                        }
+                        else
+                        {
+                            _logger.LogInformation(
+                                "Skipping social post for newly created {MarketName} on queue {Queue} because scheduled post date has passed",
                                 market.Name, queue);
                         }
                     }
@@ -164,7 +171,7 @@ public class MarketLocationEventConsumer :
 
                 foreach (var queue in targetQueues)
                 {
-                    foreach (var (message, scheduledTime) in schedules)
+                    foreach (var (message, scheduledTime, isPastScheduledDate) in schedules)
                     {
                         if (scheduledTime.HasValue)
                         {
@@ -176,11 +183,10 @@ public class MarketLocationEventConsumer :
                         }
                         else
                         {
-                            // Market is imminent — post immediately
-                            await _publisher!.PublishAsync(queue, message);
+                            // Scheduled post date has already passed — skip re-posting on updates to avoid duplicates
                             _logger.LogInformation(
-                                "Published immediate social post update for {MarketName} on queue {Queue}",
-                                market.Name, queue);
+                                "Skipping social post update for {MarketName} on queue {Queue} for occurrence starting {StartDate} because scheduled post date has already passed",
+                                market.Name, queue, message.StartDate);
                         }
                     }
                 }
@@ -292,15 +298,15 @@ public class MarketLocationEventConsumer :
         return true;
     }
 
-    private async Task<List<(MarketEventMessage message, DateTimeOffset? scheduledTime)>> BuildMessagesAndTimesAsync(
+    private async Task<List<(MarketEventMessage message, DateTimeOffset? scheduledTime, bool isPastScheduledDate)>> BuildMessagesAndTimesAsync(
         MarketLocation market, string changeType)
     {
         var occurrences = MarketDateHelper.GetAllFutureMarketOccurrences(market.UpcomingDates, market.Hours);
-        var results = new List<(MarketEventMessage, DateTimeOffset?)>();
+        var results = new List<(MarketEventMessage, DateTimeOffset?, bool)>();
 
         foreach (var (startDate, endDate) in occurrences)
         {
-            var scheduledTime = CalculateScheduledTime(startDate);
+            var (scheduledTime, isPastScheduledDate) = CalculateScheduledTime(startDate);
             var messageChangeType = "Created";
 
             var message = new MarketEventMessage
@@ -328,26 +334,25 @@ public class MarketLocationEventConsumer :
                 }
             }
 
-            results.Add((message, scheduledTime));
+            results.Add((message, scheduledTime, isPastScheduledDate));
         }
 
         return results;
     }
 
-    private DateTimeOffset? CalculateScheduledTime(DateTime? marketStartDate)
+    private (DateTimeOffset? scheduledTime, bool isPastScheduledDate) CalculateScheduledTime(DateTime? marketStartDate)
     {
         if (!marketStartDate.HasValue)
-            return null;
+            return (null, true);
 
         var postDate = marketStartDate.Value.Date.AddDays(-DaysBeforeMarket);
+        var postTime = new DateTimeOffset(postDate.Year, postDate.Month, postDate.Day, 9, 0, 0, TimeSpan.Zero);
 
-        // If post date is in the past or imminent, post immediately
-        if (postDate <= DateTime.UtcNow.Date)
-            return null;
+        // If scheduled post time has already passed
+        if (postTime <= DateTimeOffset.UtcNow)
+            return (null, true);
 
         // Post at 9am UTC on the scheduled day
-        return new DateTimeOffset(
-            postDate.Year, postDate.Month, postDate.Day,
-            9, 0, 0, TimeSpan.Zero);
+        return (postTime, false);
     }
 }
