@@ -10,16 +10,13 @@ using Nop.Services.Common;
 using Nop.Services.Helpers;
 using Nop.Services.Plugins;
 using Nop.Services.ScheduleTasks;
-using Nop.Services.Security;
-using Nop.Web.Framework.Menu;
 
 namespace Nop.Plugin.Misc.CheckoutAbandonmentTracker
 {
-    public class CheckoutAbandonmentTrackerPlugin : BasePlugin, IMiscPlugin, IAdminMenuPlugin
+    public class CheckoutAbandonmentTrackerPlugin : BasePlugin, IMiscPlugin
     {
         private readonly IMigrationManager _migrationManager;
         private readonly IScheduleTaskService _scheduleTaskService;
-        private readonly IPermissionService _permissionService;
         private readonly IWebHelper _webHelper;
 
         private const string AbandonedCheckoutTaskType =
@@ -28,12 +25,10 @@ namespace Nop.Plugin.Misc.CheckoutAbandonmentTracker
         public CheckoutAbandonmentTrackerPlugin(
             IMigrationManager migrationManager,
             IScheduleTaskService scheduleTaskService,
-            IPermissionService permissionService,
             IWebHelper webHelper)
         {
             _migrationManager = migrationManager;
             _scheduleTaskService = scheduleTaskService;
-            _permissionService = permissionService;
             _webHelper = webHelper;
         }
 
@@ -74,22 +69,6 @@ namespace Nop.Plugin.Misc.CheckoutAbandonmentTracker
             // SchemaMigration.Down and README) so re-enabling the plugin
             // later doesn't lose historical abandonment data.
             await base.UninstallAsync();
-        }
-
-        public async Task ManageSiteMapAsync(AdminMenuItem rootNode)
-        {
-            if (!await _permissionService.AuthorizeAsync(StandardPermission.Configuration.MANAGE_PLUGINS))
-                return;
-
-            var pluginNode = new AdminMenuItem
-            {
-                SystemName = "Misc.CheckoutAbandonmentTracker",
-                Title = "Abandoned Checkouts",
-                Url = "/Admin/CheckoutAbandonmentTracker/List",
-                IconClass = "far fa-dot-circle",
-                Visible = true
-            };
-            rootNode.ChildNodes.Add(pluginNode);
         }
     }
 }
