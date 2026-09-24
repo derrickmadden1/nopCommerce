@@ -20,6 +20,7 @@ using Nop.Services.Directory;
 using Nop.Services.Logging;
 using Nop.Services.Orders;
 using Nop.Services.Seo;
+using Nop.Services.Shipping;
 using Xunit;
 
 namespace Nop.Plugin.Misc.UniversalCommerce.Tests
@@ -30,6 +31,8 @@ namespace Nop.Plugin.Misc.UniversalCommerce.Tests
         private readonly Mock<ICustomerService> _customerServiceMock;
         private readonly Mock<IShoppingCartService> _shoppingCartServiceMock;
         private readonly Mock<IOrderProcessingService> _orderProcessingServiceMock;
+        private readonly Mock<IOrderService> _orderServiceMock;
+        private readonly Mock<IShipmentService> _shipmentServiceMock;
         private readonly Mock<ICountryService> _countryServiceMock;
         private readonly Mock<IStoreContext> _storeContextMock;
         private readonly Mock<IUrlRecordService> _urlRecordServiceMock;
@@ -43,6 +46,8 @@ namespace Nop.Plugin.Misc.UniversalCommerce.Tests
             _customerServiceMock = new Mock<ICustomerService>();
             _shoppingCartServiceMock = new Mock<IShoppingCartService>();
             _orderProcessingServiceMock = new Mock<IOrderProcessingService>();
+            _orderServiceMock = new Mock<IOrderService>();
+            _shipmentServiceMock = new Mock<IShipmentService>();
             _countryServiceMock = new Mock<ICountryService>();
             _storeContextMock = new Mock<IStoreContext>();
             _urlRecordServiceMock = new Mock<IUrlRecordService>();
@@ -54,6 +59,8 @@ namespace Nop.Plugin.Misc.UniversalCommerce.Tests
                 _customerServiceMock.Object,
                 _shoppingCartServiceMock.Object,
                 _orderProcessingServiceMock.Object,
+                _orderServiceMock.Object,
+                _shipmentServiceMock.Object,
                 _countryServiceMock.Object,
                 _storeContextMock.Object,
                 _urlRecordServiceMock.Object,
