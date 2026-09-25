@@ -106,6 +106,13 @@
                         Render = new RenderBoolean(),
                         ClassName = NopColumnClassDefaults.CenterAll
                     },
+                    new ColumnProperty(nameof(GoogleProductModel.IsExcluded))
+                    {
+                        Title = T("Plugins.Feed.GoogleShopping.Products.IsExcluded").Text,
+                        Width = "50",
+                        Render = new RenderBoolean(),
+                        ClassName = NopColumnClassDefaults.CenterAll
+                    },
                     //new ColumnProperty(nameof(GoogleProductModel.GoogleCategory))
                     //{
                     //    Title = T("Plugins.Feed.GoogleShopping.Products.GoogleCategory").Text,
