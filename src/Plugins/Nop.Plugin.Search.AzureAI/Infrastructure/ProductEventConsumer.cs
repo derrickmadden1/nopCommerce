@@ -35,7 +35,11 @@ public class ProductEventConsumer :
         if (!_settings.Enabled)
             return;
 
-        await PublishIndexMessageAsync(eventMessage.Entity, ProductIndexAction.Index);
+        var action = (eventMessage.Entity.Published && eventMessage.Entity.VisibleIndividually)
+            ? ProductIndexAction.Index
+            : ProductIndexAction.Delete;
+
+        await PublishIndexMessageAsync(eventMessage.Entity, action);
     }
 
     public async Task HandleEventAsync(EntityUpdatedEvent<Product> eventMessage)
@@ -43,8 +47,8 @@ public class ProductEventConsumer :
         if (!_settings.Enabled)
             return;
 
-        // If product is being unpublished, remove from index rather than update
-        var action = eventMessage.Entity.Published
+        // If product is being unpublished or hidden individually, remove from index rather than update
+        var action = (eventMessage.Entity.Published && eventMessage.Entity.VisibleIndividually)
             ? ProductIndexAction.Index
             : ProductIndexAction.Delete;
 

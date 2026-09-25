@@ -374,6 +374,7 @@ public class FeedGoogleShoppingController : BasePluginController
                     gModel.GoogleSize = googleProduct.Size;
                     gModel.CustomGoods = googleProduct.CustomGoods;
                     gModel.UseShortDescription = googleProduct.UseShortDescription;
+                    gModel.IsExcluded = googleProduct.IsExcluded;
                 }
                 return gModel;
             });
@@ -405,7 +406,8 @@ public class FeedGoogleShoppingController : BasePluginController
             Gender = googleProduct.Gender,
             GoogleSize = googleProduct.Size,
             GoogleCategory = googleProduct.Taxonomy,
-            UseShortDescription = googleProduct.UseShortDescription
+            UseShortDescription = googleProduct.UseShortDescription,
+            IsExcluded = googleProduct.IsExcluded
         };
 
         return View("~/Plugins/Feed.GoogleShopping/Views/Edit.cshtml", model);
@@ -426,6 +428,7 @@ public class FeedGoogleShoppingController : BasePluginController
             googleProduct.Size = model.GoogleSize;
             googleProduct.CustomGoods = model.CustomGoods;
             googleProduct.UseShortDescription = model.UseShortDescription;
+            googleProduct.IsExcluded = model.IsExcluded;
             await _googleService.UpdateGoogleProductRecordAsync(googleProduct);
         }
         else
@@ -440,7 +443,8 @@ public class FeedGoogleShoppingController : BasePluginController
                 Color = model.Color,
                 Size = model.GoogleSize,
                 CustomGoods = model.CustomGoods,
-                UseShortDescription = model.UseShortDescription
+                UseShortDescription = model.UseShortDescription,
+                IsExcluded = model.IsExcluded
             };
             await _googleService.InsertGoogleProductRecordAsync(googleProduct);
         }

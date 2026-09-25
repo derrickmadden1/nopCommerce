@@ -271,6 +271,8 @@ public class GoogleShoppingService : BasePlugin, IMiscPlugin
             foreach (var product in productsToProcess)
             {
                 var googleProduct = allGoogleProducts.FirstOrDefault(x => x.ProductId == product.Id);
+                if (googleProduct != null && googleProduct.IsExcluded)
+                    continue;
 
                 writer.WriteStartElement("item");
 

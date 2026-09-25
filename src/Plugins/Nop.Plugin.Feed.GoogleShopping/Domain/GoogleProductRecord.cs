@@ -21,4 +21,5 @@ public partial class GoogleProductRecord : BaseEntity
     public string Material { get; set; }
     public string Pattern { get; set; }
     public bool UseShortDescription { get; set; }
+    public bool IsExcluded { get; set; }
 }

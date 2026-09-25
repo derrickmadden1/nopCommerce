@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Nop.Core;
 using Nop.Core.Domain.Catalog;
 using Nop.Core.Domain.Localization;
@@ -150,13 +150,16 @@ public partial class ProductController : BasePublicController
         //visible individually?
         if (!product.VisibleIndividually)
         {
-            //is this one an associated products?
-            var parentGroupedProduct = await _productService.GetProductByIdAsync(product.ParentGroupedProductId);
-            if (parentGroupedProduct == null)
-                return RedirectToRoute(NopRouteNames.General.HOMEPAGE);
+            //is this one an associated product of a grouped product?
+            if (product.ParentGroupedProductId > 0)
+            {
+                var parentGroupedProduct = await _productService.GetProductByIdAsync(product.ParentGroupedProductId);
+                if (parentGroupedProduct == null)
+                    return RedirectToRoute(NopRouteNames.General.HOMEPAGE);
 
-            var productUrl = await _nopUrlHelper.RouteGenericUrlAsync(parentGroupedProduct);
-            return LocalRedirectPermanent(productUrl);
+                var productUrl = await _nopUrlHelper.RouteGenericUrlAsync(parentGroupedProduct);
+                return LocalRedirectPermanent(productUrl);
+            }
         }
 
         //update existing shopping cart or wishlist  item?

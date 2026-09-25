@@ -106,7 +106,7 @@ public class AzureAISearchController : BasePluginController
             }
 
             // 3. Fully re-index all current published products to ensure they are sync'd
-            var allProducts = await _productService.SearchProductsAsync(showHidden: false);
+            var allProducts = await _productService.SearchProductsAsync(showHidden: false, visibleIndividuallyOnly: true);
             var indexCount = 0;
             foreach (var product in allProducts)
             {

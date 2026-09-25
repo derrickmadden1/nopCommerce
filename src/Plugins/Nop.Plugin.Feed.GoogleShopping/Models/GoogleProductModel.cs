@@ -40,5 +40,8 @@ public record GoogleProductModel : BaseNopEntityModel
     [NopResourceDisplayName("Plugins.Feed.GoogleShopping.Products.UseShortDescription")]
     public bool UseShortDescription { get; set; }
 
+    [NopResourceDisplayName("Plugins.Feed.GoogleShopping.Products.IsExcluded")]
+    public bool IsExcluded { get; set; }
+
     public GoogleProductSearchModel GoogleProductListSearchModel { get; set; }
 }
