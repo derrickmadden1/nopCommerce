@@ -87,113 +87,115 @@
                 </div>
             </div>
         </div>
-
-        <!-- Multi-Tenant Agent API Key Management Card -->
-        <div class="card card-default mt-4">
-            <div class="card-header">
-                Multi-Tenant Third-Party Agent API Keys
-            </div>
-            <div class="card-body">
-                <p class="text-muted">Register and manage individual API keys for AI Agent platforms (OpenAI, Claude, Perplexity, custom bots). Keys authenticate both <strong>Agent Search</strong> and <strong>Universal Commerce Protocol (UCP)</strong> catalog endpoints.</p>
-                
-                <table class="table table-bordered table-hover">
-                    <thead>
-                        <tr>
-                            <th>Agent Name</th>
-                            <th>Key Prefix</th>
-                            <th>Status</th>
-                            <th>Rate Limit</th>
-                            <th>Allowed Scopes</th>
-                            <th>Created (UTC)</th>
-                            <th>Last Used (UTC)</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @if (Model.ExistingKeys != null && Model.ExistingKeys.Any())
-                        {
-                            foreach (var keyItem in Model.ExistingKeys)
-                            {
-                                <tr>
-                                    <td><strong>@keyItem.AgentName</strong></td>
-                                    <td><code>@keyItem.KeyPrefix...</code></td>
-                                    <td>
-                                        @if (keyItem.IsActive)
-                                        {
-                                            <span class="badge badge-success">Active</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="badge badge-secondary">Inactive</span>
-                                        }
-                                    </td>
-                                    <td>@keyItem.RateLimitPerMinute req/min</td>
-                                    <td><small>@keyItem.AllowedScopes</small></td>
-                                    <td>@keyItem.CreatedOnUtc.ToString("g")</td>
-                                    <td>@(keyItem.LastUsedOnUtc.HasValue ? keyItem.LastUsedOnUtc.Value.ToString("g") : "Never")</td>
-                                    <td>
-                                        <form asp-controller="AgentSearch" asp-action="ToggleKeyStatus" asp-route-id="@keyItem.Id" method="post" style="display:inline;">
-                                            <nop-antiforgery-token />
-                                            <button type="submit" class="btn btn-xs @(keyItem.IsActive ? "btn-warning" : "btn-success")">
-                                                @(keyItem.IsActive ? "Deactivate" : "Activate")
-                                            </button>
-                                        </form>
-                                        <form asp-controller="AgentSearch" asp-action="DeleteKey" asp-route-id="@keyItem.Id" method="post" style="display:inline;" onclick="return confirm('Are you sure you want to delete this agent key?');">
-                                            <nop-antiforgery-token />
-                                            <button type="submit" class="btn btn-xs btn-danger">Delete</button>
-                                        </form>
-                                    </td>
-                                </tr>
-                            }
-                        }
-                        else
-                        {
-                            <tr>
-                                <td colspan="8" class="text-center text-muted">No multi-tenant agent API keys registered yet. Generate one below.</td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-
-                <hr />
-                <h5 class="mt-4">Generate New Agent API Key</h5>
-                <form asp-controller="AgentSearch" asp-action="CreateKey" method="post">
-                    <nop-antiforgery-token />
-                    <div class="form-group row">
-                        <div class="col-md-3">
-                            <label class="col-form-label">Agent Name / Identifer</label>
-                        </div>
-                        <div class="col-md-9">
-                            <input asp-for="NewAgentName" class="form-control" placeholder="e.g. OpenAI-ChatGPT, PerplexityBot" required />
-                            <small class="text-muted">Identifies the third-party client or organization.</small>
-                        </div>
-                    </div>
-                    <div class="form-group row">
-                        <div class="col-md-3">
-                            <label class="col-form-label">Rate Limit (req / min)</label>
-                        </div>
-                        <div class="col-md-9">
-                            <input asp-for="NewRateLimitPerMinute" class="form-control" type="number" min="1" max="10000" />
-                        </div>
-                    </div>
-                    <div class="form-group row">
-                        <div class="col-md-3">
-                            <label class="col-form-label">Allowed Scopes</label>
-                        </div>
-                        <div class="col-md-9">
-                            <input asp-for="NewAllowedScopes" class="form-control" placeholder="Search.Read,Catalog.Read" />
-                            <small class="text-muted">Comma-separated permissions (e.g. Search.Read, Catalog.Read, Cart.Write).</small>
-                        </div>
-                    </div>
-                    <div class="form-group row">
-                        <div class="col-md-9 offset-md-3">
-                            <button type="submit" class="btn btn-success">
-                                Generate Agent API Key
-                            </button>
-                        </div>
-                    </div>
-                </form>
-            </div>
-        </div>
     </div>
 </form>
+
+<div class="cards-group mt-4">
+    <!-- Multi-Tenant Agent API Key Management Card -->
+    <div class="card card-default">
+        <div class="card-header">
+            Multi-Tenant Third-Party Agent API Keys
+        </div>
+        <div class="card-body">
+            <p class="text-muted">Register and manage individual API keys for AI Agent platforms (OpenAI, Claude, Perplexity, custom bots). Keys authenticate both <strong>Agent Search</strong> and <strong>Universal Commerce Protocol (UCP)</strong> catalog endpoints.</p>
+            
+            <table class="table table-bordered table-hover">
+                <thead>
+                    <tr>
+                        <th>Agent Name</th>
+                        <th>Key Prefix</th>
+                        <th>Status</th>
+                        <th>Rate Limit</th>
+                        <th>Allowed Scopes</th>
+                        <th>Created (UTC)</th>
+                        <th>Last Used (UTC)</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.ExistingKeys != null && Model.ExistingKeys.Any())
+                    {
+                        foreach (var keyItem in Model.ExistingKeys)
+                        {
+                            <tr>
+                                <td><strong>@keyItem.AgentName</strong></td>
+                                <td><code>@keyItem.KeyPrefix...</code></td>
+                                <td>
+                                    @if (keyItem.IsActive)
+                                    {
+                                        <span class="badge badge-success">Active</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge-secondary">Inactive</span>
+                                    }
+                                </td>
+                                <td>@keyItem.RateLimitPerMinute req/min</td>
+                                <td><small>@keyItem.AllowedScopes</small></td>
+                                <td>@keyItem.CreatedOnUtc.ToString("g")</td>
+                                <td>@(keyItem.LastUsedOnUtc.HasValue ? keyItem.LastUsedOnUtc.Value.ToString("g") : "Never")</td>
+                                <td>
+                                    <form asp-controller="AgentSearch" asp-action="ToggleKeyStatus" asp-route-id="@keyItem.Id" method="post" style="display:inline;">
+                                        <nop-antiforgery-token />
+                                        <button type="submit" class="btn btn-xs @(keyItem.IsActive ? "btn-warning" : "btn-success")">
+                                            @(keyItem.IsActive ? "Deactivate" : "Activate")
+                                        </button>
+                                    </form>
+                                    <form asp-controller="AgentSearch" asp-action="DeleteKey" asp-route-id="@keyItem.Id" method="post" style="display:inline;" onclick="return confirm('Are you sure you want to delete this agent key?');">
+                                        <nop-antiforgery-token />
+                                        <button type="submit" class="btn btn-xs btn-danger">Delete</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center text-muted">No multi-tenant agent API keys registered yet. Generate one below.</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
+            <hr />
+            <h5 class="mt-4">Generate New Agent API Key</h5>
+            <form asp-controller="AgentSearch" asp-action="CreateKey" method="post">
+                <nop-antiforgery-token />
+                <div class="form-group row">
+                    <div class="col-md-3">
+                        <label class="col-form-label">Agent Name / Identifer</label>
+                    </div>
+                    <div class="col-md-9">
+                        <input asp-for="NewAgentName" class="form-control" placeholder="e.g. OpenAI-ChatGPT, PerplexityBot" required />
+                        <small class="text-muted">Identifies the third-party client or organization.</small>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <div class="col-md-3">
+                        <label class="col-form-label">Rate Limit (req / min)</label>
+                    </div>
+                    <div class="col-md-9">
+                        <input asp-for="NewRateLimitPerMinute" class="form-control" type="number" min="1" max="10000" />
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <div class="col-md-3">
+                        <label class="col-form-label">Allowed Scopes</label>
+                    </div>
+                    <div class="col-md-9">
+                        <input asp-for="NewAllowedScopes" class="form-control" placeholder="Search.Read,Catalog.Read" />
+                        <small class="text-muted">Comma-separated permissions (e.g. Search.Read, Catalog.Read, Cart.Write).</small>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <div class="col-md-9 offset-md-3">
+                        <button type="submit" class="btn btn-success">
+                            Generate Agent API Key
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
