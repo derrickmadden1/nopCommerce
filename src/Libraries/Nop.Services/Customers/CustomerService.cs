@@ -1,4 +1,4 @@
-﻿using System.Xml;
+using System.Xml;
 using Nop.Core;
 using Nop.Core.Caching;
 using Nop.Core.Domain.Blogs;
@@ -674,42 +674,57 @@ public partial class CustomerService : ICustomerService
     public virtual async Task<int> DeleteGuestCustomersAsync(DateTime? createdFromUtc, DateTime? createdToUtc, bool onlyWithoutShoppingCart)
     {
         var guestRole = await GetCustomerRoleBySystemNameAsync(NopCustomerDefaults.GuestsRoleName);
+        var totalRecordsDeleted = 0;
+        const int batchSize = 1000;
 
-        var allGuestCustomers =
-            from guest in _customerRepository.Table
-            join ccm in _customerCustomerRoleMappingRepository.Table on guest.Id equals ccm.CustomerId
-            where ccm.CustomerRoleId == guestRole.Id
-            select guest;
+        while (true)
+        {
+            var allGuestCustomers =
+                from guest in _customerRepository.Table
+                join ccm in _customerCustomerRoleMappingRepository.Table on guest.Id equals ccm.CustomerId
+                where ccm.CustomerRoleId == guestRole.Id
+                select guest;
 
-        var guestsToDelete =
-            from guest in _customerRepository.Table
-            join g in allGuestCustomers on guest.Id equals g.Id
-            from sCart in _shoppingCartRepository.Table.Where(sci => sci.CustomerId == guest.Id).DefaultIfEmpty()
-            from order in _orderRepository.Table.Where(o => o.CustomerId == guest.Id).DefaultIfEmpty()
-            from blogComment in _blogCommentRepository.Table.Where(o => o.CustomerId == guest.Id).DefaultIfEmpty()
-            from productReview in _productReviewRepository.Table.Where(o => o.CustomerId == guest.Id).DefaultIfEmpty()
-            from productReviewHelpfulness in _productReviewHelpfulnessRepository.Table.Where(o => o.CustomerId == guest.Id).DefaultIfEmpty()
-            where (!onlyWithoutShoppingCart || sCart == null) &&
-                order == null && blogComment == null && productReview == null && productReviewHelpfulness == null &&
-                !guest.IsSystemAccount &&
-                (createdFromUtc == null || guest.CreatedOnUtc > createdFromUtc) &&
-                (createdToUtc == null || guest.CreatedOnUtc < createdToUtc)
-            select new { CustomerId = guest.Id };
+            var guestsToDelete =
+                (from guest in _customerRepository.Table
+                join g in allGuestCustomers on guest.Id equals g.Id
+                from sCart in _shoppingCartRepository.Table.Where(sci => sci.CustomerId == guest.Id).DefaultIfEmpty()
+                from order in _orderRepository.Table.Where(o => o.CustomerId == guest.Id).DefaultIfEmpty()
+                from blogComment in _blogCommentRepository.Table.Where(o => o.CustomerId == guest.Id).DefaultIfEmpty()
+                from productReview in _productReviewRepository.Table.Where(o => o.CustomerId == guest.Id).DefaultIfEmpty()
+                from productReviewHelpfulness in _productReviewHelpfulnessRepository.Table.Where(o => o.CustomerId == guest.Id).DefaultIfEmpty()
+                where (!onlyWithoutShoppingCart || sCart == null) &&
+                    order == null && blogComment == null && productReview == null && productReviewHelpfulness == null &&
+                    !guest.IsSystemAccount &&
+                    (createdFromUtc == null || guest.CreatedOnUtc > createdFromUtc) &&
+                    (createdToUtc == null || guest.CreatedOnUtc < createdToUtc)
+                select new { CustomerId = guest.Id })
+                .Take(batchSize);
 
-        await using var tmpGuests = await _dataProvider.CreateTempDataStorageAsync("tmp_guestsToDelete", guestsToDelete);
-        await using var tmpAddresses = await _dataProvider.CreateTempDataStorageAsync("tmp_guestsAddressesToDelete",
-            _customerAddressMappingRepository.Table
-                .Where(ca => tmpGuests.Any(c => c.CustomerId == ca.CustomerId))
-                .Select(ca => new { AddressId = ca.AddressId }));
+            await using var tmpGuests = await _dataProvider.CreateTempDataStorageAsync("tmp_guestsToDelete", guestsToDelete);
 
-        //delete guests
-        var totalRecordsDeleted = await _customerRepository.DeleteAsync(c => tmpGuests.Any(tmp => tmp.CustomerId == c.Id));
+            if (!tmpGuests.Any())
+                break;
 
-        //delete attributes
-        await _gaRepository.DeleteAsync(ga => tmpGuests.Any(c => c.CustomerId == ga.EntityId) && ga.KeyGroup == nameof(Customer));
+            await using var tmpAddresses = await _dataProvider.CreateTempDataStorageAsync("tmp_guestsAddressesToDelete",
+                _customerAddressMappingRepository.Table
+                    .Where(ca => tmpGuests.Any(c => c.CustomerId == ca.CustomerId))
+                    .Select(ca => new { AddressId = ca.AddressId }));
 
-        //delete m -> m addresses
-        await _customerAddressRepository.DeleteAsync(a => tmpAddresses.Any(tmp => tmp.AddressId == a.Id));
+            //delete guests
+            var batchDeletedCount = await _customerRepository.DeleteAsync(c => tmpGuests.Any(tmp => tmp.CustomerId == c.Id));
+
+            //delete attributes
+            await _gaRepository.DeleteAsync(ga => tmpGuests.Any(c => c.CustomerId == ga.EntityId) && ga.KeyGroup == nameof(Customer));
+
+            //delete m -> m addresses
+            await _customerAddressRepository.DeleteAsync(a => tmpAddresses.Any(tmp => tmp.AddressId == a.Id));
+
+            totalRecordsDeleted += batchDeletedCount;
+
+            if (batchDeletedCount < batchSize)
+                break;
+        }
 
         return totalRecordsDeleted;
     }

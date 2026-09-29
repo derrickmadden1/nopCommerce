@@ -1,7 +1,9 @@
-﻿using Microsoft.AspNetCore.Builder;
+using System.Reflection;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Nop.Core.Infrastructure;
+using Nop.Data.Migrations;
 using Nop.Plugin.Feed.GoogleShopping.Services;
 
 namespace Nop.Plugin.Feed.GoogleShopping.Infrastructure;
@@ -27,6 +29,15 @@ public class NopStartup : INopStartup
     /// <param name="application">Builder for configuring an application's request pipeline</param>
     public void Configure(IApplicationBuilder application)
     {
+        try
+        {
+            var migrationManager = EngineContext.Current.Resolve<IMigrationManager>();
+            migrationManager?.ApplyUpMigrations(Assembly.GetExecutingAssembly(), MigrationProcessType.Update);
+        }
+        catch
+        {
+            // ignore if database is not installed or initialized yet
+        }
     }
 
     /// <summary>
