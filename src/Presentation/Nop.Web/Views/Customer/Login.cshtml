@@ -1,4 +1,4 @@
-﻿@model LoginModel
+@model LoginModel
 @using Nop.Core.Domain.Customers
 @using Nop.Services.Helpers
 
@@ -42,9 +42,9 @@
                     <div class="text">
                         @await Component.InvokeAsync(typeof(TopicBlockViewComponent), new { systemName = "CheckoutAsGuestOrRegister" })
                     </div>
-                    <div class="buttons">
-                        <button type="button" class="button-1 checkout-as-guest-button" onclick="location.href='@Url.RouteUrl(NopRouteNames.Standard.CHECKOUT)'">@T("Account.Login.CheckoutAsGuest")</button>
-                        <button type="button" class="button-1 register-button" onclick="location.href='@registerUrl'">@T("Account.Register")</button>
+                    <div class="buttons" style="display: flex; flex-direction: column; gap: 15px;">
+                        <button type="button" class="button-1 register-button checkout-as-guest-button" style="width: 100%; max-width: 300px; padding: 15px; font-size: 1.1em; text-transform: uppercase; font-weight: bold; border-width: 2px;" onclick="location.href='@Url.RouteUrl(NopRouteNames.Standard.CHECKOUT)'">@T("Account.Login.CheckoutAsGuest")</button>
+                        <button type="button" class="button-1 register-button" style="width: 100%; max-width: 300px; padding: 15px; font-size: 1.1em; text-transform: uppercase; font-weight: bold; border-width: 2px;" onclick="location.href='@registerUrl'">@T("Account.Register")</button>
                     </div>
                 </div>
             }
