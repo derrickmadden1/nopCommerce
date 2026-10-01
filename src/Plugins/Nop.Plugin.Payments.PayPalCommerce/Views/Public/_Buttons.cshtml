@@ -85,8 +85,8 @@
     $(function () {
         if (isCartPage) {
             //hide buttons in shopping cart according to the settings
-            if ($('#checkout').length > 0) {
-                $('#checkout').after($('#@paypalButtonContainer'));
+            if ($('.addon-buttons').length > 0) {
+                $('.addon-buttons').append($('#@paypalButtonContainer'));
                 var hideCheckoutButton = @((settings.HideCheckoutButton).ToString().ToLower());
                 if (hideCheckoutButton) {
                     $('#checkout').hide();

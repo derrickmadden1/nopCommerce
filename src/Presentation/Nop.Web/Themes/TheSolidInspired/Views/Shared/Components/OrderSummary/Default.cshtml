@@ -367,15 +367,22 @@
                                 {
                                     @if (!Context.Request.Path.Value.Contains("/checkout", StringComparison.OrdinalIgnoreCase))
                                     {
-                                        <button type="submit" id="checkout" name="checkout" value="checkout" class="btn-primary checkout-button checkout-button-modern">
-                                            @T("Checkout.Button")
+                                        <button type="submit" id="checkout" name="checkout" value="checkout" class="btn-primary checkout-button checkout-button-modern" style="width: 100%; text-transform: uppercase; font-weight: bold;">
+                                            PROCEED TO CHECKOUT
                                         </button>
                                     }
                                 }
                             }
                         </div>
                         
-                        <div class="addon-buttons">
+                        @if (Model.ButtonPaymentMethodViewComponents.Any() || true) {
+                            <div style="text-align: center; margin: 25px 0 15px 0; position: relative;">
+                                <div style="border-top: 1px solid #ddd; position: absolute; top: 50%; width: 100%; z-index: 1;"></div>
+                                <span style="background: #fff; padding: 0 15px; color: #999; font-size: 0.9em; text-transform: uppercase; position: relative; z-index: 2;">- OR USE -</span>
+                            </div>
+                        }
+                        
+                        <div class="addon-buttons" style="display: flex; flex-direction: column; gap: 10px;">
                             @foreach (var pm in Model.ButtonPaymentMethodViewComponents)
                             {
                                 @await Component.InvokeAsync(pm)

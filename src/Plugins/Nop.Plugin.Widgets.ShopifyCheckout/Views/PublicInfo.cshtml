@@ -25,9 +25,9 @@ else if (Model.IsConfigured)
 <script asp-location="Footer">
     $(function() {
         var $container = $('#shopify-checkout-container');
-        var $checkoutButtons = $('.checkout-buttons');
-        if ($container.length && $checkoutButtons.length) {
-            $container.insertBefore($checkoutButtons);
+        var $addonButtons = $('.addon-buttons');
+        if ($container.length && $addonButtons.length) {
+            $container.prependTo($addonButtons);
         }
 
         $(document).on('click', '#shopify-checkout-btn', function(e) {
