@@ -1,9 +1,33 @@
-﻿@{
+@{
     Layout = ""; 
 }
-<link rel="stylesheet" href="~/Plugins/ExternalAuth.Facebook/Content/facebookstyles.css" />
+<style>
+    .btn-facebook {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        margin: 0 auto 15px;
+        padding: 15px 20px;
+        background-color: #1877f2;
+        color: #ffffff !important;
+        text-decoration: none;
+        font-weight: bold;
+        font-size: 1.1em;
+        text-transform: uppercase;
+        border-radius: 0;
+        border: 2px solid #1877f2;
+        transition: all 0.3s ease;
+    }
+    .btn-facebook:hover {
+        background-color: #166fe5;
+        border-color: #166fe5;
+        color: #ffffff !important;
+    }
+</style>
 <div class="facebook-login-block">
-    <div class="buttons">
-        <a asp-controller="facebookauthentication" asp-action="login" asp-route-returnurl="@Context.Request.Query["ReturnUrl"]" class="facebook-btn"></a>
-    </div>
+    <a asp-controller="facebookauthentication" asp-action="login" asp-route-returnurl="@Context.Request.Query["ReturnUrl"]" class="btn-facebook">
+        <svg viewBox="0 0 320 512" style="width: 1.2em; height: 1.2em; margin-right: 12px; fill: currentColor;"><path d="M279.14 288l14.22-92.66h-88.91v-60.13c0-25.35 12.42-50.06 52.24-50.06h40.42V6.26S260.43 0 225.36 0c-73.22 0-121.08 44.38-121.08 124.72v70.62H22.89V288h81.39v224h100.17V288z"/></svg>
+        Continue with Facebook
+    </a>
 </div>

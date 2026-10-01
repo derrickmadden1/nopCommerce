@@ -1,9 +1,38 @@
 @{
     Layout = ""; 
 }
-<link rel="stylesheet" href="~/Plugins/ExternalAuth.Google/Content/Googlestyles.css" />
+<style>
+    .btn-google {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        margin: 0 auto 15px;
+        padding: 15px 20px;
+        background-color: #ffffff;
+        color: #333333 !important;
+        text-decoration: none;
+        font-weight: bold;
+        font-size: 1.1em;
+        text-transform: uppercase;
+        border-radius: 0;
+        border: 2px solid #e3e3e3;
+        transition: all 0.3s ease;
+    }
+    .btn-google:hover {
+        background-color: #f5f5f5;
+        border-color: #dcdcdc;
+        color: #333333 !important;
+    }
+    .btn-google-icon {
+        width: 1.2em; 
+        height: 1.2em; 
+        margin-right: 12px; 
+    }
+</style>
 <div class="Google-login-block">
-    <div class="buttons">
-        <a asp-controller="Googleauthentication" asp-action="login" asp-route-returnurl="@Context.Request.Query["ReturnUrl"]" class="Google-btn"></a>
-    </div>
+    <a asp-controller="Googleauthentication" asp-action="login" asp-route-returnurl="@Context.Request.Query["ReturnUrl"]" class="btn-google">
+        <svg viewBox="0 0 488 512" class="btn-google-icon"><path fill="#ea4335" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"/></svg>
+        Continue with Google
+    </a>
 </div>
