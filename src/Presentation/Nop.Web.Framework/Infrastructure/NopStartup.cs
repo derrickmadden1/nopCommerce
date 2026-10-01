@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Nop.Core;
@@ -290,7 +290,7 @@ public partial class NopStartup : INopStartup
         services.AddScoped<IPictureService, PictureService>();
 
         //elFinder file manager
-        services.AddSingleton<IElFinderService, ElFinderService>();
+        // services.AddSingleton<IElFinderService, ElFinderService>();
 
         //installation service
         services.AddScoped<IInstallationService, InstallationService>();
