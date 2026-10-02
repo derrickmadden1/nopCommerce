@@ -1,4 +1,4 @@
-﻿using Nop.Core.Configuration;
+using Nop.Core.Configuration;
 using Nop.Core.Domain.Affiliates;
 using Nop.Core.Domain.Blogs;
 using Nop.Core.Domain.Catalog;
@@ -772,7 +772,6 @@ public partial class AdminMapperConfiguration : BaseMapperProfile
         CreateMap<AddressSettings, AddressSettingsModel>()
             .ForMember(model => model.AvailableCountries, options => options.Ignore());
         CreateMap<AddressSettingsModel, AddressSettings>()
-            .ForMember(settings => settings.PreselectCountryIfOnlyOne, options => options.Ignore())
             .ForMember(settings => settings.PrePopulateCountryByCustomer, options => options.Ignore());
 
         CreateMap<Setting, SettingModel>()

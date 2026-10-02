@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Nop.Core;
 using Nop.Core.Domain.Catalog;
@@ -277,8 +277,13 @@ public partial class CustomerModelFactory : ICustomerModelFactory
             if (model.CountryId == 0)
                 model.CountryId = _customerSettings.DefaultCountryId ?? 0;
 
-            model.AvailableCountries.Add(new SelectListItem { Text = await _localizationService.GetResourceAsync("Address.SelectCountry"), Value = "0" });
-            foreach (var c in await _countryService.GetAllCountriesAsync(currentLanguage.Id))
+            var countries = (await _countryService.GetAllCountriesAsync(currentLanguage.Id)).ToList();
+            if (_addressSettings.PreselectCountryIfOnlyOne && countries.Count == 1)
+                model.CountryId = countries[0].Id;
+            else
+                model.AvailableCountries.Add(new SelectListItem { Text = await _localizationService.GetResourceAsync("Address.SelectCountry"), Value = "0" });
+
+            foreach (var c in countries)
             {
                 model.AvailableCountries.Add(new SelectListItem
                 {
@@ -478,10 +483,18 @@ public partial class CustomerModelFactory : ICustomerModelFactory
         //countries and states
         if (_customerSettings.CountryEnabled)
         {
-            model.AvailableCountries.Add(new SelectListItem { Text = await _localizationService.GetResourceAsync("Address.SelectCountry"), Value = "0" });
-            model.CountryId = _customerSettings.DefaultCountryId ?? 0;
             var currentLanguage = await _workContext.GetWorkingLanguageAsync();
-            foreach (var c in await _countryService.GetAllCountriesAsync(currentLanguage.Id))
+            var countries = (await _countryService.GetAllCountriesAsync(currentLanguage.Id)).ToList();
+
+            if (model.CountryId == 0)
+                model.CountryId = _customerSettings.DefaultCountryId ?? 0;
+
+            if (_addressSettings.PreselectCountryIfOnlyOne && countries.Count == 1)
+                model.CountryId = countries[0].Id;
+            else
+                model.AvailableCountries.Add(new SelectListItem { Text = await _localizationService.GetResourceAsync("Address.SelectCountry"), Value = "0" });
+
+            foreach (var c in countries)
             {
                 model.AvailableCountries.Add(new SelectListItem
                 {

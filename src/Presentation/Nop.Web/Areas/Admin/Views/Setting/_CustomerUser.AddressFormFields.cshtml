@@ -145,6 +145,15 @@
         </div>
         <div class="form-group row">
             <div class="col-md-3">
+                <nop-label asp-for="AddressSettings.PreselectCountryIfOnlyOne" />
+            </div>
+            <div class="col-md-9">
+                <nop-editor asp-for="AddressSettings.PreselectCountryIfOnlyOne" />
+                <span asp-validation-for="AddressSettings.PreselectCountryIfOnlyOne"></span>
+            </div>
+        </div>
+        <div class="form-group row">
+            <div class="col-md-3">
                 <nop-label asp-for="AddressSettings.StateProvinceEnabled" />
             </div>
             <div class="col-md-9">

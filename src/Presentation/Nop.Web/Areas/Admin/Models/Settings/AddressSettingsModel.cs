@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Nop.Web.Framework.Models;
 using Nop.Web.Framework.Mvc.ModelBinding;
 
@@ -64,6 +64,9 @@ public partial record AddressSettingsModel : BaseNopModel, ISettingsModel
     [NopResourceDisplayName("Admin.Configuration.Settings.CustomerUser.AddressFormFields.DefaultCountry")]
     public int? DefaultCountryId { get; set; }
     public IList<SelectListItem> AvailableCountries { get; set; }
+
+    [NopResourceDisplayName("Admin.Configuration.Settings.CustomerUser.AddressFormFields.PreselectCountryIfOnlyOne")]
+    public bool PreselectCountryIfOnlyOne { get; set; }
 
     [NopResourceDisplayName("Admin.Configuration.Settings.CustomerUser.AddressFormFields.StateProvinceEnabled")]
     public bool StateProvinceEnabled { get; set; }
