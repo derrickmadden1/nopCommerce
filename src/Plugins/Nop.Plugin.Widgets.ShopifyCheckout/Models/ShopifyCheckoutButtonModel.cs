@@ -12,4 +12,5 @@ public record ShopifyCheckoutButtonModel : BaseNopModel
     public string InitCheckoutUrl { get; set; }
     public bool IsConfigured { get; set; }
     public bool IsAdmin { get; set; }
+    public bool IsDryRunMode { get; set; }
 }

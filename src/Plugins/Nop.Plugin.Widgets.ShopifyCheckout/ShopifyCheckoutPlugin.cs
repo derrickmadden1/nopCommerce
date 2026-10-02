@@ -74,6 +74,7 @@ public class ShopifyCheckoutPlugin : BasePlugin, IWidgetPlugin
             DisplayButtonOnPaymentMethod = true,
             FallbackToSkuAsVariantId = true,
             EnableAutoCatalogSync = true,
+            EnableDryRunMode = false,
             CustomButtonText = "Checkout with Shopify"
         });
 
@@ -99,6 +100,8 @@ public class ShopifyCheckoutPlugin : BasePlugin, IWidgetPlugin
             ["Plugins.Widgets.ShopifyCheckout.Fields.FallbackToSkuAsVariantId.Hint"] = "If enabled, uses product or attribute combination SKU as Shopify Variant ID if no explicit generic attribute mapping exists.",
             ["Plugins.Widgets.ShopifyCheckout.Fields.EnableAutoCatalogSync"] = "Auto-Sync Products to Shopify",
             ["Plugins.Widgets.ShopifyCheckout.Fields.EnableAutoCatalogSync.Hint"] = "Check to automatically push nopCommerce product creations, updates, and deletes to Shopify.",
+            ["Plugins.Widgets.ShopifyCheckout.Fields.EnableDryRunMode"] = "Enable Dry Run Mode",
+            ["Plugins.Widgets.ShopifyCheckout.Fields.EnableDryRunMode.Hint"] = "When enabled, the Shopify checkout button is only displayed and accessible to administrators for production testing.",
             ["Plugins.Widgets.ShopifyCheckout.Fields.CustomButtonText"] = "Checkout Button Text",
             ["Plugins.Widgets.ShopifyCheckout.Fields.CustomButtonText.Hint"] = "Enter custom text for the Shopify checkout button."
         });

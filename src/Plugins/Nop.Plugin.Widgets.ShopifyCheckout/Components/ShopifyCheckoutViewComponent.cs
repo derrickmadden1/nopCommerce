@@ -65,6 +65,12 @@ public class ShopifyCheckoutViewComponent : NopViewComponent
         bool isConfigured = !string.IsNullOrWhiteSpace(_settings.StoreUrl) && !string.IsNullOrWhiteSpace(_settings.StorefrontAccessToken);
         bool isAdmin = await _permissionService.AuthorizeAsync(StandardPermission.Configuration.MANAGE_WIDGETS);
 
+        if (_settings.EnableDryRunMode && !isAdmin)
+        {
+            // In dry run mode, only display button to administrators
+            return Content(string.Empty);
+        }
+
         if (!isConfigured && !isAdmin)
         {
             // Do not display unconfigured button to regular store customers
@@ -76,7 +82,8 @@ public class ShopifyCheckoutViewComponent : NopViewComponent
             ButtonText = string.IsNullOrWhiteSpace(_settings.CustomButtonText) ? "Checkout with Shopify" : _settings.CustomButtonText,
             InitCheckoutUrl = Url.RouteUrl("Plugin.Widgets.ShopifyCheckout.InitCheckout") ?? Url.Action("InitCheckout", "ShopifyCheckout"),
             IsConfigured = isConfigured,
-            IsAdmin = isAdmin
+            IsAdmin = isAdmin,
+            IsDryRunMode = _settings.EnableDryRunMode
         };
 
         return View("~/Plugins/Widgets.ShopifyCheckout/Views/PublicInfo.cshtml", model);
