@@ -847,17 +847,28 @@ public partial class ShoppingCartModelFactory : IShoppingCartModelFactory
                 .FirstOrDefaultAwaitAsync(async a => a.CountryId == null || await _storeMappingService.AuthorizeAsync(await _countryService.GetCountryByAddressAsync(a)));
 
             //countries
+            var currentLanguage = await _workContext.GetWorkingLanguageAsync();
+            var shippingCountries = (await _countryService.GetAllCountriesForShippingAsync(currentLanguage.Id)).ToList();
+
             var defaultEstimateCountryId = (setEstimateShippingDefaultAddress && shippingAddress != null)
                 ? shippingAddress.CountryId
                 : model.CountryId;
-            model.AvailableCountries.Add(new SelectListItem
-            {
-                Text = await _localizationService.GetResourceAsync("Address.SelectCountry"),
-                Value = "0"
-            });
 
-            var currentLanguage = await _workContext.GetWorkingLanguageAsync();
-            foreach (var c in await _countryService.GetAllCountriesForShippingAsync(currentLanguage.Id))
+            if ((!defaultEstimateCountryId.HasValue || defaultEstimateCountryId.Value == 0) && _addressSettings.PreselectCountryIfOnlyOne && shippingCountries.Count == 1)
+            {
+                defaultEstimateCountryId = shippingCountries[0].Id;
+                model.CountryId = defaultEstimateCountryId;
+            }
+            else
+            {
+                model.AvailableCountries.Add(new SelectListItem
+                {
+                    Text = await _localizationService.GetResourceAsync("Address.SelectCountry"),
+                    Value = "0"
+                });
+            }
+
+            foreach (var c in shippingCountries)
             {
                 model.AvailableCountries.Add(new SelectListItem
                 {

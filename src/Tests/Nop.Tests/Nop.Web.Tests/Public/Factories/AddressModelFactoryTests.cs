@@ -1,4 +1,4 @@
-﻿using AwesomeAssertions;
+using AwesomeAssertions;
 using Nop.Core;
 using Nop.Core.Domain.Catalog;
 using Nop.Core.Domain.Common;
@@ -170,6 +170,23 @@ public class AddressModelFactoryTests : BaseNopTest
         model.AvailableCountries.Count.Should().Be(250);
         model.AvailableStates.Any().Should().BeTrue();
         model.AvailableStates.Count.Should().Be(63);
+    }
+
+    [Test]
+    public async Task PrepareAddressModelShouldPreselectCountryIfOnlyOneCountryAvailable()
+    {
+        _addressSettings.PreselectCountryIfOnlyOne = true;
+        _addressSettings.DefaultCountryId = null;
+
+        var singleCountry = (await _countryService.GetAllCountriesAsync()).Take(1).ToList();
+
+        var model = new AddressModel();
+        await _addressModelFactory.PrepareAddressModelAsync(model, null, false, _addressSettings,
+            async () => await Task.FromResult<IList<global::Nop.Core.Domain.Directory.Country>>(singleCountry));
+
+        model.CountryId.Should().Be(singleCountry[0].Id);
+        model.AvailableCountries.Count.Should().Be(1);
+        model.AvailableCountries.First().Selected.Should().BeTrue();
     }
 
     [Test]

@@ -1,4 +1,4 @@
-﻿using System.ComponentModel;
+using System.ComponentModel;
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
@@ -1721,6 +1721,7 @@ public partial class InstallationService
             PhoneRequired = true,
             FaxEnabled = true,
             DefaultCountryId = await GetFirstEntityIdAsync<Country>(c => c.ThreeLetterIsoCode == _installationSettings.RegionInfo.ThreeLetterISORegionName),
+            PreselectCountryIfOnlyOne = true,
             PrePopulateCountryByCustomer = true
         });
 
