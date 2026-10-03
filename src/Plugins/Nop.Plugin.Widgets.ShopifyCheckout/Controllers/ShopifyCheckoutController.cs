@@ -110,6 +110,7 @@ public class ShopifyCheckoutController : BasePluginController
             DisplayButtonOnPaymentMethod = _settings.DisplayButtonOnPaymentMethod,
             FallbackToSkuAsVariantId = _settings.FallbackToSkuAsVariantId,
             EnableAutoCatalogSync = _settings.EnableAutoCatalogSync,
+            EnableDryRunMode = _settings.EnableDryRunMode,
             CustomButtonText = string.IsNullOrWhiteSpace(_settings.CustomButtonText) ? "Checkout with Shopify" : _settings.CustomButtonText
         };
 
@@ -131,6 +132,8 @@ public class ShopifyCheckoutController : BasePluginController
         await _localizationService.AddOrUpdateLocaleResourceAsync("Plugins.Widgets.ShopifyCheckout.Fields.DisplayButtonOnPaymentMethod", "Display on Checkout Payment Page");
         await _localizationService.AddOrUpdateLocaleResourceAsync("Plugins.Widgets.ShopifyCheckout.Fields.FallbackToSkuAsVariantId", "Fallback to SKU as Variant ID");
         await _localizationService.AddOrUpdateLocaleResourceAsync("Plugins.Widgets.ShopifyCheckout.Fields.EnableAutoCatalogSync", "Auto-Sync Products to Shopify");
+        await _localizationService.AddOrUpdateLocaleResourceAsync("Plugins.Widgets.ShopifyCheckout.Fields.EnableDryRunMode", "Enable Dry Run Mode");
+        await _localizationService.AddOrUpdateLocaleResourceAsync("Plugins.Widgets.ShopifyCheckout.Fields.EnableDryRunMode.Hint", "When enabled, the Shopify checkout button is only displayed and accessible to administrators for production testing.");
         await _localizationService.AddOrUpdateLocaleResourceAsync("Plugins.Widgets.ShopifyCheckout.Fields.CustomButtonText", "Checkout Button Text");
     }
 
@@ -154,6 +157,7 @@ public class ShopifyCheckoutController : BasePluginController
         _settings.DisplayButtonOnPaymentMethod = model.DisplayButtonOnPaymentMethod;
         _settings.FallbackToSkuAsVariantId = model.FallbackToSkuAsVariantId;
         _settings.EnableAutoCatalogSync = model.EnableAutoCatalogSync;
+        _settings.EnableDryRunMode = model.EnableDryRunMode;
         _settings.CustomButtonText = model.CustomButtonText;
 
         await _settingService.SaveSettingAsync(_settings);
@@ -228,6 +232,18 @@ public class ShopifyCheckoutController : BasePluginController
     public async Task<IActionResult> InitCheckout()
     {
         await _logger.InformationAsync("Initiating Shopify Checkout handoff...");
+
+        if (_settings.EnableDryRunMode)
+        {
+            var isAdmin = await _permissionService.AuthorizeAsync(StandardPermission.Configuration.MANAGE_WIDGETS);
+            if (!isAdmin)
+            {
+                var errMsg = "Shopify Checkout is currently in dry run mode for administrators only.";
+                await _logger.WarningAsync(errMsg);
+                _notificationService.ErrorNotification(errMsg);
+                return RedirectToRoute("ShoppingCart");
+            }
+        }
 
         if (string.IsNullOrWhiteSpace(_settings.StoreUrl) || string.IsNullOrWhiteSpace(_settings.StorefrontAccessToken))
         {

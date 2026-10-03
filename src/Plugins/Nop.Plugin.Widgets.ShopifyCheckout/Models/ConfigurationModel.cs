@@ -40,4 +40,7 @@ public record ConfigurationModel : BaseNopModel
 
     [NopResourceDisplayName("Plugins.Widgets.ShopifyCheckout.Fields.CustomButtonText")]
     public string CustomButtonText { get; set; }
+
+    [NopResourceDisplayName("Plugins.Widgets.ShopifyCheckout.Fields.EnableDryRunMode")]
+    public bool EnableDryRunMode { get; set; }
 }

@@ -61,4 +61,9 @@ public class ShopifyCheckoutSettings : ISettings
     /// Gets or sets custom text for the checkout button
     /// </summary>
     public string CustomButtonText { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether dry run mode is enabled (checkout button only displayed to administrators)
+    /// </summary>
+    public bool EnableDryRunMode { get; set; }
 }
