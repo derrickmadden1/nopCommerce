@@ -521,8 +521,9 @@
 <div id="ai-chat-bubble">
     @if (Model.EnableTeaserBubble)
     {
+        var teaserText = (ViewBag.HasCartItems == true) ? "Ready to checkout?" : Model.TeaserText;
         <div id="ai-chat-teaser" role="tooltip" aria-live="polite">
-            <span id="ai-teaser-text">@Model.TeaserText</span>
+            <span id="ai-teaser-text">@teaserText</span>
             <button id="ai-teaser-close" aria-label="Dismiss speech bubble">&times;</button>
             <div class="ai-teaser-arrow"></div>
         </div>
@@ -565,6 +566,7 @@
     const welcomeMessage = '@Html.Raw(Model.WelcomeMessage)';
     const chatEndpoint = '/AiChatbot/Chat';
     const enableTeaser = @(Model.EnableTeaserBubble ? "true" : "false");
+    const hasCartItems = @(ViewBag.HasCartItems == true ? "true" : "false");
 
     const panel = document.getElementById('ai-chat-panel');
     const toggle = document.getElementById('ai-chat-toggle');
@@ -758,25 +760,35 @@
         container.className = 'ai-starter-container';
         container.id = 'ai-starter-chips';
 
-        container.innerHTML = `
-            <div class="ai-starter-title">Suggested questions:</div>
-            <div class="ai-starter-chips">
-                <button class="ai-chip" data-prompt="When is your next market?">🗓️ Upcoming markets</button>
-                <button class="ai-chip" data-prompt="What is your return policy?">↩️ Returns policy</button>
-                <button class="ai-chip" data-prompt="What are your shipping and delivery options?">🚚 Shipping & delivery</button>
-                <button class="ai-chip" data-prompt="Can you recommend popular products?">🔍 Product advice</button>
-                <button class="ai-chip" data-prompt="How do I track my order?">📦 Track order</button>
-            </div>
-        `;
+        if (hasCartItems) {
+            container.innerHTML = `
+                <div class="ai-starter-title">Ready to checkout?</div>
+                <div class="ai-starter-chips">
+                    <button class="ai-chip" onclick="window.location.href='/cart'">🛒 View Cart</button>
+                    <button class="ai-chip" onclick="window.location.href='/checkout'">💳 Checkout</button>
+                </div>
+            `;
+        } else {
+            container.innerHTML = `
+                <div class="ai-starter-title">Suggested questions:</div>
+                <div class="ai-starter-chips">
+                    <button class="ai-chip" data-prompt="When is your next market?">🗓️ Upcoming markets</button>
+                    <button class="ai-chip" data-prompt="What is your return policy?">↩️ Returns policy</button>
+                    <button class="ai-chip" data-prompt="What are your shipping and delivery options?">🚚 Shipping & delivery</button>
+                    <button class="ai-chip" data-prompt="Can you recommend popular products?">🔍 Product advice</button>
+                    <button class="ai-chip" data-prompt="How do I track my order?">📦 Track order</button>
+                </div>
+            `;
 
-        container.querySelectorAll('.ai-chip').forEach(chip => {
-            chip.addEventListener('click', () => {
-                const promptText = chip.getAttribute('data-prompt');
-                input.value = promptText;
-                removeStarterChips();
-                sendMessage();
+            container.querySelectorAll('.ai-chip[data-prompt]').forEach(chip => {
+                chip.addEventListener('click', () => {
+                    const promptText = chip.getAttribute('data-prompt');
+                    input.value = promptText;
+                    removeStarterChips();
+                    sendMessage();
+                });
             });
-        });
+        }
 
         messagesEl.appendChild(container);
         scrollBottom();
