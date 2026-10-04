@@ -1,4 +1,4 @@
-﻿@model HeaderLinksModel
+@model HeaderLinksModel
 @using Nop.Core.Domain.Customers
 @using Nop.Services.Helpers
 @inject IWebHelper webHelper
@@ -6,6 +6,15 @@
 <div class="header-links">
     <ul>
         @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.HeaderLinksBefore, additionalData = Model })
+        @if (Model.ShoppingCartEnabled)
+        {
+            <li id="topcartlink">
+                <a href="@Url.RouteUrl(NopRouteNames.General.CART)" class="ico-cart">
+                    <span class="cart-label">@T(NopRouteNames.General.CART)</span>
+                    <span class="cart-qty">@T("ShoppingCart.HeaderQuantity", Model.ShoppingCartItems)</span>
+                </a>
+            </li>
+        }
         @if (Model.IsAuthenticated)
         {
             <li><a href="@Url.RouteUrl(NopRouteNames.General.CUSTOMER_INFO)" class="ico-account">@T("Account.MyAccount")@*@Model.CustomerName*@</a></li>
@@ -38,15 +47,6 @@
                 <a href="@Url.RouteUrl(NopRouteNames.General.WISHLIST)" class="ico-wishlist">
                     <span class="wishlist-label">@T("Wishlist")</span>
                     <span class="wishlist-qty">@T("Wishlist.HeaderQuantity", Model.WishlistItems)</span>
-                </a>
-            </li>
-        }
-        @if (Model.ShoppingCartEnabled)
-        {
-            <li id="topcartlink">
-                <a href="@Url.RouteUrl(NopRouteNames.General.CART)" class="ico-cart">
-                    <span class="cart-label">@T(NopRouteNames.General.CART)</span>
-                    <span class="cart-qty">@T("ShoppingCart.HeaderQuantity", Model.ShoppingCartItems)</span>
                 </a>
             </li>
         }
