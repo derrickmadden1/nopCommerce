@@ -1,6 +1,5 @@
 ﻿using System.Linq.Expressions;
 using Nop.Core;
-using Nop.Core.Configuration;
 using Nop.Core.Domain.Customers;
 using Nop.Core.Domain.Logging;
 using Nop.Core.Domain.Messages;
@@ -90,7 +89,7 @@ public class ForumInstallService
             ActiveDiscussionsPageSize = 50,
             LatestCustomerPostsPageSize = 10,
             ShowCustomersPostCount = true,
-            ForumEditor = EditorType.MarkdownEditor,
+            ForumEditor = EditorType.BBCodeEditor,
             SignaturesEnabled = true,
             ForumSubscriptionsPageSize = 10,
             HomepageActiveDiscussionsTopicCount = 5,
