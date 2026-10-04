@@ -5715,3 +5715,5 @@ iframe[src*="songbird"] {
     padding-left: 0;
 }
 
+
+@media (max-width: 768px) { .search-box { min-width: 0 !important; } .search-box input, .search-box-text { width: 120px !important; } body, html { overflow-x: hidden !important; width: 100%; max-width: 100vw; } }
