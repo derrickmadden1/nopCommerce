@@ -97,6 +97,7 @@ public class SettingMigration : MigrationBase
         this.SetSettingIfNotExists<OtpSettings, bool>(settings => settings.LoginByPhoneEnabled, false);
         this.SetSettingIfNotExists<OtpSettings, int>(settings => settings.OtpTimeLife, 30);
         this.SetSettingIfNotExists<OtpSettings, int>(settings => settings.OtpCountAttemptsToSendCode, 3);
+        this.SetSettingIfNotExists<OtpSettings, int>(settings => settings.OtpFailedAllowedAttempts, 3);
         this.SetSettingIfNotExists<OtpSettings, int>(settings => settings.OtpTimeToRepeat, 15);
         this.SetSettingIfNotExists<OtpSettings, int>(settings => settings.OtpLength, 6);
         this.SetSettingIfNotExists<MessagesSettings, string>(settings => settings.ActiveSmsProviderSystemName, "");
@@ -154,6 +155,12 @@ public class SettingMigration : MigrationBase
         //#56
         this.SetSettingIfNotExists<ShoppingCartSettings, bool>(settings => settings.VendorRequired, false);
         this.SetSettingIfNotExists<ShoppingCartSettings, bool>(settings => settings.VendorEnabled, false);
+
+        //#7734
+        this.SetSettingIfNotExists<CatalogSettings, bool>(settings => settings.UseStandardSearchWhenNoResults,
+            this.GetSettingByKey($"{nameof(CatalogSettings)}.UseStandardSearchWhenSearchProviderThrowsException", true));
+        this.SetSettingIfNotExists<ArtificialIntelligenceSettings, string>(settings => settings.ActiveAIRecommendationProviderSystemName, "");
+        this.SetSettingIfNotExists<ArtificialIntelligenceSettings, bool>(settings => settings.UseStandardSearchWhenNoResults, true);
     }
 
     public override void Down()

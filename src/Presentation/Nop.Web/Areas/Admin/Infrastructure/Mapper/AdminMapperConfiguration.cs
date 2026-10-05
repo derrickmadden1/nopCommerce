@@ -150,6 +150,7 @@ public partial class AdminMapperConfiguration : BaseMapperProfile
             {
                 map.ForMember(nameof(IAclSupportedModel.AvailableCustomerRoles), options => options.Ignore());
                 map.ForMember(nameof(IAclSupportedModel.SelectedCustomerRoleIds), options => options.Ignore());
+                map.ForMember(nameof(IAclSupportedModel.IsAdvancedSetting), options => options.Ignore());
             }
 
             //exclude some properties from mapping discount supported entities and models
@@ -437,7 +438,7 @@ public partial class AdminMapperConfiguration : BaseMapperProfile
             .ForMember(settings => settings.ProductSortingEnumDisplayOrder, options => options.Ignore())
             .ForMember(settings => settings.PublishBackProductWhenCancellingOrders, options => options.Ignore())
             .ForMember(settings => settings.UseLinksInRequiredProductWarnings, options => options.Ignore())
-            .ForMember(settings => settings.UseStandardSearchWhenSearchProviderThrowsException, options => options.Ignore())
+            .ForMember(settings => settings.UseStandardSearchWhenNoResults, options => options.Ignore())
             .ForMember(settings => settings.ActiveSearchProviderSystemName, options => options.Ignore())
             .ForMember(settings => settings.VendorProductReviewsPageSize, options => options.Ignore());
 
