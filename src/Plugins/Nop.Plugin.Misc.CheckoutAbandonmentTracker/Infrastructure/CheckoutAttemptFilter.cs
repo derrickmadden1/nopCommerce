@@ -1,4 +1,4 @@
-using System.Linq;
+﻿using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Nop.Core;
@@ -37,6 +37,13 @@ namespace Nop.Plugin.Misc.CheckoutAbandonmentTracker.Infrastructure
 
             if (executedContext.Exception != null && !executedContext.ExceptionHandled)
                 return;
+
+            // Ignore traffic from the Checkout Monitor bot
+            if (context.HttpContext.Request.Headers.TryGetValue("x-checkout-monitor", out var headerValue) &&
+                headerValue == "RoseCottage123!")
+            {
+                return;
+            }
 
             var controllerName = context.RouteData.Values["controller"]?.ToString() ?? string.Empty;
             var actionName = context.RouteData.Values["action"]?.ToString() ?? string.Empty;
