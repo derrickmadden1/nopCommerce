@@ -79,6 +79,7 @@ public class WinbackEmailGenerator
           "htmlBody": "full html email body here"
         }
         The HTML body should be clean, simple, mobile-friendly HTML.
+        IMPORTANT: The JSON must be strictly valid. Do NOT include any literal newlines or unescaped line breaks inside the JSON string values. The htmlBody must be a single continuous string or use properly escaped \n characters.
         Include clickable HTML anchor links (<a href="...">) for products and store links where relevant.
         Always include an unsubscribe link in the footer using the provided Unsubscribe URL.
         Use British English spelling throughout.
@@ -162,9 +163,17 @@ public class WinbackEmailGenerator
             var cleaned = content
                 .Replace("```json", "")
                 .Replace("```", "")
+                .Replace("\r", "")
+                .Replace("\n", " ")
                 .Trim();
 
-            var result = JsonSerializer.Deserialize<EmailResponse>(cleaned, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            var options = new JsonSerializerOptions 
+            { 
+                PropertyNameCaseInsensitive = true,
+                AllowTrailingCommas = true,
+                ReadCommentHandling = JsonCommentHandling.Skip
+            };
+            var result = JsonSerializer.Deserialize<EmailResponse>(cleaned, options);
             if (result == null) return null;
 
             return new GeneratedEmail
