@@ -2,6 +2,10 @@
 @using Nop.Web.Components
 @using Nop.Web.Framework.Infrastructure
 @using Nop.Web.Framework.UI
+@inject Nop.Web.Factories.ICommonModelFactory commonModelFactory
+@{
+    var socialModel = await commonModelFactory.PrepareSocialModelAsync();
+}
 
 <style>
     /* 1. Header Layout Fixes */
@@ -176,9 +180,18 @@
     <div class="header-utility">
         <div class="utility-container">
             <div class="utility-social">
-                <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
-                <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
-                <a href="#" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+                @if (!string.IsNullOrEmpty(socialModel.FacebookLink))
+                {
+                    <a href="@socialModel.FacebookLink" target="_blank" rel="noopener noreferrer" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
+                }
+                @if (!string.IsNullOrEmpty(socialModel.InstagramLink))
+                {
+                    <a href="@socialModel.InstagramLink" target="_blank" rel="noopener noreferrer" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                }
+                @if (!string.IsNullOrEmpty(socialModel.XLink))
+                {
+                    <a href="@socialModel.XLink" target="_blank" rel="noopener noreferrer" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+                }
             </div>
             <div class="utility-actions">
                 @await Component.InvokeAsync("CurrencySelector")
