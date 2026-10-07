@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using Microsoft.AspNetCore.WebUtilities;
 using Newtonsoft.Json;
 using Nop.Core;
@@ -47,13 +47,12 @@ public class GoogleAnalyticsHttpClient
 
             var uri = QueryHelpers.AddQueryString(googleAnalyticsSettings.UseSandbox ? GoogleAnalyticsDefaults.EndPointDebugUrl : GoogleAnalyticsDefaults.EndPointUrl, query);
 
-            _httpClient.BaseAddress = new Uri(uri);
-            _httpClient.Timeout = TimeSpan.FromSeconds(10);
-
             var requestString = JsonConvert.SerializeObject(request);
             var requestContent = new StringContent(requestString, Encoding.Default, MimeTypes.ApplicationJson);
-            var requestMessage = new HttpRequestMessage(new HttpMethod(request.Method), null as Uri) { Content = requestContent };
-            var httpResponse = await _httpClient.SendAsync(requestMessage);
+            var requestMessage = new HttpRequestMessage(new HttpMethod(request.Method), uri) { Content = requestContent };
+            
+            using var cts = new System.Threading.CancellationTokenSource(TimeSpan.FromSeconds(10));
+            var httpResponse = await _httpClient.SendAsync(requestMessage, cts.Token);
             httpResponse.EnsureSuccessStatusCode();
 
             var responseString = await httpResponse.Content.ReadAsStringAsync();
