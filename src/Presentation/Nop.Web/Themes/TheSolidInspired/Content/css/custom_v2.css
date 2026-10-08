@@ -3882,6 +3882,12 @@ body {
   .login-wrapper-modern {
     grid-template-columns: 1fr;
     gap: 40px;
+    margin: 30px 0;
+  }
+
+  .login-block {
+    padding: 20px;
+    margin-bottom: 20px;
   }
 }
 
