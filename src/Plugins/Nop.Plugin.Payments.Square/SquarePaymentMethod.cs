@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Primitives;
 using Nop.Core;
@@ -602,13 +602,25 @@ public class SquarePaymentMethod : BasePlugin, IPaymentMethod
     /// </summary>
     /// <param name="form">The parsed form values</param>
     /// <returns>The asynchronous task whose result contains the List of validating errors</returns>
-    public Task<IList<string>> ValidatePaymentFormAsync(IFormCollection form)
+    public async Task<IList<string>> ValidatePaymentFormAsync(IFormCollection form)
     {
         //try to get errors
         if (form.TryGetValue(nameof(PaymentInfoModel.Errors), out var errorsString) && !StringValues.IsNullOrEmpty(errorsString))
-            return Task.FromResult<IList<string>>(errorsString.ToString().Split(new[] { '|' }, StringSplitOptions.RemoveEmptyEntries).ToList());
+        {
+            var rawErrors = errorsString.ToString().Split(new[] { '|' }, StringSplitOptions.RemoveEmptyEntries).ToList();
+            var parsedErrors = new List<string>();
+            foreach (var error in rawErrors)
+            {
+                await _logger.ErrorAsync($"Square Payment Error: {error}");
+                
+                // Return a generic user-friendly message
+                parsedErrors.Add("There was an issue processing your payment details. Please check your information and try again.");
+            }
+            
+            return parsedErrors.Distinct().ToList();
+        }
 
-        return Task.FromResult<IList<string>>(new List<string>());
+        return new List<string>();
     }
 
     /// <summary>
