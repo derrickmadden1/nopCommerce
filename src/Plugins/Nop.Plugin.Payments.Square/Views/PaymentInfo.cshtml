@@ -141,7 +141,12 @@
             if ((!selectedStoredCardId || selectedStoredCardId == '@(Guid.Empty.ToString())')) {
                 await handlePaymentMethodSubmission(card);
             } else if (use3ds) {
-                await verifyBuyer(payments, selectedStoredCardId);
+                try {
+                    await verifyBuyer(payments, selectedStoredCardId);
+                } catch (e) {
+                    var currentErrorvalue = $('#@Html.IdFor(model => model.Errors)').val();
+                    $('#@Html.IdFor(model => model.Errors)').val(currentErrorvalue + '|' + e);
+                }
             }
             displayAjaxLoading(false);
             $('.payment-info-next-step-button').click();
