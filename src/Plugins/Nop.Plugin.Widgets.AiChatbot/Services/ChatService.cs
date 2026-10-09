@@ -16,6 +16,7 @@ public class ChatService
     private readonly CustomerContextService _customerContextService;
     private readonly ProductSearchService _productSearchService;
     private readonly IMarketLocationService? _marketLocationService;
+    private readonly Nop.Services.Configuration.ISettingService _settingService;
     private readonly ILogger<ChatService> _logger;
     private readonly Nop.Services.Logging.ILogger? _nopLogger;
 
@@ -28,12 +29,14 @@ public class ChatService
         AiChatbotSettings settings,
         CustomerContextService customerContextService,
         ProductSearchService productSearchService,
+        Nop.Services.Configuration.ISettingService settingService,
         IServiceProvider serviceProvider,
         ILogger<ChatService> logger)
     {
         _settings = settings;
         _customerContextService = customerContextService;
         _productSearchService = productSearchService;
+        _settingService = settingService;
         _marketLocationService = serviceProvider.GetService<IMarketLocationService>();
         _nopLogger = serviceProvider.GetService<Nop.Services.Logging.ILogger>();
         _logger = logger;
@@ -78,15 +81,20 @@ public class ChatService
             var customerContextTask = SafeGetCustomerContextAsync();
             var relevantProductsTask = SafeSearchProductsAsync(request.Message);
             var marketsTask = SafeGetMarketsAsync();
+            var reviewRewardAmountTask = _settingService.GetSettingByKeyAsync<decimal>("reviewrewardsettings.rewardamount", 5.00m);
+            var reviewRewardPercentageTask = _settingService.GetSettingByKeyAsync<bool>("reviewrewardsettings.usepercentage", false);
 
-            await Task.WhenAll(customerContextTask, relevantProductsTask, marketsTask);
+            await Task.WhenAll(customerContextTask, relevantProductsTask, marketsTask, reviewRewardAmountTask, reviewRewardPercentageTask);
 
             var customerContext = customerContextTask.Result;
             var relevantProductsList = relevantProductsTask.Result;
             var relevantProducts = ProductSearchService.FormatForPrompt(relevantProductsList);
             var marketsList = marketsTask.Result;
+            var rewardAmount = reviewRewardAmountTask.Result;
+            var usePercentage = reviewRewardPercentageTask.Result;
+            var rewardText = usePercentage ? $"{rewardAmount:0.##}%" : $"£{rewardAmount:F2}";
 
-            var systemPrompt = BuildSystemPrompt(customerContext, relevantProducts, marketsList);
+            var systemPrompt = BuildSystemPrompt(customerContext, relevantProducts, marketsList, rewardText);
 
             // Build messages — system prompt + capped history + new message
             var messages = new List<ChatRequestMessage>
@@ -261,7 +269,7 @@ public class ChatService
         }
     }
 
-    private string BuildSystemPrompt(CustomerContext customer, string relevantProducts, IList<MarketLocationDto> markets)
+    private string BuildSystemPrompt(CustomerContext customer, string relevantProducts, IList<MarketLocationDto> markets, string rewardText)
     {
         var sb = new System.Text.StringBuilder();
 
@@ -312,9 +320,11 @@ public class ChatService
             - Checkout: /checkout
             - Search results: /search?q=QUERY (url-encode the query)
             - Product page: /PRODUCT-SENAME (use the product's URL if known)
+            - Login/Register: /login
 
             Rules:
             - For questions about product ingredients, benefits, or common wellness uses (e.g., magnesium for cramps or muscle tension, lavender for sleep, oatmeal for dry skin), provide helpful, balanced general wellness information and common customer experiences, while gently noting that customers should check with a GP for persistent health concerns. Do not decline or claim you lack information simply because a question asks about general ingredient benefits.
+            - Review Rewards: If a customer asks about discounts, or if they have previously purchased an item on the site (check their Recent Orders) or at a market, let them know they can receive a {{rewardText}} discount code on their next purchase if they write a review for a product they've bought! Encourage them to log in or register at /login and navigate to the product page to leave their review.
             - For market questions (e.g., "When is your next market?", "When are you next in Thurso?"):
               * Check the 'Today's Date' and the 'Upcoming Markets & Event Locations' listed below.
               * If asked about a specific town or city (e.g. Thurso, Lairg, Wick, etc.), filter by that town/city name and provide the upcoming dates, operating hours, and address for that market.
