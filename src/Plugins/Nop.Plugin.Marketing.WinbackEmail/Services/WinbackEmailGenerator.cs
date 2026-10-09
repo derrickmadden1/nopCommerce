@@ -168,6 +168,9 @@ public class WinbackEmailGenerator
                 .Replace("\r", "")
                 .Replace("\n", " ")
                 .Replace("\\ ", " ")
+                .Replace("\\<", "<")
+                .Replace("\\>", ">")
+                .Replace("\\'", "'")
                 .Trim();
 
             var options = new JsonSerializerOptions 
