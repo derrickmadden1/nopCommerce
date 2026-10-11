@@ -62,7 +62,27 @@ public class WinbackEmailSettings : ISettings
     public int MaxDaysLapsed { get; set; } = 365;
 
     /// <summary>
-    /// Optional discount code to include in email 3
+    /// Discount amount/percentage to offer in Email 3 (set to 0 to disable dynamic discount generation)
+    /// </summary>
+    public decimal Email3DiscountAmount { get; set; } = 10m;
+
+    /// <summary>
+    /// Whether Email3DiscountAmount is a percentage (true) or fixed amount (false)
+    /// </summary>
+    public bool Email3DiscountUsePercentage { get; set; } = true;
+
+    /// <summary>
+    /// Prefix for auto-generated single-use coupon codes (e.g., "WB-")
+    /// </summary>
+    public string Email3DiscountPrefix { get; set; } = "WB-";
+
+    /// <summary>
+    /// Validity period in days for the generated single-use coupon code (0 = no expiry)
+    /// </summary>
+    public int Email3DiscountExpiryDays { get; set; } = 14;
+
+    /// <summary>
+    /// Optional fallback static discount code to include in email 3 if Email3DiscountAmount is 0
     /// </summary>
     public string Email3DiscountCode { get; set; } = string.Empty;
 

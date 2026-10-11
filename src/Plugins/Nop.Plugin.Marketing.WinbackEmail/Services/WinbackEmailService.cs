@@ -17,6 +17,8 @@ using Nop.Services.Orders;
 using Nop.Services.Common;
 using Nop.Services.Helpers;
 using Nop.Services.Seo;
+using Nop.Core.Domain.Discounts;
+using Nop.Services.Discounts;
 
 namespace Nop.Plugin.Marketing.WinbackEmail.Services;
 
@@ -35,6 +37,7 @@ public class WinbackEmailService
     private readonly IGenericAttributeService _genericAttributeService;
     private readonly IWebHelper _webHelper;
     private readonly IUrlRecordService _urlRecordService;
+    private readonly IDiscountService _discountService;
     private readonly Nop.Services.Logging.ILogger _logger;
 
     public WinbackEmailService(
@@ -51,6 +54,7 @@ public class WinbackEmailService
         IGenericAttributeService genericAttributeService,
         IWebHelper webHelper,
         IUrlRecordService urlRecordService,
+        IDiscountService discountService,
         Nop.Services.Logging.ILogger logger)
     {
         _settings = settings;
@@ -66,6 +70,7 @@ public class WinbackEmailService
         _genericAttributeService = genericAttributeService;
         _webHelper = webHelper;
         _urlRecordService = urlRecordService;
+        _discountService = discountService;
         _logger = logger;
     }
 
@@ -144,6 +149,8 @@ public class WinbackEmailService
         await _genericAttributeService.DeleteAttributesAsync<Customer>("Winback_Email2SentDateUtc");
         await _genericAttributeService.DeleteAttributesAsync<Customer>("Winback_Email3SentDateUtc");
         await _genericAttributeService.DeleteAttributesAsync<Customer>("Winback_LastOrderId");
+        await _genericAttributeService.DeleteAttributesAsync<Customer>("Winback_Email3DiscountCode");
+        await _genericAttributeService.DeleteAttributesAsync<Customer>("Winback_Email3DiscountId");
 
         // 2. Clear unsent dry-run emails from Message Queue
         var queuedEmails = await _queuedEmailService.SearchEmailsAsync(
@@ -165,6 +172,17 @@ public class WinbackEmailService
         if (dryRunEmails.Any())
         {
             await _queuedEmailService.DeleteQueuedEmailsAsync(dryRunEmails);
+        }
+
+        // 3. Clean up unredeemed generated winback discounts
+        var winbackDiscounts = await _discountService.GetAllDiscountsAsync(discountName: "Winback Email 3", showHidden: true);
+        foreach (var discount in winbackDiscounts)
+        {
+            var usage = await _discountService.GetAllDiscountUsageHistoryAsync(discountId: discount.Id, pageSize: 1);
+            if (usage.TotalCount == 0)
+            {
+                await _discountService.DeleteDiscountAsync(discount);
+            }
         }
     }
 
@@ -375,6 +393,14 @@ public class WinbackEmailService
             });
         }
 
+        string? discountCode = null;
+        string? discountDesc = null;
+
+        if (emailNumber == 3 && customer != null)
+        {
+            (discountCode, discountDesc) = await GetOrCreateEmail3DiscountAsync(customer, email);
+        }
+
         return new WinbackCustomerContext
         {
             CustomerFirstName = firstName,
@@ -382,11 +408,72 @@ public class WinbackEmailService
             EmailNumber = emailNumber,
             DaysSinceLastOrder = daysLapsed,
             RecentOrders = orderSummaries,
-            DiscountCode = emailNumber == 3 ? _settings.Email3DiscountCode : null,
+            DiscountCode = discountCode,
+            DiscountDescription = discountDesc,
             StoreName = _settings.StoreName,
             StoreUrl = storeLocation,
             UnsubscribeUrl = unsubscribeUrl
         };
+    }
+
+    private async Task<(string? Code, string? Description)> GetOrCreateEmail3DiscountAsync(Customer customer, string email)
+    {
+        // If dynamic discount value is 0 or less, fall back to optional static code
+        if (_settings.Email3DiscountAmount <= 0)
+        {
+            if (!string.IsNullOrWhiteSpace(_settings.Email3DiscountCode))
+                return (_settings.Email3DiscountCode, null);
+
+            return (null, null);
+        }
+
+        var discountDesc = _settings.Email3DiscountUsePercentage
+            ? $"{_settings.Email3DiscountAmount:G29}% off"
+            : $"£{_settings.Email3DiscountAmount:F2} off";
+
+        if (_settings.Email3DiscountExpiryDays > 0)
+            discountDesc += $" (valid for {_settings.Email3DiscountExpiryDays} days)";
+
+        // Check if an active single-use coupon was already created for this customer
+        var existingCode = await _genericAttributeService.GetAttributeAsync<string>(customer, "Winback_Email3DiscountCode");
+        if (!string.IsNullOrWhiteSpace(existingCode))
+        {
+            var discounts = await _discountService.GetAllDiscountsAsync(couponCode: existingCode, showHidden: true);
+            var existingDiscount = discounts.FirstOrDefault();
+            if (existingDiscount != null && existingDiscount.IsActive)
+            {
+                return (existingCode, discountDesc);
+            }
+        }
+
+        // Generate a new single-use discount with NTimesOnly = 1
+        var prefix = string.IsNullOrWhiteSpace(_settings.Email3DiscountPrefix) ? "WB-" : _settings.Email3DiscountPrefix.Trim();
+        var uniqueCode = prefix + Guid.NewGuid().ToString("N")[..8].ToUpperInvariant();
+        var now = DateTime.UtcNow;
+        DateTime? endDate = _settings.Email3DiscountExpiryDays > 0 ? now.AddDays(_settings.Email3DiscountExpiryDays) : null;
+
+        var discount = new Discount
+        {
+            Name = $"Winback Email 3 - {email}",
+            DiscountTypeId = (int)DiscountType.AssignedToOrderTotal,
+            UsePercentage = _settings.Email3DiscountUsePercentage,
+            DiscountAmount = _settings.Email3DiscountUsePercentage ? 0 : _settings.Email3DiscountAmount,
+            DiscountPercentage = _settings.Email3DiscountUsePercentage ? _settings.Email3DiscountAmount : 0,
+            RequiresCouponCode = true,
+            CouponCode = uniqueCode,
+            DiscountLimitationId = (int)DiscountLimitationType.NTimesOnly,
+            LimitationTimes = 1,
+            StartDateUtc = now,
+            EndDateUtc = endDate,
+            IsActive = true
+        };
+
+        await _discountService.InsertDiscountAsync(discount);
+
+        await _genericAttributeService.SaveAttributeAsync(customer, "Winback_Email3DiscountCode", uniqueCode);
+        await _genericAttributeService.SaveAttributeAsync(customer, "Winback_Email3DiscountId", discount.Id);
+
+        return (uniqueCode, discountDesc);
     }
 
     private async Task QueueEmailAsync(

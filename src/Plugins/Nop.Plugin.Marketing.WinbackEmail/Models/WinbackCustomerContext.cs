@@ -11,6 +11,7 @@ public class WinbackCustomerContext
     public int DaysSinceLastOrder { get; set; }
     public List<OrderSummary> RecentOrders { get; set; } = new();
     public string? DiscountCode { get; set; }
+    public string? DiscountDescription { get; set; }
     public string StoreName { get; set; } = string.Empty;
     public string StoreUrl { get; set; } = string.Empty;
     public string UnsubscribeUrl { get; set; } = string.Empty;

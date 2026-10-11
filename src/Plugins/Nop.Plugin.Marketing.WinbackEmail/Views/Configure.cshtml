@@ -80,9 +80,37 @@
                     <div class="col-md-3"><nop-label asp-for="MaxDaysLapsed" /></div>
                     <div class="col-md-9"><nop-editor asp-for="MaxDaysLapsed" /></div>
                 </div>
+            </div>
+        </div>
+
+        <div class="card card-default">
+            <div class="card-header">Email 3 Discount Settings</div>
+            <div class="card-body">
+                <p class="text-muted" style="margin-bottom: 20px;">
+                    When enabled, an exclusive, single-use coupon code is dynamically generated for each customer with <code>NTimesOnly = 1</code> limitation, guaranteeing it can only be redeemed once even if the customer checks out as a guest.
+                </p>
+                <div class="form-group row">
+                    <div class="col-md-3"><nop-label asp-for="Email3DiscountAmount" /></div>
+                    <div class="col-md-9"><nop-editor asp-for="Email3DiscountAmount" /></div>
+                </div>
+                <div class="form-group row">
+                    <div class="col-md-3"><nop-label asp-for="Email3DiscountUsePercentage" /></div>
+                    <div class="col-md-9"><nop-editor asp-for="Email3DiscountUsePercentage" /></div>
+                </div>
+                <div class="form-group row">
+                    <div class="col-md-3"><nop-label asp-for="Email3DiscountPrefix" /></div>
+                    <div class="col-md-9"><nop-editor asp-for="Email3DiscountPrefix" /></div>
+                </div>
+                <div class="form-group row">
+                    <div class="col-md-3"><nop-label asp-for="Email3DiscountExpiryDays" /></div>
+                    <div class="col-md-9"><nop-editor asp-for="Email3DiscountExpiryDays" /></div>
+                </div>
                 <div class="form-group row">
                     <div class="col-md-3"><nop-label asp-for="Email3DiscountCode" /></div>
-                    <div class="col-md-9"><nop-editor asp-for="Email3DiscountCode" /></div>
+                    <div class="col-md-9">
+                        <nop-editor asp-for="Email3DiscountCode" />
+                        <span class="hint">Fallback static promo code. Only used if Discount Value is set to 0.</span>
+                    </div>
                 </div>
                 <div class="form-group row">
                     <div class="col-md-9 offset-md-3">
