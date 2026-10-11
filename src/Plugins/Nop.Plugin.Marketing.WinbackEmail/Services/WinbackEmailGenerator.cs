@@ -111,7 +111,9 @@ public class WinbackEmailGenerator
         {
             1 => "A warm, genuine 'we miss you' message. No discount. Just a personal, friendly check-in that reminds them of their positive experience with the store.",
             2 => "Highlight what's new or popular in the store since their last visit. Make it feel like an insider update, not a promotional blast.",
-            3 => $"A final gentle nudge. Include the discount code '{context.DiscountCode}' if provided (only mention it if it's not empty). Keep it light — no pressure.",
+            3 => !string.IsNullOrWhiteSpace(context.DiscountCode)
+                ? $"A final gentle nudge. Offer them {context.DiscountDescription ?? "a discount"} with their exclusive single-use coupon code '{context.DiscountCode}'. Make sure to mention that this code is single-use and exclusive to them. Keep it warm, personal, and light — no pressure."
+                : "A final gentle nudge. Keep it light — no pressure.",
             _ => "A warm re-engagement message."
         };
 
@@ -132,6 +134,7 @@ public class WinbackEmailGenerator
             {storeLinkText}
             {unsubscribeLinkText}
             Discount code (email 3 only, may be empty): {context.DiscountCode ?? "none"}
+            Discount offer: {context.DiscountDescription ?? "none"}
 
             Their order history (with product URLs):
             {orderHistory}

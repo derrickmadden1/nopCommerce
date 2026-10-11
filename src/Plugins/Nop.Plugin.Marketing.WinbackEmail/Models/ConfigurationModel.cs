@@ -52,6 +52,18 @@ public record ConfigurationModel : BaseNopModel
     [NopResourceDisplayName("Plugins.Marketing.WinbackEmail.MaxDaysLapsed")]
     public int MaxDaysLapsed { get; set; } = 365;
 
+    [NopResourceDisplayName("Plugins.Marketing.WinbackEmail.Email3DiscountAmount")]
+    public decimal Email3DiscountAmount { get; set; }
+
+    [NopResourceDisplayName("Plugins.Marketing.WinbackEmail.Email3DiscountUsePercentage")]
+    public bool Email3DiscountUsePercentage { get; set; }
+
+    [NopResourceDisplayName("Plugins.Marketing.WinbackEmail.Email3DiscountPrefix")]
+    public string Email3DiscountPrefix { get; set; } = "WB-";
+
+    [NopResourceDisplayName("Plugins.Marketing.WinbackEmail.Email3DiscountExpiryDays")]
+    public int Email3DiscountExpiryDays { get; set; }
+
     [NopResourceDisplayName("Plugins.Marketing.WinbackEmail.Email3DiscountCode")]
     public string Email3DiscountCode { get; set; } = string.Empty;
 }

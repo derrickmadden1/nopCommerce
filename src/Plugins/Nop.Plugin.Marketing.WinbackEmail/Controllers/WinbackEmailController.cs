@@ -55,6 +55,10 @@ public class WinbackEmailController : BasePluginController
             DaysBetweenEmail1And2 = _settings.DaysBetweenEmail1And2,
             DaysBetweenEmail2And3 = _settings.DaysBetweenEmail2And3,
             MaxDaysLapsed = _settings.MaxDaysLapsed,
+            Email3DiscountAmount = _settings.Email3DiscountAmount,
+            Email3DiscountUsePercentage = _settings.Email3DiscountUsePercentage,
+            Email3DiscountPrefix = _settings.Email3DiscountPrefix,
+            Email3DiscountExpiryDays = _settings.Email3DiscountExpiryDays,
             Email3DiscountCode = _settings.Email3DiscountCode
         };
 
@@ -82,6 +86,10 @@ public class WinbackEmailController : BasePluginController
         _settings.DaysBetweenEmail1And2 = model.DaysBetweenEmail1And2;
         _settings.DaysBetweenEmail2And3 = model.DaysBetweenEmail2And3;
         _settings.MaxDaysLapsed = model.MaxDaysLapsed;
+        _settings.Email3DiscountAmount = model.Email3DiscountAmount;
+        _settings.Email3DiscountUsePercentage = model.Email3DiscountUsePercentage;
+        _settings.Email3DiscountPrefix = model.Email3DiscountPrefix?.Trim() ?? "WB-";
+        _settings.Email3DiscountExpiryDays = model.Email3DiscountExpiryDays;
         _settings.Email3DiscountCode = model.Email3DiscountCode?.Trim() ?? string.Empty;
 
         await _settingService.SaveSettingAsync(_settings);

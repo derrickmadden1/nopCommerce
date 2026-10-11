@@ -42,7 +42,11 @@ public class WinbackEmailPlugin : BasePlugin, IMiscPlugin
             Email1DaysLapsed = 60,
             DaysBetweenEmail1And2 = 7,
             DaysBetweenEmail2And3 = 7,
-            MaxDaysLapsed = 365
+            MaxDaysLapsed = 365,
+            Email3DiscountAmount = 10,
+            Email3DiscountUsePercentage = true,
+            Email3DiscountPrefix = "WB-",
+            Email3DiscountExpiryDays = 14
         });
 
         // Register the nightly scheduled task
@@ -74,7 +78,11 @@ public class WinbackEmailPlugin : BasePlugin, IMiscPlugin
             ["Plugins.Marketing.WinbackEmail.DaysBetweenEmail1And2"] = "Days to wait before Email 2",
             ["Plugins.Marketing.WinbackEmail.DaysBetweenEmail2And3"] = "Days to wait before Email 3",
             ["Plugins.Marketing.WinbackEmail.MaxDaysLapsed"] = "Maximum days lapsed to consider",
-            ["Plugins.Marketing.WinbackEmail.Email3DiscountCode"] = "Discount Code for Email 3"
+            ["Plugins.Marketing.WinbackEmail.Email3DiscountAmount"] = "Discount Value",
+            ["Plugins.Marketing.WinbackEmail.Email3DiscountUsePercentage"] = "Use Percentage",
+            ["Plugins.Marketing.WinbackEmail.Email3DiscountPrefix"] = "Coupon Code Prefix",
+            ["Plugins.Marketing.WinbackEmail.Email3DiscountExpiryDays"] = "Expiry Duration (Days)",
+            ["Plugins.Marketing.WinbackEmail.Email3DiscountCode"] = "Static Fallback Discount Code"
         });
 
         await base.InstallAsync();
