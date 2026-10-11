@@ -1,4 +1,4 @@
-﻿using Nop.Core.Caching;
+using Nop.Core.Caching;
 
 namespace Nop.Services.Catalog;
 
@@ -35,6 +35,11 @@ public static partial class NopCatalogDefaults
     /// Gets default prefix for product
     /// </summary>
     public static string ProductAttributePrefix => "product_attribute_";
+
+    /// <summary>
+    /// Gets a name of generic attribute for Coming Soon
+    /// </summary>
+    public static string ComingSoonAttribute => "ComingSoon";
 
     #endregion
 

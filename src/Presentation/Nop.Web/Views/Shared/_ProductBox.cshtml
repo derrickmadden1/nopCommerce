@@ -26,7 +26,11 @@
     var addtocomparelink = Url.RouteUrl(NopRouteNames.Ajax.ADD_PRODUCT_TO_COMPARE, new { productId = Model.Id });
 }
 <article class="product-item" data-productid="@Model.Id">
-    <div class="picture @(Model.InStock ? "" : "out-of-stock")">
+    <div class="picture @(Model.ComingSoon ? "coming-soon" : Model.InStock ? "" : "out-of-stock")">
+        @if (Model.ComingSoon)
+        {
+            <span class="coming-soon-ribbon">COMING SOON</span>
+        }
         @if (Model.PictureModels.Count > 1)
         {
             <div class="swiper" id="swiper-@Model.Id" dir="@Html.GetUIDirection(!await Html.ShouldUseRtlThemeAsync())">

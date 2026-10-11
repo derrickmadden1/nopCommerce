@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using System.Net;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Newtonsoft.Json;
@@ -1410,7 +1410,8 @@ public partial class ProductModelFactory : IProductModelFactory
                 MarkAsNew = product.MarkAsNew &&
                             (!product.MarkAsNewStartDateTimeUtc.HasValue || product.MarkAsNewStartDateTimeUtc.Value < DateTime.UtcNow) &&
                             (!product.MarkAsNewEndDateTimeUtc.HasValue || product.MarkAsNewEndDateTimeUtc.Value > DateTime.UtcNow),
-                InStock = product.ManageInventoryMethod == ManageInventoryMethod.ManageStock ? await _productService.GetTotalStockQuantityAsync(product) > 0 : true
+                InStock = product.ManageInventoryMethod == ManageInventoryMethod.ManageStock ? await _productService.GetTotalStockQuantityAsync(product) > 0 : true,
+                ComingSoon = await _genericAttributeService.GetAttributeAsync<bool>(product, NopCatalogDefaults.ComingSoonAttribute)
             };
 
             //price
@@ -1509,6 +1510,7 @@ public partial class ProductModelFactory : IProductModelFactory
 
         //standard properties
         var model = await GetModel(product);
+        model.ComingSoon = await _genericAttributeService.GetAttributeAsync<bool>(product, NopCatalogDefaults.ComingSoonAttribute);
 
         //automatically generate product description?
         if (_seoSettings.GenerateProductMetaDescription && string.IsNullOrEmpty(model.MetaDescription))

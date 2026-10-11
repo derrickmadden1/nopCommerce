@@ -81,7 +81,16 @@
                             }
                             
                             <!--add to cart-->
-                            @{
+                            @if (Model.ComingSoon)
+                            {
+                                <div class="add-to-cart">
+                                    <div class="add-to-cart-panel">
+                                        <button type="button" class="button-1 add-to-cart-button disabled coming-soon-button" disabled="disabled">@T("Products.ComingSoon")</button>
+                                    </div>
+                                </div>
+                            }
+                            else
+                            {
                                 var dataDictAddToCart = new ViewDataDictionary(ViewData);
                                 dataDictAddToCart.TemplateInfo.HtmlFieldPrefix = $"addtocart_{Model.Id}";
                                 @await Html.PartialAsync("_AddToCart", Model.AddToCart, dataDictAddToCart)

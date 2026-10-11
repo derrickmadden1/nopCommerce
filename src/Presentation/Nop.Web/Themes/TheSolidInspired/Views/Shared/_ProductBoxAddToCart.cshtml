@@ -20,10 +20,14 @@
     var addtocomparelink = Url.RouteUrl(NopRouteNames.Ajax.ADD_PRODUCT_TO_COMPARE, new { productId = Model.Id });
 }
 
-@if (!Model.ProductPrice.DisableBuyButton || !Model.ProductPrice.DisableWishlistButton || !Model.ProductPrice.DisableAddToCompareListButton)
+@if (Model.ComingSoon || !Model.ProductPrice.DisableBuyButton || !Model.ProductPrice.DisableWishlistButton || !Model.ProductPrice.DisableAddToCompareListButton)
 {
     <div class="buttons">
-        @if (!Model.ProductPrice.DisableBuyButton)
+        @if (Model.ComingSoon)
+        {
+            <button type="button" class="button-2 product-box-add-to-cart-button disabled coming-soon-button" disabled="disabled">@T("Products.ComingSoon")</button>
+        }
+        else if (!Model.ProductPrice.DisableBuyButton)
         {
             var addToCartText = T("ShoppingCart.AddToCart").Text;
             if (Model.ProductPrice.IsRental)

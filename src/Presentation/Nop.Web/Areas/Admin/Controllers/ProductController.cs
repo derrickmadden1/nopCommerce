@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Primitives;
 using Newtonsoft.Json;
@@ -1179,6 +1179,9 @@ public partial class ProductController : BaseAdminController
             await _customerActivityService.InsertActivityAsync("AddNewProduct",
                 string.Format(await _localizationService.GetResourceAsync("ActivityLog.AddNewProduct"), product.Name), product);
 
+            //coming soon attribute
+            await _genericAttributeService.SaveAttributeAsync(product, NopCatalogDefaults.ComingSoonAttribute, model.ComingSoon);
+
             _notificationService.SuccessNotification(await _localizationService.GetResourceAsync("Admin.Catalog.Products.Added"));
 
             if (!continueEditing)
@@ -1372,6 +1375,9 @@ public partial class ProductController : BaseAdminController
 
             //picture seo names
             await UpdatePictureSeoNamesAsync(product);
+
+            //coming soon attribute
+            await _genericAttributeService.SaveAttributeAsync(product, NopCatalogDefaults.ComingSoonAttribute, model.ComingSoon);
 
             //back in stock notifications
             if (product.ManageInventoryMethod == ManageInventoryMethod.ManageStock &&

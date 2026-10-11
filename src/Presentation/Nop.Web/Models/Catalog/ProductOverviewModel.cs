@@ -1,4 +1,4 @@
-﻿using Nop.Core.Domain.Catalog;
+using Nop.Core.Domain.Catalog;
 using Nop.Web.Framework.Models;
 using Nop.Web.Models.Media;
 
@@ -37,4 +37,5 @@ public partial record ProductOverviewModel : BaseNopEntityModel
 
     public ProductToWishlistModel ProductToWishlist { get; set; }
     public bool InStock { get; set; }
+    public bool ComingSoon { get; set; }
 }
