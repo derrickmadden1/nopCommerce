@@ -11,11 +11,44 @@
 @model ProductOverviewModel
 
 @{
-    var isOutOfStock = !Model.InStock || Model.ProductPrice.DisableBuyButton;
+    var isComingSoon = Model.ComingSoon;
+    var isOutOfStock = !isComingSoon && (!Model.InStock || Model.ProductPrice.DisableBuyButton);
 }
-<div class="product-card @(isOutOfStock ? "out-of-stock" : "")" data-productid="@Model.Id">
-    <div class="product-image-wrapper @(isOutOfStock ? "out-of-stock" : "")">
-        @if (isOutOfStock)
+<div class="product-card @(isComingSoon ? "coming-soon" : isOutOfStock ? "out-of-stock" : "")" data-productid="@Model.Id">
+    <div class="product-image-wrapper @(isComingSoon ? "coming-soon" : isOutOfStock ? "out-of-stock" : "")">
+        @if (isComingSoon)
+        {
+            <style>
+                .coming-soon-ribbon {
+                    position: absolute !important;
+                    top: 30px !important;
+                    right: -40px !important;
+                    width: 160px !important;
+                    background: #d97706 !important;
+                    color: #fff !important;
+                    padding: 5px 0 !important;
+                    font-size: 10px !important;
+                    font-weight: bold !important;
+                    text-align: center !important;
+                    transform: rotate(45deg) !important;
+                    box-shadow: 0 2px 10px rgba(0,0,0,0.5) !important;
+                    z-index: 950 !important;
+                    display: block !important;
+                    line-height: 1.5 !important;
+                    pointer-events: none !important;
+                    letter-spacing: 0.5px !important;
+                }
+                .coming-soon img {
+                    opacity: 0.5 !important;
+                    filter: grayscale(100%) !important;
+                }
+                .coming-soon .puzzle-hint-badge {
+                    display: none !important;
+                }
+            </style>
+            <span class="coming-soon-ribbon">COMING SOON</span>
+        }
+        else if (isOutOfStock)
         {
             <style>
                 .out-of-stock-ribbon {

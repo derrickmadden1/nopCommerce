@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Language Name="English">
   <LocaleResource Name="Account.AccountActivation">
     <Value>Account activation</Value>
@@ -3530,6 +3530,12 @@
   </LocaleResource>
   <LocaleResource Name="Admin.Catalog.Products.Fields.Manufacturers.NoManufacturersAvailable">
     <Value>No manufacturers available.</Value>
+  </LocaleResource>
+  <LocaleResource Name="Admin.Catalog.Products.Fields.ComingSoon">
+    <Value>Coming soon</Value>
+  </LocaleResource>
+  <LocaleResource Name="Admin.Catalog.Products.Fields.ComingSoon.Hint">
+    <Value>Check to mark the product as coming soon.</Value>
   </LocaleResource>
   <LocaleResource Name="Admin.Catalog.Products.Fields.MarkAsNew">
     <Value>Mark as new</Value>
@@ -19594,6 +19600,9 @@
   <LocaleResource Name="Products.Availability.LowStockWithQuantity">
     <Value>{0} low stock</Value>
   </LocaleResource>
+  <LocaleResource Name="Products.ComingSoon">
+    <Value>Coming Soon</Value>
+  </LocaleResource>
   <LocaleResource Name="Products.Availability.OutOfStock">
     <Value>Out of stock</Value>
   </LocaleResource>
@@ -20598,6 +20607,9 @@
   </LocaleResource>
   <LocaleResource Name="ShoppingCart.BuyingDisabled">
     <Value>Buying is disabled for this product</Value>
+  </LocaleResource>
+  <LocaleResource Name="ShoppingCart.ComingSoon">
+    <Value>This product is coming soon and cannot be purchased yet.</Value>
   </LocaleResource>
   <LocaleResource Name="ShoppingCart.CannotLoadProduct">
     <Value>Product (Id={0}) cannot be loaded</Value>

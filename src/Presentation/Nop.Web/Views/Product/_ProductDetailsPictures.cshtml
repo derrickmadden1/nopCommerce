@@ -1,4 +1,4 @@
-﻿@model ProductDetailsModel
+@model ProductDetailsModel
 
 @{
     var galeryThumbsCount = Model.PictureModels.Count;
@@ -12,7 +12,11 @@
 
 <div class="picture-gallery">
     @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.ProductDetailsBeforePictures, additionalData = Model })
-    <div class="picture @(Model.InStock ? "" : "out-of-stock")">
+    <div class="picture @(Model.ComingSoon ? "coming-soon" : Model.InStock ? "" : "out-of-stock")">
+        @if (Model.ComingSoon)
+        {
+            <span class="coming-soon-ribbon">COMING SOON</span>
+        }
         @if (Model.DefaultPictureZoomEnabled && galeryThumbsCount == 1)
         {
             <a href="@Model.DefaultPictureModel.FullSizeImageUrl" title="@Model.DefaultPictureModel.Title" id="main-product-img-lightbox-anchor-@Model.Id">

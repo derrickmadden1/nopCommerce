@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Nop.Web.Areas.Admin.Models.Settings;
 using Nop.Web.Framework.Models;
@@ -368,6 +368,9 @@ public partial record ProductModel : BaseNopEntityModel,
 
     [NopResourceDisplayName("Admin.Catalog.Products.Fields.MarkAsNew")]
     public bool MarkAsNew { get; set; }
+
+    [NopResourceDisplayName("Admin.Catalog.Products.Fields.ComingSoon")]
+    public bool ComingSoon { get; set; }
 
     [NopResourceDisplayName("Admin.Catalog.Products.Fields.MarkAsNewStartDateTimeUtc")]
     [UIHint("DateTimeNullable")]

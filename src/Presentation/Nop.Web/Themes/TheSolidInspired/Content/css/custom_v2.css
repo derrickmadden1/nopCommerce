@@ -4728,12 +4728,14 @@ body {
 
 /* Out of stock styling - Refined */
 .out-of-stock,
+.coming-soon,
 /* Out of stock styling - Ribbon Span Version */
 .out-of-stock {
     position: relative !important;
 }
 
-.out-of-stock img {
+.out-of-stock img,
+.coming-soon img {
     opacity: 0.5 !important;
     filter: grayscale(100%) !important;
 }
@@ -4756,6 +4758,40 @@ body {
     visibility: visible !important;
     pointer-events: none !important;
     line-height: 1.5 !important;
+}
+
+.coming-soon-ribbon {
+    position: absolute !important;
+    top: 30px !important;
+    right: -40px !important;
+    width: 160px !important;
+    background: #d97706 !important;
+    color: #fff !important;
+    padding: 5px 0 !important;
+    font-size: 10px !important;
+    font-weight: bold !important;
+    text-align: center !important;
+    transform: rotate(45deg) !important;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.5) !important;
+    z-index: 9999 !important;
+    display: block !important;
+    visibility: visible !important;
+    pointer-events: none !important;
+    line-height: 1.5 !important;
+    letter-spacing: 0.5px !important;
+}
+
+.coming-soon .puzzle-hint-badge {
+    display: none !important;
+}
+
+.button-2.coming-soon-button,
+.button-1.coming-soon-button {
+    background: #f3f4f6 !important;
+    color: #9ca3af !important;
+    border-color: #e5e7eb !important;
+    cursor: not-allowed !important;
+    pointer-events: none !important;
 }
 
 /* --- CART TOTALS & CHECKOUT POLISH --- */

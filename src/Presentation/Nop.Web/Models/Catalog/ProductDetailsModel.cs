@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Nop.Core.Domain.Catalog;
 using Nop.Core.Domain.Orders;
@@ -127,6 +127,7 @@ public partial record ProductDetailsModel : BaseNopEntityModel, IMetaTagsSupport
     public string CurrentStoreName { get; set; }
 
     public bool InStock { get; set; }
+    public bool ComingSoon { get; set; }
 
     public bool AllowAddingOnlyExistingAttributeCombinations { get; set; }
 

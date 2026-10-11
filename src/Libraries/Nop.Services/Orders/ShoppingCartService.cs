@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Nop.Core;
@@ -369,6 +369,10 @@ public partial class ShoppingCartService : IShoppingCartService
         //disabled "add to cart" button
         if (shoppingCartType == ShoppingCartType.ShoppingCart && product.DisableBuyButton)
             warnings.Add(await _localizationService.GetResourceAsync("ShoppingCart.BuyingDisabled"));
+
+        //coming soon check
+        if (shoppingCartType == ShoppingCartType.ShoppingCart && await _genericAttributeService.GetAttributeAsync<bool>(product, NopCatalogDefaults.ComingSoonAttribute))
+            warnings.Add(await _localizationService.GetResourceAsync("ShoppingCart.ComingSoon"));
 
         //disabled "add to wishlist" button
         if (shoppingCartType == ShoppingCartType.Wishlist && product.DisableWishlistButton)
