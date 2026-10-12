@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Nop.Core;
 using Nop.Core.Domain.Orders;
 using Nop.Plugin.DiscountRules.MultiBuy.Models;
@@ -56,7 +56,7 @@ namespace Nop.Plugin.DiscountRules.MultiBuy.Components
                     var settings = await GetMultiBuySettingsAsync(discount.Id);
                     if (settings != null && settings.EligibleProductIds.Contains(productModel.Id))
                     {
-                        model.Message = $"Multibuy Deal: {settings.BundleSize} items for {settings.BundlePrice.ToString("C")}!";
+                        model.Message = $"Multibuy Deal: Any {settings.BundleSize} items for {settings.BundlePrice.ToString("C")}!";
                         model.IsProductPage = true;
                         break;
                     }
@@ -72,7 +72,7 @@ namespace Nop.Plugin.DiscountRules.MultiBuy.Components
                     if (settings != null && settings.EligibleProductIds.Contains(overviewModel.Id))
                     {
                          // Short badge message
-                        model.Message = $"MultiBuy: {settings.BundleSize} for {settings.BundlePrice.ToString("C")}";
+                        model.Message = $"MultiBuy: Any {settings.BundleSize} for {settings.BundlePrice.ToString("C")}";
                         model.IsCatalogPage = true; 
                         break;
                     }
