@@ -47,6 +47,12 @@
                     </div>
                     
                     <div class="product-info-overview">
+                        @if (Model.ComingSoon)
+                        {
+                            <div class="coming-soon-card-badge product-details-badge">
+                                <span class="coming-soon-dot"></span> @T("Products.ComingSoon")
+                            </div>
+                        }
                         <div class="product-name">
                             <h1>@Model.Name</h1>
                         </div>
