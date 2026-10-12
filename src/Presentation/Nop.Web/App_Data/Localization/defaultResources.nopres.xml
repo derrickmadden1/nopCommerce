@@ -11581,6 +11581,9 @@
   <LocaleResource Name="Admin.ContentManagement.MessageTemplates.Description.Customer.BackInStock">
     <Value><![CDATA[This message template is used when the customer subscribed for the certain product which is unavailable at the moment to notify the customer about the product being back to stock again. You can set up this option by ticking the checkbox <strong>Allow back in stock subscriptions</strong> in Product info tab - Inventory section.]]></Value>
   </LocaleResource>
+  <LocaleResource Name="Admin.ContentManagement.MessageTemplates.Description.Customer.NowAvailable">
+    <Value><![CDATA[This message template is used when customers subscribe to be notified when a coming soon product becomes available for purchase.]]></Value>
+  </LocaleResource>
   <LocaleResource Name="Admin.ContentManagement.MessageTemplates.Description.Customer.EmailRevalidationMessage">
     <Value>This message template is used when a customer changes an email address in his account. The customer receives a message to confirm an email address used when changing email address.</Value>
   </LocaleResource>
@@ -17448,6 +17451,27 @@
   </LocaleResource>
   <LocaleResource Name="BackInStockSubscriptions.Unsubscribe">
     <Value>Unsubscribe</Value>
+  </LocaleResource>
+  <LocaleResource Name="NowAvailableSubscriptions.AlreadySubscribed">
+    <Value>You're already subscribed to receive a notification when this product becomes available</Value>
+  </LocaleResource>
+  <LocaleResource Name="NowAvailableSubscriptions.Notification.Subscribed">
+    <Value>You've successfully subscribed to notifications for when this product becomes available</Value>
+  </LocaleResource>
+  <LocaleResource Name="NowAvailableSubscriptions.Notification.Unsubscribed">
+    <Value>You've successfully unsubscribed from notifications for this product</Value>
+  </LocaleResource>
+  <LocaleResource Name="NowAvailableSubscriptions.NotifyMe">
+    <Value>Notify me when available</Value>
+  </LocaleResource>
+  <LocaleResource Name="NowAvailableSubscriptions.NotifyMeWhenAvailable">
+    <Value>Notify me when available</Value>
+  </LocaleResource>
+  <LocaleResource Name="NowAvailableSubscriptions.PopupTitle">
+    <Value>Receive an email when this product becomes available</Value>
+  </LocaleResource>
+  <LocaleResource Name="NowAvailableSubscriptions.Tooltip">
+    <Value>You'll receive a one-time email when this product becomes available for ordering. We will not send you any other emails or add you to our newsletter; you will only be emailed about this product!</Value>
   </LocaleResource>
   <LocaleResource Name="Bestsellers">
     <Value>Bestsellers</Value>

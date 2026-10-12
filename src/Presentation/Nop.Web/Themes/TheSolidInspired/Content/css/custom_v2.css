@@ -4794,6 +4794,62 @@ body {
     pointer-events: none !important;
 }
 
+.coming-soon-panel {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+    align-items: stretch !important;
+}
+
+.coming-soon-panel .back-in-stock-subscription {
+    display: block !important;
+    width: 100% !important;
+}
+
+.coming-soon-panel .subscribe-button,
+.back-in-stock-subscription .subscribe-button {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    background: #d97706 !important;
+    color: #ffffff !important;
+    border: 1px solid #d97706 !important;
+    padding: 12px 24px !important;
+    font-size: 15px !important;
+    font-weight: 600 !important;
+    border-radius: 6px !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease-in-out !important;
+    text-transform: none !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+}
+
+.coming-soon-panel .subscribe-button:hover,
+.back-in-stock-subscription .subscribe-button:hover {
+    background: #b45309 !important;
+    border-color: #b45309 !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+    transform: translateY(-1px) !important;
+}
+
+.back-in-stock-subscription-page .notify-me-button {
+    background: #d97706 !important;
+    color: #ffffff !important;
+    border: 1px solid #d97706 !important;
+    padding: 10px 20px !important;
+    font-weight: 600 !important;
+    border-radius: 4px !important;
+    cursor: pointer !important;
+    transition: background-color 0.2s ease !important;
+}
+
+.back-in-stock-subscription-page .notify-me-button:hover {
+    background: #b45309 !important;
+    border-color: #b45309 !important;
+}
+
 /* --- CART TOTALS & CHECKOUT POLISH --- */
 
 .cart-footer-modern {

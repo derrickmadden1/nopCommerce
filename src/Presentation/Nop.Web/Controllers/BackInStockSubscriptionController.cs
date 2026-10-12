@@ -1,9 +1,10 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Nop.Core;
 using Nop.Core.Domain.Catalog;
 using Nop.Core.Domain.Customers;
 using Nop.Core.Http;
 using Nop.Services.Catalog;
+using Nop.Services.Common;
 using Nop.Services.Customers;
 using Nop.Services.Localization;
 using Nop.Services.Messages;
@@ -24,6 +25,7 @@ public partial class BackInStockSubscriptionController : BasePublicController
     protected readonly CatalogSettings _catalogSettings;
     protected readonly CustomerSettings _customerSettings;
     protected readonly ICustomerService _customerService;
+    protected readonly IGenericAttributeService _genericAttributeService;
     protected readonly ILocalizationService _localizationService;
     protected readonly INotificationService _notificationService;
     protected readonly IProductService _productService;
@@ -39,6 +41,7 @@ public partial class BackInStockSubscriptionController : BasePublicController
         CustomerSettings customerSettings,
         IBackInStockSubscriptionService backInStockSubscriptionService,
         ICustomerService customerService,
+        IGenericAttributeService genericAttributeService,
         ILocalizationService localizationService,
         INotificationService notificationService,
         IProductService productService,
@@ -50,6 +53,7 @@ public partial class BackInStockSubscriptionController : BasePublicController
         _customerSettings = customerSettings;
         _backInStockSubscriptionService = backInStockSubscriptionService;
         _customerService = customerService;
+        _genericAttributeService = genericAttributeService;
         _localizationService = localizationService;
         _notificationService = notificationService;
         _productService = productService;
@@ -70,6 +74,12 @@ public partial class BackInStockSubscriptionController : BasePublicController
         if (product == null || product.Deleted)
             throw new ArgumentException("No product found with the specified id");
 
+        var isComingSoon = await _genericAttributeService.GetAttributeAsync<bool>(product, NopCatalogDefaults.ComingSoonAttribute);
+        var isOutOfStock = product.ManageInventoryMethod == ManageInventoryMethod.ManageStock &&
+            product.BackorderMode == BackorderMode.NoBackorders &&
+            product.AllowBackInStockSubscriptions &&
+            await _productService.GetTotalStockQuantityAsync(product) <= 0;
+
         var customer = await _workContext.GetCurrentCustomerAsync();
         var store = await _storeContext.GetCurrentStoreAsync();
         var model = new BackInStockSubscribeModel
@@ -81,14 +91,12 @@ public partial class BackInStockSubscriptionController : BasePublicController
             MaximumBackInStockSubscriptions = _catalogSettings.MaximumBackInStockSubscriptions,
             CurrentNumberOfBackInStockSubscriptions = (await _backInStockSubscriptionService
                     .GetAllSubscriptionsByCustomerIdAsync(customer.Id, store.Id, 0, 1))
-                .TotalCount
+                .TotalCount,
+            IsComingSoon = isComingSoon
         };
-        if (product.ManageInventoryMethod == ManageInventoryMethod.ManageStock &&
-            product.BackorderMode == BackorderMode.NoBackorders &&
-            product.AllowBackInStockSubscriptions &&
-            await _productService.GetTotalStockQuantityAsync(product) <= 0)
+        if (isComingSoon || isOutOfStock)
         {
-            //out of stock
+            //subscription allowed
             model.SubscriptionAllowed = true;
             model.AlreadySubscribed = await _backInStockSubscriptionService
                 .FindSubscriptionAsync(customer.Id, product.Id, store.Id) != null;
@@ -108,12 +116,14 @@ public partial class BackInStockSubscriptionController : BasePublicController
         if (!await _customerService.IsRegisteredAsync(customer))
             return Content(await _localizationService.GetResourceAsync("BackInStockSubscriptions.OnlyRegistered"));
 
-        if (product.ManageInventoryMethod == ManageInventoryMethod.ManageStock &&
+        var isComingSoon = await _genericAttributeService.GetAttributeAsync<bool>(product, NopCatalogDefaults.ComingSoonAttribute);
+        var isOutOfStock = product.ManageInventoryMethod == ManageInventoryMethod.ManageStock &&
             product.BackorderMode == BackorderMode.NoBackorders &&
             product.AllowBackInStockSubscriptions &&
-            await _productService.GetTotalStockQuantityAsync(product) <= 0)
+            await _productService.GetTotalStockQuantityAsync(product) <= 0;
+
+        if (isComingSoon || isOutOfStock)
         {
-            //out of stock
             var store = await _storeContext.GetCurrentStoreAsync();
             var subscription = await _backInStockSubscriptionService
                 .FindSubscriptionAsync(customer.Id, product.Id, store.Id);
@@ -123,7 +133,9 @@ public partial class BackInStockSubscriptionController : BasePublicController
                 //unsubscribe
                 await _backInStockSubscriptionService.DeleteSubscriptionAsync(subscription);
 
-                _notificationService.SuccessNotification(await _localizationService.GetResourceAsync("BackInStockSubscriptions.Notification.Unsubscribed"));
+                _notificationService.SuccessNotification(await _localizationService.GetResourceAsync(isComingSoon
+                    ? "NowAvailableSubscriptions.Notification.Unsubscribed"
+                    : "BackInStockSubscriptions.Notification.Unsubscribed"));
                 return new OkResult();
             }
 
@@ -147,7 +159,9 @@ public partial class BackInStockSubscriptionController : BasePublicController
             };
             await _backInStockSubscriptionService.InsertSubscriptionAsync(subscription);
 
-            _notificationService.SuccessNotification(await _localizationService.GetResourceAsync("BackInStockSubscriptions.Notification.Subscribed"));
+            _notificationService.SuccessNotification(await _localizationService.GetResourceAsync(isComingSoon
+                ? "NowAvailableSubscriptions.Notification.Subscribed"
+                : "BackInStockSubscriptions.Notification.Subscribed"));
             return new OkResult();
         }
 

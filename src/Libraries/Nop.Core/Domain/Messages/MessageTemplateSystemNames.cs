@@ -1,4 +1,4 @@
-﻿namespace Nop.Core.Domain.Messages;
+namespace Nop.Core.Domain.Messages;
 
 /// <summary>
 /// Represents message template system names
@@ -286,6 +286,11 @@ public static partial class MessageTemplateSystemNames
     /// Represents system name of notification customer about product receipt
     /// </summary>
     public const string BACK_IN_STOCK_NOTIFICATION = "Customer.BackInStock";
+
+    /// <summary>
+    /// Represents system name of notification customer about product now available
+    /// </summary>
+    public const string NOW_AVAILABLE_NOTIFICATION = "Customer.NowAvailable";
 
     /// <summary>
     /// Represents system name of 'Contact us' message

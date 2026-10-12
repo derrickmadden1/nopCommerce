@@ -1,14 +1,14 @@
-﻿@model BackInStockSubscribeModel
+@model BackInStockSubscribeModel
 <div class="page back-in-stock-subscription-page">
     <div class="page-title">
         <h1>
             @if (Model.AlreadySubscribed)
             {
-                @T("BackInStockSubscriptions.AlreadySubscribed")
+                @(Model.IsComingSoon ? T("NowAvailableSubscriptions.AlreadySubscribed") : T("BackInStockSubscriptions.AlreadySubscribed"))
             }
             else
             {
-                @T("BackInStockSubscriptions.PopupTitle")
+                @(Model.IsComingSoon ? T("NowAvailableSubscriptions.PopupTitle") : T("BackInStockSubscriptions.PopupTitle"))
             }
         </h1>
     </div>
@@ -35,10 +35,10 @@
         {
             if (!Model.AlreadySubscribed)
             {
-                <div class="tooltip">@T("BackInStockSubscriptions.Tooltip")</div>
+                <div class="tooltip">@(Model.IsComingSoon ? T("NowAvailableSubscriptions.Tooltip") : T("BackInStockSubscriptions.Tooltip"))</div>
             }
             <button type="submit" id="back-in-stock-notify-me" class="button-1 notify-me-button">
-                @(Model.AlreadySubscribed ? @T("BackInStockSubscriptions.Unsubscribe").Text : @T("BackInStockSubscriptions.NotifyMe").Text)
+                @(Model.AlreadySubscribed ? T("BackInStockSubscriptions.Unsubscribe").Text : (Model.IsComingSoon ? T("NowAvailableSubscriptions.NotifyMe").Text : T("BackInStockSubscriptions.NotifyMe").Text))
             </button>
             <nop-antiforgery-token />
             <script>

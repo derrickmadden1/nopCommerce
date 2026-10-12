@@ -1588,6 +1588,12 @@ public partial class ProductModelFactory : IProductModelFactory
                 break;
         }
 
+        if (model.ComingSoon)
+        {
+            model.DisplayBackInStockSubscription = true;
+            model.StockAvailability = await _localizationService.GetResourceAsync("Products.ComingSoon");
+        }
+
         //breadcrumb
         //do not prepare this model for the associated products. anyway it's not used
         if (_catalogSettings.CategoryBreadcrumbEnabled && !isAssociatedProduct)

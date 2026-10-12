@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using Nop.Core;
 using Nop.Core.Domain.Blogs;
 using Nop.Core.Domain.Catalog;
@@ -2474,11 +2474,12 @@ public partial class WorkflowMessageService : IWorkflowMessageService
     /// </summary>
     /// <param name="subscription">Subscription</param>
     /// <param name="languageId">Message language identifier</param>
+    /// <param name="isNowAvailable">A value indicating whether the notification is for a now-available product</param>
     /// <returns>
     /// A task that represents the asynchronous operation
     /// The task result contains the queued email identifier
     /// </returns>
-    public virtual async Task<IList<int>> SendBackInStockNotificationAsync(BackInStockSubscription subscription, int languageId)
+    public virtual async Task<IList<int>> SendBackInStockNotificationAsync(BackInStockSubscription subscription, int languageId, bool isNowAvailable = false)
     {
         ArgumentNullException.ThrowIfNull(subscription);
 
@@ -2493,7 +2494,14 @@ public partial class WorkflowMessageService : IWorkflowMessageService
         var store = await _storeService.GetStoreByIdAsync(subscription.StoreId) ?? await _storeContext.GetCurrentStoreAsync();
         languageId = await EnsureLanguageIsActiveAsync(languageId, store.Id);
 
-        var messageTemplates = await GetActiveMessageTemplatesAsync(MessageTemplateSystemNames.BACK_IN_STOCK_NOTIFICATION, store.Id);
+        var templateName = isNowAvailable ? MessageTemplateSystemNames.NOW_AVAILABLE_NOTIFICATION : MessageTemplateSystemNames.BACK_IN_STOCK_NOTIFICATION;
+        var messageTemplates = await GetActiveMessageTemplatesAsync(templateName, store.Id);
+        if (!messageTemplates.Any() && isNowAvailable)
+        {
+            //fallback to back-in-stock template if now-available template has not been created or is not active
+            messageTemplates = await GetActiveMessageTemplatesAsync(MessageTemplateSystemNames.BACK_IN_STOCK_NOTIFICATION, store.Id);
+        }
+
         if (!messageTemplates.Any())
             return new List<int>();
 

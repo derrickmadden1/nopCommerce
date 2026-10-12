@@ -1,4 +1,4 @@
-﻿using FluentMigrator;
+using FluentMigrator;
 using Nop.Core.Domain.Logging;
 using Nop.Core.Domain.Messages;
 using Nop.Core.Domain.ScheduleTasks;
@@ -197,6 +197,22 @@ public class DataMigration : Migration
                 IsActive = true,
                 EmailAccountId = eaGeneral.Id
             });
+        }
+
+        if (!_dataProvider.GetTable<MessageTemplate>().Any(st => string.Compare(st.Name, MessageTemplateSystemNames.NOW_AVAILABLE_NOTIFICATION, StringComparison.InvariantCultureIgnoreCase) == 0))
+        {
+            var eaGeneral = _dataProvider.GetTable<EmailAccount>().FirstOrDefault();
+            if (eaGeneral != null)
+            {
+                _dataProvider.InsertEntity(new MessageTemplate
+                {
+                    Name = MessageTemplateSystemNames.NOW_AVAILABLE_NOTIFICATION,
+                    Subject = "%Store.Name%. Now available notification",
+                    Body = $"<p>{Environment.NewLine}<a href=\"%Store.URL%\">%Store.Name%</a>{Environment.NewLine}<br />{Environment.NewLine}<br />{Environment.NewLine}Hello %Customer.FullName%,{Environment.NewLine}<br />{Environment.NewLine}Product <a target=\"_blank\" href=\"%BackInStockSubscription.ProductUrl%\">%BackInStockSubscription.ProductName%</a> is now available.{Environment.NewLine}</p>{Environment.NewLine}",
+                    IsActive = true,
+                    EmailAccountId = eaGeneral.Id
+                });
+            }
         }
     }
 

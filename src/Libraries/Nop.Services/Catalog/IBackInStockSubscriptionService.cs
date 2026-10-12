@@ -1,4 +1,4 @@
-﻿using Nop.Core;
+using Nop.Core;
 using Nop.Core.Domain.Catalog;
 
 namespace Nop.Services.Catalog;
@@ -62,11 +62,12 @@ public partial interface IBackInStockSubscriptionService
     /// Send notification to subscribers
     /// </summary>
     /// <param name="product">Product</param>
+    /// <param name="isNowAvailable">A value indicating whether the notification is for a now-available product</param>
     /// <returns>
     /// A task that represents the asynchronous operation
     /// The task result contains the number of sent email
     /// </returns>
-    Task<int> SendNotificationsToSubscribersAsync(Product product);
+    Task<int> SendNotificationsToSubscribersAsync(Product product, bool isNowAvailable = false);
 
     /// <summary>
     /// Gets all subscriptions
