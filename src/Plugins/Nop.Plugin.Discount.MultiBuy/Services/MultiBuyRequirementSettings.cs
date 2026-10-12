@@ -2,6 +2,19 @@ using System.Collections.Generic;
 
 namespace Nop.Plugin.DiscountRules.MultiBuy.Services
 {
+    public enum MultiBuyBundleType
+    {
+        /// <summary>
+        /// Mix and match: customer can pick any N items from the eligible products list.
+        /// </summary>
+        Any = 0,
+
+        /// <summary>
+        /// Complete bundle: customer must purchase all eligible products together as a set.
+        /// </summary>
+        All = 1
+    }
+
     /// <summary>
     /// Per-discount-requirement settings for the multi-buy rule.
     /// Stored via ISettingService using a key that includes the discountRequirementId.
@@ -27,6 +40,11 @@ namespace Nop.Plugin.DiscountRules.MultiBuy.Services
         /// List of product identifiers that can participate in the bundle.
         /// </summary>
         public List<int> EligibleProductIds { get; set; } = new();
+
+        /// <summary>
+        /// Type of bundle: Any (mix & match) or All (complete set).
+        /// </summary>
+        public MultiBuyBundleType BundleType { get; set; } = MultiBuyBundleType.Any;
     }
 }
 

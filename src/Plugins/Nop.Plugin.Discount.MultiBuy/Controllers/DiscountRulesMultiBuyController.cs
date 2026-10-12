@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Nop.Core.Domain.Discounts;
 using Nop.Plugin.DiscountRules.MultiBuy.Models;
 using Nop.Plugin.DiscountRules.MultiBuy.Services;
@@ -98,7 +99,13 @@ public class DiscountRulesMultiBuyController : BasePluginController
             ProductIds = string.Join(",", requirementSettings.EligibleProductIds),
             BundleSize = requirementSettings.BundleSize,
             BundlePrice = requirementSettings.BundlePrice,
-            ApplyAcrossMixedProducts = requirementSettings.ApplyAcrossMixedProducts
+            ApplyAcrossMixedProducts = requirementSettings.ApplyAcrossMixedProducts,
+            BundleTypeId = (int)requirementSettings.BundleType,
+            AvailableBundleTypes = new List<SelectListItem>
+            {
+                new() { Value = "0", Text = "Any (Mix & Match)", Selected = requirementSettings.BundleType == MultiBuyBundleType.Any },
+                new() { Value = "1", Text = "All (Complete Bundle / Set)", Selected = requirementSettings.BundleType == MultiBuyBundleType.All }
+            }
         };
 
         //set the HTML field prefix
@@ -122,6 +129,30 @@ public class DiscountRulesMultiBuyController : BasePluginController
             
         if (model.BundlePrice == 0 && Request.Form.ContainsKey($"{prefix}.BundlePrice"))
             model.BundlePrice = decimal.Parse(Request.Form[$"{prefix}.BundlePrice"], System.Globalization.CultureInfo.InvariantCulture);
+
+        if (Request.Form.ContainsKey($"{prefix}.BundleTypeId") && int.TryParse(Request.Form[$"{prefix}.BundleTypeId"], out var bundleTypeId))
+            model.BundleTypeId = bundleTypeId;
+
+        //parse eligible product IDs from the string
+        var eligibleProductIds = new List<int>();
+        if (!string.IsNullOrWhiteSpace(model.ProductIds))
+        {
+            var split = model.ProductIds
+                .Split(IDS_SEPARATOR, StringSplitOptions.RemoveEmptyEntries)
+                .Select(x => x.Trim());
+
+            foreach (var part in split)
+            {
+                if (int.TryParse(part, out var id))
+                    eligibleProductIds.Add(id);
+            }
+        }
+
+        var isAllBundle = (MultiBuyBundleType)model.BundleTypeId == MultiBuyBundleType.All;
+        if (isAllBundle && model.BundleSize <= 0 && eligibleProductIds.Any())
+        {
+            model.BundleSize = eligibleProductIds.Count;
+        }
 
         if (!ModelState.IsValid)
         {
@@ -161,26 +192,12 @@ public class DiscountRulesMultiBuyController : BasePluginController
             await _discountService.InsertDiscountRequirementAsync(discountRequirement);
         }
 
-        //parse eligible product IDs from the string
-        var eligibleProductIds = new List<int>();
-        if (!string.IsNullOrWhiteSpace(model.ProductIds))
-        {
-            var split = model.ProductIds
-                .Split(IDS_SEPARATOR, StringSplitOptions.RemoveEmptyEntries)
-                .Select(x => x.Trim());
-
-            foreach (var part in split)
-            {
-                if (int.TryParse(part, out var id))
-                    eligibleProductIds.Add(id);
-            }
-        }
-
         var settings = new MultiBuyRequirementSettings
         {
             BundleSize = model.BundleSize,
             BundlePrice = model.BundlePrice,
             ApplyAcrossMixedProducts = model.ApplyAcrossMixedProducts,
+            BundleType = (MultiBuyBundleType)model.BundleTypeId,
             EligibleProductIds = eligibleProductIds
         };
 

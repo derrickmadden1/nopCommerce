@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Nop.Web.Framework.Mvc.ModelBinding;
 
 namespace Nop.Plugin.DiscountRules.MultiBuy.Models
 {
@@ -7,6 +8,14 @@ namespace Nop.Plugin.DiscountRules.MultiBuy.Models
     /// </summary>
     public record ConfigureModel : RequirementModel
     {
+        /// <summary>
+        /// Bundle type (Any vs All).
+        /// </summary>
+        [NopResourceDisplayName("Plugins.DiscountRules.MultiBuy.Fields.BundleType")]
+        public int BundleTypeId { get; set; }
+
+        public IList<SelectListItem> AvailableBundleTypes { get; set; } = new List<SelectListItem>();
+
         /// <summary>
         /// Number of items in one bundle (e.g. 2 for \"2 for £20\").
         /// </summary>

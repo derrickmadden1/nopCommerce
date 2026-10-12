@@ -1,6 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Nop.Core;
 using Nop.Core.Domain.Orders;
+using Nop.Core.Http;
 using Nop.Plugin.DiscountRules.MultiBuy.Models;
 using Nop.Plugin.DiscountRules.MultiBuy.Services;
 using Nop.Services.Catalog;
@@ -8,8 +9,10 @@ using Nop.Services.Configuration;
 using Nop.Services.Discounts;
 using Nop.Services.Localization;
 using Nop.Services.Orders;
+using Nop.Services.Seo;
 using Nop.Web.Framework.Components;
 using Nop.Web.Framework.Infrastructure;
+using Nop.Web.Framework.Mvc.Routing;
 using Nop.Web.Models.Catalog;
 
 namespace Nop.Plugin.DiscountRules.MultiBuy.Components
@@ -23,6 +26,7 @@ namespace Nop.Plugin.DiscountRules.MultiBuy.Components
         private readonly IShoppingCartService _shoppingCartService;
         private readonly IStoreContext _storeContext;
         private readonly IWorkContext _workContext;
+        private readonly IUrlRecordService _urlRecordService;
         private readonly MultiBuyDiscountService _multiBuyDiscountService;
 
         public MultiBuyWidgetViewComponent(
@@ -32,6 +36,7 @@ namespace Nop.Plugin.DiscountRules.MultiBuy.Components
             IShoppingCartService shoppingCartService,
             IStoreContext storeContext,
             IWorkContext workContext,
+            IUrlRecordService urlRecordService,
             MultiBuyDiscountService multiBuyDiscountService)
         {
             _discountService = discountService;
@@ -40,6 +45,7 @@ namespace Nop.Plugin.DiscountRules.MultiBuy.Components
             _shoppingCartService = shoppingCartService;
             _storeContext = storeContext;
             _workContext = workContext;
+            _urlRecordService = urlRecordService;
             _multiBuyDiscountService = multiBuyDiscountService;
         }
 
@@ -56,7 +62,10 @@ namespace Nop.Plugin.DiscountRules.MultiBuy.Components
                     var settings = await GetMultiBuySettingsAsync(discount.Id);
                     if (settings != null && settings.EligibleProductIds.Contains(productModel.Id))
                     {
-                        model.Message = $"Multibuy Deal: Any {settings.BundleSize} items for {settings.BundlePrice.ToString("C")}!";
+                        var isAll = settings.BundleType == MultiBuyBundleType.All;
+                        var prefix = isAll ? "All" : "Any";
+                        var count = isAll ? settings.EligibleProductIds.Count : settings.BundleSize;
+                        model.Message = $"Multibuy Deal: {prefix} {count} items for {settings.BundlePrice.ToString("C")}!";
                         model.IsProductPage = true;
                         break;
                     }
@@ -71,8 +80,10 @@ namespace Nop.Plugin.DiscountRules.MultiBuy.Components
                     var settings = await GetMultiBuySettingsAsync(discount.Id);
                     if (settings != null && settings.EligibleProductIds.Contains(overviewModel.Id))
                     {
-                         // Short badge message
-                        model.Message = $"MultiBuy: Any {settings.BundleSize} for {settings.BundlePrice.ToString("C")}";
+                        var isAll = settings.BundleType == MultiBuyBundleType.All;
+                        var prefix = isAll ? "All" : "Any";
+                        var count = isAll ? settings.EligibleProductIds.Count : settings.BundleSize;
+                        model.Message = $"MultiBuy: {prefix} {count} for {settings.BundlePrice.ToString("C")}";
                         model.IsCatalogPage = true; 
                         break;
                     }
@@ -111,34 +122,102 @@ namespace Nop.Plugin.DiscountRules.MultiBuy.Components
                     model.TotalSavings = totalSavings.ToString("C");
                 }
                 
-                // Feature: Item Indicators (Moved to Before to ensure they render even if After is removed)
+                // Feature: Item Indicators
                 if (widgetZone.Equals(PublicWidgetZones.OrderSummaryContentBefore, StringComparison.OrdinalIgnoreCase) ||
                     widgetZone.Equals(PublicWidgetZones.OrderSummaryContentAfter, StringComparison.OrdinalIgnoreCase))
                 {
-                     foreach (var discount in allDiscounts)
-                     {
+                    foreach (var discount in allDiscounts)
+                    {
                         var settings = await GetMultiBuySettingsAsync(discount.Id);
                         if (settings != null)
                         {
-                             var eligibleItems = cart.Where(i => settings.EligibleProductIds.Contains(i.ProductId)).ToList();
-                             var eligibleCount = eligibleItems.Sum(i => i.Quantity);
-                             if (eligibleCount > 0)
-                             {
-                                 var remainder = eligibleCount % settings.BundleSize;
-                                 var message = "";
-                                 if (remainder > 0)
-                                     message = $"Buy {settings.BundleSize - remainder} more for deal!";
-                                 else
-                                     message = "MultiBuy Applied!";
- 
-                                 foreach (var item in eligibleItems)
-                                 {
-                                     if (!model.ItemMessages.ContainsKey(item.Id))
-                                         model.ItemMessages.Add(item.Id, message);
-                                 }
-                             }
+                            var eligibleItems = cart.Where(i => settings.EligibleProductIds.Contains(i.ProductId)).ToList();
+                            if (eligibleItems.Any())
+                            {
+                                if (settings.BundleType == MultiBuyBundleType.All)
+                                {
+                                    var cartProductIds = cart.Where(i => i.Quantity > 0).Select(i => i.ProductId).Distinct().ToHashSet();
+                                    var missingProductIds = settings.EligibleProductIds.Where(id => !cartProductIds.Contains(id)).ToList();
+
+                                    if (missingProductIds.Any())
+                                    {
+                                        var missingProducts = await _productService.GetProductsByIdsAsync(missingProductIds.ToArray());
+                                        var missingModels = new List<MissingBundleProductModel>();
+                                        foreach (var mp in missingProducts)
+                                        {
+                                            var seName = await _urlRecordService.GetSeNameAsync(mp);
+                                            var prodUrl = Url.RouteUrl(NopRoutingDefaults.RouteName.Generic.Product, new { SeName = seName });
+                                            var addUrl = Url.RouteUrl(NopRouteNames.Ajax.ADD_PRODUCT_TO_CART_CATALOG, new { productId = mp.Id, shoppingCartTypeId = (int)ShoppingCartType.ShoppingCart, quantity = 1 });
+
+                                            missingModels.Add(new MissingBundleProductModel
+                                            {
+                                                ProductId = mp.Id,
+                                                Name = mp.Name,
+                                                ProductUrl = prodUrl,
+                                                AddToCartUrl = addUrl
+                                            });
+                                        }
+
+                                        var promptMsg = $"Complete the bundle for {settings.BundlePrice.ToString("C")}!";
+                                        foreach (var item in eligibleItems)
+                                        {
+                                            if (!model.ItemPrompts.ContainsKey(item.Id))
+                                            {
+                                                model.ItemPrompts.Add(item.Id, new MultiBuyCartItemPromptModel
+                                                {
+                                                    Message = promptMsg,
+                                                    IsAllBundle = true,
+                                                    MissingProducts = missingModels
+                                                });
+                                                model.ItemMessages[item.Id] = promptMsg;
+                                            }
+                                        }
+                                    }
+                                    else
+                                    {
+                                        var promptMsg = "MultiBuy Applied!";
+                                        foreach (var item in eligibleItems)
+                                        {
+                                            if (!model.ItemPrompts.ContainsKey(item.Id))
+                                            {
+                                                model.ItemPrompts.Add(item.Id, new MultiBuyCartItemPromptModel
+                                                {
+                                                    Message = promptMsg,
+                                                    IsAllBundle = true,
+                                                    MissingProducts = new List<MissingBundleProductModel>()
+                                                });
+                                                model.ItemMessages[item.Id] = promptMsg;
+                                            }
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    var eligibleCount = eligibleItems.Sum(i => i.Quantity);
+                                    if (eligibleCount > 0)
+                                    {
+                                        var remainder = eligibleCount % settings.BundleSize;
+                                        var message = remainder > 0
+                                            ? $"Buy {settings.BundleSize - remainder} more for deal!"
+                                            : "MultiBuy Applied!";
+
+                                        foreach (var item in eligibleItems)
+                                        {
+                                            if (!model.ItemPrompts.ContainsKey(item.Id))
+                                            {
+                                                model.ItemPrompts.Add(item.Id, new MultiBuyCartItemPromptModel
+                                                {
+                                                    Message = message,
+                                                    IsAllBundle = false
+                                                });
+                                                model.ItemMessages[item.Id] = message;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
-                     }
+                    }
                 }
 
                 // Feature: Cart Nudge (OrderSummaryContentBefore)
@@ -149,16 +228,31 @@ namespace Nop.Plugin.DiscountRules.MultiBuy.Components
                         var settings = await GetMultiBuySettingsAsync(discount.Id);
                         if (settings != null)
                         {
-                            var eligibleItemsCount = cart.Where(i => settings.EligibleProductIds.Contains(i.ProductId)).Sum(i => i.Quantity);
-                            if (eligibleItemsCount > 0)
+                            var eligibleItems = cart.Where(i => settings.EligibleProductIds.Contains(i.ProductId)).ToList();
+                            if (eligibleItems.Any())
                             {
-                                var remainder = eligibleItemsCount % settings.BundleSize;
-                                if (remainder > 0)
+                                if (settings.BundleType == MultiBuyBundleType.All)
                                 {
-                                    var needed = settings.BundleSize - remainder;
-                                    model.Message = $"Add {needed} more eligible item(s) to complete your MultiBuy bundle!";
-                                    model.IsCartPage = true;
-                                    break;
+                                    var cartProductIds = cart.Where(i => i.Quantity > 0).Select(i => i.ProductId).Distinct().ToHashSet();
+                                    var missingProductIds = settings.EligibleProductIds.Where(id => !cartProductIds.Contains(id)).ToList();
+                                    if (missingProductIds.Any())
+                                    {
+                                        model.Message = $"Complete your MultiBuy bundle for {settings.BundlePrice.ToString("C")}! Add the missing item(s) below to qualify.";
+                                        model.IsCartPage = true;
+                                        break;
+                                    }
+                                }
+                                else
+                                {
+                                    var eligibleItemsCount = eligibleItems.Sum(i => i.Quantity);
+                                    var remainder = eligibleItemsCount % settings.BundleSize;
+                                    if (remainder > 0)
+                                    {
+                                        var needed = settings.BundleSize - remainder;
+                                        model.Message = $"Add {needed} more eligible item(s) to complete your MultiBuy bundle!";
+                                        model.IsCartPage = true;
+                                        break;
+                                    }
                                 }
                             }
                         }
@@ -166,7 +260,7 @@ namespace Nop.Plugin.DiscountRules.MultiBuy.Components
                 }
             }
 
-            if (string.IsNullOrEmpty(model.Message) && string.IsNullOrEmpty(model.TotalSavings) && model.ItemMessages.Count == 0)
+            if (string.IsNullOrEmpty(model.Message) && string.IsNullOrEmpty(model.TotalSavings) && model.ItemMessages.Count == 0 && model.ItemPrompts.Count == 0)
                 return Content("");
 
             return View("~/Plugins/DiscountRules.MultiBuy/Views/MultiBuyWidget/PublicInfo.cshtml", model);

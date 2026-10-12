@@ -45,8 +45,8 @@ namespace Nop.Plugin.DiscountRules.MultiBuy.Services
         {
             //locales
             await _localizationService.AddOrUpdateLocaleResourceAsync("Plugins.DiscountRules.MultiBuy.Fields.Products", "Restricted products");
-            // Also adding a fallback hint if needed, though not requested
-            // await _localizationService.AddOrUpdateLocaleResourceAsync("Plugins.DiscountRules.MultiBuy.Fields.Products.Hint", "Select the products eligible for this MultiBuy discount.");
+            await _localizationService.AddOrUpdateLocaleResourceAsync("Plugins.DiscountRules.MultiBuy.Fields.BundleType", "Bundle type");
+            await _localizationService.AddOrUpdateLocaleResourceAsync("Plugins.DiscountRules.MultiBuy.Fields.BundleType.Hint", "Select 'Any' to let customers mix & match eligible items, or 'All' to require every eligible item to be purchased together as a complete bundle.");
 
             await base.InstallAsync();
         }
@@ -55,6 +55,8 @@ namespace Nop.Plugin.DiscountRules.MultiBuy.Services
         {
             //locales
             await _localizationService.DeleteLocaleResourceAsync("Plugins.DiscountRules.MultiBuy.Fields.Products");
+            await _localizationService.DeleteLocaleResourceAsync("Plugins.DiscountRules.MultiBuy.Fields.BundleType");
+            await _localizationService.DeleteLocaleResourceAsync("Plugins.DiscountRules.MultiBuy.Fields.BundleType.Hint");
             
             await base.UninstallAsync();
         }
@@ -88,17 +90,31 @@ namespace Nop.Plugin.DiscountRules.MultiBuy.Services
                 return result;
             }
 
-            if (requirementSettings == null || requirementSettings.BundleSize < 1 || requirementSettings.EligibleProductIds == null || requirementSettings.EligibleProductIds.Count == 0)
+            if (requirementSettings == null || requirementSettings.EligibleProductIds == null || requirementSettings.EligibleProductIds.Count == 0)
                 return result;
 
-            var eligibleCount = 0;
-            foreach (var item in cart)
+            if (requirementSettings.BundleType == MultiBuyBundleType.All)
             {
-                if (requirementSettings.EligibleProductIds.Contains(item.ProductId))
-                    eligibleCount += item.Quantity;
-            }
+                // For "All" bundles, every eligible product must be present in the cart with quantity >= 1
+                var allPresent = requirementSettings.EligibleProductIds.All(pid =>
+                    cart.Any(item => item.ProductId == pid && item.Quantity > 0));
 
-            result.IsValid = eligibleCount >= requirementSettings.BundleSize;
+                result.IsValid = allPresent;
+            }
+            else
+            {
+                if (requirementSettings.BundleSize < 1)
+                    return result;
+
+                var eligibleCount = 0;
+                foreach (var item in cart)
+                {
+                    if (requirementSettings.EligibleProductIds.Contains(item.ProductId))
+                        eligibleCount += item.Quantity;
+                }
+
+                result.IsValid = eligibleCount >= requirementSettings.BundleSize;
+            }
             
             return result;
         }
