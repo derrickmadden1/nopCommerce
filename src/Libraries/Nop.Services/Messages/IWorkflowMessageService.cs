@@ -1,4 +1,4 @@
-﻿using Nop.Core.Domain.Blogs;
+using Nop.Core.Domain.Blogs;
 using Nop.Core.Domain.Catalog;
 using Nop.Core.Domain.Customers;
 using Nop.Core.Domain.Messages;
@@ -639,11 +639,12 @@ public partial interface IWorkflowMessageService
     /// </summary>
     /// <param name="subscription">Subscription</param>
     /// <param name="languageId">Message language identifier</param>
+    /// <param name="isNowAvailable">A value indicating whether the notification is for a now-available product</param>
     /// <returns>
     /// A task that represents the asynchronous operation
     /// The task result contains the queued email identifier
     /// </returns>
-    Task<IList<int>> SendBackInStockNotificationAsync(BackInStockSubscription subscription, int languageId);
+    Task<IList<int>> SendBackInStockNotificationAsync(BackInStockSubscription subscription, int languageId, bool isNowAvailable = false);
 
     /// <summary>
     /// Sends "contact us" message

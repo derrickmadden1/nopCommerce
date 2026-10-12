@@ -1,5 +1,5 @@
-﻿@model ProductDetailsModel
-@if (!string.IsNullOrWhiteSpace(Model.StockAvailability) || Model.DisplayBackInStockSubscription)
+@model ProductDetailsModel
+@if (!string.IsNullOrWhiteSpace(Model.StockAvailability) || (!Model.ComingSoon && Model.DisplayBackInStockSubscription))
 {
     <div class="availability">
         @if (!string.IsNullOrWhiteSpace(Model.StockAvailability))
@@ -9,6 +9,9 @@
                 <span class="value" id="stock-availability-value-@Model.Id">@Model.StockAvailability</span>
             </div>
         }
-        @await Html.PartialAsync("_BackInStockSubscription", Model)
+        @if (!Model.ComingSoon)
+        {
+            @await Html.PartialAsync("_BackInStockSubscription", Model)
+        }
     </div>
 }

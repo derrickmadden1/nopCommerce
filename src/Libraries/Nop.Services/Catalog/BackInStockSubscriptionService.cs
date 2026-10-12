@@ -1,4 +1,4 @@
-﻿using Nop.Core;
+using Nop.Core;
 using Nop.Core.Domain.Catalog;
 using Nop.Core.Domain.Customers;
 using Nop.Data;
@@ -133,11 +133,12 @@ public partial class BackInStockSubscriptionService : IBackInStockSubscriptionSe
     /// Send notification to subscribers
     /// </summary>
     /// <param name="product">Product</param>
+    /// <param name="isNowAvailable">A value indicating whether the notification is for a now-available product</param>
     /// <returns>
     /// A task that represents the asynchronous operation
     /// The task result contains the number of sent email
     /// </returns>
-    public virtual async Task<int> SendNotificationsToSubscribersAsync(Product product)
+    public virtual async Task<int> SendNotificationsToSubscribersAsync(Product product, bool isNowAvailable = false)
     {
         ArgumentNullException.ThrowIfNull(product);
 
@@ -146,7 +147,7 @@ public partial class BackInStockSubscriptionService : IBackInStockSubscriptionSe
         foreach (var subscription in subscriptions)
         {
             var customer = await _customerRepository.GetByIdAsync(subscription.CustomerId);
-            result += (await _workflowMessageService.SendBackInStockNotificationAsync(subscription, customer?.LanguageId ?? 0)).Count;
+            result += (await _workflowMessageService.SendBackInStockNotificationAsync(subscription, customer?.LanguageId ?? 0, isNowAvailable)).Count;
         }
 
         for (var i = 0; i <= subscriptions.Count - 1; i++)

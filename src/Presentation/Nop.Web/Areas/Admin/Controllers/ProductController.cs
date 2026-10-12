@@ -1279,6 +1279,7 @@ public partial class ProductController : BaseAdminController
 
             //some previously used values
             var prevTotalStockQuantity = await _productService.GetTotalStockQuantityAsync(product);
+            var prevComingSoon = await _genericAttributeService.GetAttributeAsync<bool>(product, NopCatalogDefaults.ComingSoonAttribute);
             var prevDownloadId = product.DownloadId;
             var prevSampleDownloadId = product.SampleDownloadId;
             var previousStockQuantity = product.StockQuantity;
@@ -1379,16 +1380,22 @@ public partial class ProductController : BaseAdminController
             //coming soon attribute
             await _genericAttributeService.SaveAttributeAsync(product, NopCatalogDefaults.ComingSoonAttribute, model.ComingSoon);
 
-            //back in stock notifications
-            if (product.ManageInventoryMethod == ManageInventoryMethod.ManageStock &&
+            //back in stock & now available notifications
+            var isPurchasable = product.ManageInventoryMethod != ManageInventoryMethod.ManageStock ||
+                product.BackorderMode != BackorderMode.NoBackorders ||
+                await _productService.GetTotalStockQuantityAsync(product) > 0;
+
+            var comingSoonBecameAvailable = prevComingSoon && !model.ComingSoon && isPurchasable;
+
+            var stockBecameAvailable = product.ManageInventoryMethod == ManageInventoryMethod.ManageStock &&
                 product.BackorderMode == BackorderMode.NoBackorders &&
                 product.AllowBackInStockSubscriptions &&
                 await _productService.GetTotalStockQuantityAsync(product) > 0 &&
-                prevTotalStockQuantity <= 0 &&
-                product.Published &&
-                !product.Deleted)
+                prevTotalStockQuantity <= 0;
+
+            if ((comingSoonBecameAvailable || stockBecameAvailable) && product.Published && !product.Deleted)
             {
-                await _backInStockSubscriptionService.SendNotificationsToSubscribersAsync(product);
+                await _backInStockSubscriptionService.SendNotificationsToSubscribersAsync(product, isNowAvailable: comingSoonBecameAvailable);
             }
 
             //delete an old "download" file (if deleted or updated)

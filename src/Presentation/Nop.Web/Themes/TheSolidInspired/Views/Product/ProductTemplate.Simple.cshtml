@@ -47,6 +47,12 @@
                     </div>
                     
                     <div class="product-info-overview">
+                        @if (Model.ComingSoon)
+                        {
+                            <div class="coming-soon-card-badge product-details-badge">
+                                <span class="coming-soon-dot"></span> @T("Products.ComingSoon")
+                            </div>
+                        }
                         <div class="product-name">
                             <h1>@Model.Name</h1>
                         </div>
@@ -84,8 +90,12 @@
                             @if (Model.ComingSoon)
                             {
                                 <div class="add-to-cart">
-                                    <div class="add-to-cart-panel">
+                                    <div class="add-to-cart-panel coming-soon-panel">
                                         <button type="button" class="button-1 add-to-cart-button disabled coming-soon-button" disabled="disabled">@T("Products.ComingSoon")</button>
+                                        @if (Model.DisplayBackInStockSubscription)
+                                        {
+                                            @await Html.PartialAsync("_BackInStockSubscription", Model)
+                                        }
                                     </div>
                                 </div>
                             }

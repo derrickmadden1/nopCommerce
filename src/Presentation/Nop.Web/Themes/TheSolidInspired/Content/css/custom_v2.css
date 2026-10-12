@@ -4728,16 +4728,18 @@ body {
 
 /* Out of stock styling - Refined */
 .out-of-stock,
-.coming-soon,
-/* Out of stock styling - Ribbon Span Version */
-.out-of-stock {
+.coming-soon {
     position: relative !important;
 }
 
-.out-of-stock img,
-.coming-soon img {
+.out-of-stock img {
     opacity: 0.5 !important;
     filter: grayscale(100%) !important;
+}
+
+.coming-soon img {
+    opacity: 1 !important;
+    filter: none !important;
 }
 
 .out-of-stock-ribbon {
@@ -4762,23 +4764,102 @@ body {
 
 .coming-soon-ribbon {
     position: absolute !important;
-    top: 30px !important;
-    right: -40px !important;
-    width: 160px !important;
-    background: #d97706 !important;
+    top: 24px !important;
+    right: -36px !important;
+    width: 145px !important;
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #b45309 100%) !important;
     color: #fff !important;
     padding: 5px 0 !important;
     font-size: 10px !important;
-    font-weight: bold !important;
+    font-weight: 800 !important;
     text-align: center !important;
     transform: rotate(45deg) !important;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.5) !important;
+    box-shadow: 0 4px 12px rgba(217, 119, 6, 0.4), 0 1px 3px rgba(0,0,0,0.2) !important;
     z-index: 9999 !important;
     display: block !important;
     visibility: visible !important;
     pointer-events: none !important;
-    line-height: 1.5 !important;
-    letter-spacing: 0.5px !important;
+    line-height: 1.4 !important;
+    letter-spacing: 1.2px !important;
+    text-transform: uppercase !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.35) !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Coming Soon Product Card & Badge Highlights */
+.product-card.coming-soon {
+    border: 1px solid rgba(217, 119, 6, 0.28) !important;
+    box-shadow: 0 4px 18px rgba(245, 158, 11, 0.1) !important;
+    border-radius: 8px !important;
+    overflow: hidden !important;
+    transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease !important;
+}
+
+.product-card.coming-soon::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #f59e0b, #d97706, #b45309);
+    z-index: 10;
+}
+
+.product-card.coming-soon:hover {
+    border-color: rgba(217, 119, 6, 0.55) !important;
+    box-shadow: 0 8px 24px rgba(245, 158, 11, 0.2) !important;
+    transform: translateY(-2px);
+}
+
+.coming-soon-card-badge {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    padding: 3px 10px !important;
+    background: rgba(245, 158, 11, 0.12) !important;
+    border: 1px solid rgba(217, 119, 6, 0.32) !important;
+    border-radius: 9999px !important;
+    font-size: 0.72rem !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.8px !important;
+    text-transform: uppercase !important;
+    color: #b45309 !important;
+    margin-bottom: 8px !important;
+    line-height: 1.4 !important;
+}
+
+.coming-soon-card-badge.product-details-badge {
+    padding: 5px 14px !important;
+    font-size: 0.8rem !important;
+    letter-spacing: 1px !important;
+    margin-bottom: 12px !important;
+}
+
+.coming-soon-dot {
+    width: 7px !important;
+    height: 7px !important;
+    border-radius: 50% !important;
+    background: #d97706 !important;
+    box-shadow: 0 0 0 0 rgba(217, 119, 6, 0.7) !important;
+    animation: comingSoonPulse 2s infinite cubic-bezier(0.4, 0, 0.6, 1) !important;
+    display: inline-block !important;
+}
+
+@keyframes comingSoonPulse {
+    0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(217, 119, 6, 0.7);
+    }
+    70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 7px rgba(217, 119, 6, 0);
+    }
+    100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(217, 119, 6, 0);
+    }
 }
 
 .coming-soon .puzzle-hint-badge {
@@ -4792,6 +4873,62 @@ body {
     border-color: #e5e7eb !important;
     cursor: not-allowed !important;
     pointer-events: none !important;
+}
+
+.coming-soon-panel {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+    align-items: stretch !important;
+}
+
+.coming-soon-panel .back-in-stock-subscription {
+    display: block !important;
+    width: 100% !important;
+}
+
+.coming-soon-panel .subscribe-button,
+.back-in-stock-subscription .subscribe-button {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    background: #d97706 !important;
+    color: #ffffff !important;
+    border: 1px solid #d97706 !important;
+    padding: 12px 24px !important;
+    font-size: 15px !important;
+    font-weight: 600 !important;
+    border-radius: 6px !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease-in-out !important;
+    text-transform: none !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+}
+
+.coming-soon-panel .subscribe-button:hover,
+.back-in-stock-subscription .subscribe-button:hover {
+    background: #b45309 !important;
+    border-color: #b45309 !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
+    transform: translateY(-1px) !important;
+}
+
+.back-in-stock-subscription-page .notify-me-button {
+    background: #d97706 !important;
+    color: #ffffff !important;
+    border: 1px solid #d97706 !important;
+    padding: 10px 20px !important;
+    font-weight: 600 !important;
+    border-radius: 4px !important;
+    cursor: pointer !important;
+    transition: background-color 0.2s ease !important;
+}
+
+.back-in-stock-subscription-page .notify-me-button:hover {
+    background: #b45309 !important;
+    border-color: #b45309 !important;
 }
 
 /* --- CART TOTALS & CHECKOUT POLISH --- */
