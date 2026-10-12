@@ -12,6 +12,60 @@
         display: block !important;
         font-weight: 700 !important;
     }
+    .multibuy-item-container {
+        margin-top: 6px;
+        padding: 8px 10px;
+        background-color: #f6fcf7;
+        border: 1px dashed #28a745;
+        border-radius: 6px;
+        text-align: left;
+    }
+    .multibuy-item-title {
+        color: #155724;
+        font-weight: 700;
+        font-size: 0.9rem;
+    }
+    .multibuy-missing-list {
+        margin-top: 6px;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+    .multibuy-missing-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: #ffffff;
+        border: 1px solid #c3e6cb;
+        border-radius: 4px;
+        padding: 4px 8px;
+        font-size: 0.85rem;
+    }
+    .multibuy-missing-link {
+        color: #0056b3;
+        font-weight: 600;
+        text-decoration: underline;
+    }
+    .multibuy-add-btn {
+        background-color: #28a745;
+        color: #ffffff;
+        border: none;
+        border-radius: 4px;
+        padding: 3px 8px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        margin-left: 8px;
+        white-space: nowrap;
+    }
+    .multibuy-add-btn:hover {
+        background-color: #218838;
+    }
+    .multibuy-add-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
 </style>
 
 @if (!string.IsNullOrEmpty(Model.Message))
@@ -38,32 +92,121 @@
     </div>
 }
 
-@if (Model.ItemMessages != null && Model.ItemMessages.Count > 0)
+@if ((Model.ItemPrompts != null && Model.ItemPrompts.Count > 0) || (Model.ItemMessages != null && Model.ItemMessages.Count > 0))
 {
     <script>
         document.addEventListener("DOMContentLoaded", function () {
-            var itemMessages = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.ItemMessages));
-            for (var itemId in itemMessages) {
-                if (itemMessages.hasOwnProperty(itemId)) {
-                    // Try to find row by item id input
-                    var quantityInput = document.querySelector('input[name="itemquantity' + itemId + '"]');
-                    if (quantityInput) {
-                        var row = quantityInput.closest('tr');
-                        if (row) {
-                             var productCol = row.querySelector('.product');
-                             if (productCol) {
-                                 var msgDiv = document.createElement('div');
-                                 msgDiv.className = 'multibuy-item-msg';
-                                 msgDiv.style.color = '#28a745';
-                                 msgDiv.style.fontWeight = 'bold';
-                                 msgDiv.style.marginTop = '5px';
-                                 msgDiv.innerText = itemMessages[itemId];
-                                 productCol.appendChild(msgDiv);
-                             }
+            var itemPrompts = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.ItemPrompts ?? new Dictionary<int, Nop.Plugin.DiscountRules.MultiBuy.Models.MultiBuyCartItemPromptModel>()));
+            var itemMessages = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.ItemMessages ?? new Dictionary<int, string>()));
+
+            var allItemIds = Object.keys(itemPrompts).length > 0 ? Object.keys(itemPrompts) : Object.keys(itemMessages);
+
+            allItemIds.forEach(function (itemId) {
+                var prompt = itemPrompts[itemId];
+                var fallbackMsg = itemMessages[itemId];
+
+                var quantityInput = document.querySelector('input[name="itemquantity' + itemId + '"]') || document.querySelector('select[name="itemquantity' + itemId + '"]');
+                if (quantityInput) {
+                    var row = quantityInput.closest('tr');
+                    if (row) {
+                        var productCol = row.querySelector('.product');
+                        if (productCol) {
+                            if (prompt && prompt.IsAllBundle && prompt.MissingProducts && prompt.MissingProducts.length > 0) {
+                                var container = document.createElement('div');
+                                container.className = 'multibuy-item-container';
+
+                                var title = document.createElement('div');
+                                title.className = 'multibuy-item-title';
+                                title.innerText = prompt.Message;
+                                container.appendChild(title);
+
+                                var list = document.createElement('div');
+                                list.className = 'multibuy-missing-list';
+
+                                prompt.MissingProducts.forEach(function(missing) {
+                                    var rowEl = document.createElement('div');
+                                    rowEl.className = 'multibuy-missing-row';
+
+                                    var labelSpan = document.createElement('span');
+                                    labelSpan.innerText = 'Missing: ';
+
+                                    var link = document.createElement('a');
+                                    link.href = missing.ProductUrl;
+                                    link.className = 'multibuy-missing-link';
+                                    link.innerText = missing.Name;
+                                    labelSpan.appendChild(link);
+                                    rowEl.appendChild(labelSpan);
+
+                                    var btn = document.createElement('button');
+                                    btn.type = 'button';
+                                    btn.className = 'multibuy-add-btn';
+                                    btn.innerText = '+ Add to Cart';
+                                    btn.onclick = function() {
+                                        addMissingBundleProduct(missing.AddToCartUrl, btn);
+                                        return false;
+                                    };
+                                    rowEl.appendChild(btn);
+
+                                    list.appendChild(rowEl);
+                                });
+
+                                container.appendChild(list);
+                                productCol.appendChild(container);
+                            } else {
+                                var msg = prompt ? prompt.Message : fallbackMsg;
+                                if (msg) {
+                                    var msgDiv = document.createElement('div');
+                                    msgDiv.className = 'multibuy-item-msg';
+                                    msgDiv.style.color = '#28a745';
+                                    msgDiv.style.fontWeight = 'bold';
+                                    msgDiv.style.marginTop = '5px';
+                                    msgDiv.innerText = msg;
+                                    productCol.appendChild(msgDiv);
+                                }
+                            }
                         }
                     }
                 }
-            }
+            });
         });
+
+        function addMissingBundleProduct(addUrl, btnEl) {
+            if (btnEl) {
+                btnEl.disabled = true;
+                btnEl.innerText = 'Adding...';
+            }
+            var postData = {};
+            if (typeof addAntiForgeryToken === 'function') {
+                addAntiForgeryToken(postData);
+            }
+            $.ajax({
+                cache: false,
+                url: addUrl,
+                data: postData,
+                type: "POST",
+                success: function (response) {
+                    if (response.redirect) {
+                        window.location.href = response.redirect;
+                    } else if (response.success) {
+                        window.location.reload();
+                    } else if (response.message) {
+                        if (typeof displayBarNotification === 'function') {
+                            displayBarNotification(response.message, response.success ? 'success' : 'error', 3500);
+                        } else {
+                            alert(response.message);
+                        }
+                        if (btnEl) {
+                            btnEl.disabled = false;
+                            btnEl.innerText = '+ Add to Cart';
+                        }
+                    } else {
+                        window.location.reload();
+                    }
+                },
+                error: function () {
+                    window.location.reload();
+                }
+            });
+        }
     </script>
 }
