@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 using Nop.Core.Domain.Customers;
@@ -49,8 +49,12 @@ public partial class CookieAuthenticationService : IAuthenticationService
         //create claims for customer's username and email
         var claims = new List<Claim>();
 
+        claims.Add(new Claim(ClaimTypes.NameIdentifier, customer.CustomerGuid.ToString(), ClaimValueTypes.String, NopAuthenticationDefaults.ClaimsIssuer));
+
         if (!string.IsNullOrEmpty(customer.Username))
             claims.Add(new Claim(ClaimTypes.Name, customer.Username, ClaimValueTypes.String, NopAuthenticationDefaults.ClaimsIssuer));
+        else if (!string.IsNullOrEmpty(customer.Email) && !_customerSettings.UsernamesEnabled)
+            claims.Add(new Claim(ClaimTypes.Name, customer.Email, ClaimValueTypes.Email, NopAuthenticationDefaults.ClaimsIssuer));
 
         if (!string.IsNullOrEmpty(customer.Email))
             claims.Add(new Claim(ClaimTypes.Email, customer.Email, ClaimValueTypes.Email, NopAuthenticationDefaults.ClaimsIssuer));
@@ -72,6 +76,9 @@ public partial class CookieAuthenticationService : IAuthenticationService
         //sign in
         await _httpContextAccessor.HttpContext.SignInAsync(NopAuthenticationDefaults.AuthenticationScheme, userPrincipal, authenticationProperties);
 
+        if (_httpContextAccessor.HttpContext != null)
+            _httpContextAccessor.HttpContext.User = userPrincipal;
+
         //cache authenticated customer
         _cachedCustomer = customer;
     }
@@ -87,6 +94,9 @@ public partial class CookieAuthenticationService : IAuthenticationService
 
         //and sign out from the current authentication scheme
         await _httpContextAccessor.HttpContext.SignOutAsync(NopAuthenticationDefaults.AuthenticationScheme);
+
+        if (_httpContextAccessor.HttpContext != null)
+            _httpContextAccessor.HttpContext.User = new ClaimsPrincipal(new ClaimsIdentity());
     }
 
     /// <summary>

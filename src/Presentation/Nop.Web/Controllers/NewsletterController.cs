@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Nop.Core;
 using Nop.Core.Domain.Localization;
 using Nop.Core.Domain.Messages;
@@ -64,6 +64,7 @@ public partial class NewsletterController : BasePublicController
     [CheckLanguageSeoCode(ignore: true)]
     [HttpPost]
     [ValidateCaptcha]
+    [IgnoreAntiforgeryToken]
     public virtual async Task<IActionResult> SubscribeNewsletter(string email, bool subscribe, bool captchaValid)
     {
         //validate CAPTCHA
