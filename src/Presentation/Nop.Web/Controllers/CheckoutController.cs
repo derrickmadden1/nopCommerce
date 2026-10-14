@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Nop.Core;
 using Nop.Core.Domain.Common;
@@ -1349,12 +1349,16 @@ public partial class CheckoutController : BasePublicController
                 return RedirectToRoute(NopRouteNames.Standard.CHECKOUT_COMPLETED, new { orderId = placeOrderResult.PlacedOrder.Id });
             }
 
+            //clear payment request from session on payment failure so consumed tokens/nonces are not repeatedly retried
+            await _orderProcessingService.SetProcessPaymentRequestAsync(null);
+
             foreach (var error in placeOrderResult.Errors)
                 model.Warnings.Add(error);
         }
         catch (Exception exc)
         {
             await _logger.WarningAsync(exc.Message, exc);
+            await _orderProcessingService.SetProcessPaymentRequestAsync(null);
             model.Warnings.Add(exc.Message);
         }
 
@@ -2103,6 +2107,7 @@ public partial class CheckoutController : BasePublicController
                 }
 
                 //error
+                await _orderProcessingService.SetProcessPaymentRequestAsync(null);
                 foreach (var error in placeOrderResult.Errors)
                     confirmOrderModel.Warnings.Add(error);
             }
@@ -2122,6 +2127,7 @@ public partial class CheckoutController : BasePublicController
         catch (Exception exc)
         {
             await _logger.WarningAsync(exc.Message, exc, await _workContext.GetCurrentCustomerAsync());
+            await _orderProcessingService.SetProcessPaymentRequestAsync(null);
             return Json(new { error = 1, message = exc.Message });
         }
     }

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Primitives;
 using Nop.Core;
 using Nop.Core.Domain.Common;
+using Nop.Core.Domain.Customers;
 using Nop.Core.Domain.Directory;
 using Nop.Core.Domain.Orders;
 using Nop.Core.Domain.Payments;
@@ -130,6 +131,67 @@ public class SquarePaymentMethod : BasePlugin, IPaymentMethod
     }
 
     /// <summary>
+    /// Formats Square errors into user-friendly messages for the customer
+    /// </summary>
+    /// <param name="error">Raw error message from Square</param>
+    /// <returns>User-friendly error message</returns>
+    protected virtual string FormatCustomerPaymentError(string error)
+    {
+        if (string.IsNullOrWhiteSpace(error))
+            return "There was an issue processing your payment. Please check your information and try again.";
+
+        if (error.Contains("verification_token", StringComparison.OrdinalIgnoreCase) ||
+            error.Contains("VERIFICATION_FAILED", StringComparison.OrdinalIgnoreCase) ||
+            error.Contains("Failed to verify card", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Your card verification (3D Secure) could not be completed. Please check with your bank or try another card.";
+        }
+
+        if (error.Contains("GENERIC_DECLINE", StringComparison.OrdinalIgnoreCase) ||
+            error.Contains("CARD_DECLINED", StringComparison.OrdinalIgnoreCase) ||
+            error.Contains("Card was declined", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Your card was declined. Please contact your bank or try another payment method.";
+        }
+
+        if (error.Contains("INSUFFICIENT_FUNDS", StringComparison.OrdinalIgnoreCase) ||
+            error.Contains("Insufficient funds", StringComparison.OrdinalIgnoreCase))
+        {
+            return "The transaction was declined due to insufficient funds. Please try another card.";
+        }
+
+        if (error.Contains("CVV_FAILURE", StringComparison.OrdinalIgnoreCase) ||
+            error.Contains("verification code is invalid", StringComparison.OrdinalIgnoreCase))
+        {
+            return "The card verification code (CVV) is invalid. Please check your card details and try again.";
+        }
+
+        if (error.Contains("ADDRESS_VERIFICATION_FAILURE", StringComparison.OrdinalIgnoreCase) ||
+            error.Contains("Postal code is invalid", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Billing address or postal code verification failed. Please check your billing details and try again.";
+        }
+
+        if (error.Contains("EXPIRATION_FAILURE", StringComparison.OrdinalIgnoreCase) ||
+            error.Contains("expiration date is invalid", StringComparison.OrdinalIgnoreCase))
+        {
+            return "The card expiration date is invalid or in the past. Please check your card details and try again.";
+        }
+
+        // If the error contains raw developer token or nonce references, don't expose them
+        if (error.Contains("nonce", StringComparison.OrdinalIgnoreCase) ||
+            error.Contains("source_id", StringComparison.OrdinalIgnoreCase) ||
+            error.Contains("idempotency", StringComparison.OrdinalIgnoreCase) ||
+            error.Contains("verf:", StringComparison.OrdinalIgnoreCase) ||
+            error.Contains("cnon:", StringComparison.OrdinalIgnoreCase))
+        {
+            return "There was an issue processing your payment details. Please check your information and try again.";
+        }
+
+        return error;
+    }
+
+    /// <summary>
     /// Process a payment
     /// </summary>
     /// <param name="paymentRequest">Payment info required for an order processing</param>
@@ -144,7 +206,21 @@ public class SquarePaymentMethod : BasePlugin, IPaymentMethod
         var storeId = (await _storeContext.GetCurrentStoreAsync()).Id;
         var (payment, error) = await _squarePaymentManager.CreatePaymentAsync(squarePaymentRequest, storeId);
         if (payment == null)
-            throw new NopException(error);
+            throw new NopException(FormatCustomerPaymentError(error));
+
+        //save card after successful payment if requested or required for recurring payments
+        var customer = await _customerService.GetCustomerByIdAsync(paymentRequest.CustomerId);
+        var isGuest = await _customerService.IsGuestAsync(customer);
+        var saveCardKey = await _localizationService.GetResourceAsync("Plugins.Payments.Square.Fields.SaveCard.Key");
+        var saveCardRequested = paymentRequest.CustomValues.TryGetValue(saveCardKey, out var saveCardValue)
+            && bool.TryParse(saveCardValue?.Value, out var saveCard)
+            && saveCard;
+
+        if ((saveCardRequested && !isGuest) || isRecurringPayment)
+        {
+            paymentRequest.CustomValues.Remove(saveCardKey);
+            await SaveCustomerCardAfterPaymentAsync(customer, payment.Id, storeId, isRecurringPayment, paymentRequest);
+        }
 
         //get transaction details
         var paymentStatus = payment.Status;
@@ -270,8 +346,7 @@ public class SquarePaymentMethod : BasePlugin, IPaymentMethod
         if (paymentRequest.CustomValues.TryGetValue(storedCardKey, out var storedCardId) && !(storedCardId?.ToString() ?? string.Empty).Equals(Guid.Empty.ToString()))
         {
             //check whether customer exists for current store
-            var customerId = await _genericAttributeService.GetAttributeAsync<string>(customer, SquarePaymentDefaults.CustomerIdAttribute);
-            var squareCustomer = await _squarePaymentManager.GetCustomerAsync(customerId, storeId);
+            var squareCustomer = await GetOrCreateSquareCustomerAsync(customer, storeId);
             if (squareCustomer == null)
                 throw new NopException("Failed to retrieve customer");
 
@@ -291,98 +366,115 @@ public class SquarePaymentMethod : BasePlugin, IPaymentMethod
         //remove the card nonce from payment custom values, since it's no longer needed
         paymentRequest.CustomValues.Remove(cardNonceKey);
 
-        //whether to save card details for the future purchasing
-        var saveCardKey = await _localizationService.GetResourceAsync("Plugins.Payments.Square.Fields.SaveCard.Key");
         var isGuest = await _customerService.IsGuestAsync(customer);
-        if (paymentRequest.CustomValues.TryGetValue(saveCardKey, out var saveCardValue) && bool.TryParse(saveCardValue.Value, out var saveCard) && saveCard && !isGuest)
+        if (!isGuest)
         {
-            //remove the value from payment custom values, since it is no longer needed
-            paymentRequest.CustomValues.Remove(saveCardKey);
-
-            try
-            {
-                //check whether customer exists for current store
-                var customerId = await _genericAttributeService.GetAttributeAsync<string>(customer, SquarePaymentDefaults.CustomerIdAttribute);
-                var squareCustomer = await _squarePaymentManager.GetCustomerAsync(customerId, storeId);
-
-                if (squareCustomer == null)
-                {
-                    //try to create the new one for current store, if not exists
-                    var customerRequestBuilder = new SquareModel.CreateCustomerRequest.Builder()
-                        .EmailAddress(customer.Email)
-                        .Nickname(CommonHelper.EnsureMaximumLength(customer.Username, 100))
-                        .GivenName(CommonHelper.EnsureMaximumLength(customer.FirstName, 300))
-                        .FamilyName(CommonHelper.EnsureMaximumLength(customer.LastName, 300))
-                        .PhoneNumber(customer.Phone)
-                        .CompanyName(CommonHelper.EnsureMaximumLength(customer.Company, 500))
-                        .ReferenceId(customer.CustomerGuid.ToString());
-
-                    squareCustomer = await _squarePaymentManager.CreateCustomerAsync(customerRequestBuilder.Build(), storeId);
-                    if (squareCustomer == null)
-                        throw new NopException("Failed to create customer. Error details in the log");
-
-                    //save customer identifier as generic attribute
-                    await _genericAttributeService.SaveAttributeAsync(customer, SquarePaymentDefaults.CustomerIdAttribute, squareCustomer.Id);
-                }
-
-                //create request parameters to create the new card
-                var cardRequestBuilder = new SquareModel.Card.Builder()
-                    .CustomerId(squareCustomer.Id);
-
-                var cardBillingAddress = billingAddress ?? shippingAddress;
-
-                //set postal code
-                var postalCodeKey = await _localizationService.GetResourceAsync("Plugins.Payments.Square.Fields.PostalCode.Key");
-                if (paymentRequest.CustomValues.TryGetValue(postalCodeKey, out var postalCode) && !string.IsNullOrEmpty(postalCode.ToString()))
-                {
-                    //remove the value from payment custom values, since it is no longer needed
-                    paymentRequest.CustomValues.Remove(postalCodeKey);
-
-                    cardBillingAddress ??= new SquareModel.Address();
-                    cardBillingAddress = cardBillingAddress
-                        .ToBuilder()
-                        .PostalCode(CommonHelper.EnsureMaximumLength(postalCode.ToString(), 12))
-                        .Build();
-                }
-
-                cardRequestBuilder.BillingAddress(cardBillingAddress);
-
-                //try to create card for current store
-                var createCardRequestBuilder = new SquareModel.CreateCardRequest.Builder(
-                        idempotencyKey: Guid.NewGuid().ToString(),
-                        sourceId: cardNonce.ToString(),
-                        card: cardRequestBuilder.Build())
-                    .VerificationToken(token?.ToString());
-                var card = await _squarePaymentManager.CreateCustomerCardAsync(createCardRequestBuilder.Build(), storeId);
-                if (card == null)
-                    throw new NopException("Failed to create card. Error details in the log");
-
-                //save card identifier to payment custom values for further purchasing
-                if (isRecurringPayment)
-                    paymentRequest.CustomValues.Add(new CustomValue(storedCardKey, card.Id));
-
-                //set 'card on file'
-                return paymentRequestBuilder
-                    .CustomerId(squareCustomer.Id)
-                    .SourceId(card.Id)
-                    .Build()
-                    .ToExtendedRequest(integrationId);
-            }
-            catch (Exception exception)
-            {
-                await _logger.WarningAsync(exception.Message, exception, customer);
-                if (isRecurringPayment)
-                    throw new NopException("For recurring payments you need to save the card details");
-            }
+            var squareCustomer = await GetOrCreateSquareCustomerAsync(customer, storeId);
+            if (squareCustomer != null)
+                paymentRequestBuilder.CustomerId(squareCustomer.Id);
         }
-        else if (isRecurringPayment)
-            throw new NopException("For recurring payments you need to save the card details");
 
         //set 'card nonce'
         return paymentRequestBuilder
             .SourceId(cardNonce.ToString())
             .Build()
             .ToExtendedRequest(integrationId);
+    }
+
+    /// <summary>
+    /// Gets existing Square customer or creates a new one
+    /// </summary>
+    private async Task<SquareModel.Customer> GetOrCreateSquareCustomerAsync(Customer customer, int storeId)
+    {
+        if (customer == null)
+            return null;
+
+        var customerId = await _genericAttributeService.GetAttributeAsync<string>(customer, SquarePaymentDefaults.CustomerIdAttribute);
+        var squareCustomer = await _squarePaymentManager.GetCustomerAsync(customerId, storeId);
+
+        if (squareCustomer == null)
+        {
+            var customerRequestBuilder = new SquareModel.CreateCustomerRequest.Builder()
+                .EmailAddress(customer.Email)
+                .Nickname(CommonHelper.EnsureMaximumLength(customer.Username, 100))
+                .GivenName(CommonHelper.EnsureMaximumLength(customer.FirstName, 300))
+                .FamilyName(CommonHelper.EnsureMaximumLength(customer.LastName, 300))
+                .PhoneNumber(customer.Phone)
+                .CompanyName(CommonHelper.EnsureMaximumLength(customer.Company, 500))
+                .ReferenceId(customer.CustomerGuid.ToString());
+
+            squareCustomer = await _squarePaymentManager.CreateCustomerAsync(customerRequestBuilder.Build(), storeId);
+            if (squareCustomer != null)
+                await _genericAttributeService.SaveAttributeAsync(customer, SquarePaymentDefaults.CustomerIdAttribute, squareCustomer.Id);
+        }
+
+        return squareCustomer;
+    }
+
+    /// <summary>
+    /// Saves customer card on file using the successful payment ID
+    /// </summary>
+    private async Task SaveCustomerCardAfterPaymentAsync(
+        Customer customer,
+        string paymentId,
+        int storeId,
+        bool isRecurringPayment,
+        ProcessPaymentRequest paymentRequest)
+    {
+        try
+        {
+            var squareCustomer = await GetOrCreateSquareCustomerAsync(customer, storeId);
+            if (squareCustomer == null)
+            {
+                await _logger.WarningAsync($"Cannot save card on file: failed to get or create Square customer for customer ID {customer?.Id}", customer: customer);
+                return;
+            }
+
+            var customerBillingAddress = await _customerService.GetCustomerBillingAddressAsync(customer);
+            var customerShippingAddress = await _customerService.GetCustomerShippingAddressAsync(customer);
+            var addressToUse = customerBillingAddress ?? customerShippingAddress;
+
+            SquareModel.Address cardBillingAddress = null;
+            if (addressToUse != null)
+            {
+                var country = await _countryService.GetCountryByAddressAsync(addressToUse);
+                cardBillingAddress = new SquareModel.Address
+                (
+                    addressLine1: CommonHelper.EnsureMaximumLength(addressToUse.Address1, 500),
+                    addressLine2: CommonHelper.EnsureMaximumLength(addressToUse.Address2, 500),
+                    administrativeDistrictLevel1: CommonHelper.EnsureMaximumLength((await _stateProvinceService.GetStateProvinceByAddressAsync(addressToUse))?.Abbreviation, 200),
+                    administrativeDistrictLevel2: CommonHelper.EnsureMaximumLength(addressToUse.County, 200),
+                    country: string.Equals(country?.TwoLetterIsoCode, new RegionInfo(country?.TwoLetterIsoCode).TwoLetterISORegionName, StringComparison.InvariantCultureIgnoreCase)
+                        ? country?.TwoLetterIsoCode : null,
+                    firstName: CommonHelper.EnsureMaximumLength(addressToUse.FirstName, 300),
+                    lastName: CommonHelper.EnsureMaximumLength(addressToUse.LastName, 300),
+                    locality: CommonHelper.EnsureMaximumLength(addressToUse.City, 300),
+                    postalCode: CommonHelper.EnsureMaximumLength(addressToUse.ZipPostalCode, 12)
+                );
+            }
+
+            var cardRequestBuilder = new SquareModel.Card.Builder()
+                .CustomerId(squareCustomer.Id)
+                .BillingAddress(cardBillingAddress);
+
+            var createCardRequestBuilder = new SquareModel.CreateCardRequest.Builder(
+                idempotencyKey: Guid.NewGuid().ToString(),
+                sourceId: paymentId,
+                card: cardRequestBuilder.Build());
+
+            var card = await _squarePaymentManager.CreateCustomerCardAsync(createCardRequestBuilder.Build(), storeId);
+            if (card != null && isRecurringPayment)
+            {
+                var storedCardKey = await _localizationService.GetResourceAsync("Plugins.Payments.Square.Fields.StoredCard.Key");
+                paymentRequest.CustomValues.Add(new CustomValue(storedCardKey, card.Id));
+            }
+        }
+        catch (Exception exception)
+        {
+            await _logger.WarningAsync($"Square payment warning: Failed to save card after payment: {exception.Message}", exception, customer);
+            if (isRecurringPayment)
+                throw new NopException("Failed to save card details for recurring payment");
+        }
     }
 
     #endregion

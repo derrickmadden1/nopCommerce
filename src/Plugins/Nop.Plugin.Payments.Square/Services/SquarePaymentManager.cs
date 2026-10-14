@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.WebUtilities;
+using Microsoft.AspNetCore.WebUtilities;
 using Nop.Core;
 using Nop.Services.Configuration;
 using Nop.Services.Logging;
@@ -78,17 +78,42 @@ public class SquarePaymentManager
     {
         ArgumentNullException.ThrowIfNull(exception);
 
-        //log full error
         var errorMessage = exception.Message;
-        await _logger.ErrorAsync($"Square payment error: {errorMessage}.", exception, await _workContext.GetCurrentCustomerAsync());
 
         // check Square exception
-        if (exception is not ApiException apiException)
-            return errorMessage;
+        if (exception is ApiException apiException)
+        {
+            if (apiException.Errors?.Any() ?? false)
+            {
+                var formattedErrors = apiException.Errors.Select(error =>
+                {
+                    var parts = new List<string>();
+                    if (!string.IsNullOrEmpty(error.Code))
+                        parts.Add(error.Code);
+                    if (!string.IsNullOrEmpty(error.Category))
+                        parts.Add($"Category: {error.Category}");
+                    if (!string.IsNullOrEmpty(error.Detail))
+                        parts.Add(error.Detail);
+                    if (!string.IsNullOrEmpty(error.Field))
+                        parts.Add($"Field: {error.Field}");
+                    return parts.Any() ? string.Join(" - ", parts) : "Unknown error";
+                });
 
-        //try to get error details
-        if (apiException.Errors?.Any() ?? false)
-            errorMessage = string.Join(";", apiException.Errors.Select(error => error.Detail));
+                var errorDetails = string.Join("; ", formattedErrors);
+                var statusCode = apiException.ResponseCode > 0 ? $" (HTTP {apiException.ResponseCode})" : string.Empty;
+                errorMessage = $"{exception.Message}{statusCode}: {errorDetails}";
+            }
+            else if (apiException.ResponseCode > 0)
+            {
+                errorMessage = $"{exception.Message} (HTTP {apiException.ResponseCode})";
+            }
+        }
+
+        //log full error
+        await _logger.ErrorAsync($"Square payment error: {errorMessage}.", exception, await _workContext.GetCurrentCustomerAsync());
+
+        if (exception is ApiException ex && (ex.Errors?.Any() ?? false))
+            return string.Join(";", ex.Errors.Select(error => error.Detail));
 
         return errorMessage;
     }
