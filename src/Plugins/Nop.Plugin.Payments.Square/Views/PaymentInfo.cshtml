@@ -93,35 +93,35 @@
         async function tokenize(paymentMethod) {
             var tokenResult = await paymentMethod.tokenize();
             if (tokenResult.status === 'OK') {
-                return tokenResult.token;
+                return { status: 'OK', token: tokenResult.token };
             } else {
                 let errorMessage = `Tokenization failed-status: ${tokenResult.status}`;
-                if (tokenResult.errors) {
-                    errorMessage += ` and errors: ${JSON.stringify(
-                        tokenResult.errors
-                    )}`;
+                if (tokenResult.errors && tokenResult.errors.length) {
+                    errorMessage = tokenResult.errors.map(err => err.message || err.detail || JSON.stringify(err)).join('; ');
                 }
                 console.error(errorMessage);
+                return { status: tokenResult.status, errors: errorMessage };
             }
         }
 
         async function handlePaymentMethodSubmission(paymentMethod) {
             try {
-                var token = await tokenize(paymentMethod);
+                var tokenResult = await tokenize(paymentMethod);
 
-                if (token.errors) {
+                if (!tokenResult || tokenResult.status !== 'OK') {
                     var currentErrorvalue = $('#@Html.IdFor(model => model.Errors)').val();
-                    $('#@Html.IdFor(model => model.Errors)').val(currentErrorvalue + '|' + token.errors.message);
+                    var errorMsg = tokenResult?.errors || 'Failed to tokenize card';
+                    $('#@Html.IdFor(model => model.Errors)').val(currentErrorvalue ? currentErrorvalue + '|' + errorMsg : errorMsg);
                 } else if (use3ds) {
-                    $('#@Html.IdFor(model => model.CardNonce)').val(token);
-                    await verifyBuyer(payments, token);
+                    $('#@Html.IdFor(model => model.CardNonce)').val(tokenResult.token);
+                    await verifyBuyer(payments, tokenResult.token);
                 }
                 else {
-                    $('#@Html.IdFor(model => model.CardNonce)').val(token);
+                    $('#@Html.IdFor(model => model.CardNonce)').val(tokenResult.token);
                 }
             } catch (e) {
                 var currentErrorvalue = $('#@Html.IdFor(model => model.Errors)').val();
-                $('#@Html.IdFor(model => model.Errors)').val(currentErrorvalue + '|' + e);
+                $('#@Html.IdFor(model => model.Errors)').val(currentErrorvalue ? currentErrorvalue + '|' + e : e);
             }
         }
 
@@ -145,7 +145,7 @@
                     await verifyBuyer(payments, selectedStoredCardId);
                 } catch (e) {
                     var currentErrorvalue = $('#@Html.IdFor(model => model.Errors)').val();
-                    $('#@Html.IdFor(model => model.Errors)').val(currentErrorvalue + '|' + e);
+                    $('#@Html.IdFor(model => model.Errors)').val(currentErrorvalue ? currentErrorvalue + '|' + e : e);
                 }
             }
             displayAjaxLoading(false);
@@ -154,8 +154,8 @@
 
         async function verifyBuyer(payments, token) {
             var verificationDetails = {
-                intent: '@settings.TransactionMode.ToString().ToUpper()',
-                amount: '@Model.OrderTotal',
+                intent: 'CHARGE',
+                amount: '@Model.OrderTotal.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)',
                 currencyCode: '@Model.Currency',
                 billingContact: {
                     addressLines: ['@Model.BillingAddressLine1', '@Model.BillingAddressLine2'],
@@ -175,7 +175,9 @@
 
             var verificationResults = await payments.verifyBuyer(token, verificationDetails);
 
-            $('#@Html.IdFor(model => model.Token)').val(verificationResults.token);
+            if (verificationResults && verificationResults.token) {
+                $('#@Html.IdFor(model => model.Token)').val(verificationResults.token);
+            }
         }
 
     });
