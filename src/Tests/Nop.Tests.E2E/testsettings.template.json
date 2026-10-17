@@ -1,0 +1,32 @@
+{
+  "CheckoutTest": {
+    "BaseUrl": "https://localhost:58552",
+    "Headless": false,
+    "SlowMo": 500,
+    "TestProductSlug": "system-verification-item",
+    "Customer": {
+      "FirstName": "Test",
+      "LastName": "Buyer",
+      "Email": "e2e-test@rosecottagecroft.co.uk",
+      "Company": "Rose Cottage Test Ltd",
+      "Address1": "123 Test Lane",
+      "City": "London",
+      "County": "Greater London",
+      "ZipPostalCode": "SW1A 1AA",
+      "PhoneNumber": "+447700900123",
+      "Country": "United Kingdom"
+    },
+    "Square": {
+      "TestCardNumber": "4111111111111111",
+      "Expiration": "12/28",
+      "Cvv": "123",
+      "PostalCode": "SW1A 1AA",
+      "Handle3ds": true,
+      "3dsSmsCode": "1234"
+    },
+    "PayPal": {
+      "SandboxBuyerEmail": "",
+      "SandboxBuyerPassword": ""
+    }
+  }
+}

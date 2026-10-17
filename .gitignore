@@ -215,3 +215,5 @@ src/Tests/Nop.Tests/Connections.resx
 /src/Presentation/Nop.Web/App_Data/appsettings - Copy (2).json
 /InsertMissingLocales.sql
 /CheckMissingLocales.sql
+testsettings.json
+**/Nop.Tests.E2E/Screenshots/
