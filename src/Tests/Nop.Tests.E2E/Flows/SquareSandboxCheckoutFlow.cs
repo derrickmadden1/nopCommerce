@@ -8,13 +8,37 @@ namespace Nop.Tests.E2E.Flows;
 public class SquareSandboxCheckoutFlow : BaseCheckoutFlow
 {
     public CheckoutAuthMode AuthMode { get; }
+    public bool SaveCard { get; }
+    public bool UseStoredCard { get; }
+    public string? CustomCardNumber { get; }
+    public bool ExpectPaymentFailure { get; }
 
-    public override string RouteName => $"square-sandbox-checkout-{AuthMode.ToString().ToLowerInvariant()}";
+    public override string RouteName
+    {
+        get
+        {
+            var mode = AuthMode.ToString().ToLowerInvariant();
+            if (UseStoredCard) return $"square-sandbox-checkout-{mode}-stored-card";
+            if (SaveCard) return $"square-sandbox-checkout-{mode}-save-card";
+            if (!string.IsNullOrEmpty(CustomCardNumber)) return $"square-sandbox-checkout-{mode}-custom-card";
+            return $"square-sandbox-checkout-{mode}";
+        }
+    }
 
-    public SquareSandboxCheckoutFlow(CheckoutTestSettings? settings = null, CheckoutAuthMode authMode = CheckoutAuthMode.Guest) 
+    public SquareSandboxCheckoutFlow(
+        CheckoutTestSettings? settings = null,
+        CheckoutAuthMode authMode = CheckoutAuthMode.Guest,
+        bool saveCard = false,
+        bool useStoredCard = false,
+        string? customCardNumber = null,
+        bool expectPaymentFailure = false) 
         : base(settings)
     {
         AuthMode = authMode;
+        SaveCard = saveCard;
+        UseStoredCard = useStoredCard;
+        CustomCardNumber = customCardNumber;
+        ExpectPaymentFailure = expectPaymentFailure;
     }
 
     public override async Task<CheckoutResult> RunAsync(IPage page, CancellationToken cancellationToken = default)
@@ -42,11 +66,23 @@ public class SquareSandboxCheckoutFlow : BaseCheckoutFlow
             // 6. Select Square Payment Method
             await SelectPaymentMethodAsync(page, "Payments.Square");
 
-            // 7. Fill Square Payment Info (Web Payments SDK iframe)
-            await FillSquarePaymentDetailsAsync(page);
+            // 7. Fill Square Payment Info (Web Payments SDK iframe or Stored Card)
+            await FillSquarePaymentDetailsAsync(page, saveCard: SaveCard, useStoredCard: UseStoredCard, customCardNumber: CustomCardNumber);
 
             // 8. Confirm Order
             await ConfirmOrderAsync(page);
+
+            if (ExpectPaymentFailure)
+            {
+                var failureMessage = await WaitForPaymentFailureMessageAsync(page);
+                stopwatch.Stop();
+                return new CheckoutResult(
+                    RouteName,
+                    Success: true, // Successfully encountered expected failure
+                    OrderNumber: null,
+                    Duration: stopwatch.Elapsed,
+                    ErrorMessage: failureMessage);
+            }
 
             // 9. Assert order completed
             var orderNumber = await WaitForOrderCompletionAndGetNumberAsync(page);

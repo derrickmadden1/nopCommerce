@@ -49,7 +49,12 @@ UPDATE Setting
 SET Value = 'Standard' 
 WHERE Name = 'customersettings.userregistrationtype';
 
-PRINT '6. Ensuring deterministic returning test customer exists...';
+PRINT '6. Disabling minimum order placement interval to permit sequential automated test orders...';
+UPDATE Setting 
+SET Value = '0' 
+WHERE Name = 'ordersettings.minimumorderplacementinterval';
+
+PRINT '7. Ensuring deterministic returning test customer exists...';
 IF NOT EXISTS (SELECT 1 FROM Customer WHERE Email = 'e2e-returning-customer@rosecottagecroft.co.uk')
 BEGIN
     INSERT INTO Customer (
@@ -68,7 +73,7 @@ BEGIN
         NULL, '127.0.0.1', GETUTCDATE(), GETUTCDATE(), GETUTCDATE(),
         1, NULL, NULL, 'Returning', 'Buyer',
         'Rose Cottage Test Ltd', '123 Test Lane', 'Testville', 'Testshire', 'TE5 5ST', 82, 0,
-        0, '07700900123', 0, 0
+        0, '+447700900123', 0, 0
     );
 
     DECLARE @ReturningCustomerId INT = SCOPE_IDENTITY();
@@ -84,7 +89,7 @@ BEGIN
         FirstName, LastName, Email, Company, CountryId, StateProvinceId, City, Address1, ZipPostalCode, PhoneNumber, CreatedOnUtc, County
     )
     VALUES (
-        'Returning', 'Buyer', 'e2e-returning-customer@rosecottagecroft.co.uk', 'Rose Cottage Test Ltd', 82, NULL, 'Testville', '123 Test Lane', 'TE5 5ST', '07700900123', GETUTCDATE(), 'Testshire'
+        'Returning', 'Buyer', 'e2e-returning-customer@rosecottagecroft.co.uk', 'Rose Cottage Test Ltd', 82, NULL, 'Testville', '123 Test Lane', 'TE5 5ST', '+447700900123', GETUTCDATE(), 'Testshire'
     );
 
     DECLARE @AddressId INT = SCOPE_IDENTITY();
@@ -101,7 +106,8 @@ END
 ELSE
 BEGIN
     DECLARE @ExistingId INT = (SELECT TOP 1 Id FROM Customer WHERE Email = 'e2e-returning-customer@rosecottagecroft.co.uk');
-    UPDATE Customer SET Active = 1, Deleted = 0, CannotLoginUntilDateUtc = NULL, FailedLoginAttempts = 0 WHERE Id = @ExistingId;
+    UPDATE Customer SET Active = 1, Deleted = 0, CannotLoginUntilDateUtc = NULL, FailedLoginAttempts = 0, Phone = '+447700900123' WHERE Id = @ExistingId;
+    UPDATE Address SET PhoneNumber = '+447700900123' WHERE Email = 'e2e-returning-customer@rosecottagecroft.co.uk';
     DELETE FROM CustomerPassword WHERE CustomerId = @ExistingId;
     INSERT INTO CustomerPassword (CustomerId, Password, PasswordFormatId, PasswordSalt, CreatedOnUtc)
     VALUES (@ExistingId, 'Password123!', 0, NULL, GETUTCDATE());

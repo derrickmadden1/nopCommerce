@@ -118,15 +118,55 @@ public abstract class BaseCheckoutFlow : ICheckoutFlow
             await page.WaitForURLAsync(url => !url.Contains("/login", StringComparison.OrdinalIgnoreCase), new() { Timeout = 15000 });
             await page.WaitForLoadStateAsync(LoadState.DOMContentLoaded);
 
-            // If login redirected back to /cart, proceed to checkout as authenticated user
-            if (page.Url.Contains("/cart", StringComparison.OrdinalIgnoreCase))
+            // Ensure returning customer phone is E.164 compliant (+44...) for Square API customer creation
+            await EnsureCustomerProfilePhoneValidAsync(page);
+
+            // If not already in checkout, proceed to cart and checkout
+            if (!page.Url.Contains("/checkout", StringComparison.OrdinalIgnoreCase))
             {
-                TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Redirected to cart after login, clicking checkout as authenticated user");
+                TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Proceeding to cart after login and profile check");
                 await ProceedToCartAndAcceptTermsAsync(page);
             }
         }
 
         TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] HandleReturningCustomerLoginIfPromptedAsync finished, url={page.Url}");
+    }
+
+    public async Task EnsureCustomerProfilePhoneValidAsync(IPage page)
+    {
+        try
+        {
+            var infoUrl = $"{Settings.BaseUrl.TrimEnd('/')}/customer/info";
+            TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Navigating to customer info: {infoUrl}");
+            await page.GotoAsync(infoUrl, new() { WaitUntil = WaitUntilState.DOMContentLoaded });
+
+            // Check if we were redirected to login
+            if (page.Url.Contains("/login", StringComparison.OrdinalIgnoreCase))
+            {
+                await HandleReturningCustomerLoginIfPromptedAsync(page);
+                await page.GotoAsync(infoUrl, new() { WaitUntil = WaitUntilState.DOMContentLoaded });
+            }
+
+            var phoneInput = page.Locator("#Phone");
+            if (await phoneInput.IsVisibleAsync())
+            {
+                var curVal = await phoneInput.InputValueAsync();
+                TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Current customer profile phone is '{curVal}'");
+                if (string.IsNullOrEmpty(curVal) || !curVal.StartsWith("+"))
+                {
+                    TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Updating customer profile phone to '+447700900123'");
+                    await phoneInput.FillAsync("+447700900123");
+                    var saveBtn = page.Locator("#save-info-button, button.save-customer-info-button").First;
+                    await saveBtn.ClickAsync();
+                    await page.WaitForLoadStateAsync(LoadState.DOMContentLoaded);
+                    TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Customer profile saved successfully");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] EnsureCustomerProfilePhoneValidAsync non-fatal: {ex.Message}");
+        }
     }
 
     protected async Task HandleNewCustomerRegistrationIfPromptedAsync(IPage page, string? firstName = null, string? lastName = null, string? email = null, string? password = null)
@@ -216,6 +256,17 @@ public abstract class BaseCheckoutFlow : ICheckoutFlow
                 await HandleNewCustomerRegistrationIfPromptedAsync(page);
                 break;
         }
+    }
+
+    public async Task NavigateToPaymentInfoAsync(IPage page, CheckoutAuthMode authMode, string paymentMethodSystemName = "Payments.Square")
+    {
+        await AddTestProductToCartAsync(page);
+        await ProceedToCartAndAcceptTermsAsync(page);
+        await HandleAuthenticationStepAsync(page, authMode);
+        await FillBillingAddressIfRequiredAsync(page);
+        await FillShippingAddressIfRequiredAsync(page);
+        await SelectShippingMethodAsync(page);
+        await SelectPaymentMethodAsync(page, paymentMethodSystemName);
     }
 
     protected async Task FillBillingAddressIfRequiredAsync(IPage page)
@@ -425,13 +476,86 @@ public abstract class BaseCheckoutFlow : ICheckoutFlow
         TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Left paymentmethod page, new url={page.Url}");
     }
 
-    protected async Task FillSquarePaymentDetailsAsync(IPage page)
+    protected async Task FillSquarePaymentDetailsAsync(
+        IPage page,
+        bool saveCard = false,
+        bool useStoredCard = false,
+        string? customCardNumber = null)
     {
         TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] FillSquarePaymentDetailsAsync entering, url={page.Url}");
         if (!page.Url.Contains("/checkout/paymentinfo", StringComparison.OrdinalIgnoreCase))
             return;
 
         await DismissCookieNotificationAsync(page);
+
+        // Stored card flow (PR #269 card-on-file)
+        if (useStoredCard)
+        {
+            TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Using stored card on file");
+            var storedCardSelect = page.Locator("#StoredCardId, select[name='StoredCardId']");
+            try
+            {
+                await storedCardSelect.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 5000 });
+            }
+            catch (Exception ex) when (ex.Message.Contains("Timeout") || ex is TimeoutException)
+            {
+                throw new InvalidOperationException("UseStoredCard was requested, but no saved card dropdown (#StoredCardId) was found on the payment info page.");
+            }
+
+            // Ensure options exist
+            var options = await storedCardSelect.Locator("option").AllAsync();
+            TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Found {options.Count} stored card options");
+
+            // Look for non-empty option
+            string? cardVal = null;
+            foreach (var opt in options)
+            {
+                var val = await opt.GetAttributeAsync("value");
+                if (!string.IsNullOrEmpty(val) && !val.Equals(Guid.Empty.ToString(), StringComparison.OrdinalIgnoreCase))
+                {
+                    cardVal = val;
+                    break;
+                }
+            }
+
+            if (string.IsNullOrEmpty(cardVal))
+            {
+                throw new InvalidOperationException("UseStoredCard was requested, but no saved card token was found in #StoredCardId dropdown.");
+            }
+
+            TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Selecting stored card ID: {cardVal}");
+            await storedCardSelect.SelectOptionAsync(new[] { cardVal });
+
+            // Verify #payment-form is hidden as expected per toggleStoredCard()
+            var paymentForm = page.Locator("#payment-form");
+            var isPaymentFormHidden = await paymentForm.IsHiddenAsync();
+            TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] #payment-form is hidden: {isPaymentFormHidden}");
+
+            // Wait for Square SDK initialization to complete
+            try
+            {
+                await page.Locator(".ajax-loading-block-window").WaitForAsync(new() { State = WaitForSelectorState.Hidden, Timeout = 10000 });
+            }
+            catch { }
+            await Task.Delay(1000);
+
+            var payButton = page.Locator("#pay-button").First;
+            await payButton.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 10000 });
+            TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Clicking #pay-button for stored card");
+            await payButton.ClickAsync();
+
+            if (Settings.Square.Handle3ds)
+            {
+                TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Checking for 3DS CardinalCommerce modal (stored card)");
+                await HandleCardinal3dsModalIfPresentAsync(page, Settings.Square.ThreeDsSmsCode);
+            }
+
+            TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Waiting for transition away from paymentinfo");
+            await page.WaitForURLAsync(url => !url.Contains("/checkout/paymentinfo", StringComparison.OrdinalIgnoreCase), new() { Timeout = 25000 });
+            await page.WaitForLoadStateAsync(LoadState.DOMContentLoaded);
+            TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Transitioned to confirm, new url={page.Url}");
+            return;
+        }
 
         TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Waiting for Square #card-container iframe");
         var cardIframe = page.FrameLocator("#card-container iframe");
@@ -440,10 +564,11 @@ public abstract class BaseCheckoutFlow : ICheckoutFlow
         await cardNumberInput.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 25000 });
 
         var square = Settings.Square;
-        TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Entering Square test card: {square.TestCardNumber[..4]}****");
+        var cardNumberToUse = customCardNumber ?? square.TestCardNumber;
+        TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Entering Square test card: {cardNumberToUse[..4]}****");
 
         await cardNumberInput.ClickAsync();
-        await cardNumberInput.FillAsync(square.TestCardNumber);
+        await cardNumberInput.FillAsync(cardNumberToUse);
 
         var expInput = cardIframe.Locator("input[name='expirationDate'], input[autocomplete='cc-exp'], input[placeholder*='MM/YY']").First;
         if (await expInput.IsVisibleAsync())
@@ -467,10 +592,21 @@ public abstract class BaseCheckoutFlow : ICheckoutFlow
             TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Postal code field filled with {square.PostalCode}");
         }
 
-        var payButton = page.Locator("#pay-button").First;
-        await payButton.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 10000 });
+        if (saveCard)
+        {
+            var saveCardCheckbox = page.Locator("#SaveCard, input[name='SaveCard']").First;
+            await saveCardCheckbox.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 10000 });
+            TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Checking 'Save card' checkbox");
+            if (!await saveCardCheckbox.IsCheckedAsync())
+            {
+                await saveCardCheckbox.CheckAsync();
+            }
+        }
+
+        var payBtn = page.Locator("#pay-button").First;
+        await payBtn.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 10000 });
         TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Clicking #pay-button for Square tokenization");
-        await payButton.ClickAsync();
+        await payBtn.ClickAsync();
 
         if (square.Handle3ds)
         {
@@ -549,10 +685,23 @@ public abstract class BaseCheckoutFlow : ICheckoutFlow
 
     protected async Task<string> WaitForOrderCompletionAndGetNumberAsync(IPage page, int timeoutSeconds = 30)
     {
-        // Wait for completed URL
-        await page.WaitForURLAsync(
-            url => url.ToString().Contains("/checkout/completed", StringComparison.OrdinalIgnoreCase),
-            new() { Timeout = timeoutSeconds * 1000, WaitUntil = WaitUntilState.DOMContentLoaded });
+        try
+        {
+            // Wait for completed URL
+            await page.WaitForURLAsync(
+                url => url.ToString().Contains("/checkout/completed", StringComparison.OrdinalIgnoreCase),
+                new() { Timeout = timeoutSeconds * 1000, WaitUntil = WaitUntilState.DOMContentLoaded });
+        }
+        catch (TimeoutException)
+        {
+            var errorElement = page.Locator(".message-error, .order-confirm-page .message-error li, .message-error li").First;
+            if (await errorElement.IsVisibleAsync())
+            {
+                var text = (await errorElement.InnerTextAsync()).Trim();
+                throw new InvalidOperationException($"Checkout failed on confirm step with error: '{text}'");
+            }
+            throw;
+        }
 
         await page.WaitForLoadStateAsync(LoadState.DOMContentLoaded);
 
@@ -574,6 +723,16 @@ public abstract class BaseCheckoutFlow : ICheckoutFlow
         }
 
         return "COMPLETED";
+    }
+
+    public async Task<string> WaitForPaymentFailureMessageAsync(IPage page, int timeoutSeconds = 25)
+    {
+        TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Waiting for payment failure message on confirm page");
+        var errorLocator = page.Locator(".message-error, .order-confirm-page .message-error li, .message-error li").First;
+        await errorLocator.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = timeoutSeconds * 1000 });
+        var text = (await errorLocator.InnerTextAsync()).Trim();
+        TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Captured payment failure message: {text}");
+        return text;
     }
 
     protected async Task DismissCookieNotificationAsync(IPage page)
