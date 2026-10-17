@@ -11,10 +11,14 @@ UPDATE Setting
 SET Value = 'True' 
 WHERE Name IN ('squarepaymentsettings.usesandbox', 'paypalcommercesettings.usesandbox');
 
--- Ensure Store 1 Square access token matches the valid sandbox token
-UPDATE Setting
-SET Value = 'EAAAEBSajl6ZFHQFhEq5nSjGnyzK69jrt2_KKUFoFfv2ZIhPUvL7-MT5LzuZkIlX'
-WHERE Name = 'squarepaymentsettings.accesstoken' AND StoreId = 1;
+-- Ensure Store 1 Square access token matches Store 0 without hardcoding secrets
+UPDATE s1
+SET s1.Value = s0.Value
+FROM Setting s1
+JOIN Setting s0 ON s0.Name = s1.Name AND s0.StoreId = 0
+WHERE s1.Name = 'squarepaymentsettings.accesstoken' 
+  AND s1.StoreId = 1 
+  AND (s1.Value IS NULL OR s1.Value = '');
 
 -- Ensure PayPal Commerce merchantid is empty so Sandbox uses REST app client credentials
 UPDATE Setting
