@@ -25,6 +25,8 @@ public class CustomerSettings
     public string ZipPostalCode { get; set; } = "TE5 5ST";
     public string PhoneNumber { get; set; } = "07700900123";
     public string Country { get; set; } = "United Kingdom";
+    public string ReturningCustomerEmail { get; set; } = "e2e-returning-customer@rosecottagecroft.co.uk";
+    public string ReturningCustomerPassword { get; set; } = "Password123!";
 }
 
 public class SquareSettings

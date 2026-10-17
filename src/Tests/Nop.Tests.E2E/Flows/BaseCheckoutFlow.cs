@@ -92,6 +92,132 @@ public abstract class BaseCheckoutFlow : ICheckoutFlow
         TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] HandleGuestCheckoutIfPromptedAsync finished, url={page.Url}");
     }
 
+    protected async Task HandleReturningCustomerLoginIfPromptedAsync(IPage page, string? email = null, string? password = null)
+    {
+        await DismissCookieNotificationAsync(page);
+        TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] HandleReturningCustomerLoginIfPromptedAsync entering, url={page.Url}");
+
+        if (page.Url.Contains("/login", StringComparison.OrdinalIgnoreCase) ||
+            page.Url.Contains("checkoutasguest", StringComparison.OrdinalIgnoreCase))
+        {
+            var customer = Settings.Customer;
+            var loginEmail = email ?? customer.ReturningCustomerEmail;
+            var loginPassword = password ?? customer.ReturningCustomerPassword;
+
+            var emailInput = page.Locator("#Email, input[name='Email'], input.email").First;
+            await emailInput.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 10000 });
+            await emailInput.FillAsync(loginEmail);
+
+            var passwordInput = page.Locator("#Password, input[name='Password'], input.password").First;
+            await passwordInput.FillAsync(loginPassword);
+
+            var loginButton = page.Locator("button.login-btn-modern, button[type='submit']:has-text('Log in'), input[value='Log in'], .returning-customer-block button[type='submit']").First;
+            TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Submitting returning customer login for {loginEmail}");
+            await loginButton.ClickAsync();
+
+            await page.WaitForURLAsync(url => !url.Contains("/login", StringComparison.OrdinalIgnoreCase), new() { Timeout = 15000 });
+            await page.WaitForLoadStateAsync(LoadState.DOMContentLoaded);
+
+            // If login redirected back to /cart, proceed to checkout as authenticated user
+            if (page.Url.Contains("/cart", StringComparison.OrdinalIgnoreCase))
+            {
+                TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Redirected to cart after login, clicking checkout as authenticated user");
+                await ProceedToCartAndAcceptTermsAsync(page);
+            }
+        }
+
+        TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] HandleReturningCustomerLoginIfPromptedAsync finished, url={page.Url}");
+    }
+
+    protected async Task HandleNewCustomerRegistrationIfPromptedAsync(IPage page, string? firstName = null, string? lastName = null, string? email = null, string? password = null)
+    {
+        await DismissCookieNotificationAsync(page);
+        TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] HandleNewCustomerRegistrationIfPromptedAsync entering, url={page.Url}");
+
+        if (page.Url.Contains("/login", StringComparison.OrdinalIgnoreCase) ||
+            page.Url.Contains("checkoutasguest", StringComparison.OrdinalIgnoreCase))
+        {
+            var registerNavBtn = page.Locator(".new-customer-block button:has-text('Register'), .new-customer-content button:has-text('Register'), a[href*='/register'], button[onclick*='register']").First;
+            await registerNavBtn.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 10000 });
+            TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Clicking Register button from checkout prompt");
+            await registerNavBtn.ClickAsync();
+
+            await page.WaitForURLAsync(url => url.Contains("/register", StringComparison.OrdinalIgnoreCase), new() { Timeout = 15000 });
+            await page.WaitForLoadStateAsync(LoadState.DOMContentLoaded);
+            await DismissCookieNotificationAsync(page);
+
+            var customer = Settings.Customer;
+            var regEmail = email ?? $"e2e-reg-{DateTime.UtcNow:yyyyMMddHHmmssfff}@rosecottagecroft.co.uk";
+            var regPassword = password ?? "Password123!";
+
+            var firstNameInput = page.Locator("#FirstName");
+            if (await firstNameInput.IsVisibleAsync())
+                await firstNameInput.FillAsync(firstName ?? customer.FirstName);
+
+            var lastNameInput = page.Locator("#LastName");
+            if (await lastNameInput.IsVisibleAsync())
+                await lastNameInput.FillAsync(lastName ?? customer.LastName);
+
+            var emailInput = page.Locator("#Email");
+            await emailInput.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 10000 });
+            await emailInput.FillAsync(regEmail);
+
+            var passwordInput = page.Locator("#Password");
+            await passwordInput.FillAsync(regPassword);
+
+            var confirmPasswordInput = page.Locator("#ConfirmPassword");
+            if (await confirmPasswordInput.IsVisibleAsync())
+                await confirmPasswordInput.FillAsync(regPassword);
+
+            var consentInput = page.Locator("#accept-consent");
+            if (await consentInput.IsVisibleAsync())
+                await consentInput.CheckAsync(new() { Force = true });
+
+            var registerSubmitBtn = page.Locator("#register-button, button.register-btn-modern, button[name='register-button']").First;
+            TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Submitting registration for new customer: {regEmail}");
+            await registerSubmitBtn.ClickAsync();
+
+            await page.WaitForURLAsync(url => !url.EndsWith("/register", StringComparison.OrdinalIgnoreCase), new() { Timeout = 20000 });
+            await page.WaitForLoadStateAsync(LoadState.DOMContentLoaded);
+
+            if (page.Url.Contains("registerresult", StringComparison.OrdinalIgnoreCase))
+            {
+                TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] On registerresult page, clicking Continue button");
+                var continueBtn = page.Locator(".register-continue-button, a:has-text('Continue'), button:has-text('Continue')").First;
+                if (await continueBtn.IsVisibleAsync())
+                {
+                    await continueBtn.ClickAsync();
+                    await page.WaitForURLAsync(url => !url.Contains("registerresult", StringComparison.OrdinalIgnoreCase), new() { Timeout = 15000 });
+                    await page.WaitForLoadStateAsync(LoadState.DOMContentLoaded);
+                }
+            }
+
+            if (page.Url.Contains("/cart", StringComparison.OrdinalIgnoreCase))
+            {
+                TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Back on cart after registration, clicking checkout as authenticated user");
+                await ProceedToCartAndAcceptTermsAsync(page);
+            }
+        }
+
+        TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] HandleNewCustomerRegistrationIfPromptedAsync finished, url={page.Url}");
+    }
+
+    protected async Task HandleAuthenticationStepAsync(IPage page, CheckoutAuthMode authMode)
+    {
+        switch (authMode)
+        {
+            case CheckoutAuthMode.Guest:
+                await HandleGuestCheckoutIfPromptedAsync(page);
+                break;
+            case CheckoutAuthMode.ReturningCustomer:
+                await HandleReturningCustomerLoginIfPromptedAsync(page);
+                break;
+            case CheckoutAuthMode.NewCustomerRegistration:
+                await HandleNewCustomerRegistrationIfPromptedAsync(page);
+                break;
+        }
+    }
+
     protected async Task FillBillingAddressIfRequiredAsync(IPage page)
     {
         TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] FillBillingAddressIfRequiredAsync entering, url={page.Url}");
@@ -270,6 +396,155 @@ public abstract class BaseCheckoutFlow : ICheckoutFlow
         await page.WaitForURLAsync(url => !url.Contains("/checkout/shippingmethod", StringComparison.OrdinalIgnoreCase), new() { Timeout = 15000 });
         await page.WaitForLoadStateAsync(LoadState.DOMContentLoaded);
         TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Left shippingmethod page, new url={page.Url}");
+    }
+
+    protected async Task SelectPaymentMethodAsync(IPage page, string paymentMethodSystemName)
+    {
+        TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] SelectPaymentMethodAsync entering for {paymentMethodSystemName}, url={page.Url}");
+        if (!page.Url.Contains("/checkout/paymentmethod", StringComparison.OrdinalIgnoreCase))
+            return;
+
+        await DismissCookieNotificationAsync(page);
+
+        var radio = page.Locator($"input[value='{paymentMethodSystemName}']").First;
+        await radio.WaitForAsync(new() { State = WaitForSelectorState.Attached, Timeout = 15000 });
+
+        TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Selecting {paymentMethodSystemName} payment method");
+        if (!await radio.IsCheckedAsync())
+        {
+            await radio.CheckAsync(new() { Force = true });
+        }
+
+        var nextBtn = page.Locator(".payment-method-page button[name='nextstep'], #payment-method-buttons-container .payment-method-next-step-button, button[onclick*='PaymentMethod.save']").Locator(":visible").First;
+        await nextBtn.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 10000 });
+        TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Clicking payment method Next button");
+        await nextBtn.ClickAsync(new() { Force = true });
+
+        await page.WaitForURLAsync(url => !url.Contains("/checkout/paymentmethod", StringComparison.OrdinalIgnoreCase), new() { Timeout = 15000 });
+        await page.WaitForLoadStateAsync(LoadState.DOMContentLoaded);
+        TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Left paymentmethod page, new url={page.Url}");
+    }
+
+    protected async Task FillSquarePaymentDetailsAsync(IPage page)
+    {
+        TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] FillSquarePaymentDetailsAsync entering, url={page.Url}");
+        if (!page.Url.Contains("/checkout/paymentinfo", StringComparison.OrdinalIgnoreCase))
+            return;
+
+        await DismissCookieNotificationAsync(page);
+
+        TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Waiting for Square #card-container iframe");
+        var cardIframe = page.FrameLocator("#card-container iframe");
+
+        var cardNumberInput = cardIframe.Locator("input[name='cardNumber'], input[autocomplete='cc-number'], input[placeholder*='Card number']").First;
+        await cardNumberInput.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 25000 });
+
+        var square = Settings.Square;
+        TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Entering Square test card: {square.TestCardNumber[..4]}****");
+
+        await cardNumberInput.ClickAsync();
+        await cardNumberInput.FillAsync(square.TestCardNumber);
+
+        var expInput = cardIframe.Locator("input[name='expirationDate'], input[autocomplete='cc-exp'], input[placeholder*='MM/YY']").First;
+        if (await expInput.IsVisibleAsync())
+        {
+            await expInput.ClickAsync();
+            await expInput.FillAsync(square.Expiration);
+        }
+
+        var cvvInput = cardIframe.Locator("input[name='cvv'], input[autocomplete='cc-csc'], input[placeholder*='CVV']").First;
+        if (await cvvInput.IsVisibleAsync())
+        {
+            await cvvInput.ClickAsync();
+            await cvvInput.FillAsync(square.Cvv);
+        }
+
+        var postalInput = cardIframe.Locator("input[name='postalCode'], input[autocomplete='postal-code'], input[placeholder*='Postal']").First;
+        if (await postalInput.IsVisibleAsync())
+        {
+            await postalInput.ClickAsync();
+            await postalInput.FillAsync(square.PostalCode);
+            TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Postal code field filled with {square.PostalCode}");
+        }
+
+        var payButton = page.Locator("#pay-button").First;
+        await payButton.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 10000 });
+        TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Clicking #pay-button for Square tokenization");
+        await payButton.ClickAsync();
+
+        if (square.Handle3ds)
+        {
+            TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Checking for 3DS CardinalCommerce modal");
+            await HandleCardinal3dsModalIfPresentAsync(page, square.ThreeDsSmsCode);
+        }
+
+        TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Waiting for transition away from paymentinfo");
+        await page.WaitForURLAsync(url => !url.Contains("/checkout/paymentinfo", StringComparison.OrdinalIgnoreCase), new() { Timeout = 25000 });
+        await page.WaitForLoadStateAsync(LoadState.DOMContentLoaded);
+        TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Transitioned to confirm, new url={page.Url}");
+    }
+
+    protected async Task HandleCardinal3dsModalIfPresentAsync(IPage page, string smsCode)
+    {
+        try
+        {
+            var cardinalFrame = page.FrameLocator("#Cardinal-CCA-IFrame");
+            var challengeInput = cardinalFrame.Locator("input[name='challengeDataEntry'], input[type='password'], input[name='txtOtpCode'], input[placeholder*='code']").First;
+            await challengeInput.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 6000 });
+
+            if (await challengeInput.IsVisibleAsync())
+            {
+                await challengeInput.FillAsync(smsCode);
+
+                var submitBtn = cardinalFrame.Locator("input[type='submit'], button:has-text('Submit'), button:has-text('SUBMIT'), #btnSubmit").First;
+                if (await submitBtn.IsVisibleAsync())
+                {
+                    await submitBtn.ClickAsync();
+                    await Task.Delay(2000);
+                }
+            }
+        }
+        catch
+        {
+            try
+            {
+                var cardinalFrame = page.FrameLocator("#Cardinal-CCA-IFrame");
+                var directSubmit = cardinalFrame.Locator("input[value='SUBMIT'], button:has-text('SUBMIT'), button:has-text('Submit')").First;
+                await directSubmit.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 2000 });
+                await directSubmit.ClickAsync();
+                await Task.Delay(2000);
+            }
+            catch
+            {
+                // No challenge modal
+            }
+        }
+    }
+
+    protected async Task ConfirmOrderAsync(IPage page)
+    {
+        if (!page.Url.Contains("/checkout/confirm", StringComparison.OrdinalIgnoreCase))
+            return;
+
+        await DismissCookieNotificationAsync(page);
+
+        var termsCheckbox = page.Locator("#termsofservice");
+        if (await termsCheckbox.CountAsync() > 0)
+        {
+            try
+            {
+                await termsCheckbox.CheckAsync(new() { Force = true });
+            }
+            catch
+            {
+                await page.EvaluateAsync("const cb = document.getElementById('termsofservice'); if (cb) cb.checked = true;");
+            }
+        }
+
+        var confirmButton = page.Locator(".confirm-order-btn-modern, .order-confirm-page button[name='nextstep'], #confirm-order-buttons-container .confirm-order-next-step-button, button[onclick*='ConfirmOrder.save'], button:has-text('Confirm')").Locator(":visible").First;
+        await confirmButton.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 15000 });
+        TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Clicking confirm order button");
+        await confirmButton.ClickAsync(new() { Force = true });
     }
 
     protected async Task<string> WaitForOrderCompletionAndGetNumberAsync(IPage page, int timeoutSeconds = 30)

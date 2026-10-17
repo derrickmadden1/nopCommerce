@@ -21,6 +21,14 @@ UPDATE Setting
 SET Value = ''
 WHERE Name = 'paypalcommercesettings.merchantid';
 
+-- Ensure CheckMoneyOrder is enabled for manual offline checkout testing
+IF NOT EXISTS (SELECT 1 FROM Setting WHERE Name = 'paymentsettings.activepaymentmethodsystemnames' AND Value LIKE '%Payments.CheckMoneyOrder%')
+BEGIN
+    UPDATE Setting
+    SET Value = Value + ',Payments.CheckMoneyOrder'
+    WHERE Name = 'paymentsettings.activepaymentmethodsystemnames';
+END
+
 PRINT '2. Disabling background email transmission (QueuedMessagesSendTask)...';
 UPDATE ScheduleTask 
 SET Enabled = 0 
@@ -31,7 +39,76 @@ UPDATE Setting
 SET Value = 'False' 
 WHERE Name = 'storeinformationsettings.displayeucookielawwarning';
 
-PRINT '3. Ensuring E2E verification test product exists...';
+PRINT '4. Disabling Captcha on dev store to enable automated E2E testing...';
+UPDATE Setting 
+SET Value = 'False' 
+WHERE Name = 'captchasettings.enabled';
+
+PRINT '5. Setting user registration type to Standard for immediate login upon registration...';
+UPDATE Setting 
+SET Value = 'Standard' 
+WHERE Name = 'customersettings.userregistrationtype';
+
+PRINT '6. Ensuring deterministic returning test customer exists...';
+IF NOT EXISTS (SELECT 1 FROM Customer WHERE Email = 'e2e-returning-customer@rosecottagecroft.co.uk')
+BEGIN
+    INSERT INTO Customer (
+        CustomerGuid, Username, Email, EmailToRevalidate, AdminComment,
+        IsTaxExempt, AffiliateId, VendorId, HasShoppingCartItems, RequireReLogin,
+        FailedLoginAttempts, CannotLoginUntilDateUtc, Active, Deleted, IsSystemAccount,
+        SystemName, LastIpAddress, CreatedOnUtc, LastLoginDateUtc, LastActivityDateUtc,
+        RegisteredInStoreId, BillingAddress_Id, ShippingAddress_Id, FirstName, LastName,
+        Company, StreetAddress, City, County, ZipPostalCode, CountryId, StateProvinceId,
+        VatNumberStatusId, Phone, MustChangePassword, PhoneSmsVerified
+    )
+    VALUES (
+        NEWID(), 'e2e-returning-customer@rosecottagecroft.co.uk', 'e2e-returning-customer@rosecottagecroft.co.uk', NULL, 'E2E Returning Test Customer',
+        0, 0, 0, 0, 0,
+        0, NULL, 1, 0, 0,
+        NULL, '127.0.0.1', GETUTCDATE(), GETUTCDATE(), GETUTCDATE(),
+        1, NULL, NULL, 'Returning', 'Buyer',
+        'Rose Cottage Test Ltd', '123 Test Lane', 'Testville', 'Testshire', 'TE5 5ST', 82, 0,
+        0, '07700900123', 0, 0
+    );
+
+    DECLARE @ReturningCustomerId INT = SCOPE_IDENTITY();
+
+    INSERT INTO CustomerPassword (CustomerId, Password, PasswordFormatId, PasswordSalt, CreatedOnUtc)
+    VALUES (@ReturningCustomerId, 'Password123!', 0, NULL, GETUTCDATE());
+
+    INSERT INTO Customer_CustomerRole_Mapping (Customer_Id, CustomerRole_Id)
+    SELECT @ReturningCustomerId, Id FROM CustomerRole WHERE SystemName = 'Registered';
+
+    -- Insert pre-saved address
+    INSERT INTO Address (
+        FirstName, LastName, Email, Company, CountryId, StateProvinceId, City, Address1, ZipPostalCode, PhoneNumber, CreatedOnUtc, County
+    )
+    VALUES (
+        'Returning', 'Buyer', 'e2e-returning-customer@rosecottagecroft.co.uk', 'Rose Cottage Test Ltd', 82, NULL, 'Testville', '123 Test Lane', 'TE5 5ST', '07700900123', GETUTCDATE(), 'Testshire'
+    );
+
+    DECLARE @AddressId INT = SCOPE_IDENTITY();
+
+    INSERT INTO CustomerAddresses (Customer_Id, Address_Id)
+    VALUES (@ReturningCustomerId, @AddressId);
+
+    UPDATE Customer 
+    SET BillingAddress_Id = @AddressId, ShippingAddress_Id = @AddressId 
+    WHERE Id = @ReturningCustomerId;
+
+    PRINT 'Created returning customer with ID: ' + CAST(@ReturningCustomerId AS VARCHAR);
+END
+ELSE
+BEGIN
+    DECLARE @ExistingId INT = (SELECT TOP 1 Id FROM Customer WHERE Email = 'e2e-returning-customer@rosecottagecroft.co.uk');
+    UPDATE Customer SET Active = 1, Deleted = 0, CannotLoginUntilDateUtc = NULL, FailedLoginAttempts = 0 WHERE Id = @ExistingId;
+    DELETE FROM CustomerPassword WHERE CustomerId = @ExistingId;
+    INSERT INTO CustomerPassword (CustomerId, Password, PasswordFormatId, PasswordSalt, CreatedOnUtc)
+    VALUES (@ExistingId, 'Password123!', 0, NULL, GETUTCDATE());
+    PRINT 'Updated existing returning test customer (ID: ' + CAST(@ExistingId AS VARCHAR) + ')';
+END
+
+PRINT '7. Ensuring E2E verification test product exists...';
 IF NOT EXISTS (SELECT 1 FROM Product WHERE Sku = 'TEST-E2E-001')
 BEGIN
     INSERT INTO Product (
@@ -97,7 +174,7 @@ BEGIN
     PRINT 'Verified existing test product (Sku TEST-E2E-001).';
 END
 
-PRINT '4. Status Summary:';
+PRINT '8. Status Summary:';
 SELECT Name, Value FROM Setting WHERE Name IN ('squarepaymentsettings.usesandbox', 'paypalcommercesettings.usesandbox');
 SELECT Id, Name, Enabled FROM ScheduleTask WHERE Id = 1;
 SELECT p.Id, p.Name, p.Sku, p.Price, p.StockQuantity, u.Slug 

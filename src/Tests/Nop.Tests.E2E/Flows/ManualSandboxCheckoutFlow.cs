@@ -7,10 +7,14 @@ namespace Nop.Tests.E2E.Flows;
 
 public class ManualSandboxCheckoutFlow : BaseCheckoutFlow
 {
-    public override string RouteName => "manual-checkout";
+    public CheckoutAuthMode AuthMode { get; }
 
-    public ManualSandboxCheckoutFlow(CheckoutTestSettings? settings = null) : base(settings)
+    public override string RouteName => $"manual-checkout-{AuthMode.ToString().ToLowerInvariant()}";
+
+    public ManualSandboxCheckoutFlow(CheckoutTestSettings? settings = null, CheckoutAuthMode authMode = CheckoutAuthMode.Guest) 
+        : base(settings)
     {
+        AuthMode = authMode;
     }
 
     public override async Task<CheckoutResult> RunAsync(IPage page, CancellationToken cancellationToken = default)
@@ -25,8 +29,8 @@ public class ManualSandboxCheckoutFlow : BaseCheckoutFlow
             // 2. Go to cart and accept terms
             await ProceedToCartAndAcceptTermsAsync(page);
 
-            // 3. Handle guest checkout if prompted
-            await HandleGuestCheckoutIfPromptedAsync(page);
+            // 3. Handle auth step (Guest, Returning Customer, or New Registration)
+            await HandleAuthenticationStepAsync(page, AuthMode);
 
             // 4. Fill Billing & Shipping addresses
             await FillBillingAddressIfRequiredAsync(page);
@@ -112,31 +116,5 @@ public class ManualSandboxCheckoutFlow : BaseCheckoutFlow
         {
             // Payment info step might have been skipped automatically
         }
-    }
-
-    private async Task ConfirmOrderAsync(IPage page)
-    {
-        if (!page.Url.Contains("/checkout/confirm", StringComparison.OrdinalIgnoreCase))
-            return;
-
-        await DismissCookieNotificationAsync(page);
-
-        // On Confirm step, check #termsofservice if present
-        var termsCheckbox = page.Locator("#termsofservice");
-        if (await termsCheckbox.CountAsync() > 0)
-        {
-            try
-            {
-                await termsCheckbox.CheckAsync(new() { Force = true });
-            }
-            catch
-            {
-                await page.EvaluateAsync("const cb = document.getElementById('termsofservice'); if (cb) cb.checked = true;");
-            }
-        }
-
-        var confirmButton = page.Locator(".confirm-order-btn-modern, .order-confirm-page button[name='nextstep'], #confirm-order-buttons-container .confirm-order-next-step-button, button[onclick*='ConfirmOrder.save'], button:has-text('Confirm')").First;
-        await confirmButton.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 15000 });
-        await confirmButton.ClickAsync();
     }
 }
