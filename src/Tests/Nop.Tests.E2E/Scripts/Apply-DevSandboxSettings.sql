@@ -25,6 +25,12 @@ UPDATE Setting
 SET Value = ''
 WHERE Name = 'paypalcommercesettings.merchantid';
 
+-- Ensure PayPal Commerce WebhookUrl points to local dev store (never live production site)
+-- so the plugin remains connected and active without leaking sandbox events to production
+UPDATE Setting
+SET Value = 'https://localhost:58552/plugins/paypalcommerce/webhook'
+WHERE Name = 'paypalcommercesettings.webhookurl';
+
 -- Ensure CheckMoneyOrder is enabled for manual offline checkout testing
 IF NOT EXISTS (SELECT 1 FROM Setting WHERE Name = 'paymentsettings.activepaymentmethodsystemnames' AND Value LIKE '%Payments.CheckMoneyOrder%')
 BEGIN
