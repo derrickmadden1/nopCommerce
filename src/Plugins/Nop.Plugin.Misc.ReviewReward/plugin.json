@@ -2,7 +2,7 @@
   "Group": "Misc",
   "FriendlyName": "Review Reward Discounts",
   "SystemName": "Misc.ReviewReward",
-  "Version": "1.00",
+  "Version": "1.01",
   "SupportedVersions": [ "5.00" ],
   "Author": "Derrick Madden",
   "DisplayOrder": 1,

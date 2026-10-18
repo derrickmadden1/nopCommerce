@@ -8,6 +8,11 @@ namespace Nop.Plugin.Misc.ReviewReward.Services
     public interface IReviewRewardMessageService
     {
         /// <summary>
+        /// Ensures the ReviewReward.CouponEarned message template exists in the database.
+        /// </summary>
+        Task EnsureMessageTemplateExistsAsync(bool overwriteExisting = false);
+
+        /// <summary>
         /// Sends the ReviewReward.CouponEarned email to the customer with their earned discount coupon.
         /// </summary>
         Task SendReviewRewardCouponEmailAsync(Customer customer, Product product, Discount discount, int languageId = 0, int storeId = 0);

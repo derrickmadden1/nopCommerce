@@ -36,6 +36,7 @@ namespace Nop.Plugin.Misc.ReviewReward.Controllers
         private readonly ICustomerService _customerService;
         private readonly IDiscountService _discountService;
         private readonly IReviewRewardService _reviewRewardService;
+        private readonly IReviewRewardMessageService _reviewRewardMessageService;
         private readonly INotificationService _notificationService;
 
         public ReviewRewardAdminController(
@@ -48,6 +49,7 @@ namespace Nop.Plugin.Misc.ReviewReward.Controllers
             ICustomerService customerService,
             IDiscountService discountService,
             IReviewRewardService reviewRewardService,
+            IReviewRewardMessageService reviewRewardMessageService,
             INotificationService notificationService)
         {
             _settingService = settingService;
@@ -59,12 +61,15 @@ namespace Nop.Plugin.Misc.ReviewReward.Controllers
             _customerService = customerService;
             _discountService = discountService;
             _reviewRewardService = reviewRewardService;
+            _reviewRewardMessageService = reviewRewardMessageService;
             _notificationService = notificationService;
         }
 
         [HttpGet]
         public async Task<IActionResult> Configure()
         {
+            await _reviewRewardMessageService.EnsureMessageTemplateExistsAsync();
+
             var settings = await _settingService.LoadSettingAsync<ReviewRewardSettings>();
 
             var model = new ReviewRewardConfigureModel
