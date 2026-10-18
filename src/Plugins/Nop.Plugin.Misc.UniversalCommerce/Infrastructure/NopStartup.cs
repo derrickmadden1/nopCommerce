@@ -39,27 +39,7 @@ namespace Nop.Plugin.Misc.UniversalCommerce.Infrastructure
             // 4. Set up rate-limiting rules using your custom UcpSettings records dynamically per request
             services.AddRateLimiter(options =>
             {
-                options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-                options.OnRejected = async (context, token) =>
-                {
-                    context.HttpContext.Response.ContentType = "application/json";
-                    await context.HttpContext.Response.WriteAsync(
-                        "{\"error\": \"Too many requests. Agent traffic threshold exceeded.\"}",
-                        cancellationToken: token);
-                };
-
-                options.AddPolicy("UcpAgentPolicy", context =>
-                {
-                    // Resolve settings dynamically at runtime per request to avoid null DI contexts at startup
-                    var ucpSettings = context.RequestServices.GetRequiredService<UcpSettings>();
-                    return RateLimitPartition.GetFixedWindowLimiter("UcpAgentPolicy", partition => new FixedWindowRateLimiterOptions
-                    {
-                        PermitLimit = ucpSettings.PermitLimit > 0 ? ucpSettings.PermitLimit : 100,
-                        Window = TimeSpan.FromSeconds(ucpSettings.WindowInSeconds > 0 ? ucpSettings.WindowInSeconds : 60),
-                        QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-                        QueueLimit = ucpSettings.QueueLimit >= 0 ? ucpSettings.QueueLimit : 0
-                    });
-                });
+                options.AddPolicy("UcpAgentPolicy", new UcpAgentRateLimiterPolicy());
             });
         }
 
