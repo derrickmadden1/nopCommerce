@@ -65,7 +65,7 @@ namespace Nop.Plugin.Misc.ReviewReward.Services
             if (string.IsNullOrWhiteSpace(code))
                 return null;
 
-            var trimmedCode = code.Trim();
+            var trimmedCode = code.Trim().ToUpperInvariant();
             var match = await _marketCodeRepository.Table
                 .FirstOrDefaultAsync(c => c.Code == trimmedCode && c.IsActive);
 
@@ -78,6 +78,10 @@ namespace Nop.Plugin.Misc.ReviewReward.Services
         public async Task<ReviewRewardCoupon> GrantRewardAsync(Customer customer, ProductReview review,
             MarketPurchaseCode? marketCodeUsed = null)
         {
+            var existingReward = await _rewardRepository.Table.FirstOrDefaultAsync(r => r.ProductReviewId == review.Id);
+            if (existingReward != null)
+                return existingReward;
+
             var settings = await _settingService.LoadSettingAsync<ReviewRewardSettings>();
 
             var now = DateTime.UtcNow;
@@ -105,7 +109,8 @@ namespace Nop.Plugin.Misc.ReviewReward.Services
             var requirement = new DiscountRequirement
             {
                 DiscountId = discount.Id,
-                DiscountRequirementRuleSystemName = "Misc.ReviewReward"
+                DiscountRequirementRuleSystemName = "Misc.ReviewReward",
+                InteractionType = RequirementGroupInteractionType.And
             };
             await _discountService.InsertDiscountRequirementAsync(requirement);
 

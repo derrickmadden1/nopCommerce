@@ -7,11 +7,13 @@ using Nop.Core.Domain.Cms;
 using Nop.Core.Domain.Messages;
 using Nop.Data.Migrations;
 using Nop.Plugin.Misc.ReviewReward.Components;
+using Nop.Plugin.Misc.ReviewReward.Discounts;
 using Nop.Plugin.Misc.ReviewReward.Domain;
 using Nop.Plugin.Misc.ReviewReward.Services;
 using Nop.Services.Cms;
 using Nop.Services.Common;
 using Nop.Services.Configuration;
+using Nop.Services.Discounts;
 using Nop.Services.Helpers;
 using Nop.Services.Localization;
 using Nop.Services.Messages;
@@ -20,13 +22,14 @@ using Nop.Web.Framework.Infrastructure;
 
 namespace Nop.Plugin.Misc.ReviewReward
 {
-    public class ReviewRewardPlugin : BasePlugin, IMiscPlugin, IWidgetPlugin
+    public class ReviewRewardPlugin : BasePlugin, IMiscPlugin, IWidgetPlugin, IDiscountRequirementRule
     {
         private readonly IMigrationManager _migrationManager;
         private readonly ILocalizationService _localizationService;
         private readonly ISettingService _settingService;
         private readonly IMessageTemplateService _messageTemplateService;
         private readonly IReviewRewardMessageService _reviewRewardMessageService;
+        private readonly ReviewRewardRequirementRule _requirementRule;
         private readonly IWebHelper _webHelper;
         private readonly WidgetSettings _widgetSettings;
 
@@ -36,6 +39,7 @@ namespace Nop.Plugin.Misc.ReviewReward
             ISettingService settingService,
             IMessageTemplateService messageTemplateService,
             IReviewRewardMessageService reviewRewardMessageService,
+            ReviewRewardRequirementRule requirementRule,
             IWebHelper webHelper,
             WidgetSettings widgetSettings)
         {
@@ -44,8 +48,19 @@ namespace Nop.Plugin.Misc.ReviewReward
             _settingService = settingService;
             _messageTemplateService = messageTemplateService;
             _reviewRewardMessageService = reviewRewardMessageService;
+            _requirementRule = requirementRule;
             _webHelper = webHelper;
             _widgetSettings = widgetSettings;
+        }
+
+        public Task<DiscountRequirementValidationResult> CheckRequirementAsync(DiscountRequirementValidationRequest request)
+        {
+            return _requirementRule.CheckRequirementAsync(request);
+        }
+
+        public string GetConfigurationUrl(int discountId, int? discountRequirementId)
+        {
+            return _requirementRule.GetConfigurationUrl(discountId, discountRequirementId);
         }
 
         public Task<IList<string>> GetWidgetZonesAsync()

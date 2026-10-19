@@ -72,11 +72,16 @@ Write-Host "`n[2/4] Checking store connectivity at $TargetUrl..." -ForegroundCol
 function Test-StoreEndpoint {
     param ([string]$url)
     try {
-        $response = Invoke-WebRequest -Uri $url -SkipCertificateCheck -TimeoutSec 3 -ErrorAction SilentlyContinue
+        if ($PSVersionTable.PSVersion.Major -ge 6) {
+            $response = Invoke-WebRequest -Uri $url -SkipCertificateCheck -TimeoutSec 3 -ErrorAction SilentlyContinue
+        } else {
+            [System.Net.ServicePointManager]::ServerCertificateValidationCallback = { $true }
+            $response = Invoke-WebRequest -Uri $url -UseBasicParsing -TimeoutSec 3 -ErrorAction SilentlyContinue
+        }
         return ($response.StatusCode -ge 200 -and $response.StatusCode -lt 400)
     }
     catch {
-        if ($_.Exception.Response -and $_.Exception.Response.StatusCode -lt 500) {
+        if ($_.Exception.Response -and [int]$_.Exception.Response.StatusCode -lt 500) {
             return $true
         }
         return $false
@@ -125,7 +130,7 @@ else {
 
     if (-not $ready) {
         if ($serverProcess -and -not $serverProcess.HasExited) {
-            $serverProcess.Kill($true)
+            Stop-Process -Id $serverProcess.Id -Force -ErrorAction SilentlyContinue
         }
         throw "Timed out waiting for store to become healthy at $TargetUrl."
     }
@@ -172,7 +177,7 @@ Write-Host "`n[4/4] Completing test run and cleaning up..." -ForegroundColor Yel
 if ($startedByScript -and $serverProcess -and -not $serverProcess.HasExited) {
     Write-Host "Stopping background Kestrel process (PID $($serverProcess.Id))..." -ForegroundColor Gray
     try {
-        $serverProcess.Kill($true)
+        Stop-Process -Id $serverProcess.Id -Force -ErrorAction SilentlyContinue
         $serverProcess.WaitForExit(5000)
     }
     catch {
