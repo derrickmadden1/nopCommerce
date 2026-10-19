@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Nop.Core.Infrastructure;
+using Nop.Plugin.Misc.ReviewReward.Discounts;
 using Nop.Plugin.Misc.ReviewReward.Services;
 
 namespace Nop.Plugin.Misc.ReviewReward
@@ -12,6 +13,7 @@ namespace Nop.Plugin.Misc.ReviewReward
         {
             services.AddScoped<IReviewRewardService, ReviewRewardService>();
             services.AddScoped<IReviewRewardMessageService, ReviewRewardMessageService>();
+            services.AddScoped<ReviewRewardRequirementRule>();
         }
 
         public void Configure(IApplicationBuilder application)

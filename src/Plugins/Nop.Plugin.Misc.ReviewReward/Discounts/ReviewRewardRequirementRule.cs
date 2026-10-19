@@ -15,7 +15,7 @@ namespace Nop.Plugin.Misc.ReviewReward.Discounts
     /// Ordinary (non-review-reward) promo codes are untouched, so they can still
     /// stack alongside a single review-reward code per requirement.
     /// </summary>
-    public class ReviewRewardRequirementRule : BasePlugin, IDiscountRequirementRule
+    public class ReviewRewardRequirementRule
     {
         private readonly IRepository<ReviewRewardCoupon> _rewardRepository;
         private readonly IRepository<Discount> _discountRepository;
@@ -54,18 +54,21 @@ namespace Nop.Plugin.Misc.ReviewReward.Discounts
             if (appliedCouponCodes == null || appliedCouponCodes.Length == 0)
                 return new DiscountRequirementValidationResult { IsValid = true };
 
-            // Find all discounts associated with applied coupon codes
+            // Find all active (non-expired) discounts associated with applied coupon codes
             var currentDiscountId = requirement.DiscountId;
+            var now = DateTime.UtcNow;
             var otherAppliedDiscountIds = _discountRepository.Table
-                .Where(d => appliedCouponCodes.Contains(d.CouponCode) && d.Id != currentDiscountId)
+                .Where(d => appliedCouponCodes.Contains(d.CouponCode)
+                    && d.Id != currentDiscountId
+                    && (!d.EndDateUtc.HasValue || d.EndDateUtc.Value > now))
                 .Select(d => d.Id)
                 .ToList();
 
             if (otherAppliedDiscountIds.Count == 0)
                 return new DiscountRequirementValidationResult { IsValid = true };
 
-            // Check if any of those other applied discounts is ALSO a review reward coupon
-            var hasOtherReviewReward = _rewardRepository.Table.Any(r => otherAppliedDiscountIds.Contains(r.DiscountId));
+            // Check if any of those other applied discounts is ALSO an unredeemed review reward coupon
+            var hasOtherReviewReward = _rewardRepository.Table.Any(r => otherAppliedDiscountIds.Contains(r.DiscountId) && !r.RedeemedOnUtc.HasValue);
             if (hasOtherReviewReward)
             {
                 return new DiscountRequirementValidationResult

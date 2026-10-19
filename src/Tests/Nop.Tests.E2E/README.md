@@ -25,6 +25,14 @@ Unlike the Azure Checkout Monitor (which halts before payment to avoid live char
 3. **Manual / Offline Payment Flow** (`ManualCheckoutTests.cs`)
    - Tests standard store checkout pipeline with zero external gateway dependencies for quick sanity checking.
 
+4. **Review Reward Plugin End-to-End Flow** (`ReviewRewardTests.cs`)
+   - **Guest Review Prompt**: Verifies unauthenticated visitors see the login/register reward call-to-action on product pages.
+   - **Admin Configuration & Market Codes**: Tests updating reward settings (`RewardAmount`, `UsePercentage`, `CouponPrefix`, `ExpiryDays`) and creating/toggling Market Stall Purchase Codes (`#market-codes-grid`).
+   - **Verified Online Purchase Flow**: Verifies the "Verified Online Purchase" badge, submits a product review, confirms automatic `RVW-` coupon generation, and applies the coupon in `/cart`.
+   - **Market Stall Purchase Code Flow**: Tests submitting a product review as a non-online buyer with both invalid and valid (`E2E-MARKET-STALL`) market codes.
+   - **Single-Reward-Per-Order Stacking Rule**: Verifies `ReviewRewardRequirementRule` blocks applying a second `RVW-` coupon to the same shopping cart order.
+   - **Manual Market Stall Redemption**: Tests marking a coupon as redeemed in Admin (`Mark Redeemed (Market)`) and confirms the deactivated coupon can no longer be applied online.
+
 ---
 
 ## Configuration & Sandbox Secrets

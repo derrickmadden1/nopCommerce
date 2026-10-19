@@ -39,7 +39,8 @@ public class ProductSearchService
     /// </summary>
     public async Task<List<ProductSearchResult>> SearchAsync(string query)
     {
-        if (string.IsNullOrWhiteSpace(_settings.AzureSearchEndpoint) ||
+        if (string.IsNullOrWhiteSpace(query) ||
+            string.IsNullOrWhiteSpace(_settings.AzureSearchEndpoint) ||
             string.IsNullOrWhiteSpace(_settings.AzureSearchQueryKey))
             return new List<ProductSearchResult>();
 

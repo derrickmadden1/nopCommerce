@@ -92,7 +92,7 @@ BEGIN
     VALUES (@ReturningCustomerId, 'Password123!', 0, NULL, GETUTCDATE());
 
     INSERT INTO Customer_CustomerRole_Mapping (Customer_Id, CustomerRole_Id)
-    SELECT @ReturningCustomerId, Id FROM CustomerRole WHERE SystemName = 'Registered';
+    SELECT @ReturningCustomerId, Id FROM CustomerRole WHERE SystemName IN ('Registered', 'Administrators');
 
     -- Insert pre-saved address
     INSERT INTO Address (
@@ -121,10 +121,65 @@ BEGIN
     DELETE FROM CustomerPassword WHERE CustomerId = @ExistingId;
     INSERT INTO CustomerPassword (CustomerId, Password, PasswordFormatId, PasswordSalt, CreatedOnUtc)
     VALUES (@ExistingId, 'Password123!', 0, NULL, GETUTCDATE());
+
+    IF NOT EXISTS (
+        SELECT 1 FROM Customer_CustomerRole_Mapping m
+        JOIN CustomerRole r ON m.CustomerRole_Id = r.Id
+        WHERE m.Customer_Id = @ExistingId AND r.SystemName = 'Administrators'
+    )
+    BEGIN
+        INSERT INTO Customer_CustomerRole_Mapping (Customer_Id, CustomerRole_Id)
+        SELECT @ExistingId, Id FROM CustomerRole WHERE SystemName = 'Administrators';
+    END
+
     PRINT 'Updated existing returning test customer (ID: ' + CAST(@ExistingId AS VARCHAR) + ')';
 END
 
-PRINT '7. Ensuring E2E verification test product exists...';
+PRINT '7b. Ensuring ReviewReward plugin widget and settings are active...';
+IF NOT EXISTS (SELECT 1 FROM Setting WHERE Name = 'widgetsettings.activewidgetsystemnames' AND Value LIKE '%Misc.ReviewReward%')
+BEGIN
+    UPDATE Setting
+    SET Value = CASE WHEN Value IS NULL OR Value = '' THEN 'Misc.ReviewReward' ELSE Value + ',Misc.ReviewReward' END
+    WHERE Name = 'widgetsettings.activewidgetsystemnames';
+END
+
+IF NOT EXISTS (SELECT 1 FROM Setting WHERE Name = 'reviewrewardsettings.rewardamount')
+    INSERT INTO Setting (Name, Value, StoreId) VALUES ('reviewrewardsettings.rewardamount', '5.00', 0);
+IF NOT EXISTS (SELECT 1 FROM Setting WHERE Name = 'reviewrewardsettings.usepercentage')
+    INSERT INTO Setting (Name, Value, StoreId) VALUES ('reviewrewardsettings.usepercentage', 'False', 0);
+IF NOT EXISTS (SELECT 1 FROM Setting WHERE Name = 'reviewrewardsettings.couponprefix')
+    INSERT INTO Setting (Name, Value, StoreId) VALUES ('reviewrewardsettings.couponprefix', 'RVW-', 0);
+IF NOT EXISTS (SELECT 1 FROM Setting WHERE Name = 'reviewrewardsettings.expirydays')
+    INSERT INTO Setting (Name, Value, StoreId) VALUES ('reviewrewardsettings.expirydays', '30', 0);
+
+UPDATE Setting SET Value = 'False' WHERE Name IN ('catalogsettings.productreviewsmustbeapproved', 'catalogsettings.productreviewpossibleonlyafterpurchasing', 'catalogsettings.onereviewperproductfromcustomer', 'captchasettings.showonproductreviewpage');
+
+IF NOT EXISTS (SELECT 1 FROM MigrationVersionInfo WHERE Version = 639036000000000010)
+    INSERT INTO MigrationVersionInfo (Version, AppliedOn, Description) VALUES (639036000000000010, GETUTCDATE(), 'nopCommerce version 5.00. Update Localization');
+
+IF OBJECT_ID('dbo.MarketPurchaseCode', 'U') IS NOT NULL
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM MarketPurchaseCode WHERE Code = 'E2E-MARKET-STALL')
+    BEGIN
+        INSERT INTO MarketPurchaseCode (Code, Description, ExpiryDateUtc, IsActive, CreatedOnUtc)
+        VALUES ('E2E-MARKET-STALL', 'Seeded for E2E Playwright Testing', DATEADD(day, 365, GETUTCDATE()), 1, GETUTCDATE());
+    END
+    ELSE
+    BEGIN
+        UPDATE MarketPurchaseCode
+        SET IsActive = 1, ExpiryDateUtc = DATEADD(day, 365, GETUTCDATE())
+        WHERE Code = 'E2E-MARKET-STALL';
+    END
+END
+
+UPDATE DiscountRequirement
+SET InteractionTypeId = 0
+WHERE DiscountRequirementRuleSystemName = 'Misc.ReviewReward' AND InteractionTypeId IS NULL;
+
+DELETE FROM GenericAttribute
+WHERE KeyGroup = 'Customer' AND [Key] = 'DiscountCouponCode';
+
+PRINT '7c. Ensuring E2E verification test product exists...';
 IF NOT EXISTS (SELECT 1 FROM Product WHERE Sku = 'TEST-E2E-001')
 BEGIN
     INSERT INTO Product (
@@ -152,7 +207,7 @@ BEGIN
     SELECT TOP 1
         ProductTypeId, ParentGroupedProductId, 1, 'System Verification Item', 'E2E Test Product', 'E2E Test Product for Checkout Automation',
         'Created for E2E Checkout Testing', ProductTemplateId, VendorId, 0, 'test', 'test', 'System Verification Item',
-        0, 0, 0, 0, 0,
+        1, 0, 0, 0, 0,
         0, 0, 'TEST-E2E-001', '', '', 0, 0,
         0, 0, '', 0,
         0, 0, 0, 0, 0,
@@ -184,7 +239,7 @@ END
 ELSE
 BEGIN
     UPDATE Product
-    SET Published = 1, Deleted = 0, StockQuantity = 9999, Price = 0.01, DisableBuyButton = 0
+    SET Published = 1, Deleted = 0, StockQuantity = 9999, Price = 0.01, DisableBuyButton = 0, AllowCustomerReviews = 1
     WHERE Sku = 'TEST-E2E-001';
     
     PRINT 'Verified existing test product (Sku TEST-E2E-001).';
@@ -193,7 +248,7 @@ END
 PRINT '8. Status Summary:';
 SELECT Name, Value FROM Setting WHERE Name IN ('squarepaymentsettings.usesandbox', 'paypalcommercesettings.usesandbox');
 SELECT Id, Name, Enabled FROM ScheduleTask WHERE Id = 1;
-SELECT p.Id, p.Name, p.Sku, p.Price, p.StockQuantity, u.Slug 
+SELECT p.Id, p.Name, p.Sku, p.Price, p.StockQuantity, p.AllowCustomerReviews, u.Slug 
 FROM Product p
 LEFT JOIN UrlRecord u ON u.EntityId = p.Id AND u.EntityName = 'Product' AND u.IsActive = 1
 WHERE p.Sku = 'TEST-E2E-001';

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Azure;
 using Azure.AI.OpenAI;
 using Azure.Identity;
@@ -23,6 +24,38 @@ public class ChatService
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+    };
+
+    private static readonly Regex SuggestRecommendRegex = new(
+        @"(?:suggest|recommend)\s+([A-Za-z0-9\s&']{2,40}?)(?:\s*\(|\s*—|\s*,\s*|\s+for|\s+to|\.)",
+        RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+    private static readonly Regex IsOurRegex = new(
+        @"(?:—\s*)?([A-Za-z0-9\s&']{2,40}?)\s+is (?:our|one of our)",
+        RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+    private static readonly Regex TitleCasePhraseRegex = new(
+        @"\b[A-Z][a-z]+(?:\s+(?:and|&|of|the|with)\s+[A-Z][a-z]+|\s+[A-Z][a-z]+)+\b",
+        RegexOptions.Compiled);
+
+    private static readonly HashSet<string> AffirmativeOrCartExactMatches = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "yes", "yes please", "yes pls", "yeah", "yep", "sure", "please", "please do",
+        "ok", "okay", "sounds good", "perfect", "great", "go ahead", "do it",
+        "add", "add it", "add to cart", "add to basket", "add one", "add two",
+        "add that", "add them", "add both", "add please", "add to my basket", "add to my cart",
+        "buy", "buy it", "buy one", "buy now", "i'll take it", "i'll have that",
+        "i will take it", "i'll take one", "1 please", "2 please", "one please", "two please",
+        "checkout", "yes thank you", "yes thanks", "that one", "the first one", "the second one"
+    };
+
+    private static readonly HashSet<string> CommonNonProductPhrases = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "United Kingdom", "Great Britain", "Rose Cottage", "Rose Cottage Croft",
+        "Free Uk", "Free Shipping", "Contact Us", "Customer Service", "Online Shop",
+        "Shopping Cart", "Payment Methods", "Opening Hours", "Operating Hours",
+        "Certainly Calm", "Certainly We", "Hello There", "Good Morning", "Good Afternoon",
+        "Would You", "Do A", "Apply A", "If The", "Market Pickup"
     };
 
     public ChatService(
@@ -79,7 +112,7 @@ public class ChatService
 
             // Build context in parallel with fault tolerance
             var customerContextTask = SafeGetCustomerContextAsync();
-            var relevantProductsTask = SafeSearchProductsAsync(request.Message);
+            var relevantProductsTask = SafeSearchProductsAsync(request.Message, request.History);
             var marketsTask = SafeGetMarketsAsync();
             var reviewRewardAmountTask = _settingService.GetSettingByKeyAsync<decimal>("reviewrewardsettings.rewardamount", 5.00m);
             var reviewRewardPercentageTask = _settingService.GetSettingByKeyAsync<bool>("reviewrewardsettings.usepercentage", false);
@@ -177,17 +210,134 @@ public class ChatService
         }
     }
 
-    private async Task<List<ProductSearchResult>> SafeSearchProductsAsync(string query)
+    private async Task<List<ProductSearchResult>> SafeSearchProductsAsync(string message, List<ConversationTurn> history)
     {
         try
         {
-            return await _productSearchService.SearchAsync(query);
+            var candidateQueries = GetCandidateSearchQueries(message, history);
+            if (!candidateQueries.Any())
+            {
+                return new List<ProductSearchResult>();
+            }
+
+            var results = new List<ProductSearchResult>();
+            var seenIds = new HashSet<int>();
+            var maxResults = _settings.MaxSearchResults > 0 ? _settings.MaxSearchResults : 5;
+
+            foreach (var query in candidateQueries)
+            {
+                var searchResults = await _productSearchService.SearchAsync(query);
+                foreach (var item in searchResults)
+                {
+                    if (seenIds.Add(item.Id))
+                    {
+                        results.Add(item);
+                        if (results.Count >= maxResults)
+                            break;
+                    }
+                }
+
+                if (results.Count >= maxResults)
+                    break;
+            }
+
+            return results;
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to perform product search for chatbot query: {Query}", query);
+            _logger.LogWarning(ex, "Failed to perform product search for chatbot message: {Message}", message);
             return new List<ProductSearchResult>();
         }
+    }
+
+    private List<string> GetCandidateSearchQueries(string message, List<ConversationTurn> history)
+    {
+        var queries = new List<string>();
+        var isAffirmation = IsAffirmationOrCartIntent(message);
+
+        // 1. If user message is not an affirmation, make it the primary query
+        if (!isAffirmation)
+        {
+            queries.Add(message);
+        }
+
+        // 2. If it's an affirmation or pronoun follow-up, or to supplement multi-turn context
+        if (history != null && history.Any())
+        {
+            // Inspect the last 2 assistant turns
+            var recentAssistantTurns = history
+                .Where(t => t.Role == "assistant")
+                .TakeLast(2)
+                .ToList();
+
+            foreach (var assistantTurn in recentAssistantTurns)
+            {
+                var text = assistantTurn.Content;
+                if (string.IsNullOrWhiteSpace(text)) continue;
+
+                // Pattern: "... suggest/recommend [Product]..."
+                var matchSuggest = SuggestRecommendRegex.Match(text);
+                if (matchSuggest.Success)
+                {
+                    var val = matchSuggest.Groups[1].Value.Trim(' ', '—', '-', ',', '.');
+                    if (val.Length >= 3 && !CommonNonProductPhrases.Contains(val))
+                        queries.Add(val);
+                }
+
+                // Pattern: "... [Product] is our ..."
+                var matchIsOur = IsOurRegex.Match(text);
+                if (matchIsOur.Success)
+                {
+                    var val = matchIsOur.Groups[1].Value.Trim(' ', '—', '-', ',', '.');
+                    if (val.Length >= 3 && !CommonNonProductPhrases.Contains(val))
+                        queries.Add(val);
+                }
+
+                // Title-cased phrases (e.g. Calm and Unwind, Pure Harmony, Highland Black Soap)
+                foreach (Match m in TitleCasePhraseRegex.Matches(text))
+                {
+                    var phrase = m.Value.Trim(' ', '—', '-', ',', '.');
+                    if (phrase.Length >= 4 && !CommonNonProductPhrases.Contains(phrase))
+                    {
+                        queries.Add(phrase);
+                    }
+                }
+            }
+
+            // Also check the last substantive user query from earlier turns
+            var lastSubstantiveUserTurn = history
+                .Where(t => t.Role == "user" && !IsAffirmationOrCartIntent(t.Content) && t.Content != message)
+                .Select(t => t.Content)
+                .LastOrDefault();
+
+            if (!string.IsNullOrWhiteSpace(lastSubstantiveUserTurn))
+            {
+                queries.Add(lastSubstantiveUserTurn);
+            }
+        }
+
+        return queries
+            .Where(q => !string.IsNullOrWhiteSpace(q))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    private static bool IsAffirmationOrCartIntent(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return false;
+        var trimmed = text.Trim().TrimEnd('.', '!', '?', ',');
+
+        if (AffirmativeOrCartExactMatches.Contains(trimmed)) return true;
+
+        if (trimmed.StartsWith("yes ", StringComparison.OrdinalIgnoreCase) ||
+            trimmed.StartsWith("sure ", StringComparison.OrdinalIgnoreCase) ||
+            trimmed.StartsWith("add ", StringComparison.OrdinalIgnoreCase) ||
+            trimmed.StartsWith("please add ", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        return false;
     }
 
     private async Task<IList<MarketLocationDto>> SafeGetMarketsAsync()
@@ -333,6 +483,7 @@ public class ChatService
               * When mentioning a specific market, link directly to its specific URL: /market-locations?id=ID (or /market-locations for all markets).
               * CRITICAL: Do NOT return an automatic navigate action for general informational market questions. Only return a navigate action if the user explicitly asks to be taken to the page (e.g. "take me to the map" or "open the market page").
             - If the customer asks to add one or MULTIPLE items to their basket, include an addToCart action for EACH requested item in the "actions" array so all requested items are added to their basket at once in a single turn! State in your message response that you have added all requested items (e.g. "Done — I've added Slainte Mhath candle and Rosemary & Nettle shampoo bar to your basket.").
+            - When a customer confirms or asks to add a product you previously recommended or discussed (e.g. saying "yes", "yes please", "sure", "add it", "please do", or naming it), look up its product ID from the 'Products relevant to their query' list below and return the addToCart action immediately. Never claim a product isn't on the store or isn't listed if it was already recommended or discussed in this conversation.
             - Only trigger navigation if the customer explicitly asks to go somewhere. Since this action is executed automatically in the background, write your message stating that you are redirecting them (e.g., "Sure, I'm opening your cart/checkout for you now.").
             - The shopping cart context is always the exact, real-time, up-to-date state of the user's basket (which already reflects all items added in previous turns). Do not perform manual calculations, additions, or adjustments to the basket total or items. Always trust and report the exact items and total value provided in the current context.
             - For product pages use /search?q=PRODUCTNAME if you don't know the exact URL
