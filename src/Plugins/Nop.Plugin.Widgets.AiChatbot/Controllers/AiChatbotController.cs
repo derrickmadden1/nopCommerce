@@ -60,8 +60,16 @@ public class AiChatbotController : BasePluginController
         var isGuest = currentCustomer == null || await _customerService.IsGuestAsync(currentCustomer);
         var customerId = isGuest ? 0 : currentCustomer!.Id;
 
+        var sessionGuid = request.SessionGuid;
+        if ((!sessionGuid.HasValue || sessionGuid.Value == Guid.Empty) &&
+            Request.Cookies.TryGetValue("ai_chat_session_guid", out var cookieGuidStr) &&
+            Guid.TryParse(cookieGuidStr, out var parsedCookieGuid))
+        {
+            sessionGuid = parsedCookieGuid;
+        }
+
         // Fetch or assign session
-        var session = await _chatSessionService.GetOrCreateSessionAsync(request.SessionGuid, customerId);
+        var session = await _chatSessionService.GetOrCreateSessionAsync(sessionGuid, customerId);
 
         var response = await _chatService.GetResponseAsync(request);
         response.SessionGuid = session.SessionGuid;
@@ -70,6 +78,15 @@ public class AiChatbotController : BasePluginController
         {
             await _chatSessionService.SaveTurnAsync(session.SessionGuid, customerId, request.Message, response.Response);
         }
+
+        // Set or refresh session cookie for cross-tab and cross-page synchronization
+        Response.Cookies.Append("ai_chat_session_guid", session.SessionGuid.ToString(), new Microsoft.AspNetCore.Http.CookieOptions
+        {
+            Path = "/",
+            Expires = DateTimeOffset.UtcNow.AddDays(1),
+            SameSite = Microsoft.AspNetCore.Http.SameSiteMode.Lax,
+            IsEssential = true
+        });
 
         return Json(response);
     }

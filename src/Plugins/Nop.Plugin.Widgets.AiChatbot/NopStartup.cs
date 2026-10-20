@@ -14,6 +14,7 @@ public class NopStartup : INopStartup
         services.AddScoped<ProductSearchService>();
         services.AddScoped<ChatService>();
         services.AddScoped<ChatSessionService>();
+        services.AddScoped<CustomerLoginConsumer>();
     }
 
     public void Configure(IApplicationBuilder app) { }

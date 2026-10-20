@@ -1,8 +1,11 @@
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Nop.Core;
 using Nop.Core.Domain.Orders;
+using Nop.Plugin.Widgets.AiChatbot.Services;
+using Nop.Services.Customers;
 using Nop.Services.Orders;
 using Nop.Web.Framework.Components;
 
@@ -17,17 +20,23 @@ public class ChatWidgetViewComponent : NopViewComponent
     private readonly IShoppingCartService _shoppingCartService;
     private readonly IStoreContext _storeContext;
     private readonly IWorkContext _workContext;
+    private readonly ICustomerService _customerService;
+    private readonly ChatSessionService _chatSessionService;
 
     public ChatWidgetViewComponent(
         AiChatbotSettings settings,
         IShoppingCartService shoppingCartService,
         IStoreContext storeContext,
-        IWorkContext workContext)
+        IWorkContext workContext,
+        ICustomerService customerService,
+        ChatSessionService chatSessionService)
     {
         _settings = settings;
         _shoppingCartService = shoppingCartService;
         _storeContext = storeContext;
         _workContext = workContext;
+        _customerService = customerService;
+        _chatSessionService = chatSessionService;
     }
 
     public async Task<IViewComponentResult> InvokeAsync(string widgetZone, object? additionalData = null)
@@ -44,6 +53,20 @@ public class ChatWidgetViewComponent : NopViewComponent
         var cart = await _shoppingCartService.GetShoppingCartAsync(customer, ShoppingCartType.ShoppingCart, store.Id);
 
         ViewBag.HasCartItems = cart.Any();
+
+        var isGuest = customer == null || await _customerService.IsGuestAsync(customer);
+        var customerId = isGuest ? 0 : customer!.Id;
+        ViewBag.CustomerId = customerId;
+
+        if (customerId > 0)
+        {
+            var recentSession = await _chatSessionService.GetRecentCustomerSessionAsync(customerId, 24);
+            if (recentSession != null)
+            {
+                ViewBag.ActiveSessionGuid = recentSession.SessionGuid.ToString();
+                ViewBag.ActiveSessionHistory = recentSession.MessagesJson;
+            }
+        }
 
         return View("~/Plugins/Widgets.AiChatbot/Views/ChatWidget.cshtml", _settings);
     }
