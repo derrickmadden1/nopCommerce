@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Nop.Core;
@@ -40,7 +40,17 @@ namespace Nop.Plugin.Misc.CheckoutAbandonmentTracker.Infrastructure
 
             // Ignore traffic from the Checkout Monitor bot
             if (context.HttpContext.Request.Headers.TryGetValue("x-checkout-monitor", out var headerValue) &&
-                headerValue == "RoseCottage123!")
+                string.Equals(headerValue.ToString().Trim(), "RoseCottage123!", System.StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            // Ignore browser prefetch / prerender requests
+            var requestHeaders = context.HttpContext.Request.Headers;
+            if ((requestHeaders.TryGetValue("Sec-Purpose", out var secPurpose) && secPurpose.ToString().IndexOf("prefetch", System.StringComparison.OrdinalIgnoreCase) >= 0) ||
+                (requestHeaders.TryGetValue("Purpose", out var purpose) && purpose.ToString().IndexOf("prefetch", System.StringComparison.OrdinalIgnoreCase) >= 0) ||
+                (requestHeaders.TryGetValue("X-Purpose", out var xPurpose) && xPurpose.ToString().IndexOf("preview", System.StringComparison.OrdinalIgnoreCase) >= 0) ||
+                (requestHeaders.TryGetValue("X-Moz", out var xMoz) && xMoz.ToString().IndexOf("prefetch", System.StringComparison.OrdinalIgnoreCase) >= 0))
             {
                 return;
             }
@@ -56,11 +66,12 @@ namespace Nop.Plugin.Misc.CheckoutAbandonmentTracker.Infrastructure
             var customer = await _workContext.GetCurrentCustomerAsync();
             var store = await _storeContext.GetCurrentStoreAsync();
 
-            // Skip logging entirely for customers with an empty cart hitting the
-            // cart page — otherwise every casual browse of an empty cart page
-            // creates a row.
+            // Skip logging entirely for customers with an empty cart —
+            // a customer cannot check out with an empty cart. Any hit to cart or checkout URLs
+            // with an empty cart is either a casual browse, crawler/bot, or cookieless
+            // prefetch probe redirected to /cart.
             var cart = await _shoppingCartService.GetShoppingCartAsync(customer, ShoppingCartType.ShoppingCart, store.Id);
-            if (step == CheckoutStep.CartViewed && !cart.Any())
+            if (!cart.Any())
                 return;
 
             decimal? cartTotal = null;
@@ -107,6 +118,7 @@ namespace Nop.Plugin.Misc.CheckoutAbandonmentTracker.Infrastructure
                 return (action, httpMethod) switch
                 {
                     ("Index", "GET") => CheckoutStep.CheckoutStarted,
+                    ("OnePageCheckout", "GET") => CheckoutStep.CheckoutStarted,
                     ("BillingAddress", "GET") => CheckoutStep.BillingAddress,
                     ("ShippingAddress", "GET") => CheckoutStep.ShippingAddress,
                     ("PaymentMethod", "GET") => CheckoutStep.PaymentMethod,
