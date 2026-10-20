@@ -7,9 +7,8 @@ using Nop.Core.Domain.Catalog;
 using Nop.Core.Domain.Customers;
 using Nop.Core.Domain.Discounts;
 using Nop.Core.Domain.Messages;
-using Nop.Plugin.Misc.ReviewReward.Domain;
-using Nop.Services.Configuration;
-using Nop.Services.Localization;
+using Nop.Data;
+using Nop.Services.Catalog;
 using Nop.Services.Messages;
 using Nop.Services.Stores;
 
@@ -23,9 +22,8 @@ namespace Nop.Plugin.Misc.ReviewReward.Services
         private readonly IEmailAccountService _emailAccountService;
         private readonly IStoreContext _storeContext;
         private readonly IStoreService _storeService;
-        private readonly ILanguageService _languageService;
-        private readonly ISettingService _settingService;
-        private readonly ILocalizationService _localizationService;
+        private readonly IProductService _productService;
+        private readonly IRepository<DiscountProductMapping> _discountProductMappingRepository;
 
         public const string MessageTemplateName = "ReviewReward.CouponEarned";
 
@@ -39,12 +37,12 @@ namespace Nop.Plugin.Misc.ReviewReward.Services
 <div style=""padding: 20px; background-color: #f8f9fa; border: 2px dashed #28a745; border-radius: 8px; text-align: center; margin: 20px 0;"">
     <div style=""font-size: 13px; text-transform: uppercase; color: #6c757d; letter-spacing: 1px; margin-bottom: 5px;"">Your Coupon Code</div>
     <div style=""font-size: 24px; font-weight: bold; color: #28a745; letter-spacing: 3px; font-family: monospace;"">%ReviewReward.CouponCode%</div>
-    <div style=""font-size: 16px; margin-top: 8px; color: #343a40;"">Discount Value: <strong>%ReviewReward.RewardAmount%</strong></div>
+    <div style=""font-size: 16px; margin-top: 8px; color: #343a40;"">Reward Value: <strong>%ReviewReward.RewardAmount%</strong></div>
 </div>
 
-<h4 style=""color: #343a40; margin-bottom: 10px;"">How to Redeem Your Discount:</h4>
+<h4 style=""color: #343a40; margin-bottom: 10px;"">How to Redeem Your Reward:</h4>
 <ul style=""color: #495057; line-height: 1.6; padding-left: 20px;"">
-    <li><strong>Online:</strong> Enter your coupon code during checkout in the discount code box.</li>
+    <li><strong>Online:</strong> Enter your coupon code during checkout in the discount code box (if offering a free product, it is automatically added to your basket when applied).</li>
     <li><strong>In-Person at Market Stall:</strong> Present this email or coupon code to stall staff at any of our market locations.</li>
 </ul>
 
@@ -65,9 +63,8 @@ namespace Nop.Plugin.Misc.ReviewReward.Services
             IEmailAccountService emailAccountService,
             IStoreContext storeContext,
             IStoreService storeService,
-            ILanguageService languageService,
-            ISettingService settingService,
-            ILocalizationService localizationService)
+            IProductService productService,
+            IRepository<DiscountProductMapping> discountProductMappingRepository)
         {
             _workflowMessageService = workflowMessageService;
             _messageTokenProvider = messageTokenProvider;
@@ -75,9 +72,8 @@ namespace Nop.Plugin.Misc.ReviewReward.Services
             _emailAccountService = emailAccountService;
             _storeContext = storeContext;
             _storeService = storeService;
-            _languageService = languageService;
-            _settingService = settingService;
-            _localizationService = localizationService;
+            _productService = productService;
+            _discountProductMappingRepository = discountProductMappingRepository;
         }
 
         public async Task EnsureMessageTemplateExistsAsync(bool overwriteExisting = false)
@@ -104,10 +100,6 @@ namespace Nop.Plugin.Misc.ReviewReward.Services
                     await _messageTemplateService.UpdateMessageTemplateAsync(template);
                 }
             }
-
-            await _localizationService.AddOrUpdateLocaleResourceAsync(
-                $"Admin.ContentManagement.MessageTemplates.Description.{MessageTemplateName}",
-                "This message template is used to send reward coupons to customers after they submit a verified review.");
         }
 
         public async Task SendReviewRewardCouponEmailAsync(Customer customer, Product product, Discount discount, int languageId = 0, int storeId = 0)
@@ -131,11 +123,22 @@ namespace Nop.Plugin.Misc.ReviewReward.Services
             if (!messageTemplates.Any())
                 return;
 
-            var settings = await _settingService.LoadSettingAsync<ReviewRewardSettings>();
-
-            string rewardAmountText = settings.UsePercentage
-                ? $"{settings.RewardAmount:G29}% off"
-                : $"{discount.DiscountAmount:C2} off";
+            string rewardAmountText;
+            if (discount.DiscountType == DiscountType.AssignedToSkus)
+            {
+                var mapping = await _discountProductMappingRepository.Table
+                    .FirstOrDefaultAsync(m => m.DiscountId == discount.Id);
+                var freeProduct = mapping != null ? await _productService.GetProductByIdAsync(mapping.EntityId) : null;
+                rewardAmountText = freeProduct != null
+                    ? $"Free Product: {freeProduct.Name} (100% off)"
+                    : "Free Product (100% off)";
+            }
+            else
+            {
+                rewardAmountText = discount.UsePercentage
+                    ? $"{discount.DiscountPercentage:G29}% off"
+                    : $"{discount.DiscountAmount:C2} off";
+            }
 
             string expiryDateText = discount.EndDateUtc.HasValue
                 ? discount.EndDateUtc.Value.ToString("dd MMMM yyyy")

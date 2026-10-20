@@ -2,9 +2,9 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Nop.Core;
 using Nop.Core.Domain.Catalog;
-using Nop.Core.Domain.Customers;
 using Nop.Core.Domain.Discounts;
 using Nop.Data;
 using Nop.Plugin.Misc.ReviewReward.Domain;
@@ -65,6 +65,32 @@ namespace Nop.Plugin.Misc.ReviewReward.Controllers
             _notificationService = notificationService;
         }
 
+        private async Task PrepareAvailableProductsAsync(ReviewRewardConfigureModel model)
+        {
+            model.AvailableProducts.Clear();
+            model.AvailableProducts.Add(new SelectListItem
+            {
+                Text = "-- Select Free Product --",
+                Value = "0",
+                Selected = model.FreeProductId == 0
+            });
+
+            var products = await _productService.SearchProductsAsync(
+                productType: ProductType.SimpleProduct,
+                overridePublished: false,
+                pageSize: 500);
+
+            foreach (var p in products.OrderBy(p => p.Name))
+            {
+                model.AvailableProducts.Add(new SelectListItem
+                {
+                    Text = $"{p.Name} ({p.Price:C2})",
+                    Value = p.Id.ToString(),
+                    Selected = p.Id == model.FreeProductId
+                });
+            }
+        }
+
         [HttpGet]
         public async Task<IActionResult> Configure()
         {
@@ -77,8 +103,12 @@ namespace Nop.Plugin.Misc.ReviewReward.Controllers
                 RewardAmount = settings.RewardAmount,
                 UsePercentage = settings.UsePercentage,
                 CouponPrefix = settings.CouponPrefix,
-                ExpiryDays = settings.ExpiryDays
+                ExpiryDays = settings.ExpiryDays,
+                OfferFreeProduct = settings.OfferFreeProduct,
+                FreeProductId = settings.FreeProductId
             };
+
+            await PrepareAvailableProductsAsync(model);
 
             return View("~/Plugins/Misc.ReviewReward/Views/ReviewRewardAdmin/Configure.cshtml", model);
         }
@@ -94,6 +124,8 @@ namespace Nop.Plugin.Misc.ReviewReward.Controllers
             settings.UsePercentage = model.UsePercentage;
             settings.CouponPrefix = model.CouponPrefix ?? "RVW-";
             settings.ExpiryDays = model.ExpiryDays;
+            settings.OfferFreeProduct = model.OfferFreeProduct;
+            settings.FreeProductId = model.FreeProductId;
 
             await _settingService.SaveSettingAsync(settings);
 
@@ -192,9 +224,17 @@ namespace Nop.Plugin.Misc.ReviewReward.Controllers
                     string amountText = string.Empty;
                     if (discount != null)
                     {
-                        amountText = discount.UsePercentage
-                            ? $"{discount.DiscountPercentage:G29}%"
-                            : $"{discount.DiscountAmount:C2}";
+                        var freeProduct = _reviewRewardService.GetFreeProductForDiscountAsync(discount.Id).Result;
+                        if (freeProduct != null)
+                        {
+                            amountText = $"Free Product: {freeProduct.Name}";
+                        }
+                        else
+                        {
+                            amountText = discount.UsePercentage
+                                ? $"{discount.DiscountPercentage:G29}%"
+                                : $"{discount.DiscountAmount:C2}";
+                        }
                     }
 
                     var usageHistoryList = _discountService.GetAllDiscountUsageHistoryAsync(r.DiscountId, null, null, false, 0, 1).Result;

@@ -186,9 +186,46 @@ public class ReviewRewardFlow : BaseCheckoutFlow
         decimal rewardAmount,
         bool usePercentage,
         string couponPrefix,
-        int expiryDays)
+        int expiryDays,
+        bool offerFreeProduct = false,
+        int? freeProductId = null)
     {
         await NavigateToAdminConfigureAsync(page);
+
+        var offerFreeProductCheckbox = page.Locator("#OfferFreeProduct");
+        if (await offerFreeProductCheckbox.CountAsync() > 0)
+        {
+            if (await offerFreeProductCheckbox.IsCheckedAsync() != offerFreeProduct)
+            {
+                if (offerFreeProduct)
+                    await offerFreeProductCheckbox.CheckAsync(new() { Force = true });
+                else
+                    await offerFreeProductCheckbox.UncheckAsync(new() { Force = true });
+            }
+
+            if (offerFreeProduct)
+            {
+                var freeProductSelect = page.Locator("#FreeProductId");
+                if (freeProductId.HasValue)
+                {
+                    await freeProductSelect.SelectOptionAsync(freeProductId.Value.ToString());
+                }
+                else
+                {
+                    var options = freeProductSelect.Locator("option");
+                    var optCount = await options.CountAsync();
+                    for (var i = 0; i < optCount; i++)
+                    {
+                        var val = await options.Nth(i).GetAttributeAsync("value");
+                        if (!string.IsNullOrEmpty(val) && val != "0")
+                        {
+                            await freeProductSelect.SelectOptionAsync(val);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
 
         await page.Locator("#RewardAmount").FillAsync(rewardAmount.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture));
 
