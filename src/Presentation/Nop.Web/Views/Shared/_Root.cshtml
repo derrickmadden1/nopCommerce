@@ -34,11 +34,20 @@
         if (!cartHasItems) return;
 
         var isSubmittingOrder = false;
+        var abandonmentReported = false;
         document.addEventListener('submit', function () { isSubmittingOrder = true; });
 
         function handleAbandonment() {
-            if (!isSubmittingOrder && document.visibilityState === 'hidden' && typeof clarity === 'function') {
-                clarity('event', 'checkout_left_page');
+            if (abandonmentReported || isSubmittingOrder) return;
+            if (document.visibilityState === 'hidden') {
+                abandonmentReported = true;
+                try {
+                    if (typeof window.clarity === 'function') {
+                        window.clarity('event', 'checkout_left_page');
+                    }
+                } catch (e) {
+                    // Suppress any errors during page teardown / unload / background state
+                }
             }
         }
 

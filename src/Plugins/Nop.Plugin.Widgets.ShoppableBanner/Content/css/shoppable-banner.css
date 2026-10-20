@@ -191,6 +191,7 @@
     font-size: 0.9rem;
     font-weight: 500;
     color: #333;
+    cursor: pointer;
 }
 
 .add-to-cart-hotspot {
@@ -300,6 +301,7 @@
         flex-direction: column;
         transition: transform 0.2s ease, box-shadow 0.2s ease;
         min-width: 0; /* prevents horizontal expansion */
+        cursor: pointer;
     }
 
     .mobile-product-card:active {
@@ -314,6 +316,7 @@
         align-items: center;
         justify-content: center;
         padding: 10px;
+        cursor: pointer;
     }
 
     .mobile-card-image img {
@@ -345,6 +348,7 @@
         overflow: hidden;
         height: 2.4rem;
         line-height: 1.2;
+        cursor: pointer;
     }
 
     .mobile-card-details .product-price {
