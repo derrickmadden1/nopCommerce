@@ -25,6 +25,7 @@ namespace Nop.Plugin.Misc.ReviewReward.Services
         private readonly IStoreService _storeService;
         private readonly ILanguageService _languageService;
         private readonly ISettingService _settingService;
+        private readonly ILocalizationService _localizationService;
 
         public const string MessageTemplateName = "ReviewReward.CouponEarned";
 
@@ -65,7 +66,8 @@ namespace Nop.Plugin.Misc.ReviewReward.Services
             IStoreContext storeContext,
             IStoreService storeService,
             ILanguageService languageService,
-            ISettingService settingService)
+            ISettingService settingService,
+            ILocalizationService localizationService)
         {
             _workflowMessageService = workflowMessageService;
             _messageTokenProvider = messageTokenProvider;
@@ -75,6 +77,7 @@ namespace Nop.Plugin.Misc.ReviewReward.Services
             _storeService = storeService;
             _languageService = languageService;
             _settingService = settingService;
+            _localizationService = localizationService;
         }
 
         public async Task EnsureMessageTemplateExistsAsync(bool overwriteExisting = false)
@@ -101,6 +104,10 @@ namespace Nop.Plugin.Misc.ReviewReward.Services
                     await _messageTemplateService.UpdateMessageTemplateAsync(template);
                 }
             }
+
+            await _localizationService.AddOrUpdateLocaleResourceAsync(
+                $"Admin.ContentManagement.MessageTemplates.Description.{MessageTemplateName}",
+                "This message template is used to send reward coupons to customers after they submit a verified review.");
         }
 
         public async Task SendReviewRewardCouponEmailAsync(Customer customer, Product product, Discount discount, int languageId = 0, int storeId = 0)
