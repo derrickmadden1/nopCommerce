@@ -15,11 +15,54 @@
         z-index: 999998 !important;
     }
 
-    /* Hide chatbot on all checkout pages */
+    /* ── Checkout Specific Safeguards ────────────────────────────────────────── */
+    /* Position the chat bubble on the bottom-left on all checkout pages so it
+       never collides with right-aligned 'Confirm' / 'Continue' buttons */
     html.html-checkout-page #ai-chat-bubble,
     .html-checkout-page #ai-chat-bubble,
-    .checkout-page #ai-chat-bubble {
+    .checkout-page #ai-chat-bubble,
+    body.checkout-page #ai-chat-bubble,
+    #ai-chat-bubble.ai-checkout-mode {
+        right: auto !important;
+        left: 20px !important;
+        bottom: 20px !important;
+    }
+
+    /* Anchor chat panel to the left when on checkout pages */
+    html.html-checkout-page #ai-chat-panel,
+    .html-checkout-page #ai-chat-panel,
+    .checkout-page #ai-chat-panel,
+    body.checkout-page #ai-chat-panel,
+    #ai-chat-bubble.ai-checkout-mode #ai-chat-panel {
+        right: auto !important;
+        left: 0 !important;
+        transform-origin: bottom left !important;
+    }
+
+    /* Suppress unsolicited teaser speech bubbles & pulse wave animations on checkout */
+    html.html-checkout-page #ai-chat-teaser,
+    .html-checkout-page #ai-chat-teaser,
+    .checkout-page #ai-chat-teaser,
+    body.checkout-page #ai-chat-teaser,
+    #ai-chat-bubble.ai-checkout-mode #ai-chat-teaser {
         display: none !important;
+    }
+
+    html.html-checkout-page #ai-chat-toggle.has-pulse::after,
+    html.html-checkout-page #ai-chat-toggle.has-pulse::before,
+    .html-checkout-page #ai-chat-toggle.has-pulse::after,
+    .html-checkout-page #ai-chat-toggle.has-pulse::before,
+    .checkout-page #ai-chat-toggle.has-pulse::after,
+    .checkout-page #ai-chat-toggle.has-pulse::before,
+    #ai-chat-bubble.ai-checkout-mode #ai-chat-toggle.has-pulse::after,
+    #ai-chat-bubble.ai-checkout-mode #ai-chat-toggle.has-pulse::before {
+        display: none !important;
+    }
+
+    /* Add bottom buffer on checkout pages so content/buttons can scroll cleanly above any bottom elements */
+    html.html-checkout-page body,
+    body.checkout-page {
+        padding-bottom: 90px !important;
     }
 
     #ai-chat-bubble {
@@ -29,6 +72,13 @@
         z-index: 500000;
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
         font-size: 14px;
+        pointer-events: none;
+    }
+
+    #ai-chat-toggle,
+    #ai-chat-teaser,
+    #ai-chat-panel {
+        pointer-events: auto;
     }
 
     /* ── Toggle Button ──────────────────────────────────────────────────────── */
@@ -518,7 +568,7 @@
     }
 </style>
 
-<div id="ai-chat-bubble">
+<div id="ai-chat-bubble" class="@(ViewBag.IsCheckoutPage == true ? "ai-checkout-mode" : "")">
     @if (Model.EnableTeaserBubble)
     {
         var teaserText = (ViewBag.HasCartItems == true) ? "Ready to checkout?" : Model.TeaserText;
@@ -567,6 +617,7 @@
     const chatEndpoint = '/AiChatbot/Chat';
     const enableTeaser = @(Model.EnableTeaserBubble ? "true" : "false");
     const hasCartItems = @(ViewBag.HasCartItems == true ? "true" : "false");
+    const isCheckoutPage = @(ViewBag.IsCheckoutPage == true ? "true" : "false");
 
     const panel = document.getElementById('ai-chat-panel');
     const toggle = document.getElementById('ai-chat-toggle');
@@ -742,7 +793,7 @@
 
     // ── Entry Wiggle & Teaser Callout Popup Logic ──────────────────────────────
     window.addEventListener('load', () => {
-        if (!isOpen) {
+        if (!isOpen && !isCheckoutPage) {
             // Trigger eye-catching wiggle animation on load
             setTimeout(() => {
                 if (!isOpen) {

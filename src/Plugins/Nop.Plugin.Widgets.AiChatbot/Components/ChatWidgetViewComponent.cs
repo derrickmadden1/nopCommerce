@@ -45,8 +45,8 @@ public class ChatWidgetViewComponent : NopViewComponent
             return Content(string.Empty);
 
         var controller = ViewContext.RouteData.Values["controller"]?.ToString();
-        if (string.Equals(controller, "Checkout", StringComparison.OrdinalIgnoreCase))
-            return Content(string.Empty);
+        var isCheckoutPage = string.Equals(controller, "Checkout", StringComparison.OrdinalIgnoreCase);
+        ViewBag.IsCheckoutPage = isCheckoutPage;
 
         var customer = await _workContext.GetCurrentCustomerAsync();
         var store = await _storeContext.GetCurrentStoreAsync();
