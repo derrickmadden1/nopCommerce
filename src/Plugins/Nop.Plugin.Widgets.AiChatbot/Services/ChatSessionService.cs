@@ -37,9 +37,10 @@ public class ChatSessionService
 
         if (session == null && customerId > 0)
         {
-            // Fallback to customer's most recent session
+            // Fallback to customer's most recent active session within the last 24 hours
+            var cutoff = DateTime.UtcNow.AddHours(-24);
             session = await _chatSessionRepository.Table
-                .Where(s => s.CustomerId == customerId)
+                .Where(s => s.CustomerId == customerId && s.UpdatedOnUtc >= cutoff)
                 .OrderByDescending(s => s.UpdatedOnUtc)
                 .FirstOrDefaultAsync();
         }
@@ -62,10 +63,39 @@ public class ChatSessionService
         {
             // Associate guest session with newly logged in customer
             session.CustomerId = customerId;
+            session.UpdatedOnUtc = DateTime.UtcNow;
             await _chatSessionRepository.UpdateAsync(session);
         }
 
         return session;
+    }
+
+    public async Task AssociateSessionWithCustomerAsync(Guid sessionGuid, int customerId)
+    {
+        if (sessionGuid == Guid.Empty || customerId <= 0)
+            return;
+
+        var session = await _chatSessionRepository.Table
+            .FirstOrDefaultAsync(s => s.SessionGuid == sessionGuid);
+
+        if (session != null && session.CustomerId == 0)
+        {
+            session.CustomerId = customerId;
+            session.UpdatedOnUtc = DateTime.UtcNow;
+            await _chatSessionRepository.UpdateAsync(session);
+        }
+    }
+
+    public async Task<ChatSession?> GetRecentCustomerSessionAsync(int customerId, int withinHours = 24)
+    {
+        if (customerId <= 0)
+            return null;
+
+        var cutoff = DateTime.UtcNow.AddHours(-withinHours);
+        return await _chatSessionRepository.Table
+            .Where(s => s.CustomerId == customerId && s.UpdatedOnUtc >= cutoff)
+            .OrderByDescending(s => s.UpdatedOnUtc)
+            .FirstOrDefaultAsync();
     }
 
     public async Task<ChatSession> SaveTurnAsync(Guid sessionGuid, int customerId, string userMessage, string assistantReply)

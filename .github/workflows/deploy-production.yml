@@ -229,6 +229,12 @@ jobs:
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+    - name: Pause Better Stack Monitoring
+      run: |
+        # Use the Better Stack API to pause the monitor
+        # Replace '123456' with your actual Monitor ID (found in the Monitor URL)
+        curl --request PATCH --url https://uptime.betterstack.com/api/v2/monitors/3352825 --header "Authorization: Bearer ${{ secrets.BETTERSTACK_API_TOKEN }}" --header "Content-Type:  application/json" --data "{\"paused\": true}"
+    
     - name: Ensure Production Slot Uses .NET 10
       run: |
         echo "Setting production runtime to .NET 10 (safe, no immediate restart)..."
@@ -248,12 +254,6 @@ jobs:
         az webapp config appsettings set --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --slot staging --settings ASPNETCORE_ENVIRONMENT="Development" ASPNETCORE_DETAILEDERRORS=true
         az webapp log config --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --slot staging --application-logging filesystem --detailed-error-messages true --failed-request-tracing true
 
-    - name: Pause Better Stack Monitoring
-      run: |
-        # Use the Better Stack API to pause the monitor
-        # Replace '123456' with your actual Monitor ID (found in the Monitor URL)
-        curl --request PATCH --url https://uptime.betterstack.com/api/v2/monitors/3352825 --header "Authorization: Bearer ${{ secrets.BETTERSTACK_API_TOKEN }}" --header "Content-Type:  application/json" --data "{\"paused\": true}"
-    
     - name: Deploy to Staging
       uses: azure/webapps-deploy@v3
       with:

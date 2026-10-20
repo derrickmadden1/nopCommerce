@@ -2,6 +2,7 @@ using Azure;
 using Azure.Search.Documents;
 using Azure.Search.Documents.Models;
 using Microsoft.Extensions.Logging;
+using Nop.Services.Seo;
 
 namespace Nop.Plugin.Widgets.AiChatbot.Services;
 
@@ -24,13 +25,16 @@ public class ProductSearchService
 {
     private readonly AiChatbotSettings _settings;
     private readonly ILogger<ProductSearchService> _logger;
+    private readonly IUrlRecordService _urlRecordService;
 
     public ProductSearchService(
         AiChatbotSettings settings,
-        ILogger<ProductSearchService> logger)
+        ILogger<ProductSearchService> logger,
+        IUrlRecordService urlRecordService)
     {
         _settings = settings;
         _logger = logger;
+        _urlRecordService = urlRecordService;
     }
 
     /// <summary>
@@ -84,13 +88,28 @@ public class ProductSearchService
 
                 if (id != null && name != null && int.TryParse(id, out var productId))
                 {
+                    string? productUrl = null;
+                    try
+                    {
+                        var seName = await _urlRecordService.GetSeNameAsync(productId, "Product");
+                        if (!string.IsNullOrWhiteSpace(seName))
+                        {
+                            productUrl = $"/{seName}";
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Failed to resolve SeName for product ID {ProductId}", productId);
+                    }
+
                     results.Add(new ProductSearchResult
                     {
                         Id = productId,
                         Name = name,
                         ShortDescription = desc,
                         Price = price != null && decimal.TryParse(price, out var p) ? $"£{p:F2}" : price ?? string.Empty,
-                        CategoryNames = categoryNames
+                        CategoryNames = categoryNames,
+                        Url = productUrl
                     });
                 }
             }
@@ -106,7 +125,7 @@ public class ProductSearchService
 
     /// <summary>
     /// Formats search results as a string for injection into the system prompt.
-    /// Includes product IDs and category names so the AI can reference them accurately.
+    /// Includes product IDs, URLs, and category names so the AI can reference them accurately.
     /// </summary>
     public static string FormatForPrompt(List<ProductSearchResult> results)
     {
@@ -115,6 +134,9 @@ public class ProductSearchService
 
         return string.Join("\n", results.Select(r =>
         {
+            var url = !string.IsNullOrWhiteSpace(r.Url)
+                ? $" [URL: {r.Url}]"
+                : string.Empty;
             var categories = r.CategoryNames.Any()
                 ? $" [Categories: {string.Join(", ", r.CategoryNames)}]"
                 : string.Empty;
@@ -122,7 +144,7 @@ public class ProductSearchService
                 ? $": {r.ShortDescription}"
                 : string.Empty;
 
-            return $"- [ID:{r.Id}] {r.Name} ({r.Price}){categories}{desc}";
+            return $"- [ID:{r.Id}] {r.Name} ({r.Price}){url}{categories}{desc}";
         }));
     }
 }

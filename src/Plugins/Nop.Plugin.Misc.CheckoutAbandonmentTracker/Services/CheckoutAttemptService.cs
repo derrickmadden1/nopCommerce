@@ -54,6 +54,9 @@ namespace Nop.Plugin.Misc.CheckoutAbandonmentTracker.Services
                 if (step > attempt.LastStepReached)
                     attempt.LastStepReached = step;
 
+                if (customerId > 0 && attempt.CustomerId != customerId)
+                    attempt.CustomerId = customerId;
+
                 attempt.LastActivityUtc = nowUtc;
                 if (cartTotal.HasValue && cartTotal.Value > 0)
                     attempt.CartTotal = cartTotal;

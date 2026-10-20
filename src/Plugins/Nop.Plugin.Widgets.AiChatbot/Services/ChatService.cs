@@ -46,7 +46,9 @@ public class ChatService
         "add that", "add them", "add both", "add please", "add to my basket", "add to my cart",
         "buy", "buy it", "buy one", "buy now", "i'll take it", "i'll have that",
         "i will take it", "i'll take one", "1 please", "2 please", "one please", "two please",
-        "checkout", "yes thank you", "yes thanks", "that one", "the first one", "the second one"
+        "checkout", "yes thank you", "yes thanks", "that one", "the first one", "the second one",
+        "logged in", "i'm logged in", "i am logged in", "i have logged in", "i've logged in", "im logged in",
+        "done", "all done", "ready", "ready now"
     };
 
     private static readonly HashSet<string> CommonNonProductPhrases = new(StringComparer.OrdinalIgnoreCase)
@@ -332,7 +334,12 @@ public class ChatService
         if (trimmed.StartsWith("yes ", StringComparison.OrdinalIgnoreCase) ||
             trimmed.StartsWith("sure ", StringComparison.OrdinalIgnoreCase) ||
             trimmed.StartsWith("add ", StringComparison.OrdinalIgnoreCase) ||
-            trimmed.StartsWith("please add ", StringComparison.OrdinalIgnoreCase))
+            trimmed.StartsWith("please add ", StringComparison.OrdinalIgnoreCase) ||
+            trimmed.StartsWith("i'm logged in", StringComparison.OrdinalIgnoreCase) ||
+            trimmed.StartsWith("i am logged in", StringComparison.OrdinalIgnoreCase) ||
+            trimmed.StartsWith("i have logged in", StringComparison.OrdinalIgnoreCase) ||
+            trimmed.StartsWith("i've logged in", StringComparison.OrdinalIgnoreCase) ||
+            trimmed.StartsWith("im logged in", StringComparison.OrdinalIgnoreCase))
         {
             return true;
         }
@@ -468,13 +475,17 @@ public class ChatService
             Navigation URLs:
             - Cart: /cart
             - Checkout: /checkout
-            - Search results: /search?q=QUERY (url-encode the query)
-            - Product page: /PRODUCT-SENAME (use the product's URL if known)
+            - Search results: /search?q=QUERY (url-encode the query — only use if you do not know the product's exact URL)
+            - Product page: Use the exact [URL: /sename] from the 'Products relevant to their query' list below (e.g. /mo-chridhe). NEVER instruct or ask the customer to search for a product using /search?q=... when the product is already listed or known in the conversation.
             - Login/Register: /login
 
             Rules:
             - For questions about product ingredients, benefits, or common wellness uses (e.g., magnesium for cramps or muscle tension, lavender for sleep, oatmeal for dry skin), provide helpful, balanced general wellness information and common customer experiences, while gently noting that customers should check with a GP for persistent health concerns. Do not decline or claim you lack information simply because a question asks about general ingredient benefits.
-            - Review Rewards: If a customer asks about discounts, or if they have previously purchased an item on the site (check their Recent Orders) or at a market, let them know they can receive a {{rewardText}} discount code on their next purchase if they write a review for a product they've bought! Encourage them to log in or register at /login and navigate to the product page to leave their review.
+            - Review Rewards: If a customer asks about discounts, or if they have previously purchased an item on the site (check their Recent Orders) or at a market, let them know they can receive a {{rewardText}} discount code on their next purchase if they write a review for a product they've bought! Encourage them to log in or register at /login and visit the product page using its direct URL (e.g. /mo-chridhe) to leave their review.
+            - Post-Login or Context Continuity: If the customer mentions they have logged in or registered (e.g. "I'm logged in", "done", "all done"), or confirms wanting a product previously discussed:
+              * Greet them warmly (use their first name if available in customer context).
+              * If they were looking to review a product, provide the direct product link (e.g. /mo-chridhe) so they do not need to search for it.
+              * If they ask to add it to their basket, or if they previously asked to add it, return the addToCart action immediately so it is added for them without them needing to find or search for it!
             - For market questions (e.g., "When is your next market?", "When are you next in Thurso?"):
               * Check the 'Today's Date' and the 'Upcoming Markets & Event Locations' listed below.
               * If asked about a specific town or city (e.g. Thurso, Lairg, Wick, etc.), filter by that town/city name and provide the upcoming dates, operating hours, and address for that market.
@@ -486,7 +497,7 @@ public class ChatService
             - When a customer confirms or asks to add a product you previously recommended or discussed (e.g. saying "yes", "yes please", "sure", "add it", "please do", or naming it), look up its product ID from the 'Products relevant to their query' list below and return the addToCart action immediately. Never claim a product isn't on the store or isn't listed if it was already recommended or discussed in this conversation.
             - Only trigger navigation if the customer explicitly asks to go somewhere. Since this action is executed automatically in the background, write your message stating that you are redirecting them (e.g., "Sure, I'm opening your cart/checkout for you now.").
             - The shopping cart context is always the exact, real-time, up-to-date state of the user's basket (which already reflects all items added in previous turns). Do not perform manual calculations, additions, or adjustments to the basket total or items. Always trust and report the exact items and total value provided in the current context.
-            - For product pages use /search?q=PRODUCTNAME if you don't know the exact URL
+            - Never tell the customer to search for a product using /search?q=... if you already have the product in your context list. Provide the direct product URL (e.g. /mo-chridhe).
             - Keep the message short — 1-3 sentences
             - Do not include markdown in the message field
             - Do not output any text outside the JSON object
