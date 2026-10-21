@@ -175,12 +175,38 @@ namespace Nop.Plugin.DiscountRules.MultiBuy.Services
 
                 if (totalMbDiscountAmount > decimal.Zero)
                 {
+                    // Also check for non-MultiBuy subtotal discounts (e.g. cumulative coupon codes)
+                    var otherSubtotalDiscounts = allowedDiscounts
+                        .Where(d => d.DiscountType == DiscountType.AssignedToOrderSubTotal &&
+                                    !appliedMbDiscounts.Any(mb => mb.Id == d.Id))
+                        .ToList();
+
+                    if (otherSubtotalDiscounts.Any())
+                    {
+                        var remainingSubTotal = Math.Max(decimal.Zero, orderSubTotalExclTax - totalMbDiscountAmount);
+                        var otherAppliedDiscounts = _discountService.GetPreferredDiscount(otherSubtotalDiscounts, remainingSubTotal, out var otherDiscountAmount);
+
+                        if (otherDiscountAmount > decimal.Zero)
+                        {
+                            totalMbDiscountAmount += otherDiscountAmount;
+                            foreach (var disc in otherAppliedDiscounts)
+                            {
+                                if (!_discountService.ContainsDiscount(appliedMbDiscounts, disc))
+                                    appliedMbDiscounts.Add(disc);
+                            }
+                        }
+                    }
+
                     return (totalMbDiscountAmount, appliedMbDiscounts);
                 }
             }
 
-            // Fallback to core preferred-discount behavior
-            appliedDiscounts = _discountService.GetPreferredDiscount(allowedDiscounts, orderSubTotalExclTax,
+            // Fallback to core preferred-discount behavior (only apply discounts assigned to subtotal)
+            var subtotalAllowedDiscounts = allowedDiscounts
+                .Where(d => d.DiscountType == DiscountType.AssignedToOrderSubTotal)
+                .ToList();
+
+            appliedDiscounts = _discountService.GetPreferredDiscount(subtotalAllowedDiscounts, orderSubTotalExclTax,
                 out discountAmount);
 
             if (discountAmount < decimal.Zero)
