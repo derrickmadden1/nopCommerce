@@ -54,7 +54,18 @@ public class PersonalisedRecommendationsViewComponent : NopViewComponent
         var isCart = widgetZone.Contains("order_summary");
 
         if (isHomepage && !_settings.ShowOnHomepage) return Content(string.Empty);
-        if (isCart && !_settings.ShowOnCart) return Content(string.Empty);
+        if (isCart)
+        {
+            if (!_settings.ShowOnCart) return Content(string.Empty);
+
+            // Do not show product recommendations during checkout to avoid distraction and confusion with "Complete your order"
+            if (additionalData is Nop.Web.Models.ShoppingCart.ShoppingCartModel cart && !cart.IsEditable)
+                return Content(string.Empty);
+
+            var path = HttpContext?.Request?.Path.Value ?? string.Empty;
+            if (path.Contains("/checkout", StringComparison.OrdinalIgnoreCase))
+                return Content(string.Empty);
+        }
 
         var customer = await _workContext.GetCurrentCustomerAsync();
         var isGuest = await _customerService.IsGuestAsync(customer);
@@ -84,7 +95,7 @@ public class PersonalisedRecommendationsViewComponent : NopViewComponent
         var title = isGuest
             ? "Popular right now"
             : isCart
-                ? "Complete your order"
+                ? "You might also like"
                 : "Recommended for you";
 
         var model = new RecommendationModel { Title = title };
