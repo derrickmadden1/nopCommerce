@@ -3041,6 +3041,50 @@ body {
   margin-bottom: 15px;
 }
 /* --- BUTTONS & LINKS --- */
+.btn-primary,
+.next-step-btn,
+.confirm-order-btn-modern,
+.square-btn,
+#pay-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 18px 45px !important;
+  background: var(--dark-grey) !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: 4px;
+  font-family: var(--heading-font);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  font-size: 1.05rem;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  text-decoration: none;
+}
+
+.btn-primary:hover,
+.next-step-btn:hover,
+.confirm-order-btn-modern:hover,
+.square-btn:hover,
+#pay-button:hover {
+  background: var(--brand-magenta) !important;
+  color: #fff !important;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(184, 29, 125, 0.25);
+}
+
+.btn-primary:active,
+.next-step-btn:active,
+.confirm-order-btn-modern:active,
+.square-btn:active,
+#pay-button:active {
+  transform: translateY(0);
+}
+
 .btn-primary-outline {
   display: inline-block;
   padding: 12px 30px;
@@ -5832,7 +5876,9 @@ html.html-checkout-page #ai-chat-bubble,
 
   .confirm-order-btn-modern,
   .checkout-footer-modern .btn-primary,
-  .checkout-footer-modern .next-step-btn {
+  .checkout-footer-modern .next-step-btn,
+  .checkout-footer-modern .square-btn,
+  #pay-button {
     width: 100% !important;
     min-width: 0 !important;
     display: flex !important;

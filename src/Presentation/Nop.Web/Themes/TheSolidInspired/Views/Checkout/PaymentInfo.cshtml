@@ -1,0 +1,47 @@
+@model CheckoutPaymentInfoModel
+@{
+    Layout = "_ColumnsOne";
+
+    //title
+    NopHtml.AddTitleParts(T("PageTitle.Checkout").Text);
+    //page class
+    NopHtml.AppendPageCssClassParts("html-checkout-page");
+    NopHtml.AppendPageCssClassParts("html-payment-info-page");
+}
+
+<div class="page checkout-page payment-info-page section-container">
+    @await Component.InvokeAsync("CheckoutProgress", new { step = CheckoutProgressStep.Payment })
+    
+    <div class="section-header">
+        <h1>@T("Checkout.PaymentInfo")</h1>
+    </div>
+
+    <div class="page-body checkout-data">
+        <div class="payment-info-modern">
+            <form asp-route="@NopRouteNames.Standard.CHECKOUT_PAYMENT_INFO" method="post">
+                @await Component.InvokeAsync("Widget", new { widgetZone = PublicWidgetZones.CheckoutPaymentInfoTop, additionalData = Model })
+
+                <div asp-validation-summary="ModelOnly" class="message-error"></div>
+
+                <div class="payment-info-content-modern">
+                    @await Component.InvokeAsync(Model.PaymentViewComponent)
+                </div>
+
+                <div class="checkout-footer-modern payment-info-default-footer">
+                    <button type="submit" name="nextstep" class="btn-primary next-step-btn payment-info-next-step-button">
+                        @T("Checkout.NextButton") <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+
+                @await Component.InvokeAsync("Widget", new { widgetZone = PublicWidgetZones.CheckoutPaymentInfoBottom, additionalData = Model })
+            </form>
+        </div>
+
+        <div class="section order-summary">
+            <div class="section-title">
+                <h2>@T("Checkout.OrderSummary")</h2>
+            </div>
+            @await Component.InvokeAsync("OrderSummary")
+        </div>
+    </div>
+</div>
