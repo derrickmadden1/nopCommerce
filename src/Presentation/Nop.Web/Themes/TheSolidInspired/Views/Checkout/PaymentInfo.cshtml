@@ -7,6 +7,7 @@
     //page class
     NopHtml.AppendPageCssClassParts("html-checkout-page");
     NopHtml.AppendPageCssClassParts("html-payment-info-page");
+    var isSquarePayment = Model.PaymentViewComponent?.Name?.Contains("Square", StringComparison.OrdinalIgnoreCase) == true;
 }
 
 <div class="page checkout-page payment-info-page section-container">
@@ -27,8 +28,8 @@
                     @await Component.InvokeAsync(Model.PaymentViewComponent)
                 </div>
 
-                <div class="checkout-footer-modern payment-info-default-footer">
-                    <button type="submit" name="nextstep" class="btn-primary next-step-btn payment-info-next-step-button">
+                <div class="checkout-footer-modern payment-info-default-footer @(isSquarePayment ? "payment-info-default-footer-hidden d-none" : "")" style="@(isSquarePayment ? "display: none !important; position: absolute !important; left: -9999px !important;" : "")">
+                    <button type="submit" name="nextstep" class="btn-primary next-step-btn payment-info-next-step-button @(isSquarePayment ? "hidden-button" : "")" style="@(isSquarePayment ? "display: none !important;" : "")">
                         @T("Checkout.NextButton") <i class="fas fa-arrow-right"></i>
                     </button>
                 </div>

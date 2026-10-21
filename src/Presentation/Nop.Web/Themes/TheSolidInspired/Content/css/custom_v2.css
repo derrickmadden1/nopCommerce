@@ -5863,7 +5863,7 @@ html.html-checkout-page #ai-chat-bubble,
 
 /* On mobile, ensure checkout footer buttons are full width and easy to tap */
 @media (max-width: 768px) {
-  .checkout-footer-modern {
+  .checkout-footer-modern:not(.payment-info-default-footer-hidden):not(.d-none):not([style*="display: none"]):not([style*="display:none"]) {
     display: flex !important;
     flex-direction: column !important;
     justify-content: stretch !important;
@@ -5875,8 +5875,8 @@ html.html-checkout-page #ai-chat-bubble,
   }
 
   .confirm-order-btn-modern,
-  .checkout-footer-modern .btn-primary,
-  .checkout-footer-modern .next-step-btn,
+  .checkout-footer-modern:not(.payment-info-default-footer-hidden) .btn-primary:not(.payment-info-next-step-button):not(.hidden-button),
+  .checkout-footer-modern:not(.payment-info-default-footer-hidden) .next-step-btn:not(.payment-info-next-step-button):not(.hidden-button),
   .checkout-footer-modern .square-btn,
   #pay-button {
     width: 100% !important;
@@ -5894,6 +5894,25 @@ html.html-checkout-page #ai-chat-bubble,
     width: 100%;
     margin-bottom: 15px;
   }
+}
+
+/* Hide default checkout footer when Square or a custom pay button is present */
+.payment-info-modern:has(.square-checkout-footer, #pay-button) .payment-info-default-footer,
+.payment-info-page .payment-info-default-footer.payment-info-default-footer-hidden,
+.payment-info-default-footer-hidden,
+.payment-info-default-footer[style*="display: none"],
+.payment-info-default-footer[style*="display:none"],
+.payment-info-next-step-button.hidden-button {
+  display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  overflow: hidden !important;
+  position: absolute !important;
+  left: -9999px !important;
 }
 
 /* --- 3D-SECURE / PAYMENT VERIFICATION (SQUARE & CARDINALCOMMERCE) MOBILE FIX --- */
