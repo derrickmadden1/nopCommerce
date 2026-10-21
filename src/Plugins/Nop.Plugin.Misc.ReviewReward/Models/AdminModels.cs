@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Nop.Web.Framework.Models;
 
 namespace Nop.Plugin.Misc.ReviewReward.Models
@@ -9,6 +11,9 @@ namespace Nop.Plugin.Misc.ReviewReward.Models
         public bool UsePercentage { get; set; }
         public string? CouponPrefix { get; set; }
         public int ExpiryDays { get; set; }
+        public bool OfferFreeProduct { get; set; }
+        public int FreeProductId { get; set; }
+        public IList<SelectListItem> AvailableProducts { get; set; } = new List<SelectListItem>();
     }
 
     public record MarketPurchaseCodeSearchModel : BaseSearchModel

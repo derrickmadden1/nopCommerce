@@ -12,6 +12,16 @@ namespace Nop.Plugin.Misc.ReviewReward.Models
         public bool HasOrderedProduct { get; set; }
 
         /// <summary>
+        /// True if the reward is configured as a free product instead of a monetary/percentage discount.
+        /// </summary>
+        public bool OfferFreeProduct { get; set; }
+
+        /// <summary>
+        /// Name of the free product reward when OfferFreeProduct is true.
+        /// </summary>
+        public string? FreeProductName { get; set; }
+
+        /// <summary>
         /// Code entered by market stall customers.
         /// </summary>
         public string? MarketPurchaseCode { get; set; }

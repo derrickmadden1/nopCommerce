@@ -753,20 +753,22 @@
 
     // ── Mobile Viewport & Virtual Keyboard Handler ───────────────────────────
     function updateMobileViewport() {
-        if (!isOpen) return;
-        if (window.innerWidth <= 600) {
-            if (window.visualViewport) {
-                panel.style.height = window.visualViewport.height + 'px';
-                panel.style.top = window.visualViewport.offsetTop + 'px';
+        try {
+            if (!isOpen) return;
+            if (window.innerWidth <= 600) {
+                if (window.visualViewport) {
+                    panel.style.height = window.visualViewport.height + 'px';
+                    panel.style.top = window.visualViewport.offsetTop + 'px';
+                } else {
+                    panel.style.height = '100dvh';
+                    panel.style.top = '0px';
+                }
+                scrollBottom();
             } else {
-                panel.style.height = '100dvh';
-                panel.style.top = '0px';
+                panel.style.height = '';
+                panel.style.top = '';
             }
-            scrollBottom();
-        } else {
-            panel.style.height = '';
-            panel.style.top = '';
-        }
+        } catch (e) {}
     }
 
     if (window.visualViewport) {

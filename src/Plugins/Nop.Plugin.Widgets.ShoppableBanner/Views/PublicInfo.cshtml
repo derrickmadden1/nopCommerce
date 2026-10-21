@@ -18,7 +18,7 @@
         @foreach (var hotspot in Model.Hotspots)
         {
             var hasImage = !string.IsNullOrEmpty(hotspot.PictureUrl);
-            <div class="hotspot-marker @(hasImage ? "has-image" : "")" style="left: @(hotspot.PositionX)%; top: @(hotspot.PositionY)%;">
+            <div class="hotspot-marker @(hasImage ? "has-image" : "")" style="left: @(hotspot.PositionX)%; top: @(hotspot.PositionY)%;" data-product-id="@hotspot.ProductId">
                 @if (hasImage)
                 {
                     <img src="@hotspot.PictureUrl" class="hotspot-product-thumbnail" alt="@hotspot.ProductName" />
@@ -53,7 +53,7 @@
             <div class="mobile-grid">
                 @foreach (var product in Model.Hotspots)
                 {
-                    <div class="mobile-product-card">
+                    <div class="mobile-product-card" data-product-id="@product.ProductId" role="button" tabindex="0" aria-label="@product.ProductName">
                         @if (!string.IsNullOrEmpty(product.PictureUrl))
                         {
                             <div class="mobile-card-image">
@@ -146,22 +146,27 @@
     document.addEventListener("DOMContentLoaded", function() {
         // Adjust hotspot tooltips to prevent them from extending outside the desktop banner container
         const adjustTooltips = () => {
-            const wrapper = document.querySelector(".banner-desktop-wrapper");
-            if (!wrapper) return;
-            const wrapperRect = wrapper.getBoundingClientRect();
-            const tooltips = wrapper.querySelectorAll(".hotspot-tooltip");
-            
-            tooltips.forEach(tooltip => {
-                tooltip.style.left = "";
-                const rect = tooltip.getBoundingClientRect();
-                if (rect.right > wrapperRect.right) {
-                    const shiftLeft = rect.right - wrapperRect.right;
-                    tooltip.style.left = `calc(50% - ${shiftLeft + 10}px)`;
-                } else if (rect.left < wrapperRect.left) {
-                    const shiftRight = wrapperRect.left - rect.left;
-                    tooltip.style.left = `calc(50% + ${shiftRight + 10}px)`;
-                }
-            });
+            try {
+                const wrapper = document.querySelector(".banner-desktop-wrapper");
+                if (!wrapper || wrapper.offsetParent === null) return;
+                const wrapperRect = wrapper.getBoundingClientRect();
+                if (wrapperRect.width === 0) return;
+                const tooltips = wrapper.querySelectorAll(".hotspot-tooltip");
+                
+                tooltips.forEach(tooltip => {
+                    tooltip.style.left = "";
+                    const rect = tooltip.getBoundingClientRect();
+                    if (rect.right > wrapperRect.right) {
+                        const shiftLeft = rect.right - wrapperRect.right;
+                        tooltip.style.left = `calc(50% - ${shiftLeft + 10}px)`;
+                    } else if (rect.left < wrapperRect.left) {
+                        const shiftRight = wrapperRect.left - rect.left;
+                        tooltip.style.left = `calc(50% + ${shiftRight + 10}px)`;
+                    }
+                });
+            } catch (e) {
+                // Safeguard against layout calculations on teardown/hidden
+            }
         };
 
         // Run on load and resize
@@ -182,44 +187,79 @@
         const contentContainer = document.getElementById('quickview-content');
         const closeBtn = document.getElementById('close-quickview');
 
-        // Target both desktop hotspot buttons and mobile stack buttons
-        const actionButtons = document.querySelectorAll('.add-to-cart-hotspot, .add-to-cart-mobile');
+        function openQuickView(productId) {
+            if (!productId || !modal || !contentContainer) return;
 
-        actionButtons.forEach(button => {
-            button.addEventListener('click', function(e) {
-                e.preventDefault();
-                const productId = this.getAttribute('data-product-id');
-
-                // Show a loading state if desired
-                contentContainer.innerHTML = '<p>Loading natural goodness...</p>';
+            // Show a loading state
+            contentContainer.innerHTML = '<p>Loading natural goodness...</p>';
+            if (typeof modal.showModal === 'function') {
                 modal.showModal();
+            } else {
+                modal.setAttribute('open', '');
+            }
 
-                // Fetch the product partial view
-                fetch(`/WidgetsShoppableBannerPublic/QuickView?productId=${productId}`)
-                    .then(response => response.text())
-                    .then(html => {
-                        // Inject the HTML containing the product info and Add to Cart form
-                        contentContainer.innerHTML = html;
-                    })
-                    .catch(error => {
-                        console.error('Error fetching product details:', error);
-                        contentContainer.innerHTML = '<p>Sorry, we could not load this product right now.</p>';
-                    });
+            // Fetch the product partial view
+            fetch(`/WidgetsShoppableBannerPublic/QuickView?productId=${productId}`)
+                .then(response => {
+                    if (!response.ok) throw new Error('Network error loading product');
+                    return response.text();
+                })
+                .then(html => {
+                    contentContainer.innerHTML = html;
+                })
+                .catch(error => {
+                    console.error('Error fetching product details:', error);
+                    contentContainer.innerHTML = '<p>Sorry, we could not load this product right now.</p>';
+                });
+        }
+
+        // Desktop hotspot marker and tooltip button interactions
+        document.querySelectorAll('.hotspot-marker').forEach(marker => {
+            marker.addEventListener('click', function(e) {
+                const btn = e.target.closest('.add-to-cart-hotspot');
+                const productId = btn ? btn.getAttribute('data-product-id') : this.getAttribute('data-product-id');
+                if (productId) {
+                    e.preventDefault();
+                    openQuickView(productId);
+                }
+            });
+        });
+
+        // Mobile product card interactions: clicking anywhere on the card (image, name, or 'Shop Now' button)
+        document.querySelectorAll('.mobile-product-card').forEach(card => {
+            card.addEventListener('click', function(e) {
+                const productId = this.getAttribute('data-product-id');
+                if (productId) {
+                    e.preventDefault();
+                    openQuickView(productId);
+                }
+            });
+            // Accessible keyboard navigation (Enter or Space)
+            card.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    const productId = this.getAttribute('data-product-id');
+                    if (productId) openQuickView(productId);
+                }
             });
         });
 
         // Close modal logic
-        closeBtn.addEventListener('click', () => {
-            modal.close();
-            contentContainer.innerHTML = ''; // Clear DOM to prevent ID conflicts
-        });
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                modal.close();
+                contentContainer.innerHTML = ''; // Clear DOM to prevent ID conflicts
+            });
+        }
 
         // Close on outside click
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                modal.close();
-                contentContainer.innerHTML = '';
-            }
-        });
+        if (modal) {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.close();
+                    contentContainer.innerHTML = '';
+                }
+            });
+        }
     });
 </script>

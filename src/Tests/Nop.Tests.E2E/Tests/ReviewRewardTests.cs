@@ -245,4 +245,91 @@ public class ReviewRewardTests : CheckoutTestBase
         Assert.That(cartAttempt.IsApplied, Is.False, $"Coupon '{targetCoupon.CouponCode}' was redeemed at a market stall and deactivated, so online cart redemption must fail.");
         await _flow.ClearCartAndDiscountsAsync(Page);
     }
+
+    [Test]
+    [Order(7)]
+    [Description("Verifies that when Offer Free Product is enabled, completing a review adds the free product and coupon code directly to the basket, enforces 1 reward per order across multiple reviews, removes the free product when the code is removed, and allows swapping to an alternative review reward code.")]
+    public async Task Free_Product_Reward_Is_Auto_Added_To_Basket_And_Controlled_By_Coupon_Code()
+    {
+        try
+        {
+            await _flow.LoginAsync(Page);
+            await _flow.ClearCartAndDiscountsAsync(Page);
+
+            // 1. Enable OfferFreeProduct in Admin settings
+            await _flow.UpdateRewardSettingsInAdminAsync(
+                Page,
+                rewardAmount: 5.00m,
+                usePercentage: false,
+                couponPrefix: "RVW-FREE-",
+                expiryDays: 30,
+                offerFreeProduct: true);
+
+            // 2. Submit first product review -> Free product + first coupon code should be added directly to basket
+            await _flow.SubmitProductReviewAsync(
+                Page,
+                title: $"Free Product Review 1 {DateTime.UtcNow:HHmmssfff}",
+                reviewText: "First review to earn a free product added directly to the basket.",
+                rating: 5);
+
+            var couponsAfterFirst = (await _flow.GetCouponsInAdminAsync(Page, "RVW-FREE-"))
+                .Where(c => !c.IsRedeemed)
+                .ToList();
+            Assert.That(couponsAfterFirst.Count, Is.GreaterThanOrEqualTo(1), "Expected a Free Product Review Reward coupon to be granted.");
+            var firstFreeCoupon = couponsAfterFirst[0].CouponCode;
+            Assert.That(couponsAfterFirst[0].DiscountText, Does.StartWith("Free Product:"), "Expected admin coupon grid to show Free Product reward.");
+
+            // 3. Submit second product review -> Second code is issued to account, but basket keeps only the first reward
+            await _flow.SubmitProductReviewAsync(
+                Page,
+                title: $"Free Product Review 2 {DateTime.UtcNow:HHmmssfff}",
+                reviewText: "Second review to earn an alternative free product code on the account.",
+                rating: 5);
+
+            var couponsAfterSecond = (await _flow.GetCouponsInAdminAsync(Page, "RVW-FREE-"))
+                .Where(c => !c.IsRedeemed)
+                .ToList();
+            Assert.That(couponsAfterSecond.Count, Is.GreaterThanOrEqualTo(2), "Expected two Free Product Review Reward coupons on the customer's account.");
+            var secondFreeCoupon = couponsAfterSecond.First(c => !c.CouponCode.Equals(firstFreeCoupon, StringComparison.OrdinalIgnoreCase)).CouponCode;
+
+            // 4. Navigate to shopping cart and verify the free product is in the basket and controlled by the first coupon code
+            var cartUrl = $"{Settings.BaseUrl.TrimEnd('/')}/cart";
+            await Page.GotoAsync(cartUrl, new() { WaitUntil = Microsoft.Playwright.WaitUntilState.DOMContentLoaded });
+
+            var cartRowsBeforeRemove = await Page.Locator(".cart tbody tr").CountAsync();
+            var appliedCodesInCart = await Page.Locator(".coupon-box .applied-discount-code").AllInnerTextsAsync();
+            Assert.Multiple(() =>
+            {
+                Assert.That(cartRowsBeforeRemove, Is.EqualTo(1), "Expected 1 free product row in the basket even after completing two reviews.");
+                Assert.That(appliedCodesInCart.Any(c => c.Contains(firstFreeCoupon, StringComparison.OrdinalIgnoreCase)), Is.True, $"Expected first coupon '{firstFreeCoupon}' to be applied in the basket.");
+            });
+
+            // 5. Remove the discount code from the basket -> free product should also be removed from the basket
+            var removeDiscountBtn = Page.Locator("button.remove-discount-button, button[name^='removediscount-']").First;
+            await removeDiscountBtn.ClickAsync();
+            await Page.WaitForLoadStateAsync(Microsoft.Playwright.LoadState.DOMContentLoaded);
+
+            var cartRowsAfterRemove = await Page.Locator(".cart tbody tr").CountAsync();
+            Assert.That(cartRowsAfterRemove, Is.EqualTo(0), "Removing the Free Product coupon code should remove the free product from the basket.");
+
+            // 6. Apply the alternative review reward coupon code (secondFreeCoupon) in the cart -> free product should be added back with the second code
+            var applyAltResult = await _flow.ApplyCouponInCartAsync(Page, secondFreeCoupon, ensureProductInCart: true);
+            Assert.Multiple(() =>
+            {
+                Assert.That(applyAltResult.IsApplied, Is.True, $"Expected alternative coupon '{secondFreeCoupon}' to apply cleanly after removing the first code, but got: {applyAltResult.Message}");
+                Assert.That(applyAltResult.AppliedCouponCodes.Any(c => c.Contains(secondFreeCoupon, StringComparison.OrdinalIgnoreCase)), Is.True);
+            });
+        }
+        finally
+        {
+            await _flow.ClearCartAndDiscountsAsync(Page);
+            await _flow.UpdateRewardSettingsInAdminAsync(
+                Page,
+                rewardAmount: 5.00m,
+                usePercentage: false,
+                couponPrefix: "RVW-",
+                expiryDays: 30,
+                offerFreeProduct: false);
+        }
+    }
 }

@@ -23,5 +23,15 @@ namespace Nop.Plugin.Misc.ReviewReward.Domain
         /// Days until generated reward coupon expires (0 = no expiry).
         /// </summary>
         public int ExpiryDays { get; set; } = 30;
+
+        /// <summary>
+        /// True to offer a free product instead of a monetary/percentage discount.
+        /// </summary>
+        public bool OfferFreeProduct { get; set; } = false;
+
+        /// <summary>
+        /// Product identifier for the free product reward when OfferFreeProduct is true.
+        /// </summary>
+        public int FreeProductId { get; set; } = 0;
     }
 }

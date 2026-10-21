@@ -450,37 +450,41 @@
 
     // Sticky header with dynamic padding spacer to prevent layout collapse
     function handleScroll() {
-        const header = document.querySelector(".header-modern");
-        const wrapper = document.querySelector(".master-wrapper-page");
-        if (header) {
-            if (window.scrollY > 50) {
-                if (!header.classList.contains("sticky-shrink")) {
-                    const headerHeight = header.offsetHeight;
-                    header.classList.add("sticky-shrink");
-                    if (wrapper) {
-                        wrapper.style.paddingTop = headerHeight + "px";
+        try {
+            const header = document.querySelector(".header-modern");
+            const wrapper = document.querySelector(".master-wrapper-page");
+            if (header) {
+                if (window.scrollY > 50) {
+                    if (!header.classList.contains("sticky-shrink")) {
+                        const headerHeight = header.offsetHeight;
+                        header.classList.add("sticky-shrink");
+                        if (wrapper) {
+                            wrapper.style.paddingTop = headerHeight + "px";
+                        }
                     }
-                }
-            } else {
-                if (header.classList.contains("sticky-shrink")) {
-                    header.classList.remove("sticky-shrink");
-                    if (wrapper) {
-                        wrapper.style.paddingTop = "0px";
+                } else {
+                    if (header.classList.contains("sticky-shrink")) {
+                        header.classList.remove("sticky-shrink");
+                        if (wrapper) {
+                            wrapper.style.paddingTop = "0px";
+                        }
                     }
                 }
             }
-        }
+        } catch (e) {}
     }
     window.addEventListener("scroll", handleScroll);
     window.addEventListener("resize", function() {
-        const header = document.querySelector(".header-modern");
-        const wrapper = document.querySelector(".master-wrapper-page");
-        if (header && header.classList.contains("sticky-shrink") && wrapper) {
-            header.style.position = "static";
-            const naturalHeight = header.offsetHeight;
-            header.style.position = "";
-            wrapper.style.paddingTop = naturalHeight + "px";
-        }
+        try {
+            const header = document.querySelector(".header-modern");
+            const wrapper = document.querySelector(".master-wrapper-page");
+            if (header && header.classList.contains("sticky-shrink") && wrapper) {
+                header.style.position = "static";
+                const naturalHeight = header.offsetHeight;
+                header.style.position = "";
+                wrapper.style.paddingTop = naturalHeight + "px";
+            }
+        } catch (e) {}
     });
     document.addEventListener("DOMContentLoaded", handleScroll);
     if (document.readyState === "complete" || document.readyState === "interactive") {

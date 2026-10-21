@@ -1,7 +1,7 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
-using Nop.Core;
 using Nop.Core.Domain.Catalog;
+using Nop.Core.Domain.Orders;
 using Nop.Core.Events;
 using Nop.Plugin.Misc.ReviewReward.Services;
 using Nop.Services.Catalog;
@@ -12,7 +12,9 @@ namespace Nop.Plugin.Misc.ReviewReward.Infrastructure
 {
     public class ProductReviewEventConsumer : 
         IConsumer<EntityInsertedEvent<ProductReview>>,
-        IConsumer<ProductReviewApprovedEvent>
+        IConsumer<ProductReviewApprovedEvent>,
+        IConsumer<EntityDeletedEvent<ShoppingCartItem>>,
+        IConsumer<OrderPlacedEvent>
     {
         private readonly IReviewRewardService _reviewRewardService;
         private readonly ICustomerService _customerService;
@@ -45,6 +47,22 @@ namespace Nop.Plugin.Misc.ReviewReward.Infrastructure
                 return;
 
             await ProcessRewardAsync(eventMessage.ProductReview);
+        }
+
+        public async Task HandleEventAsync(EntityDeletedEvent<ShoppingCartItem> eventMessage)
+        {
+            if (eventMessage?.Entity == null)
+                return;
+
+            await _reviewRewardService.HandleCartItemDeletedAsync(eventMessage.Entity);
+        }
+
+        public async Task HandleEventAsync(OrderPlacedEvent eventMessage)
+        {
+            if (eventMessage?.Order == null)
+                return;
+
+            await _reviewRewardService.HandleOrderPlacedAsync(eventMessage.Order);
         }
 
         private async Task ProcessRewardAsync(ProductReview review)

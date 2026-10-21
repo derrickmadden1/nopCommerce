@@ -6,7 +6,6 @@ using Nop.Data;
 using Nop.Plugin.Misc.ReviewReward.Domain;
 using Nop.Services.Customers;
 using Nop.Services.Discounts;
-using Nop.Services.Plugins;
 
 namespace Nop.Plugin.Misc.ReviewReward.Discounts
 {
@@ -54,12 +53,19 @@ namespace Nop.Plugin.Misc.ReviewReward.Discounts
             if (appliedCouponCodes == null || appliedCouponCodes.Length == 0)
                 return new DiscountRequirementValidationResult { IsValid = true };
 
+            var normalizedCodes = appliedCouponCodes
+                .Where(c => !string.IsNullOrWhiteSpace(c))
+                .SelectMany(c => new[] { c.Trim(), c.Trim().ToUpperInvariant(), c.Trim().ToLowerInvariant() })
+                .Distinct()
+                .ToList();
+
             // Find all active (non-expired) discounts associated with applied coupon codes
             var currentDiscountId = requirement.DiscountId;
             var now = DateTime.UtcNow;
             var otherAppliedDiscountIds = _discountRepository.Table
-                .Where(d => appliedCouponCodes.Contains(d.CouponCode)
+                .Where(d => normalizedCodes.Contains(d.CouponCode)
                     && d.Id != currentDiscountId
+                    && d.IsActive
                     && (!d.EndDateUtc.HasValue || d.EndDateUtc.Value > now))
                 .Select(d => d.Id)
                 .ToList();
@@ -68,14 +74,22 @@ namespace Nop.Plugin.Misc.ReviewReward.Discounts
                 return new DiscountRequirementValidationResult { IsValid = true };
 
             // Check if any of those other applied discounts is ALSO an unredeemed review reward coupon
-            var hasOtherReviewReward = _rewardRepository.Table.Any(r => otherAppliedDiscountIds.Contains(r.DiscountId) && !r.RedeemedOnUtc.HasValue);
-            if (hasOtherReviewReward)
+            var otherRewardDiscountIds = _rewardRepository.Table
+                .Where(r => otherAppliedDiscountIds.Contains(r.DiscountId) && !r.RedeemedOnUtc.HasValue)
+                .Select(r => r.DiscountId)
+                .ToList();
+
+            foreach (var otherDiscountId in otherRewardDiscountIds)
             {
-                return new DiscountRequirementValidationResult
+                var usageHistory = await _discountService.GetAllDiscountUsageHistoryAsync(otherDiscountId, null, null, false, 0, 1);
+                if (usageHistory.TotalCount == 0)
                 {
-                    IsValid = false,
-                    UserError = "Only one review reward coupon code can be applied per order."
-                };
+                    return new DiscountRequirementValidationResult
+                    {
+                        IsValid = false,
+                        UserError = "Only one review reward coupon code can be applied per order."
+                    };
+                }
             }
 
             return new DiscountRequirementValidationResult { IsValid = true };

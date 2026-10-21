@@ -1,9 +1,11 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Nop.Core;
+using Nop.Plugin.Misc.ReviewReward.Domain;
 using Nop.Plugin.Misc.ReviewReward.Models;
 using Nop.Plugin.Misc.ReviewReward.Services;
 using Nop.Services.Catalog;
+using Nop.Services.Configuration;
 using Nop.Services.Customers;
 using Nop.Web.Framework.Components;
 using Nop.Web.Framework.Infrastructure;
@@ -16,17 +18,20 @@ namespace Nop.Plugin.Misc.ReviewReward.Components
         private readonly IWorkContext _workContext;
         private readonly ICustomerService _customerService;
         private readonly IProductService _productService;
+        private readonly ISettingService _settingService;
         private readonly IReviewRewardService _reviewRewardService;
 
         public ReviewRewardReviewFormViewComponent(
             IWorkContext workContext,
             ICustomerService customerService,
             IProductService productService,
+            ISettingService settingService,
             IReviewRewardService reviewRewardService)
         {
             _workContext = workContext;
             _customerService = customerService;
             _productService = productService;
+            _settingService = settingService;
             _reviewRewardService = reviewRewardService;
         }
 
@@ -58,11 +63,26 @@ namespace Nop.Plugin.Misc.ReviewReward.Components
                 return Content(string.Empty);
 
             var hasOrdered = await _reviewRewardService.CustomerHasOrderedProductAsync(customer, product);
+            var settings = await _settingService.LoadSettingAsync<ReviewRewardSettings>();
+
+            string? freeProductName = null;
+            bool offerFreeProduct = false;
+            if (settings.OfferFreeProduct && settings.FreeProductId > 0)
+            {
+                var freeProduct = await _productService.GetProductByIdAsync(settings.FreeProductId);
+                if (freeProduct != null && !freeProduct.Deleted && freeProduct.Published)
+                {
+                    offerFreeProduct = true;
+                    freeProductName = freeProduct.Name;
+                }
+            }
 
             var model = new ReviewRewardFormModel
             {
                 ProductId = productId,
-                HasOrderedProduct = hasOrdered
+                HasOrderedProduct = hasOrdered,
+                OfferFreeProduct = offerFreeProduct,
+                FreeProductName = freeProductName
             };
 
             return View("~/Plugins/Misc.ReviewReward/Views/ReviewReward/ReviewFormRewardInfo.cshtml", model);

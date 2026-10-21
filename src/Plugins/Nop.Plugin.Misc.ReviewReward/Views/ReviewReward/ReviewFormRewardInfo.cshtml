@@ -9,7 +9,14 @@
             </div>
             <div>
                 <strong style="display: block; color: #2b8a3e; font-size: 1.1em;">Verified Online Purchase</strong>
-                <span style="font-weight: normal; color: #495057; font-size: 0.95em;">Submit your review to earn an exclusive discount reward coupon via email!</span>
+                @if (Model.OfferFreeProduct && !string.IsNullOrEmpty(Model.FreeProductName))
+                {
+                    <span style="font-weight: normal; color: #495057; font-size: 0.95em;">Submit your review to receive a free <strong>@Model.FreeProductName</strong> added directly to your basket (and a reward coupon via email)!</span>
+                }
+                else
+                {
+                    <span style="font-weight: normal; color: #495057; font-size: 0.95em;">Submit your review to earn an exclusive discount reward coupon via email!</span>
+                }
             </div>
         </div>
     }
@@ -22,7 +29,14 @@
                 </div>
                 <div>
                     <strong style="display: block; color: #1c7ed6; font-size: 1.1em;">Bought this item at a Market Stall?</strong>
-                    <span style="color: #495057; font-size: 0.95em;">Enter your stall purchase code below to verify your review and earn an exclusive discount reward coupon!</span>
+                    @if (Model.OfferFreeProduct && !string.IsNullOrEmpty(Model.FreeProductName))
+                    {
+                        <span style="color: #495057; font-size: 0.95em;">Enter your stall purchase code below to verify your review and receive a free <strong>@Model.FreeProductName</strong> added directly to your basket!</span>
+                    }
+                    else
+                    {
+                        <span style="color: #495057; font-size: 0.95em;">Enter your stall purchase code below to verify your review and earn an exclusive discount reward coupon!</span>
+                    }
                 </div>
             </div>
 

@@ -108,7 +108,8 @@ namespace Nop.Plugin.Misc.ReviewReward
             {
                 ["Plugins.Misc.ReviewReward.MarketCode"] = "Market Purchase Code",
                 ["Plugins.Misc.ReviewReward.MarketCode.Hint"] = "Enter the purchase code provided at the market stall to verify your review and earn a reward coupon.",
-                ["Plugins.Misc.ReviewReward.MarketCode.Invalid"] = "The market purchase code entered is invalid or has expired."
+                ["Plugins.Misc.ReviewReward.MarketCode.Invalid"] = "The market purchase code entered is invalid or has expired.",
+                [$"Admin.ContentManagement.MessageTemplates.Description.{ReviewRewardMessageService.MessageTemplateName}"] = "This message template is used to send reward coupons to customers after they submit a verified review."
             });
 
             await base.InstallAsync();
@@ -122,7 +123,8 @@ namespace Nop.Plugin.Misc.ReviewReward
             {
                 ["Plugins.Misc.ReviewReward.MarketCode"] = "Market Purchase Code",
                 ["Plugins.Misc.ReviewReward.MarketCode.Hint"] = "Enter the purchase code provided at the market stall to verify your review and earn a reward coupon.",
-                ["Plugins.Misc.ReviewReward.MarketCode.Invalid"] = "The market purchase code entered is invalid or has expired."
+                ["Plugins.Misc.ReviewReward.MarketCode.Invalid"] = "The market purchase code entered is invalid or has expired.",
+                [$"Admin.ContentManagement.MessageTemplates.Description.{ReviewRewardMessageService.MessageTemplateName}"] = "This message template is used to send reward coupons to customers after they submit a verified review."
             });
 
             await base.UpdateAsync(currentVersion, targetVersion);
@@ -147,6 +149,7 @@ namespace Nop.Plugin.Misc.ReviewReward
             }
 
             await _localizationService.DeleteLocaleResourcesAsync("Plugins.Misc.ReviewReward");
+            await _localizationService.DeleteLocaleResourceAsync($"Admin.ContentManagement.MessageTemplates.Description.{ReviewRewardMessageService.MessageTemplateName}");
 
             await base.UninstallAsync();
         }
