@@ -115,6 +115,27 @@
             box-sizing: border-box !important;
         }
     }
+
+    /* Hide default nopCommerce checkout footer and button when Square provides its own action */
+    .payment-info-page .checkout-footer-modern.payment-info-default-footer,
+    .payment-info-modern .checkout-footer-modern.payment-info-default-footer,
+    .payment-info-modern .payment-info-default-footer,
+    .payment-info-default-footer,
+    .payment-info-default-footer-hidden,
+    .payment-info-next-step-button,
+    .hidden-button {
+        display: none !important;
+        visibility: hidden !important;
+        height: 0 !important;
+        min-height: 0 !important;
+        max-height: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        border: none !important;
+        overflow: hidden !important;
+        position: absolute !important;
+        left: -9999px !important;
+    }
 </style>
 
 <script asp-location="Footer">
@@ -126,8 +147,14 @@
             console.error('Square.js failed to load properly');
         }
 
-        $('.payment-info-next-step-button').closest('.checkout-footer-modern, .buttons').hide();
-        $('.payment-info-next-step-button').hide();
+        var defaultFooter = $('.payment-info-next-step-button').closest('.checkout-footer-modern, .buttons, .payment-info-default-footer');
+        defaultFooter.addClass('payment-info-default-footer-hidden');
+        defaultFooter.each(function () {
+            this.style.setProperty('display', 'none', 'important');
+        });
+        $('.payment-info-next-step-button').addClass('hidden-button').each(function () {
+            this.style.setProperty('display', 'none', 'important');
+        });
         displayAjaxLoading(true);
         var use3ds = @settings.Use3ds.ToString().ToLower();
         var payButton = $('#pay-button');
