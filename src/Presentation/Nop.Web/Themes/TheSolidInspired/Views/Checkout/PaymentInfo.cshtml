@@ -24,6 +24,14 @@
 
                 <div asp-validation-summary="ModelOnly" class="message-error"></div>
 
+                @if (Context.Request.Query.ContainsKey("retry") || (Context.Request.Headers.Referer.ToString().Contains("checkout/confirm", StringComparison.OrdinalIgnoreCase) && !ViewData.ModelState.IsValid))
+                {
+                    <div class="payment-retry-alert" style="margin-bottom: 25px; padding: 16px 20px; border-radius: 8px; border-left: 5px solid #3182ce; background-color: #ebf8ff; color: #2b6cb0; font-size: 0.95rem; display: flex; align-items: center; gap: 12px; box-shadow: 0 2px 8px rgba(49, 130, 206, 0.08);">
+                        <i class="fas fa-info-circle" style="font-size: 1.25rem; flex-shrink: 0;"></i>
+                        <span>Please re-enter or update your card details below to proceed with your order.</span>
+                    </div>
+                }
+
                 <div class="payment-info-content-modern">
                     @await Component.InvokeAsync(Model.PaymentViewComponent)
                 </div>

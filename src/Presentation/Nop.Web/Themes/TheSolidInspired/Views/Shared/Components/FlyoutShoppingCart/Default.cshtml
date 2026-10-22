@@ -1,5 +1,7 @@
 @model MiniShoppingCartModel
 
+@inject Nop.Core.IWorkContext workContext
+@inject Nop.Services.Localization.ILocalizationService localizationService
 @using Nop.Core.Domain.Catalog
 
 <div id="flyout-cart" class="flyout-cart">
@@ -36,11 +38,8 @@
                 }
                 @if (Model.TotalDistinctProducts > Model.Items.Count)
                 {
-                    var moreItemsText = T("ShoppingCart.Mini.MoreItems").Text;
-                    if (string.IsNullOrEmpty(moreItemsText) || string.Equals(moreItemsText, "ShoppingCart.Mini.MoreItems", StringComparison.OrdinalIgnoreCase))
-                    {
-                        moreItemsText = "... and {0} more item(s) in your basket.";
-                    }
+                    var currentLanguage = await workContext.GetWorkingLanguageAsync();
+                    var moreItemsText = await localizationService.GetResourceAsync("ShoppingCart.Mini.MoreItems", currentLanguage?.Id ?? 0, logIfNotFound: false, defaultValue: "... and {0} more item(s) in your basket.");
                     <div class="more-items-notice" style="text-align: center; padding: 10px; font-size: 13px; color: #6c757d; border-top: 1px dashed #e9ecef; margin-top: 8px;">
                         @string.Format(moreItemsText, Model.TotalDistinctProducts - Model.Items.Count)
                     </div>

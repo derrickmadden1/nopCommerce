@@ -34,6 +34,27 @@
                 </div>
 
                 <form asp-route="@NopRouteNames.Standard.CHECKOUT_CONFIRM" method="post" id="confirm-order-form">
+                    @if (Model.Warnings.Count > 0)
+                    {
+                        <div class="message-error confirm-error-box" id="confirm-warnings-box" role="alert">
+                            <div class="error-header">
+                                <i class="fas fa-exclamation-circle"></i>
+                                <span>Payment could not be completed</span>
+                            </div>
+                            <ul>
+                                @foreach (var warning in Model.Warnings)
+                                {
+                                    <li>@warning</li>
+                                }
+                            </ul>
+                            <div class="error-action">
+                                <a href="@Url.RouteUrl(NopRouteNames.Standard.CHECKOUT_PAYMENT_INFO, new { retry = true })" class="btn-change-payment">
+                                    <i class="fas fa-credit-card"></i> Change or re-enter payment details
+                                </a>
+                            </div>
+                        </div>
+                    }
+
                     <div class="confirm-actions-modern">
                         @if (Model.TermsOfServiceOnOrderConfirmPage)
                         {
@@ -70,6 +91,13 @@
 
                     <script asp-location="Footer">
                         $(function() {
+                            var warningBox = $('#confirm-warnings-box');
+                            if (warningBox.length > 0) {
+                                $('html, body').animate({
+                                    scrollTop: warningBox.offset().top - 90
+                                }, 350);
+                            }
+
                             $('#termsofservice').on('change', function () {
                                 if ($(this).is(':checked')) {
                                     $(this).closest('.terms-of-service-modern').css({
@@ -108,18 +136,6 @@
                     {
                         <div class="captcha-modern">
                             <nop-captcha />
-                        </div>
-                    }
-
-                    @if (Model.Warnings.Count > 0)
-                    {
-                        <div class="message-error">
-                            <ul>
-                                @foreach (var warning in Model.Warnings)
-                                {
-                                    <li>@warning</li>
-                                }
-                            </ul>
                         </div>
                     }
                 </form>
