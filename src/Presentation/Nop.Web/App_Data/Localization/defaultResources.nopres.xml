@@ -20782,6 +20782,9 @@
   <LocaleResource Name="ShoppingCart.Mini.UnitPrice">
     <Value>Unit price</Value>
   </LocaleResource>
+  <LocaleResource Name="ShoppingCart.Mini.MoreItems">
+    <Value>... and {0} more item(s) in your basket.</Value>
+  </LocaleResource>
   <LocaleResource Name="ShoppingCart.Mini.ViewCart">
     <Value>Go to cart</Value>
   </LocaleResource>

@@ -287,7 +287,9 @@ public abstract class BaseCheckoutFlow : ICheckoutFlow
             try
             {
                 TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Existing billing address found, clicking select button");
-                await existingBtn.ClickAsync(new() { Force = true });
+                await existingBtn.ScrollIntoViewIfNeededAsync();
+                await Task.Delay(300);
+                await existingBtn.ClickAsync();
                 await page.WaitForURLAsync(url => !url.Contains("/checkout/billingaddress", StringComparison.OrdinalIgnoreCase), new() { Timeout = 15000 });
                 await page.WaitForLoadStateAsync(LoadState.DOMContentLoaded);
                 TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Selected existing billing address, new url={page.Url}");
@@ -295,7 +297,19 @@ public abstract class BaseCheckoutFlow : ICheckoutFlow
             }
             catch (Exception ex)
             {
-                TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Existing address click fallback: {ex.Message}");
+                TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Existing billing address click fallback: {ex.Message}");
+                try
+                {
+                    await existingBtn.EvaluateAsync("el => el.click()");
+                    await page.WaitForURLAsync(url => !url.Contains("/checkout/billingaddress", StringComparison.OrdinalIgnoreCase), new() { Timeout = 15000 });
+                    await page.WaitForLoadStateAsync(LoadState.DOMContentLoaded);
+                    TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Selected existing billing address via JS click, new url={page.Url}");
+                    return;
+                }
+                catch (Exception retryEx)
+                {
+                    TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Existing billing address JS click fallback: {retryEx.Message}");
+                }
             }
         }
 
@@ -364,7 +378,9 @@ public abstract class BaseCheckoutFlow : ICheckoutFlow
             try
             {
                 TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Existing shipping address found, clicking select button");
-                await existingBtn.ClickAsync(new() { Force = true });
+                await existingBtn.ScrollIntoViewIfNeededAsync();
+                await Task.Delay(500); // Allow MarketLocator DOM transplant / layout shift to settle
+                await existingBtn.ClickAsync();
                 await page.WaitForURLAsync(url => !url.Contains("/checkout/shippingaddress", StringComparison.OrdinalIgnoreCase), new() { Timeout = 15000 });
                 await page.WaitForLoadStateAsync(LoadState.DOMContentLoaded);
                 TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Selected existing shipping address, new url={page.Url}");
@@ -373,12 +389,48 @@ public abstract class BaseCheckoutFlow : ICheckoutFlow
             catch (Exception ex)
             {
                 TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Existing shipping address click fallback: {ex.Message}");
+                try
+                {
+                    TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Retrying existing shipping address selection via JS click");
+                    await existingBtn.EvaluateAsync("el => el.click()");
+                    await page.WaitForURLAsync(url => !url.Contains("/checkout/shippingaddress", StringComparison.OrdinalIgnoreCase), new() { Timeout = 15000 });
+                    await page.WaitForLoadStateAsync(LoadState.DOMContentLoaded);
+                    TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Selected existing shipping address via JS click, new url={page.Url}");
+                    return;
+                }
+                catch (Exception jsEx)
+                {
+                    TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] JS click failed: {jsEx.Message}");
+                    try
+                    {
+                        var onclick = await existingBtn.GetAttributeAsync("onclick");
+                        if (!string.IsNullOrEmpty(onclick) && onclick.Contains("setLocation('"))
+                        {
+                            var start = onclick.IndexOf("setLocation('") + "setLocation('".Length;
+                            var end = onclick.IndexOf("')", start);
+                            if (end > start)
+                            {
+                                var destUrl = onclick.Substring(start, end - start);
+                                TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Direct navigation to setLocation URL: {destUrl}");
+                                await page.GotoAsync(destUrl);
+                                await page.WaitForURLAsync(url => !url.Contains("/checkout/shippingaddress", StringComparison.OrdinalIgnoreCase), new() { Timeout = 15000 });
+                                await page.WaitForLoadStateAsync(LoadState.DOMContentLoaded);
+                                return;
+                            }
+                        }
+                    }
+                    catch (Exception navEx)
+                    {
+                        TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Direct navigation fallback failed: {navEx.Message}");
+                    }
+                }
             }
         }
 
         var shippingFirstName = page.Locator("#ShippingNewAddress_FirstName");
-        if (await shippingFirstName.IsVisibleAsync())
+        if (await shippingFirstName.CountAsync() > 0)
         {
+            await shippingFirstName.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 10000 });
             var customer = Settings.Customer;
             TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Filling new shipping address for {customer.FirstName} {customer.LastName}");
             await shippingFirstName.FillAsync(customer.FirstName);
@@ -406,17 +458,17 @@ public abstract class BaseCheckoutFlow : ICheckoutFlow
             await page.Locator("#ShippingNewAddress_Address1").FillAsync(customer.Address1);
             await page.Locator("#ShippingNewAddress_ZipPostalCode").FillAsync(customer.ZipPostalCode);
             await page.Locator("#ShippingNewAddress_PhoneNumber").FillAsync(customer.PhoneNumber);
+
+            var shippingNext = page.Locator("#shippingaddress-next-button, .shipping-address-page button[name='nextstep'], #shipping-buttons-container .new-address-next-step-button").Locator(":visible").First;
+            TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Waiting for shipping Next button to be visible");
+            await shippingNext.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 10000 });
+            TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Clicking shipping Next button");
+            await shippingNext.ClickAsync(new() { Force = true });
+
+            await page.WaitForURLAsync(url => !url.Contains("/checkout/shippingaddress", StringComparison.OrdinalIgnoreCase), new() { Timeout = 15000 });
+            await page.WaitForLoadStateAsync(LoadState.DOMContentLoaded);
+            TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Left shippingaddress page, new url={page.Url}");
         }
-
-        var shippingNext = page.Locator("#shippingaddress-next-button, .shipping-address-page button[name='nextstep'], #shipping-buttons-container .new-address-next-step-button").Locator(":visible").First;
-        TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Waiting for shipping Next button to be visible");
-        await shippingNext.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 10000 });
-        TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Clicking shipping Next button");
-        await shippingNext.ClickAsync(new() { Force = true });
-
-        await page.WaitForURLAsync(url => !url.Contains("/checkout/shippingaddress", StringComparison.OrdinalIgnoreCase), new() { Timeout = 15000 });
-        await page.WaitForLoadStateAsync(LoadState.DOMContentLoaded);
-        TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Left shippingaddress page, new url={page.Url}");
     }
 
     protected async Task SelectShippingMethodAsync(IPage page)

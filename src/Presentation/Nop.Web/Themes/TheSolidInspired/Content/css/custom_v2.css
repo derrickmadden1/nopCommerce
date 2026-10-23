@@ -3757,6 +3757,68 @@ body {
   cursor: wait;
 }
 
+.confirm-error-box {
+  width: 100%;
+  box-sizing: border-box;
+  margin-bottom: 25px !important;
+  padding: 20px 24px !important;
+  border-radius: 10px !important;
+  border-left: 6px solid #e53e3e !important;
+  background-color: #fff5f5 !important;
+  border-top: 1px solid #fed7d7;
+  border-right: 1px solid #fed7d7;
+  border-bottom: 1px solid #fed7d7;
+  box-shadow: 0 4px 15px rgba(229, 62, 62, 0.08);
+}
+
+.confirm-error-box .error-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: #c53030;
+  margin-bottom: 8px;
+}
+
+.confirm-error-box ul {
+  margin: 0;
+  padding-left: 20px;
+  color: #742a2a;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.confirm-error-box .error-action {
+  margin-top: 15px;
+  padding-top: 12px;
+  border-top: 1px solid #fed7d7;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.confirm-error-box .btn-change-payment {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff;
+  border: 1px solid #cbd5e0;
+  color: #2d3748;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.confirm-error-box .btn-change-payment:hover {
+  background: #edf2f7;
+  color: #1a202c;
+  border-color: #a0aec0;
+}
+
 .captcha-modern {
   margin-top: 30px;
   display: flex;
