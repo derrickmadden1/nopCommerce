@@ -145,7 +145,7 @@ public class TokenizerTests : ServiceTest
     [Test]
     public void CanReplaceTokensWithTrackingConditions()
     {
-        var template = @"%if (!String.IsNullOrEmpty(%Shipment.TrackingNumber%))Tracking number: %if (!String.IsNullOrEmpty(%Shipment.TrackingNumberURL%))<a href=""%Shipment.TrackingNumberURL%"" target=""_blank"">%Shipment.TrackingNumber%</a>endif%%if (String.IsNullOrEmpty(%Shipment.TrackingNumberURL%))%Shipment.TrackingNumber%endif%<br />endif%";
+        var template = @"%if (!String.IsNullOrEmpty(%Shipment.TrackingNumber%))Tracking number: %if (!String.IsNullOrEmpty(%Shipment.TrackingNumberURL%))<a href=""%Shipment.TrackingNumberURL%"" target=""_blank"">%Shipment.TrackingNumber%</a>endif%%if (String.IsNullOrEmpty(%Shipment.TrackingNumberURL%))%Shipment.TrackingNumber%endif%<br />%if (!String.IsNullOrEmpty(%Shipment.TrackingNumberURL%))Tracking URL: <a href=""%Shipment.TrackingNumberURL%"" target=""_blank"">%Shipment.TrackingNumberURL%</a><br />endif%endif%";
 
         // Case 1: Tracking number and URL both present
         var tokensWithBoth = new List<Token>
@@ -154,7 +154,7 @@ public class TokenizerTests : ServiceTest
             new("Shipment.TrackingNumberURL", "https://ups.com/track?num=1Z9999999", true)
         };
         var res1 = _tokenizer.Replace(template, tokensWithBoth, false);
-        res1.Should().Be(@"Tracking number: <a href=""https://ups.com/track?num=1Z9999999"" target=""_blank"">1Z9999999</a><br />");
+        res1.Should().Be(@"Tracking number: <a href=""https://ups.com/track?num=1Z9999999"" target=""_blank"">1Z9999999</a><br />Tracking URL: <a href=""https://ups.com/track?num=1Z9999999"" target=""_blank"">https://ups.com/track?num=1Z9999999</a><br />");
 
         // Case 2: Tracking number present, URL empty
         var tokensWithNumOnly = new List<Token>
