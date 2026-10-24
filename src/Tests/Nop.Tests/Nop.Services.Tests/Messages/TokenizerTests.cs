@@ -1,4 +1,4 @@
-﻿using AwesomeAssertions;
+using AwesomeAssertions;
 using Nop.Core.Domain.Messages;
 using Nop.Services.Configuration;
 using Nop.Services.Messages;
@@ -140,5 +140,52 @@ public class TokenizerTests : ServiceTest
 
         _tokenizer.Replace("Some text %Token1%, %Token2%, %Token3%", tokens, true)
             .Should().Be("Some text True, 1, value");
+    }
+
+    [Test]
+    public void CanReplaceTokensWithTrackingConditions()
+    {
+        var template = @"%if (!String.IsNullOrEmpty(%Shipment.TrackingNumber%))Tracking number: %if (!String.IsNullOrEmpty(%Shipment.TrackingNumberURL%))<a href=""%Shipment.TrackingNumberURL%"" target=""_blank"">%Shipment.TrackingNumber%</a>endif%%if (String.IsNullOrEmpty(%Shipment.TrackingNumberURL%))%Shipment.TrackingNumber%endif%<br />%if (!String.IsNullOrEmpty(%Shipment.TrackingNumberURL%))Tracking URL: <a href=""%Shipment.TrackingNumberURL%"" target=""_blank"">%Shipment.TrackingNumberURL%</a><br />endif%endif%";
+
+        // Case 1: Tracking number and URL both present
+        var tokensWithBoth = new List<Token>
+        {
+            new("Shipment.TrackingNumber", "1Z9999999"),
+            new("Shipment.TrackingNumberURL", "https://ups.com/track?num=1Z9999999", true)
+        };
+        var res1 = _tokenizer.Replace(template, tokensWithBoth, false);
+        res1.Should().Be(@"Tracking number: <a href=""https://ups.com/track?num=1Z9999999"" target=""_blank"">1Z9999999</a><br />Tracking URL: <a href=""https://ups.com/track?num=1Z9999999"" target=""_blank"">https://ups.com/track?num=1Z9999999</a><br />");
+
+        // Case 2: Tracking number present, URL empty
+        var tokensWithNumOnly = new List<Token>
+        {
+            new("Shipment.TrackingNumber", "1Z9999999"),
+            new("Shipment.TrackingNumberURL", "", true)
+        };
+        var res2 = _tokenizer.Replace(template, tokensWithNumOnly, false);
+        res2.Should().Be(@"Tracking number: 1Z9999999<br />");
+
+        // Case 3: Both empty
+        var tokensEmpty = new List<Token>
+        {
+            new("Shipment.TrackingNumber", ""),
+            new("Shipment.TrackingNumberURL", "", true)
+        };
+        var res3 = _tokenizer.Replace(template, tokensEmpty, false);
+        res3.Should().Be(string.Empty);
+
+        // Case 4: Null tracking number
+        var tokensNull = new List<Token>
+        {
+            new("Shipment.TrackingNumber", null),
+            new("Shipment.TrackingNumberURL", "", true)
+        };
+        var res4 = _tokenizer.Replace(template, tokensNull, false);
+        res4.Should().Be(string.Empty);
+
+        // Case 5: Missing tokens
+        var tokensMissing = new List<Token>();
+        var res5 = _tokenizer.Replace(template, tokensMissing, false);
+        res5.Should().Be(string.Empty);
     }
 }

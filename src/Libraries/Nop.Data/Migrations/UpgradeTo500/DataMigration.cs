@@ -214,6 +214,19 @@ public class DataMigration : Migration
                 });
             }
         }
+
+        var shipmentSentTemplate = _dataProvider.GetTable<MessageTemplate>()
+            .FirstOrDefault(st => string.Compare(st.Name, MessageTemplateSystemNames.SHIPMENT_SENT_CUSTOMER_NOTIFICATION, StringComparison.InvariantCultureIgnoreCase) == 0);
+        if (shipmentSentTemplate != null && !shipmentSentTemplate.Body.Contains("%Shipment.TrackingNumber%"))
+        {
+            var trackingLine = $"%if (!String.IsNullOrEmpty(%Shipment.TrackingNumber%))Tracking number: %if (!String.IsNullOrEmpty(%Shipment.TrackingNumberURL%))<a href=\"%Shipment.TrackingNumberURL%\" target=\"_blank\">%Shipment.TrackingNumber%</a>endif%%if (String.IsNullOrEmpty(%Shipment.TrackingNumberURL%))%Shipment.TrackingNumber%endif%{Environment.NewLine}<br />{Environment.NewLine}%if (!String.IsNullOrEmpty(%Shipment.TrackingNumberURL%))Tracking URL: <a href=\"%Shipment.TrackingNumberURL%\" target=\"_blank\">%Shipment.TrackingNumberURL%</a>{Environment.NewLine}<br />{Environment.NewLine}endif%endif%<br />";
+            var regex = new System.Text.RegularExpressions.Regex(@"Shipping Method: %Order\.ShippingMethod%\s*(?:<br\s*/?>\s*){2}", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            if (regex.IsMatch(shipmentSentTemplate.Body))
+            {
+                shipmentSentTemplate.Body = regex.Replace(shipmentSentTemplate.Body, $"Shipping Method: %Order.ShippingMethod%{Environment.NewLine}<br />{Environment.NewLine}{trackingLine}");
+                _dataProvider.UpdateEntity(shipmentSentTemplate);
+            }
+        }
     }
 
     /// <summary>Collects the DOWN migration expressions</summary>
