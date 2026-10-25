@@ -3,8 +3,20 @@
 @using Nop.Web.Framework.Infrastructure
 @using Nop.Web.Framework.UI
 @inject Nop.Web.Factories.ICommonModelFactory commonModelFactory
+@inject Nop.Web.Factories.ICatalogModelFactory catalogModelFactory
 @{
     var socialModel = await commonModelFactory.PrepareSocialModelAsync();
+    var categoryNavModel = await catalogModelFactory.PrepareCategoryNavigationModelAsync(0, 0);
+    var rootCategories = categoryNavModel?.Categories ?? new List<CategorySimpleModel>();
+
+    var currentCategoryId = 0;
+    if (Url.ActionContext.RouteData.Values["controller"]?.ToString().Equals("catalog", StringComparison.InvariantCultureIgnoreCase) == true &&
+        Url.ActionContext.RouteData.Values["action"]?.ToString().Equals("category", StringComparison.InvariantCultureIgnoreCase) == true &&
+        Url.ActionContext.RouteData.Values["categoryId"] != null)
+    {
+        int.TryParse(Url.ActionContext.RouteData.Values["categoryId"].ToString(), out currentCategoryId);
+    }
+    var currentSeName = ViewContext.RouteData.Values["SeName"]?.ToString() ?? "";
 }
 
 <style>
@@ -153,6 +165,10 @@
         border: none !important;
     }
 
+    .header-mobile-spacer {
+        display: none !important;
+    }
+
     @@media (max-width: 991px) {
         .header-search-cart {
             position: static !important;
@@ -165,6 +181,56 @@
             flex-direction: column !important;
         }
         #mini-cart-panel { width: 100% !important; }
+    }
+
+    @@media (max-width: 768px) {
+        .header-modern .header-main-area {
+            padding: 12px 15px !important;
+        }
+        .header-logo-row {
+            display: flex !important;
+            flex-direction: row !important;
+            flex-wrap: wrap !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            min-height: unset !important;
+            padding: 0 !important;
+            position: relative !important;
+        }
+        .mobile-menu-toggle {
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 6px !important;
+            padding: 6px 11px !important;
+            position: static !important;
+            transform: none !important;
+            margin: 0 !important;
+            flex: 0 0 auto !important;
+            box-sizing: border-box !important;
+        }
+        .header-logo {
+            flex: 1 1 auto !important;
+            text-align: center !important;
+            padding: 0 8px !important;
+            min-width: 0 !important;
+        }
+        .header-logo img {
+            max-height: 42px !important;
+            max-width: 100% !important;
+            height: auto !important;
+            width: auto !important;
+            display: inline-block !important;
+        }
+        .header-mobile-spacer {
+            display: block !important;
+            flex: 0 0 68px !important;
+            width: 68px !important;
+            height: 1px !important;
+        }
+        .header-search-cart {
+            width: 100% !important;
+            margin-top: 14px !important;
+        }
     }
 </style>
 
@@ -205,16 +271,22 @@
     <div class="header-main-area">
         <!-- Logo Row -->
         <div class="header-logo-row">
+            <!-- Hamburger Menu Button with Text Label (Mobile Only) -->
+            <button id="mobile-menu-toggle" class="mobile-menu-toggle" aria-label="Toggle navigation" type="button">
+                <span class="hamburger-icon" aria-hidden="true">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </span>
+                <span class="mobile-menu-label">Menu</span>
+            </button>
+
             <div class="header-logo">
                 @await Component.InvokeAsync(typeof(LogoViewComponent))
             </div>
-            
-            <!-- Hamburger Menu Button (Mobile Only) -->
-            <button id="mobile-menu-toggle" class="mobile-menu-toggle" aria-label="Toggle navigation">
-                <span></span>
-                <span></span>
-                <span></span>
-            </button>
+
+            <!-- Mobile Balance Spacer to keep logo centered without overlapping -->
+            <div class="header-mobile-spacer" aria-hidden="true"></div>
             
             <div class="header-search-cart">
                 <div class="search-box">
@@ -241,6 +313,38 @@
             }
         </nav>
     </div>
+
+    @if (rootCategories.Any())
+    {
+        <!-- Mobile Category Chip Strip -->
+        <div class="mobile-category-strip-wrapper">
+            <nav class="mobile-category-strip" aria-label="Categories">
+                <button type="button" class="category-chip category-chip-all" onclick="openMobileNav()" aria-label="Open full menu">
+                    <i class="fas fa-bars" aria-hidden="true"></i>
+                    <span>All</span>
+                </button>
+                @foreach (var category in rootCategories)
+                {
+                    var hasValidUrl = !string.IsNullOrEmpty(category.SeName);
+                    var isCurrent = (category.Id == currentCategoryId) || (hasValidUrl && !string.IsNullOrEmpty(currentSeName) && category.SeName.Equals(currentSeName, StringComparison.InvariantCultureIgnoreCase));
+
+                    if (hasValidUrl)
+                    {
+                        <a href="@Url.RouteUrl("Category", new { SeName = category.SeName })" class="category-chip @(isCurrent ? "active" : "")">
+                            @category.Name
+                        </a>
+                    }
+                    else
+                    {
+                        <button type="button" class="category-chip" onclick="openMobileNavToCategory('@category.Name')" aria-label="Browse @category.Name categories">
+                            <span>@category.Name</span>
+                            <i class="fas fa-chevron-down chip-dropdown-icon" aria-hidden="true"></i>
+                        </button>
+                    }
+                }
+            </nav>
+        </div>
+    }
 
 </header>
 @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.HeaderAfter })
@@ -334,6 +438,27 @@
         document.body.style.overflow = "";
     }
 
+    function openMobileNavToCategory(categoryName) {
+        openMobileNav();
+        if (categoryName) {
+            const mobileNavPanel = document.getElementById("mobile-nav-panel");
+            if (mobileNavPanel) {
+                const items = mobileNavPanel.querySelectorAll(".mega-menu-item");
+                items.forEach(item => {
+                    const link = item.querySelector("a");
+                    if (link && link.textContent.trim().toLowerCase() === categoryName.trim().toLowerCase()) {
+                        item.classList.add("expanded");
+                        const toggleBtn = item.querySelector(".mobile-menu-toggle-btn");
+                        if (toggleBtn) toggleBtn.setAttribute("aria-expanded", "true");
+                        setTimeout(() => {
+                            item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                        }, 150);
+                    }
+                });
+            }
+        }
+    }
+
     // Ajax Cart Override
     if (typeof AjaxCart !== 'undefined') {
         var originalSuccess = AjaxCart.success_process;
@@ -398,22 +523,15 @@
                     toggleBtn.setAttribute("aria-expanded", "false");
                     
                     const parentLink = Array.from(item.children).find(el => el.tagName && el.tagName.toLowerCase() === 'a');
-                    if (parentLink) {
-                        parentLink.setAttribute("role", "button");
-                        parentLink.setAttribute("aria-expanded", "false");
-                    }
 
                     function toggleSubMenu(e) {
                         e.preventDefault();
                         e.stopPropagation();
                         const isExpanded = item.classList.toggle("expanded");
                         toggleBtn.setAttribute("aria-expanded", isExpanded.toString());
-                        if (parentLink) {
-                            parentLink.setAttribute("aria-expanded", isExpanded.toString());
-                        }
                     }
 
-                    // Clicking either the arrow button or the parent title toggles the sub-menu
+                    // For parent categories with no direct page, clicking either the row or chevron toggles the subcategories
                     toggleBtn.addEventListener("click", toggleSubMenu);
                     if (parentLink) {
                         parentLink.addEventListener("click", toggleSubMenu);
