@@ -2,17 +2,30 @@
 @using Nop.Web.Components
 @using Nop.Web.Framework.Infrastructure
 @using Nop.Web.Framework.UI
+@using Nop.Web.Models.Common
 @inject Nop.Web.Factories.ICommonModelFactory commonModelFactory
 @inject Nop.Web.Factories.ICatalogModelFactory catalogModelFactory
 @{
     var socialModel = await commonModelFactory.PrepareSocialModelAsync();
+    var headerLinksModel = await commonModelFactory.PrepareHeaderLinksModelAsync();
     var categoryNavModel = await catalogModelFactory.PrepareCategoryNavigationModelAsync(0, 0);
     var rootCategories = categoryNavModel?.Categories ?? new List<CategorySimpleModel>();
 
+    var currentController = Url.ActionContext.RouteData.Values["controller"]?.ToString() ?? "";
+    var currentAction = Url.ActionContext.RouteData.Values["action"]?.ToString() ?? "";
+
+    var isHomePage = currentController.Equals("home", StringComparison.InvariantCultureIgnoreCase) &&
+                     currentAction.Equals("index", StringComparison.InvariantCultureIgnoreCase);
+    var isSearchPage = currentController.Equals("catalog", StringComparison.InvariantCultureIgnoreCase) &&
+                       currentAction.Equals("search", StringComparison.InvariantCultureIgnoreCase);
+    var isCartPage = currentController.Equals("shoppingcart", StringComparison.InvariantCultureIgnoreCase) &&
+                     currentAction.Equals("cart", StringComparison.InvariantCultureIgnoreCase);
+    var isAccountPage = currentController.Equals("customer", StringComparison.InvariantCultureIgnoreCase);
+    var isCategoryPage = currentController.Equals("catalog", StringComparison.InvariantCultureIgnoreCase) &&
+                         currentAction.Equals("category", StringComparison.InvariantCultureIgnoreCase);
+
     var currentCategoryId = 0;
-    if (Url.ActionContext.RouteData.Values["controller"]?.ToString().Equals("catalog", StringComparison.InvariantCultureIgnoreCase) == true &&
-        Url.ActionContext.RouteData.Values["action"]?.ToString().Equals("category", StringComparison.InvariantCultureIgnoreCase) == true &&
-        Url.ActionContext.RouteData.Values["categoryId"] != null)
+    if (isCategoryPage && Url.ActionContext.RouteData.Values["categoryId"] != null)
     {
         int.TryParse(Url.ActionContext.RouteData.Values["categoryId"].ToString(), out currentCategoryId);
     }
@@ -382,6 +395,36 @@
 </div>
 <div id="mobile-nav-overlay" class="mobile-nav-overlay" style="display: none !important;"></div>
 
+<!-- Mobile Bottom Navigation Bar (Thumb Zone) -->
+<nav class="mobile-bottom-nav" aria-label="Mobile Navigation">
+    <a href="@Url.RouteUrl(NopRouteNames.General.HOMEPAGE)" class="mobile-bottom-nav-item @(isHomePage ? "active" : "")" aria-label="Home">
+        <i class="fas fa-home" aria-hidden="true"></i>
+        <span>Home</span>
+    </a>
+    <button type="button" class="mobile-bottom-nav-item @(isCategoryPage ? "active" : "")" onclick="openMobileNav()" aria-label="Open categories menu">
+        <i class="fas fa-th-large" aria-hidden="true"></i>
+        <span>Categories</span>
+    </button>
+    <button type="button" class="mobile-bottom-nav-item @(isSearchPage ? "active" : "")" onclick="focusMobileSearch()" aria-label="Search store">
+        <i class="fas fa-search" aria-hidden="true"></i>
+        <span>Search</span>
+    </button>
+    @if (headerLinksModel.ShoppingCartEnabled)
+    {
+        <button type="button" class="mobile-bottom-nav-item @(isCartPage ? "active" : "")" onclick="openCartPanel()" aria-label="View cart">
+            <span class="bottom-nav-icon-wrapper">
+                <i class="fas fa-shopping-bag" aria-hidden="true"></i>
+                <span id="bottom-cart-badge" class="bottom-cart-badge" style="@(headerLinksModel.ShoppingCartItems > 0 ? "" : "display:none;")">@headerLinksModel.ShoppingCartItems</span>
+            </span>
+            <span>Cart</span>
+        </button>
+    }
+    <a href="@(headerLinksModel.IsAuthenticated ? Url.RouteUrl(NopRouteNames.General.CUSTOMER_INFO) : Url.RouteUrl(NopRouteNames.General.LOGIN))" class="mobile-bottom-nav-item @(isAccountPage ? "active" : "")" aria-label="My account">
+        <i class="fas fa-user" aria-hidden="true"></i>
+        <span>Account</span>
+    </a>
+</nav>
+
 <script>
     // Logic for toggling panels
     function openCartPanel() {
@@ -459,6 +502,35 @@
         }
     }
 
+    // Mobile Search Bar Focus helper
+    function focusMobileSearch() {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        const searchInput = document.getElementById("small-searchterms");
+        if (searchInput) {
+            setTimeout(function() {
+                searchInput.focus();
+                searchInput.classList.add("search-highlight");
+                setTimeout(function() {
+                    searchInput.classList.remove("search-highlight");
+                }, 1800);
+            }, 250);
+        }
+    }
+
+    // Dynamic Bottom Cart Badge synchronization
+    function updateBottomCartBadge() {
+        const qtyElem = document.querySelector('.cart-qty');
+        const badge = document.getElementById('bottom-cart-badge');
+        if (badge) {
+            if (qtyElem) {
+                const text = qtyElem.textContent.replace(/[^\d]/g, '').trim();
+                const count = parseInt(text, 10) || 0;
+                badge.textContent = count;
+                badge.style.display = count > 0 ? 'inline-flex' : 'none';
+            }
+        }
+    }
+
     // Ajax Cart Override
     if (typeof AjaxCart !== 'undefined') {
         var originalSuccess = AjaxCart.success_process;
@@ -467,6 +539,7 @@
             if (response.updateflyoutcartsectionhtml || (response.success && response.message)) {
                  openCartPanel();
             }
+            setTimeout(updateBottomCartBadge, 250);
             return result;
         };
     }
@@ -504,6 +577,13 @@
 
         const navOverlay = document.getElementById("mobile-nav-overlay");
         if (navOverlay) navOverlay.addEventListener("click", closeMobileNav);
+
+        updateBottomCartBadge();
+        if (window.jQuery) {
+            $(document).ajaxComplete(function() {
+                setTimeout(updateBottomCartBadge, 250);
+            });
+        }
 
         // Mobile Navigation Sub-menu Toggling
         const mobileNavPanel = document.getElementById("mobile-nav-panel");
