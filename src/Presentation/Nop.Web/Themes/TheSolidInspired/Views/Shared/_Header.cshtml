@@ -114,13 +114,19 @@
         position: fixed !important;
         top: 0 !important;
         right: 0 !important;
-        width: 400px !important;
-        height: 100vh !important;
+        width: 420px !important;
+        max-width: 100vw !important;
+        height: 100% !important;
+        height: 100dvh !important;
+        max-height: 100dvh !important;
         background: #fff !important;
         z-index: 100000 !important;
         box-shadow: 0 0 50px rgba(0,0,0,0.3) !important;
-        padding: 40px !important;
+        padding: 24px 28px !important;
+        display: none !important;
         flex-direction: column !important;
+        box-sizing: border-box !important;
+        overflow: hidden !important;
     }
 
     body #mobile-nav-panel {
@@ -197,6 +203,11 @@
     }
 
     @@media (max-width: 768px) {
+        body #mini-cart-panel {
+            width: 100% !important;
+            max-width: 100vw !important;
+            padding: 16px 18px max(14px, env(safe-area-inset-bottom, 14px)) 18px !important;
+        }
         .header-modern .header-main-area {
             padding: 12px 15px !important;
         }
@@ -365,13 +376,11 @@
 <!-- Panels moved OUTSIDE the header for isolation -->
 <div id="mini-cart-overlay" class="mini-cart-overlay" style="display: none !important;"></div>
 <div id="mini-cart-panel" class="mini-cart-panel" style="display: none !important;">
-    <div class="mini-cart-header" style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+    <div class="mini-cart-header" style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-shrink: 0; padding-bottom: 10px; border-bottom: 1px solid #eee;">
         <h3 style="margin:0;">Your Cart</h3>
-        <a href="javascript:void(0)" id="cart-close" onclick="closeCartPanel()" style="color: #1b1b1b; text-decoration: none; font-size: 2rem; font-weight: bold;">&times;</a>
+        <a href="javascript:void(0)" id="cart-close" onclick="closeCartPanel()" style="color: #1b1b1b; text-decoration: none; font-size: 2rem; font-weight: bold; line-height: 1;">&times;</a>
     </div>
-    <div id="flyout-cart">
-        @await Component.InvokeAsync("FlyoutShoppingCart")
-    </div>
+    @await Component.InvokeAsync("FlyoutShoppingCart")
 </div>
 
 <div id="mobile-nav-panel" class="mobile-nav-panel" style="display: none !important;">
@@ -433,6 +442,7 @@
         if (panel) {
             panel.style.setProperty("display", "flex", "important");
             panel.classList.add("open");
+            document.body.style.overflow = "hidden";
         }
         if (overlay) {
             overlay.style.setProperty("display", "block", "important");
@@ -446,6 +456,7 @@
         if (panel) {
             panel.style.setProperty("display", "none", "important");
             panel.classList.remove("open");
+            document.body.style.overflow = "";
         }
         if (overlay) {
             overlay.style.setProperty("display", "none", "important");
