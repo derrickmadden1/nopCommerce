@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Nop.Core.Http;
 using Nop.Plugin.Payments.PayPalCommerce.Domain;
 using Nop.Plugin.Payments.PayPalCommerce.Factories;
@@ -135,6 +135,9 @@ public class PayPalCommercePublicController : BasePublicController
         var completedModel = await _modelFactory.PrepareOrderCompletedModelAsync(orderId, liabilityShift);
         if (!string.IsNullOrEmpty(completedModel.Error))
             return ErrorJson(completedModel.Error);
+
+        if (!string.IsNullOrEmpty(completedModel.Warning))
+            _notificationService.ErrorNotification(completedModel.Warning);
 
         return Json(new { redirect = Url.RouteUrl(NopRouteNames.Standard.CHECKOUT_COMPLETED, new { orderId = completedModel.OrderId }) });
     }

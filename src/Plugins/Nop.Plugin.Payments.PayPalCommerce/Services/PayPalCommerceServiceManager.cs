@@ -217,6 +217,32 @@ public class PayPalCommerceServiceManager
             : new Payee { MerchantId = merchantId };
     }
 
+    private static string FormatProcessorErrorMessage(ProcessorResponse processorResponse, StatusDetails statusDetails, string defaultMessage)
+    {
+        var reason = processorResponse?.ResponseCode switch
+        {
+            "0051" or "5120" => "Insufficient funds",
+            "0500" => "Do not honor (declined by card issuer)",
+            "5100" => "Declined by card issuer",
+            "5110" => "CVV mismatch (incorrect security code)",
+            "5130" => "Exceeds withdrawal limit",
+            "5140" or "5400" => "Expired card",
+            "5150" => "Invalid card number",
+            "5160" => "Invalid expiration date",
+            "5170" => "Card not supported",
+            "5180" => "Restricted card",
+            "9500" => "Suspected fraud",
+            _ => !string.IsNullOrEmpty(statusDetails?.Reason) ? statusDetails.Reason : null
+        };
+
+        var code = processorResponse?.ResponseCode;
+        var details = !string.IsNullOrEmpty(reason)
+            ? (!string.IsNullOrEmpty(code) ? $"{reason} (Code: {code})" : reason)
+            : (!string.IsNullOrEmpty(code) ? $"Code: {code}" : null);
+
+        return !string.IsNullOrEmpty(details) ? $"{defaultMessage}: {details}" : defaultMessage;
+    }
+
     #region Components
 
     /// <summary>
@@ -2342,7 +2368,7 @@ public class PayPalCommerceServiceManager
                 if (authorization is not null)
                 {
                     if (authorization.Status?.ToUpper() == AuthorizationStatusType.DENIED.ToString())
-                        throw new NopException("Cannot authorize funds for this authorized payment");
+                        throw new NopException(FormatProcessorErrorMessage(authorization.ProcessorResponse, authorization.StatusDetails, "Cannot authorize funds for this authorized payment"));
 
                     if (authorization.Status?.ToUpper() == AuthorizationStatusType.PENDING.ToString())
                     {
@@ -2373,10 +2399,10 @@ public class PayPalCommerceServiceManager
                 if (capture is not null)
                 {
                     if (capture.Status?.ToUpper() == CaptureStatusType.DECLINED.ToString())
-                        throw new NopException("The funds could not be captured");
+                        throw new NopException(FormatProcessorErrorMessage(capture.ProcessorResponse, capture.StatusDetails, "The funds could not be captured"));
 
                     if (capture.Status?.ToUpper() == CaptureStatusType.FAILED.ToString())
-                        throw new NopException("There was an error while capturing payment");
+                        throw new NopException(FormatProcessorErrorMessage(capture.ProcessorResponse, capture.StatusDetails, "There was an error while capturing payment"));
 
                     if (capture.Status?.ToUpper() == CaptureStatusType.PENDING.ToString())
                     {
@@ -2615,10 +2641,10 @@ public class PayPalCommerceServiceManager
             var capture = await _httpClient.RequestAsync<Api.Payments.CreateCaptureRequest, Api.Payments.CreateCaptureResponse>(request, settings);
 
             if (capture.Status?.ToUpper() == CaptureStatusType.DECLINED.ToString())
-                throw new NopException("The funds could not be captured");
+                throw new NopException(FormatProcessorErrorMessage(capture.ProcessorResponse, capture.StatusDetails, "The funds could not be captured"));
 
             if (capture.Status?.ToUpper() == CaptureStatusType.FAILED.ToString())
-                throw new NopException("There was an error while capturing payment");
+                throw new NopException(FormatProcessorErrorMessage(capture.ProcessorResponse, capture.StatusDetails, "There was an error while capturing payment"));
 
             if (capture.Status?.ToUpper() == CaptureStatusType.PENDING.ToString())
                 throw new NopException($"Capture is in {capture.Status} status due to {capture.StatusDetails?.Reason}");
@@ -3342,7 +3368,7 @@ public class PayPalCommerceServiceManager
                         await _orderService.InsertOrderNoteAsync(new()
                         {
                             OrderId = nopOrder.Id,
-                            Note = "Cannot authorize funds for this authorized payment",
+                            Note = FormatProcessorErrorMessage(authorization.ProcessorResponse, authorization.StatusDetails, "Cannot authorize funds for this authorized payment"),
                             DisplayToCustomer = false,
                             CreatedOnUtc = DateTime.UtcNow
                         });
@@ -3387,7 +3413,7 @@ public class PayPalCommerceServiceManager
                         await _orderService.InsertOrderNoteAsync(new()
                         {
                             OrderId = nopOrder.Id,
-                            Note = "The funds could not be captured",
+                            Note = FormatProcessorErrorMessage(capture.ProcessorResponse, capture.StatusDetails, "The funds could not be captured"),
                             DisplayToCustomer = false,
                             CreatedOnUtc = DateTime.UtcNow
                         });
