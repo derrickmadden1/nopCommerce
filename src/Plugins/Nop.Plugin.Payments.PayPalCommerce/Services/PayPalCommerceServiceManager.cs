@@ -217,7 +217,7 @@ public class PayPalCommerceServiceManager
             : new Payee { MerchantId = merchantId };
     }
 
-    private static string FormatProcessorErrorMessage(ProcessorResponse processorResponse, StatusDetails statusDetails, string defaultMessage)
+    public static string FormatProcessorErrorMessage(ProcessorResponse processorResponse, StatusDetails statusDetails, string defaultMessage)
     {
         var reason = processorResponse?.ResponseCode switch
         {

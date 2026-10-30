@@ -28,4 +28,8 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\Plugins\Nop.Plugin.Payments.PayPalCommerce\Nop.Plugin.Payments.PayPalCommerce.csproj" />
+  </ItemGroup>
+
 </Project>
