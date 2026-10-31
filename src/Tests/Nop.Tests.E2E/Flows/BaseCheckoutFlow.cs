@@ -272,6 +272,11 @@ public abstract class BaseCheckoutFlow : ICheckoutFlow
     protected async Task FillBillingAddressIfRequiredAsync(IPage page)
     {
         TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] FillBillingAddressIfRequiredAsync entering, url={page.Url}");
+        if (page.Url.EndsWith("/cart", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("Checkout redirected back to /cart instead of advancing to /checkout/billingaddress. Ensure non-button payment plugins (e.g. Payments.Square, Payments.CheckMoneyOrder) are compatible with the current nopCommerce version and Nop.Web has been restarted.");
+        }
+
         if (!page.Url.Contains("/checkout/billingaddress", StringComparison.OrdinalIgnoreCase))
         {
             TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Not on billingaddress page, skipping");
@@ -810,17 +815,19 @@ public abstract class BaseCheckoutFlow : ICheckoutFlow
         try
         {
             var cartUrl = $"{Settings.BaseUrl.TrimEnd('/')}/cart";
-            await page.GotoAsync(cartUrl, new() { WaitUntil = WaitUntilState.Commit });
-            await Task.Delay(1000);
+            await page.GotoAsync(cartUrl, new() { WaitUntil = WaitUntilState.DOMContentLoaded });
+            await DismissCookieNotificationAsync(page);
 
-            var removeBtns = page.Locator(".remove-btn, .remove-from-cart input[type='checkbox'], .remove-from-cart button");
-            while (await removeBtns.CountAsync() > 0)
+            var removeBtns = page.Locator("button.remove-btn, .remove-from-cart button");
+            var maxAttempts = 20;
+            while (maxAttempts-- > 0 && await removeBtns.CountAsync() > 0)
             {
                 var first = removeBtns.First;
                 if (await first.IsVisibleAsync())
                 {
                     await first.ClickAsync();
-                    await Task.Delay(1000);
+                    await page.WaitForLoadStateAsync(LoadState.DOMContentLoaded);
+                    await Task.Delay(500);
                 }
                 else
                 {

@@ -7,6 +7,7 @@ using Nop.Plugin.Widgets.MarketLocator.Messaging.Messages;
 using Nop.Plugin.Widgets.MarketLocator.Services;
 using Nop.Services.Events;
 using Nop.Services.Messaging;
+using INopLogger = Nop.Services.Logging.ILogger;
 
 public class MarketLocationEventConsumer :
     IConsumer<EntityInsertedEvent<MarketLocation>>,
@@ -16,6 +17,7 @@ public class MarketLocationEventConsumer :
     private readonly IServiceBusPublisher? _publisher;
     private readonly IMarketLocationService _marketLocationService;
     private readonly ILogger<MarketLocationEventConsumer> _logger;
+    private readonly INopLogger _nopLogger;
     private readonly MarketLocatorSettings _settings;
     private readonly Nop.Core.Configuration.AppSettings _appSettings;
     private readonly Nop.Services.Media.IPictureService _pictureService;
@@ -44,6 +46,7 @@ public class MarketLocationEventConsumer :
         IEnumerable<IServiceBusPublisher> publishers,
         IMarketLocationService marketLocationService,
         ILogger<MarketLocationEventConsumer> logger,
+        INopLogger nopLogger,
         MarketLocatorSettings settings,
         Nop.Core.Configuration.AppSettings appSettings,
         Nop.Services.Media.IPictureService pictureService)
@@ -51,6 +54,7 @@ public class MarketLocationEventConsumer :
         _publisher = publishers.FirstOrDefault();
         _marketLocationService = marketLocationService;
         _logger = logger;
+        _nopLogger = nopLogger;
         _settings = settings;
         _appSettings = appSettings;
         _pictureService = pictureService;
@@ -102,6 +106,8 @@ public class MarketLocationEventConsumer :
                             _logger.LogInformation(
                                 "Scheduled social post for {MarketName} on queue {Queue} — sequence {SequenceNumber}",
                                 market.Name, queue, seq);
+                            await _nopLogger.InformationAsync(
+                                $"MarketLocator: Scheduled social post for '{market.Name}' on queue '{queue}' — sequence {seq}");
                         }
                         else if (!isPastScheduledDate || (message.StartDate.HasValue && message.StartDate.Value >= DateTime.UtcNow))
                         {
@@ -110,12 +116,16 @@ public class MarketLocationEventConsumer :
                             _logger.LogInformation(
                                 "Published immediate social post for newly created {MarketName} on queue {Queue}",
                                 market.Name, queue);
+                            await _nopLogger.InformationAsync(
+                                $"MarketLocator: Published immediate social post for newly created '{market.Name}' on queue '{queue}'");
                         }
                         else
                         {
                             _logger.LogInformation(
                                 "Skipping social post for newly created {MarketName} on queue {Queue} because scheduled post date has passed",
                                 market.Name, queue);
+                            await _nopLogger.InformationAsync(
+                                $"MarketLocator: Skipping social post for newly created '{market.Name}' on queue '{queue}' because scheduled post date has passed");
                         }
                     }
                 }
@@ -127,10 +137,12 @@ public class MarketLocationEventConsumer :
             catch (ServiceBusException ex) when (ex.IsTransient)
             {
                 _logger.LogWarning(ex, "Transient Service Bus error on Created for {MarketName}", market.Name);
+                await _nopLogger.WarningAsync($"MarketLocator: Transient Service Bus error on Created for '{market.Name}'", ex);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error handling Created for {MarketName}", market.Name);
+                await _nopLogger.ErrorAsync($"MarketLocator: Error handling Created for '{market.Name}'", ex);
             }
         }
         finally
@@ -180,6 +192,8 @@ public class MarketLocationEventConsumer :
                             _logger.LogInformation(
                                 "Rescheduled social post for {MarketName} on queue {Queue} — new sequence {SequenceNumber}",
                                 market.Name, queue, seq);
+                            await _nopLogger.InformationAsync(
+                                $"MarketLocator: Rescheduled social post for '{market.Name}' on queue '{queue}' — new sequence {seq}");
                         }
                         else
                         {
@@ -187,6 +201,8 @@ public class MarketLocationEventConsumer :
                             _logger.LogInformation(
                                 "Skipping social post update for {MarketName} on queue {Queue} for occurrence starting {StartDate} because scheduled post date has already passed",
                                 market.Name, queue, message.StartDate);
+                            await _nopLogger.InformationAsync(
+                                $"MarketLocator: Skipping social post update for '{market.Name}' on queue '{queue}' for occurrence starting {message.StartDate} because scheduled post date has already passed");
                         }
                     }
                 }
@@ -197,10 +213,12 @@ public class MarketLocationEventConsumer :
             catch (ServiceBusException ex) when (ex.IsTransient)
             {
                 _logger.LogWarning(ex, "Transient Service Bus error on Updated for {MarketName}", market.Name);
+                await _nopLogger.WarningAsync($"MarketLocator: Transient Service Bus error on Updated for '{market.Name}'", ex);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error handling Updated for {MarketName}", market.Name);
+                await _nopLogger.ErrorAsync($"MarketLocator: Error handling Updated for '{market.Name}'", ex);
             }
         }
         finally
@@ -263,14 +281,18 @@ public class MarketLocationEventConsumer :
                         _logger.LogInformation(
                             "Cancelled scheduled social post sequence {SequenceNumber} on queue {Queue} for {MarketName}",
                             seq, targetQueue, market.Name);
+                        await _nopLogger.InformationAsync(
+                            $"MarketLocator: Cancelled scheduled social post sequence {seq} on queue '{targetQueue}' for '{market.Name}'");
                     }
                     catch (ServiceBusException ex) when (ex.IsTransient)
                     {
                         _logger.LogWarning(ex, "Transient error cancelling sequence {SequenceNumber} on queue {Queue} for {MarketName}", seq, targetQueue, market.Name);
+                        await _nopLogger.WarningAsync($"MarketLocator: Transient error cancelling sequence {seq} on queue '{targetQueue}' for '{market.Name}'", ex);
                     }
                     catch (Exception ex)
                     {
                         _logger.LogError(ex, "Error cancelling sequence {SequenceNumber} on queue {Queue} for {MarketName}", seq, targetQueue, market.Name);
+                        await _nopLogger.ErrorAsync($"MarketLocator: Error cancelling sequence {seq} on queue '{targetQueue}' for '{market.Name}'", ex);
                     }
                 }
             }
@@ -284,6 +306,7 @@ public class MarketLocationEventConsumer :
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error processing cancelation for {MarketName}", market.Name);
+            await _nopLogger.ErrorAsync($"MarketLocator: Error processing cancelation for '{market.Name}'", ex);
         }
     }
 

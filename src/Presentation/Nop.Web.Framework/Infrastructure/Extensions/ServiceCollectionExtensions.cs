@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using System.Text.Encodings.Web;
 using System.Threading.RateLimiting;
 using FluentValidation;
 using Microsoft.AspNetCore.Builder;
@@ -249,6 +251,16 @@ public static class ServiceCollectionExtensions
         {
             options.ViewLocationExpanders.Add(new ThemeableViewLocationExpander());
         });
+
+        //keep the normal Razor engine for caching and compilation, and decorate explicit plugin paths.
+        services.TryAddSingleton<RazorViewEngine>();
+
+        services.Replace(ServiceDescriptor.Singleton<IRazorViewEngine>(provider =>
+            new ThemeableRazorViewEngine(provider.GetRequiredService<DiagnosticListener>(),
+                provider.GetRequiredService<HtmlEncoder>(),
+                provider.GetRequiredService<IHttpContextAccessor>(),
+                provider.GetRequiredService<IRazorPageActivator>(),
+                provider.GetRequiredService<RazorViewEngine>())));
     }
 
     /// <summary>

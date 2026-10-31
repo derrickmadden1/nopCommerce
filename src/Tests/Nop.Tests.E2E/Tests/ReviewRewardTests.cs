@@ -322,14 +322,21 @@ public class ReviewRewardTests : CheckoutTestBase
         }
         finally
         {
-            await _flow.ClearCartAndDiscountsAsync(Page);
-            await _flow.UpdateRewardSettingsInAdminAsync(
-                Page,
-                rewardAmount: 5.00m,
-                usePercentage: false,
-                couponPrefix: "RVW-",
-                expiryDays: 30,
-                offerFreeProduct: false);
+            try
+            {
+                await _flow.ClearCartAndDiscountsAsync(Page);
+                await _flow.UpdateRewardSettingsInAdminAsync(
+                    Page,
+                    rewardAmount: 5.00m,
+                    usePercentage: false,
+                    couponPrefix: "RVW-",
+                    expiryDays: 30,
+                    offerFreeProduct: false);
+            }
+            catch (Exception cleanupEx)
+            {
+                TestContext.WriteLine($"[Cleanup Warning] {cleanupEx.Message}");
+            }
         }
     }
 }

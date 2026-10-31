@@ -3,7 +3,7 @@
   "FriendlyName": "Agent Search API",
   "SystemName": "Widgets.AgentSearch",
   "Version": "1.0.0",
-  "SupportedVersions": [ "5.00" ],
+  "SupportedVersions": [ "5.00", "5.10" ],
   "Author": "Rose Cottage Croft",
   "DisplayOrder": 1,
   "FileName": "Nop.Plugin.Widgets.AgentSearch.dll",
