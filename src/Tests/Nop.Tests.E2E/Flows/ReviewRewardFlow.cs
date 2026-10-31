@@ -214,14 +214,36 @@ public class ReviewRewardFlow : BaseCheckoutFlow
                 {
                     var options = freeProductSelect.Locator("option");
                     var optCount = await options.CountAsync();
+                    string? selectedVal = null;
+
                     for (var i = 0; i < optCount; i++)
                     {
                         var val = await options.Nth(i).GetAttributeAsync("value");
-                        if (!string.IsNullOrEmpty(val) && val != "0")
+                        var text = await options.Nth(i).InnerTextAsync();
+                        if (!string.IsNullOrEmpty(val) && val != "0" &&
+                            text.Contains("System Verification Item", StringComparison.OrdinalIgnoreCase))
                         {
-                            await freeProductSelect.SelectOptionAsync(val);
+                            selectedVal = val;
                             break;
                         }
+                    }
+
+                    if (selectedVal == null)
+                    {
+                        for (var i = 0; i < optCount; i++)
+                        {
+                            var val = await options.Nth(i).GetAttributeAsync("value");
+                            if (!string.IsNullOrEmpty(val) && val != "0")
+                            {
+                                selectedVal = val;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (selectedVal != null)
+                    {
+                        await freeProductSelect.SelectOptionAsync(selectedVal);
                     }
                 }
             }

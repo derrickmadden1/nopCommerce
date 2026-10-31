@@ -3,7 +3,7 @@
   "FriendlyName": "Checkout with Shopify",
   "SystemName": "Widgets.ShopifyCheckout",
   "Version": "1.00",
-  "SupportedVersions": [ "5.00" ],
+  "SupportedVersions": [ "5.00", "5.10" ],
   "Author": "Rose Cottage Croft",
   "DisplayOrder": 1,
   "FileName": "Nop.Plugin.Widgets.ShopifyCheckout.dll",

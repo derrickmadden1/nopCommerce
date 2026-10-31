@@ -3,7 +3,7 @@
   "FriendlyName": "Azure AI Search",
   "SystemName": "Search.AzureAI",
   "Version": "1.0.1",
-  "SupportedVersions": [ "5.00" ],
+  "SupportedVersions": [ "5.00", "5.10" ],
   "Author": "Rose Cottage Croft",
   "DisplayOrder": 1,
   "FileName": "Nop.Plugin.Search.AzureAI.dll",

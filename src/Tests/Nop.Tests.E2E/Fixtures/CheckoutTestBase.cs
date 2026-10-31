@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using System.Net.Http;
 using Microsoft.Playwright;
 using Nop.Tests.E2E.Configuration;
 using NUnit.Framework;
@@ -8,6 +10,9 @@ namespace Nop.Tests.E2E.Fixtures;
 [TestFixture]
 public abstract class CheckoutTestBase
 {
+    private static Process? _managedServerProcess;
+    private static readonly SemaphoreSlim _serverLock = new(1, 1);
+
     protected CheckoutTestSettings Settings { get; private set; } = null!;
     protected IPlaywright PlaywrightInstance { get; private set; } = null!;
     protected IBrowser Browser { get; private set; } = null!;
@@ -23,6 +28,8 @@ public abstract class CheckoutTestBase
     [SetUp]
     public async Task SetUp()
     {
+        await EnsureStoreRunningAsync();
+
         PlaywrightInstance = await Playwright.CreateAsync();
 
         Browser = await PlaywrightInstance.Chromium.LaunchAsync(new BrowserTypeLaunchOptions
@@ -44,6 +51,106 @@ public abstract class CheckoutTestBase
         Page = await Context.NewPageAsync();
         Page.Console += (_, msg) => TestContext.WriteLine($"[BROWSER CONSOLE] {msg.Type}: {msg.Text}");
         Page.PageError += (_, err) => TestContext.WriteLine($"[BROWSER ERROR] {err}");
+    }
+
+    private async Task EnsureStoreRunningAsync()
+    {
+        if (await IsStoreListeningAsync(Settings.BaseUrl))
+            return;
+
+        await _serverLock.WaitAsync();
+        try
+        {
+            if (await IsStoreListeningAsync(Settings.BaseUrl))
+                return;
+
+            var webProjectDir = FindWebProjectDirectory();
+            if (webProjectDir == null)
+            {
+                TestContext.WriteLine($"[E2E Server] Could not locate Presentation/Nop.Web directory from {AppContext.BaseDirectory}");
+                return;
+            }
+
+            var uri = new Uri(Settings.BaseUrl);
+            var port = uri.Port > 0 ? uri.Port : 58552;
+            var dllPath = Path.Combine(webProjectDir, "bin", "Debug", "net10.0", "Nop.Web.dll");
+
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = "dotnet",
+                Arguments = File.Exists(dllPath)
+                    ? $"\"{dllPath}\""
+                    : $"run --no-build --project \"{Path.Combine(webProjectDir, "Nop.Web.csproj")}\"",
+                WorkingDirectory = webProjectDir,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+            startInfo.Environment["ASPNETCORE_URLS"] = $"https://localhost:{port};http://localhost:{port + 1}";
+            startInfo.Environment["ASPNETCORE_ENVIRONMENT"] = "Development";
+
+            TestContext.WriteLine($"[E2E Server] Store not running at {Settings.BaseUrl}. Launching Nop.Web in background...");
+            _managedServerProcess = Process.Start(startInfo);
+
+            AppDomain.CurrentDomain.ProcessExit += (_, _) =>
+            {
+                try
+                {
+                    if (_managedServerProcess is { HasExited: false })
+                        _managedServerProcess.Kill(entireProcessTree: true);
+                }
+                catch
+                {
+                    // Ignore exit cleanup errors
+                }
+            };
+
+            for (var i = 0; i < 45; i++)
+            {
+                await Task.Delay(2000);
+                if (await IsStoreListeningAsync(Settings.BaseUrl))
+                {
+                    TestContext.WriteLine($"[E2E Server] Store is now healthy and listening at {Settings.BaseUrl}.");
+                    return;
+                }
+            }
+
+            TestContext.WriteLine($"[E2E Server] Warning: Timed out waiting for store to respond at {Settings.BaseUrl}.");
+        }
+        finally
+        {
+            _serverLock.Release();
+        }
+    }
+
+    private static async Task<bool> IsStoreListeningAsync(string baseUrl)
+    {
+        try
+        {
+            using var handler = new HttpClientHandler
+            {
+                ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+            };
+            using var client = new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(5) };
+            using var response = await client.GetAsync(baseUrl);
+            return (int)response.StatusCode < 500;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static string? FindWebProjectDirectory()
+    {
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        while (dir != null)
+        {
+            var candidate = Path.Combine(dir.FullName, "Presentation", "Nop.Web");
+            if (File.Exists(Path.Combine(candidate, "Nop.Web.csproj")))
+                return candidate;
+            dir = dir.Parent;
+        }
+        return null;
     }
 
     [TearDown]
@@ -72,14 +179,16 @@ public abstract class CheckoutTestBase
             try
             {
                 var cartUrl = $"{Settings.BaseUrl.TrimEnd('/')}/cart";
-                await Page.GotoAsync(cartUrl, new() { Timeout = 8000, WaitUntil = WaitUntilState.Commit });
-                var removeBtns = Page.Locator(".remove-btn, .remove-from-cart button, .remove-from-cart input[type='checkbox']");
-                while (await removeBtns.CountAsync() > 0)
+                await Page.GotoAsync(cartUrl, new() { Timeout = 8000, WaitUntil = WaitUntilState.DOMContentLoaded });
+                var removeBtns = Page.Locator("button.remove-btn, .remove-from-cart button");
+                var maxAttempts = 20;
+                while (maxAttempts-- > 0 && await removeBtns.CountAsync() > 0)
                 {
                     var first = removeBtns.First;
                     if (await first.IsVisibleAsync())
                     {
                         await first.ClickAsync();
+                        await Page.WaitForLoadStateAsync(LoadState.DOMContentLoaded);
                         await Task.Delay(500);
                     }
                     else break;

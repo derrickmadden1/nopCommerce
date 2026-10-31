@@ -3,7 +3,7 @@
   "FriendlyName": "Review Reward Discounts",
   "SystemName": "Misc.ReviewReward",
   "Version": "1.01",
-  "SupportedVersions": [ "5.00" ],
+  "SupportedVersions": [ "5.00", "5.10" ],
   "Author": "Derrick Madden",
   "DisplayOrder": 1,
   "FileName": "Nop.Plugin.Misc.ReviewReward.dll",

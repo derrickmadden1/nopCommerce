@@ -1,9 +1,9 @@
-﻿{
+{
   "Group": "Discount requirements",
   "FriendlyName": "Multibuy product rules",
   "SystemName": "DiscountRules.MultiBuy",
   "Version": "5.00.1",
-  "SupportedVersions": [ "5.00" ],
+  "SupportedVersions": [ "5.00", "5.10" ],
   "Author": "Rose Cottage Croft",
   "DisplayOrder": 1,
   "FileName": "Nop.Plugin.DiscountRules.MultiBuy.dll",

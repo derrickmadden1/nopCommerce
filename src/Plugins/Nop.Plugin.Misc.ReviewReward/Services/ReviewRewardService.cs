@@ -111,6 +111,11 @@ namespace Nop.Plugin.Misc.ReviewReward.Services
             if (customer == null)
                 return false;
 
+            var storeId = (await _storeContext.GetCurrentStoreAsync())?.Id ?? 0;
+            var cart = await _shoppingCartService.GetShoppingCartAsync(customer, ShoppingCartType.ShoppingCart, storeId);
+            if (cart != null && !cart.Any())
+                return false;
+
             var appliedCouponCodes = await _customerService.ParseAppliedDiscountCouponCodesAsync(customer);
             if (appliedCouponCodes == null || appliedCouponCodes.Length == 0)
                 return false;
@@ -258,6 +263,17 @@ namespace Nop.Plugin.Misc.ReviewReward.Services
                     var storeId = review.StoreId > 0
                         ? review.StoreId
                         : (await _storeContext.GetCurrentStoreAsync()).Id;
+
+                    var existingCart = await _shoppingCartService.GetShoppingCartAsync(customer, ShoppingCartType.ShoppingCart, storeId);
+                    if (existingCart != null && !existingCart.Any())
+                    {
+                        var staleCodes = await _customerService.ParseAppliedDiscountCouponCodesAsync(customer);
+                        if (staleCodes != null)
+                        {
+                            foreach (var staleCode in staleCodes)
+                                await _customerService.RemoveDiscountCouponCodeAsync(customer, staleCode);
+                        }
+                    }
 
                     var warnings = await _shoppingCartService.AddToCartAsync(
                         customer: customer,

@@ -279,16 +279,16 @@ public class PayPalSandboxCheckoutFlow : BaseCheckoutFlow
                         if (page.Url.Contains("/checkout/completed") || page.Url.Contains("ConfirmOrder"))
                             break;
 
-                        // Locate active frame containing Pay Later content (Hermes may render modals in an iframe)
+                        // Locate active frame containing Pay Later content (Hermes may render modals in a child iframe, so check child frames before MainFrame)
                         IFrame targetFrame = paypalPage.MainFrame;
-                        foreach (var frame in paypalPage.Frames)
+                        foreach (var frame in paypalPage.Frames.Reverse())
                         {
                             try
                             {
                                 var fText = await frame.EvaluateAsync<string>("() => (document.body ? document.body.innerText : '') || ''");
                                 if (fText.Contains("Confirm your details") || fText.Contains("Agree and Continue") || fText.Contains("What's your title") || 
                                     fText.Contains("Loan of") || fText.Contains("Billing address and phone number") || fText.Contains("Enter a valid phone number") ||
-                                    fText.Contains("Link a card"))
+                                    fText.Contains("Link a card") || fText.Contains("Choose a way to pay") || fText.Contains("Pay in 3"))
                                 {
                                     targetFrame = frame;
                                     break;
@@ -496,7 +496,7 @@ public class PayPalSandboxCheckoutFlow : BaseCheckoutFlow
 
                             TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Waiting for PayPal popup to close or complete after agreement...");
                             var closeWaitStart = DateTime.UtcNow;
-                            while (!paypalPage.IsClosed && DateTime.UtcNow - closeWaitStart < TimeSpan.FromSeconds(30))
+                            while (!paypalPage.IsClosed && DateTime.UtcNow - closeWaitStart < TimeSpan.FromSeconds(10))
                             {
                                 if (page.Url.Contains("/checkout/completed") || page.Url.Contains("ConfirmOrder"))
                                     break;

@@ -3,7 +3,7 @@
   "FriendlyName": "Checkout Abandonment Tracker",
   "SystemName": "Misc.CheckoutAbandonmentTracker",
   "Version": "1.00",
-  "SupportedVersions": [ "5.00" ],
+  "SupportedVersions": [ "5.00", "5.10" ],
   "Author": "Derrick",
   "DisplayOrder": 1,
   "FileName": "Nop.Plugin.Misc.CheckoutAbandonmentTracker.dll",

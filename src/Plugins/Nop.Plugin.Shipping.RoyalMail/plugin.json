@@ -3,7 +3,7 @@
   "FriendlyName": "Royal Mail Shipping & Tracking",
   "SystemName": "Shipping.RoyalMail",
   "Version": "1.00",
-  "SupportedVersions": [ "5.00" ],
+  "SupportedVersions": [ "5.00", "5.10" ],
   "Author": "Rose Cottage Phone",
   "DisplayOrder": 1,
   "FileName": "Nop.Plugin.Shipping.RoyalMail.dll",
