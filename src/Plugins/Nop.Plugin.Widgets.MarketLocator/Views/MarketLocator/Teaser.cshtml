@@ -25,7 +25,7 @@
         .market-teaser__main {
             display: flex;
             align-items: center;
-             gap: 0.55rem;
+            gap: 0.55rem;
             flex-wrap: wrap;
             flex: 1 1 auto;
         }
@@ -44,7 +44,7 @@
             color: #6b5b4d;
             margin-right: 0.15rem;
         }
-        .market-teaser__item {
+        a.market-teaser__item {
             display: inline-flex;
             align-items: center;
             gap: 0.25rem;
@@ -53,15 +53,33 @@
             border-radius: 6px;
             padding: 0.2rem 0.55rem;
             font-size: 0.84rem;
-            color: #3d2b1f;
+            color: #3d2b1f !important;
+            text-decoration: none !important;
+            cursor: pointer;
+            transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
         }
-        .market-teaser__item.today {
+        a.market-teaser__item:hover {
+            background: #eae2d3;
+            border-color: #4a6741;
+            color: #3d2b1f !important;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 5px rgba(61, 43, 31, 0.1);
+        }
+        a.market-teaser__item.today {
             background: #fdf2f0;
             border-color: #eabfb9;
         }
-        .market-teaser__item.soon {
+        a.market-teaser__item.today:hover {
+            background: #fae5e1;
+            border-color: #c0392b;
+        }
+        a.market-teaser__item.soon {
             background: #eaf3e8;
             border-color: #c2d8bc;
+        }
+        a.market-teaser__item.soon:hover {
+            background: #dcebd9;
+            border-color: #4a6741;
         }
         .market-teaser__more-btn {
             display: inline-flex;
@@ -202,21 +220,32 @@
             flex-wrap: wrap;
             gap: 0.35rem;
         }
-        .market-teaser__date-pill {
+        a.market-teaser__date-pill {
             display: inline-block;
             background: #f0ede6;
-            color: #3d2b1f;
+            color: #3d2b1f !important;
             border: 1px solid #e2d9c5;
             border-radius: 6px;
             padding: 0.15rem 0.5rem;
             font-size: 0.78rem;
             font-weight: 500;
+            text-decoration: none !important;
+            transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
         }
-        .market-teaser__date-pill--first {
+        a.market-teaser__date-pill:hover {
+            background: #e4ddd0;
+            border-color: #4a6741;
+            transform: translateY(-1px);
+        }
+        a.market-teaser__date-pill--first {
             background: #eaf3e8;
             border-color: #b7d1b0;
-            color: #35512c;
+            color: #35512c !important;
             font-weight: 600;
+        }
+        a.market-teaser__date-pill--first:hover {
+            background: #dcebd9;
+            border-color: #4a6741;
         }
         .market-teaser__popup-footer {
             margin-top: 0.85rem;
@@ -251,9 +280,9 @@
                 <span class="market-teaser__headline">Find us at a market:</span>
                 @foreach (var item in Model.NextMarkets)
                 {
-                    <span class="market-teaser__item @item.Status">
+                    <a href="/market-locations?id=@item.Id" class="market-teaser__item @item.Status" title="View @item.Name on map">
                         <strong>@item.Name</strong> · @item.NextDate
-                    </span>
+                    </a>
                 }
                 @if (showMoreTrigger)
                 {
@@ -292,7 +321,9 @@
                             <div class="market-teaser__popup-dates">
                                 @for (var i = 0; i < market.Dates.Count; i++)
                                 {
-                                    <span class="market-teaser__date-pill @(i == 0 ? "market-teaser__date-pill--first" : "")">@market.Dates[i]</span>
+                                    <a href="/market-locations?id=@market.Id"
+                                       class="market-teaser__date-pill @(i == 0 ? "market-teaser__date-pill--first" : "")"
+                                       title="View @market.Name on map">@market.Dates[i]</a>
                                 }
                             </div>
                         </div>
