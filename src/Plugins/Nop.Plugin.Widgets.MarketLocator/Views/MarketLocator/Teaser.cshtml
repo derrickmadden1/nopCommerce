@@ -1,7 +1,157 @@
 @model Nop.Plugin.Widgets.MarketLocator.Models.MarketTeaserModel
 @if (Model.NextMarkets.Any())
 {
-    <div class="market-teaser">
+    var extraMarketCount = Model.TotalCount - Model.NextMarkets.Count;
+    var hasExtraDates = Model.AllMarkets.Any(m => m.Dates.Count > 1);
+    var showMoreTrigger = extraMarketCount > 0 || hasExtraDates;
+
+    <style>
+        .market-teaser {
+            position: relative;
+        }
+        .market-teaser__more-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            background: rgba(74, 103, 65, 0.12);
+            color: #3d2b1f;
+            border: 1px solid rgba(74, 103, 65, 0.35);
+            border-radius: 999px;
+            padding: 0.12rem 0.6rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-left: 0.35rem;
+            transition: background 0.15s ease, border-color 0.15s ease;
+            vertical-align: baseline;
+        }
+        .market-teaser__more-btn:hover,
+        .market-teaser__more-btn[aria-expanded="true"] {
+            background: #4a6741;
+            border-color: #4a6741;
+            color: #ffffff;
+        }
+        .market-teaser__popup {
+            display: none;
+            position: absolute;
+            left: 0;
+            top: calc(100% + 0.4rem);
+            z-index: 1000;
+            width: min(520px, 94vw);
+            max-height: 70vh;
+            overflow-y: auto;
+            background: #fdfbf7;
+            color: #3d2b1f;
+            border: 1px solid #ede5d3;
+            border-radius: 10px;
+            box-shadow: 0 10px 28px rgba(61, 43, 31, 0.18);
+            padding: 1rem 1.15rem;
+            text-align: left;
+        }
+        .market-teaser__popup.is-open {
+            display: block;
+        }
+        .market-teaser__popup-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 0.6rem;
+            margin-bottom: 0.6rem;
+            border-bottom: 1px solid #ede5d3;
+        }
+        .market-teaser__popup-title {
+            font-weight: 700;
+            font-size: 0.95rem;
+            color: #3d2b1f;
+        }
+        .market-teaser__popup-close {
+            background: none;
+            border: none;
+            font-size: 1.25rem;
+            line-height: 1;
+            color: #8c7b6b;
+            cursor: pointer;
+            padding: 0.1rem 0.35rem;
+            border-radius: 4px;
+        }
+        .market-teaser__popup-close:hover {
+            background: #ede5d3;
+            color: #3d2b1f;
+        }
+        .market-teaser__popup-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.65rem;
+        }
+        .market-teaser__popup-item {
+            padding-bottom: 0.65rem;
+            border-bottom: 1px solid #f2ece1;
+        }
+        .market-teaser__popup-item:last-child {
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+        .market-teaser__popup-item-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-bottom: 0.35rem;
+        }
+        .market-teaser__popup-name {
+            font-weight: 700;
+            color: #3d2b1f;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+        .market-teaser__popup-name:hover {
+            color: #4a6741;
+            text-decoration: underline;
+        }
+        .market-teaser__popup-meta {
+            font-size: 0.78rem;
+            color: #8c7b6b;
+        }
+        .market-teaser__popup-dates {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.35rem;
+        }
+        .market-teaser__date-pill {
+            display: inline-block;
+            background: #f0ede6;
+            color: #3d2b1f;
+            border: 1px solid #e2d9c5;
+            border-radius: 6px;
+            padding: 0.15rem 0.5rem;
+            font-size: 0.78rem;
+            font-weight: 500;
+        }
+        .market-teaser__date-pill--first {
+            background: #eaf3e8;
+            border-color: #b7d1b0;
+            color: #35512c;
+            font-weight: 600;
+        }
+        .market-teaser__popup-footer {
+            margin-top: 0.75rem;
+            padding-top: 0.6rem;
+            border-top: 1px solid #ede5d3;
+            text-align: right;
+        }
+        .market-teaser__popup-footer a {
+            color: #4a6741;
+            font-weight: 600;
+            font-size: 0.82rem;
+            text-decoration: none;
+        }
+        .market-teaser__popup-footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+
+    <div class="market-teaser" id="market-teaser-widget">
         <div class="market-teaser__icon">📍</div>
         <div class="market-teaser__content">
             <span class="market-teaser__headline">Find us at a market:</span>
@@ -11,11 +161,89 @@
                     <strong>@item.Name</strong> · @item.NextDate
                 </span>
             }
-            @if (Model.TotalCount > Model.NextMarkets.Count)
+            @if (showMoreTrigger)
             {
-                <span class="market-teaser__more">+@(Model.TotalCount - Model.NextMarkets.Count) more</span>
+                <button type="button"
+                        class="market-teaser__more market-teaser__more-btn"
+                        id="market-teaser-more-btn"
+                        aria-expanded="false"
+                        aria-controls="market-teaser-popup">
+                    @(extraMarketCount > 0 ? $"+{extraMarketCount} more" : "+more dates") ▾
+                </button>
             }
         </div>
         <a href="/market-locations" class="market-teaser__cta">See all locations →</a>
+
+        @if (showMoreTrigger)
+        {
+            <div class="market-teaser__popup" id="market-teaser-popup" role="dialog" aria-label="Upcoming market dates">
+                <div class="market-teaser__popup-header">
+                    <span class="market-teaser__popup-title">📅 Upcoming Markets &amp; Dates</span>
+                    <button type="button" class="market-teaser__popup-close" id="market-teaser-popup-close" aria-label="Close">×</button>
+                </div>
+                <div class="market-teaser__popup-list">
+                    @foreach (var market in Model.AllMarkets)
+                    {
+                        <div class="market-teaser__popup-item">
+                            <div class="market-teaser__popup-item-top">
+                                <a href="/market-locations?id=@market.Id" class="market-teaser__popup-name">@market.Name</a>
+                                <span class="market-teaser__popup-meta">
+                                    @market.City@(!string.IsNullOrWhiteSpace(market.Hours) ? $" · {market.Hours}" : "")
+                                </span>
+                            </div>
+                            <div class="market-teaser__popup-dates">
+                                @for (var i = 0; i < market.Dates.Count; i++)
+                                {
+                                    <span class="market-teaser__date-pill @(i == 0 ? "market-teaser__date-pill--first" : "")">@market.Dates[i]</span>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+                <div class="market-teaser__popup-footer">
+                    <a href="/market-locations">See map &amp; all locations →</a>
+                </div>
+            </div>
+
+            <script>
+                (function () {
+                    const widget = document.getElementById('market-teaser-widget');
+                    const btn = document.getElementById('market-teaser-more-btn');
+                    const popup = document.getElementById('market-teaser-popup');
+                    const closeBtn = document.getElementById('market-teaser-popup-close');
+                    if (!widget || !btn || !popup) return;
+
+                    function setOpen(open) {
+                        popup.classList.toggle('is-open', open);
+                        btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+                    }
+
+                    btn.addEventListener('click', function (e) {
+                        e.stopPropagation();
+                        setOpen(!popup.classList.contains('is-open'));
+                    });
+
+                    if (closeBtn) {
+                        closeBtn.addEventListener('click', function (e) {
+                            e.stopPropagation();
+                            setOpen(false);
+                        });
+                    }
+
+                    document.addEventListener('click', function (e) {
+                        if (popup.classList.contains('is-open') && !widget.contains(e.target)) {
+                            setOpen(false);
+                        }
+                    });
+
+                    document.addEventListener('keydown', function (e) {
+                        if (e.key === 'Escape' && popup.classList.contains('is-open')) {
+                            setOpen(false);
+                            btn.focus();
+                        }
+                    });
+                })();
+            </script>
+        }
     </div>
 }

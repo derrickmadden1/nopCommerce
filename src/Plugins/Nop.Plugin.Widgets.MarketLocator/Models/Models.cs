@@ -83,11 +83,15 @@ public class MarketTeaserModel
 {
     public int TotalCount { get; set; }
     public List<TeaserItem> NextMarkets { get; set; } = new();
+    public List<TeaserItem> AllMarkets { get; set; } = new();
 
     public class TeaserItem
     {
+        public int Id { get; set; }
         public string Name { get; set; } = string.Empty;
         public string NextDate { get; set; } = string.Empty;
+        public List<string> Dates { get; set; } = new();
+        public string Hours { get; set; } = string.Empty;
         public string City { get; set; } = string.Empty;
         public string Status { get; set; } = "upcoming";
     }
