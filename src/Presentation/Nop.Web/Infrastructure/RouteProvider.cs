@@ -467,6 +467,10 @@ public partial class RouteProvider : BaseRouteProvider, IRouteProvider
             pattern: $"{lang}/orderdetails/shipment/{{shipmentId}}",
             defaults: new { controller = "Order", action = "ShipmentDetails" });
 
+        endpointRouteBuilder.MapControllerRoute(name: NopRouteNames.Standard.SHIPMENT_TRACKING,
+            pattern: $"{lang}/orderdetails/shipment/{{shipmentId:min(0)}}/track",
+            defaults: new { controller = "Order", action = "TrackShipment" });
+
         endpointRouteBuilder.MapControllerRoute(name: NopRouteNames.Standard.RETURN_REQUEST,
             pattern: $"{lang}/returnrequest/{{orderId:min(0)}}",
             defaults: new { controller = "ReturnRequest", action = "ReturnRequest" });

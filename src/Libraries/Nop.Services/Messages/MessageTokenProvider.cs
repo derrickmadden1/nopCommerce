@@ -1189,18 +1189,15 @@ public partial class MessageTokenProvider : IMessageTokenProvider
     {
         tokens.Add(new Token("Shipment.ShipmentNumber", shipment.Id));
         tokens.Add(new Token("Shipment.TrackingNumber", shipment.TrackingNumber));
-        var trackingNumberUrl = string.Empty;
-        if (!string.IsNullOrEmpty(shipment.TrackingNumber))
-        {
-            var shipmentTracker = await _shipmentService.GetShipmentTrackerAsync(shipment);
-            if (shipmentTracker != null)
-                trackingNumberUrl = await shipmentTracker.GetUrlAsync(shipment.TrackingNumber, shipment);
-        }
 
+        var order = await _orderService.GetOrderByIdAsync(shipment.OrderId);
+        var storeId = order?.StoreId ?? 0;
+
+        var trackingNumberUrl = await RouteUrlAsync(storeId, NopRouteNames.Standard.SHIPMENT_TRACKING, new { shipmentId = shipment.Id });
         tokens.Add(new Token("Shipment.TrackingNumberURL", trackingNumberUrl, true));
         tokens.Add(new Token("Shipment.Product(s)", await ProductListToHtmlTableAsync(shipment, languageId), true));
 
-        var shipmentUrl = await RouteUrlAsync((await _orderService.GetOrderByIdAsync(shipment.OrderId)).StoreId, NopRouteNames.Standard.SHIPMENT_DETAILS, new { shipmentId = shipment.Id });
+        var shipmentUrl = await RouteUrlAsync(storeId, NopRouteNames.Standard.SHIPMENT_DETAILS, new { shipmentId = shipment.Id });
         tokens.Add(new Token("Shipment.URLForCustomer", shipmentUrl, true));
 
         //event notification

@@ -382,6 +382,11 @@ public static partial class NopRouteNames
         public const string SHIPMENT_DETAILS = "ShipmentDetails";
 
         /// <summary>
+        /// Gets the shipment tracking route name
+        /// </summary>
+        public const string SHIPMENT_TRACKING = "ShipmentTracking";
+
+        /// <summary>
         /// Gets the return request route name
         /// </summary>
         public const string RETURN_REQUEST = "ReturnRequest";

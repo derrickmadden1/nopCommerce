@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Nop.Core;
 using Nop.Core.Domain.Customers;
 using Nop.Core.Domain.Orders;
@@ -300,6 +300,32 @@ public partial class OrderController : BasePublicController
 
         if (order == null || order.Deleted || customer.Id != order.CustomerId)
             return Challenge();
+
+        var model = await _orderModelFactory.PrepareShipmentDetailsModelAsync(shipment);
+        return View(model);
+    }
+
+    //Shipment tracking redirect / status page (accessible without login for guest checkouts)
+    public virtual async Task<IActionResult> TrackShipment(int shipmentId)
+    {
+        var shipment = await _shipmentService.GetShipmentByIdAsync(shipmentId);
+        if (shipment == null)
+            return RedirectToRoute(NopRouteNames.General.HOMEPAGE);
+
+        var order = await _orderService.GetOrderByIdAsync(shipment.OrderId);
+        if (order == null || order.Deleted)
+            return RedirectToRoute(NopRouteNames.General.HOMEPAGE);
+
+        if (!string.IsNullOrEmpty(shipment.TrackingNumber))
+        {
+            var shipmentTracker = await _shipmentService.GetShipmentTrackerAsync(shipment);
+            if (shipmentTracker != null)
+            {
+                var trackingNumberUrl = await shipmentTracker.GetUrlAsync(shipment.TrackingNumber, shipment);
+                if (!string.IsNullOrEmpty(trackingNumberUrl))
+                    return Redirect(trackingNumberUrl);
+            }
+        }
 
         var model = await _orderModelFactory.PrepareShipmentDetailsModelAsync(shipment);
         return View(model);
