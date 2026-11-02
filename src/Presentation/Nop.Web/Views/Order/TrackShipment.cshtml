@@ -1,0 +1,145 @@
+@model ShipmentDetailsModel
+
+@{
+    Layout = "_ColumnsOne";
+
+    //title
+    NopHtml.AddTitleParts(T("PageTitle.ShipmentDetails").Text);
+    //page class
+    NopHtml.AppendPageCssClassParts("html-shipment-details-page");
+}
+<div class="page shipment-details-page">
+    <div class="page-title">
+        <h1>@string.Format(T("Order.Shipments.Information").Text, Model.Id)</h1>
+    </div>
+    <div class="page-body">
+        <div class="shipment-details-area">
+            <div class="order-info-wrap">
+                <div class="order-info">
+                    <h2 class="title">
+                        @T("Order.Shipments.Order#")@Model.Order.CustomOrderNumber
+                    </h2>
+                    <ul class="info-list">
+                        <li class="shipping-method">
+                            @T("Order.Shipments.ShippingMethod"): @Model.Order.ShippingMethod
+                        </li>
+                        @if (Model.Order.PickupInStore)
+                        {
+                            <li class="ready-for-pickup-date">
+                                @T("Order.Shipments.ReadyForPickupDate"):
+                                @if (Model.ReadyForPickupDate.HasValue)
+                                {
+                                    @Model.ReadyForPickupDate.Value.ToString("D")
+                                }
+                                else
+                                {
+                                    @T("Order.Shipments.ReadyForPickupDate.NotYet")
+                                }
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="shipped-date">
+                                @T("Order.Shipments.ShippedDate"):
+                                @if (Model.ShippedDate.HasValue)
+                                {
+                                    @Model.ShippedDate.Value.ToString("D")
+                                }
+                                else
+                                {
+                                    @T("Order.Shipments.ShippedDate.NotYet")
+                                }
+                            </li>
+                        }
+                        <li class="delivery-date">
+                            @T("Order.Shipments.DeliveryDate"):
+                            @if (Model.DeliveryDate.HasValue)
+                            {
+                                @Model.DeliveryDate.Value.ToString("D")
+                            }
+                            else
+                            {
+                                @T("Order.Shipments.DeliveryDate.NotYet")
+                            }
+                        </li>
+                        <li class="tracking-number">
+                            @T("Order.Shipments.TrackingNumber"):
+                            @if (!string.IsNullOrEmpty(Model.TrackingNumber))
+                            {
+                                if (!string.IsNullOrEmpty(Model.TrackingNumberUrl))
+                                {
+                                    <a href="@Model.TrackingNumberUrl" target="_blank" class="tracking-url">@Model.TrackingNumber</a>
+                                }
+                                else
+                                {
+                                    @Model.TrackingNumber
+                                }
+                            }
+                            else
+                            {
+                                <span>@T("Order.Shipments.TrackingNumber.NotYet")</span>
+                            }
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        @if (Model.ShipmentStatusEvents.Count > 0)
+        {
+            <div class="section shipment-status-events">
+                <h2 class="title">
+                    @T("Order.ShipmentStatusEvents")
+                </h2>
+                <div class="table-wrapper">
+                    <table class="data-table">
+                        <colgroup>
+                            <col />
+                            <col />
+                            <col />
+                            <col />
+                        </colgroup>
+                        <thead>
+                            <tr>
+                                <th class="event">
+                                    @T("Order.ShipmentStatusEvents.Event")
+                                </th>
+                                <th class="location">
+                                    @T("Order.ShipmentStatusEvents.Location")
+                                </th>
+                                <th class="country">
+                                    @T("Order.ShipmentStatusEvents.Country")
+                                </th>
+                                <th class="date">
+                                    @T("Order.ShipmentStatusEvents.Date")
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.ShipmentStatusEvents)
+                            {
+                                <tr>
+                                    <td class="event">
+                                        @item.EventName
+                                    </td>
+                                    <td class="location">
+                                        @item.Location
+                                    </td>
+                                    <td class="country">
+                                        @item.Country
+                                    </td>
+                                    <td class="date">
+                                        @if (item.Date.HasValue)
+                                        {
+                                            @item.Date.Value.ToString("D")
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+    </div>
+</div>

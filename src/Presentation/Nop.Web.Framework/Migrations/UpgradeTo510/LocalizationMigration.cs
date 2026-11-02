@@ -1,11 +1,11 @@
-﻿using FluentMigrator;
+using FluentMigrator;
 using Nop.Data;
 using Nop.Data.Migrations;
 using Nop.Web.Framework.Extensions;
 
 namespace Nop.Web.Framework.Migrations.UpgradeTo510;
 
-[NopUpdateMigration("2026-10-28 00:00:00", "5.10", UpdateMigrationType.Localization)]
+[NopUpdateMigration("2026-11-02 15:00:00", "5.10", UpdateMigrationType.Localization)]
 public class LocalizationMigration : MigrationBase
 {
     /// <summary>Collect the UP migration expressions</summary>
@@ -36,7 +36,7 @@ public class LocalizationMigration : MigrationBase
 
         this.AddOrUpdateLocaleResource(new Dictionary<string, string>
         {
-            
+            ["Order.Shipments.TrackingNumber.NotYet"] = "Tracking details are being prepared. Please revisit this link shortly."
         });
 
         #endregion

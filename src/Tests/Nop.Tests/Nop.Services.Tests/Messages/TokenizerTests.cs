@@ -145,18 +145,27 @@ public class TokenizerTests : ServiceTest
     [Test]
     public void CanReplaceTokensWithTrackingConditions()
     {
-        var template = @"%if (!String.IsNullOrEmpty(%Shipment.TrackingNumber%))Tracking number: %if (!String.IsNullOrEmpty(%Shipment.TrackingNumberURL%))<a href=""%Shipment.TrackingNumberURL%"" target=""_blank"">%Shipment.TrackingNumber%</a>endif%%if (String.IsNullOrEmpty(%Shipment.TrackingNumberURL%))%Shipment.TrackingNumber%endif%<br />%if (!String.IsNullOrEmpty(%Shipment.TrackingNumberURL%))Tracking URL: <a href=""%Shipment.TrackingNumberURL%"" target=""_blank"">%Shipment.TrackingNumberURL%</a><br />endif%endif%";
+        var template = @"%if (!String.IsNullOrEmpty(%Shipment.TrackingNumber%))Tracking number: %if (!String.IsNullOrEmpty(%Shipment.TrackingNumberURL%))<a href=""%Shipment.TrackingNumberURL%"" target=""_blank"">%Shipment.TrackingNumber%</a>endif%%if (String.IsNullOrEmpty(%Shipment.TrackingNumberURL%))%Shipment.TrackingNumber%endif%<br />endif%%if (!String.IsNullOrEmpty(%Shipment.TrackingNumberURL%))Tracking URL: <a href=""%Shipment.TrackingNumberURL%"" target=""_blank"">%Shipment.TrackingNumberURL%</a><br />endif%";
 
         // Case 1: Tracking number and URL both present
         var tokensWithBoth = new List<Token>
         {
             new("Shipment.TrackingNumber", "1Z9999999"),
-            new("Shipment.TrackingNumberURL", "https://ups.com/track?num=1Z9999999", true)
+            new("Shipment.TrackingNumberURL", "https://store.com/orderdetails/shipment/258/track", true)
         };
         var res1 = _tokenizer.Replace(template, tokensWithBoth, false);
-        res1.Should().Be(@"Tracking number: <a href=""https://ups.com/track?num=1Z9999999"" target=""_blank"">1Z9999999</a><br />Tracking URL: <a href=""https://ups.com/track?num=1Z9999999"" target=""_blank"">https://ups.com/track?num=1Z9999999</a><br />");
+        res1.Should().Be(@"Tracking number: <a href=""https://store.com/orderdetails/shipment/258/track"" target=""_blank"">1Z9999999</a><br />Tracking URL: <a href=""https://store.com/orderdetails/shipment/258/track"" target=""_blank"">https://store.com/orderdetails/shipment/258/track</a><br />");
 
-        // Case 2: Tracking number present, URL empty
+        // Case 2: Tracking number empty (not set yet), store tracking URL present
+        var tokensWithUrlOnly = new List<Token>
+        {
+            new("Shipment.TrackingNumber", ""),
+            new("Shipment.TrackingNumberURL", "https://store.com/orderdetails/shipment/258/track", true)
+        };
+        var resUrlOnly = _tokenizer.Replace(template, tokensWithUrlOnly, false);
+        resUrlOnly.Should().Be(@"Tracking URL: <a href=""https://store.com/orderdetails/shipment/258/track"" target=""_blank"">https://store.com/orderdetails/shipment/258/track</a><br />");
+
+        // Case 3: Tracking number present, URL empty
         var tokensWithNumOnly = new List<Token>
         {
             new("Shipment.TrackingNumber", "1Z9999999"),
@@ -165,7 +174,7 @@ public class TokenizerTests : ServiceTest
         var res2 = _tokenizer.Replace(template, tokensWithNumOnly, false);
         res2.Should().Be(@"Tracking number: 1Z9999999<br />");
 
-        // Case 3: Both empty
+        // Case 4: Both empty
         var tokensEmpty = new List<Token>
         {
             new("Shipment.TrackingNumber", ""),
@@ -174,7 +183,7 @@ public class TokenizerTests : ServiceTest
         var res3 = _tokenizer.Replace(template, tokensEmpty, false);
         res3.Should().Be(string.Empty);
 
-        // Case 4: Null tracking number
+        // Case 5: Null tracking number, URL empty
         var tokensNull = new List<Token>
         {
             new("Shipment.TrackingNumber", null),
@@ -183,7 +192,7 @@ public class TokenizerTests : ServiceTest
         var res4 = _tokenizer.Replace(template, tokensNull, false);
         res4.Should().Be(string.Empty);
 
-        // Case 5: Missing tokens
+        // Case 6: Missing tokens
         var tokensMissing = new List<Token>();
         var res5 = _tokenizer.Replace(template, tokensMissing, false);
         res5.Should().Be(string.Empty);
