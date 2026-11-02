@@ -67,17 +67,16 @@ public class MarketLocationService : IMarketLocationService
             .Select(m =>
             {
                 // Only surface future dates — past ones are silently dropped.
-                var dates = MarketDateHelper.GetFutureDates(m.UpcomingDates);
+                var dates = MarketDateHelper.GetFutureDates(m.UpcomingDates, today);
                 if (!dates.Any()) return null; // hide markets with no remaining dates
 
                 var status = ComputeStatus(dates, today);
 
                 // Calculate an approximate Datetime for chronological sorting
                 DateTime sortDate = DateTime.MaxValue;
-                if (MarketDateHelper.TryParseDate(dates[0], today.Year, out var dt))
+                if (MarketDateHelper.TryResolveFutureDate(dates[0], today, out var dt))
                 {
                     sortDate = dt;
-                    if (dt.Date < today.Date) sortDate = sortDate.AddYears(1);
                 }
 
                 return new
@@ -113,10 +112,10 @@ public class MarketLocationService : IMarketLocationService
     {
         if (!dates.Any()) return "upcoming";
 
-        if (MarketDateHelper.TryParseDate(dates[0], today.Year, out var firstDate))
+        if (MarketDateHelper.TryResolveFutureDate(dates[0], today, out var firstDate))
         {
             if (firstDate.Date == today)               return "today";
-            if (firstDate.Date <= today.AddDays(7))    return "soon";
+            if (firstDate.Date > today && firstDate.Date <= today.AddDays(7)) return "soon";
         }
 
         return "upcoming";
