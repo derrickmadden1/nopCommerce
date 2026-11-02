@@ -34,24 +34,28 @@ public class MarketTeaserViewComponent : NopViewComponent
         var dtos = await _locationService.GetPublishedDtosAsync();
 
         // Show markets with status "today" or "soon" first, then "upcoming"
-        var prioritised = dtos
+        var allItems = dtos
             .OrderBy(d => d.Status switch { "today" => 0, "soon" => 1, _ => 2 })
-            .Take(settings.TeaserMaxItems)
+            .Select(d => new MarketTeaserModel.TeaserItem
+            {
+                Id = d.Id,
+                Name = d.Name,
+                NextDate = d.Dates.FirstOrDefault() ?? string.Empty,
+                Dates = d.Dates,
+                Hours = d.Hours,
+                City = d.City,
+                Status = d.Status,
+            })
             .ToList();
 
-        if (!prioritised.Any())
+        if (!allItems.Any())
             return Content(string.Empty);
 
         var model = new MarketTeaserModel
         {
-            TotalCount = dtos.Count,
-            NextMarkets = prioritised.Select(d => new MarketTeaserModel.TeaserItem
-            {
-                Name = d.Name,
-                NextDate = d.Dates.FirstOrDefault() ?? string.Empty,
-                City = d.City,
-                Status = d.Status,
-            }).ToList(),
+            TotalCount = allItems.Count,
+            NextMarkets = allItems.Take(settings.TeaserMaxItems).ToList(),
+            AllMarkets = allItems,
         };
 
         return View("~/Plugins/Widgets.MarketLocator/Views/MarketLocator/Teaser.cshtml", model);

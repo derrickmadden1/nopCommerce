@@ -94,12 +94,18 @@ function initMarketMap() {
         });
     }
 
+    function renderExtraDatesToggle(dates) {
+        if (!dates || dates.length <= 1) return '';
+        const rest = dates.slice(1);
+        const pills = rest.map(d => `<span class="ml-extra-date-pill">${d}</span>`).join('');
+        return ` <button type="button" class="ml-more-dates-btn" onclick="event.stopPropagation(); const el = this.nextElementSibling; const open = el.classList.toggle('is-open'); this.textContent = open ? 'hide dates ▴' : '+${rest.length} more ▾';">+${rest.length} more ▾</button><div class="ml-extra-dates" onclick="event.stopPropagation();">${pills}</div>`;
+    }
+
     function popupHTML(m) {
         const statusKey = m.Status?.toLowerCase() || 'upcoming';
         const label = STATUS_LABEL[statusKey] || 'Upcoming';
         const badge = STATUS_BADGE[statusKey] || 'badge-upcoming';
-        const extraDates = m.Dates && m.Dates.length > 1
-            ? ` <em>+${m.Dates.length - 1} more</em>` : '';
+        const extraDates = renderExtraDatesToggle(m.Dates);
         const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(m.Address)}`;
         const icsUrl = `/market-locations/ics/${m.Id}`;
         const webcalUrl = `webcal://${window.location.host}${icsUrl}`;
@@ -166,7 +172,7 @@ function initMarketMap() {
             const badge = STATUS_BADGE[statusKey] || 'badge-upcoming';
             const label = STATUS_LABEL[statusKey] || 'Upcoming';
             const nextDate = (m.Dates && m.Dates[0]) ? m.Dates[0] : '';
-            const extra = m.Dates && m.Dates.length > 1 ? ` +${m.Dates.length - 1} more` : '';
+            const extra = renderExtraDatesToggle(m.Dates);
             return `
             <div class="ml-card ${activeId === m.Id ? 'is-active' : ''}"
                  id="ml-card-${m.Id}" data-id="${m.Id}">

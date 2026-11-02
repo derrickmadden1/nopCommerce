@@ -351,3 +351,42 @@
     border-radius: 6px;
     font-weight: 500;
 }
+
+
+/* ── Expandable Extra Dates (Cards & Map Popups) ───────── */
+.ml-more-dates-btn {
+    background: var(--ml-parch);
+    color: var(--ml-bark);
+    border: 1px solid #dccfb8;
+    border-radius: 999px;
+    padding: 0.1rem 0.5rem;
+    font-size: 0.72rem;
+    font-weight: 600;
+    cursor: pointer;
+    margin-left: 0.25rem;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+.ml-more-dates-btn:hover {
+    background: var(--ml-moss);
+    border-color: var(--ml-moss);
+    color: white;
+}
+.ml-extra-dates {
+    display: none;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    margin-top: 0.35rem;
+}
+.ml-extra-dates.is-open {
+    display: flex;
+}
+.ml-extra-date-pill {
+    display: inline-block;
+    background: var(--ml-cream);
+    color: var(--ml-bark);
+    border: 1px solid var(--ml-parch);
+    border-radius: 5px;
+    padding: 0.1rem 0.45rem;
+    font-size: 0.74rem;
+    font-weight: 500;
+}
