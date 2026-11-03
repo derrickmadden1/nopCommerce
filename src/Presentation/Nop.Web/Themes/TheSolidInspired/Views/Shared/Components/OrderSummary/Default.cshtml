@@ -312,9 +312,9 @@
                                 </button>
                             </div>
                             <div class="terms-of-service-wrapper">
-                                <div class="terms-of-service terms-of-service-modern" id="terms-of-service-container">
+                                <label class="terms-of-service terms-of-service-modern" id="terms-of-service-container" for="termsofservice" onclick="">
                                     <input id="termsofservice" type="checkbox" name="termsofservice" />
-                                    <label for="termsofservice">
+                                    <span class="terms-text">
                                         <span>@T("Checkout.TermsOfService.IAccept")</span>
                                         @if (Model.TermsOfServicePopup)
                                         {
@@ -324,8 +324,8 @@
                                         {
                                             <a class="read" id="read-terms" href="@await NopUrl.RouteTopicUrlAsync("conditionsofuse")" role="button" tabindex="0">@T("Checkout.TermsOfService.Read")</a>
                                         }
-                                    </label>
-                                </div>
+                                    </span>
+                                </label>
                                 <div id="terms-of-service-error" class="terms-error-message" role="alert" style="display: none;">
                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
                                     <span>@T("Checkout.TermsOfService.PleaseAccept")</span>
@@ -371,6 +371,28 @@
                                             $('#termsofservice').prop('checked', true).trigger('change');
                                         });
 
+                                        // Clicking terms container card toggles checkbox reliably across mobile touch & desktop
+                                        var lastTermsTap = 0;
+                                        $(document).on('click pointerup', '#terms-of-service-container', function(e) {
+                                            if ($(e.target).closest('#read-terms').length > 0) {
+                                                return; // clicking "(read)" opens popup without checking box
+                                            }
+                                            if ($(e.target).is('#termsofservice')) {
+                                                return; // direct interaction with input handles itself
+                                            }
+                                            // Debounce rapid dual events (pointerup then synthetic click)
+                                            var now = Date.now();
+                                            if (now - lastTermsTap < 350) {
+                                                e.preventDefault();
+                                                return;
+                                            }
+                                            lastTermsTap = now;
+
+                                            e.preventDefault();
+                                            var cb = $('#termsofservice');
+                                            cb.prop('checked', !cb.prop('checked')).trigger('change');
+                                        });
+
                                         // React to state changes on terms checkbox
                                         $('#termsofservice').on('change', function () {
                                             if ($(this).is(':checked')) {
@@ -379,14 +401,6 @@
                                                 if ($('#terms-of-service-warning-box').hasClass('ui-dialog-content') && $('#terms-of-service-warning-box').dialog('isOpen')) {
                                                     $('#terms-of-service-warning-box').dialog('close');
                                                 }
-                                            }
-                                        });
-
-                                        // Clicking terms container row focuses/toggles checkbox
-                                        $('#terms-of-service-container').on('click', function(e) {
-                                            if (!$(e.target).is('input, label, a, #read-terms')) {
-                                                var cb = $('#termsofservice');
-                                                cb.prop('checked', !cb.is(':checked')).trigger('change');
                                             }
                                         });
 
@@ -399,7 +413,7 @@
                                                     
                                                     var termsEl = document.getElementById('terms-of-service-container');
                                                     if (termsEl) {
-                                                        termsEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                                        termsEl.scrollIntoView({ behavior: 'auto', block: 'center' });
                                                     }
                                                     termOfServiceOk = false;
                                                 } else {

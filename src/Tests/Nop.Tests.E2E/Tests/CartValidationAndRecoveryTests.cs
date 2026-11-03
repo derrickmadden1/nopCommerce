@@ -70,6 +70,11 @@ public class CartValidationAndRecoveryTests : CheckoutTestBase
             var warningDialog = mobilePage.Locator(".ui-dialog:visible");
             Assert.That(await warningDialog.CountAsync(), Is.EqualTo(0), "jQuery UI dialog should not be opened over the terms checkbox.");
         }
+        catch (Exception)
+        {
+            await CaptureMobileScreenshotAsync(mobilePage, nameof(Cart_Without_Terms_Shows_Inline_Validation_On_Mobile));
+            throw;
+        }
         finally
         {
             await mobileContext.CloseAsync();
@@ -111,6 +116,11 @@ public class CartValidationAndRecoveryTests : CheckoutTestBase
             await mobilePage.WaitForURLAsync(url => !url.EndsWith("/cart", StringComparison.OrdinalIgnoreCase), new() { Timeout = 15000 });
             Assert.That(mobilePage.Url, Does.Not.EndWith("/cart"), "User should successfully transition to checkout after accepting terms.");
         }
+        catch (Exception)
+        {
+            await CaptureMobileScreenshotAsync(mobilePage, nameof(Cart_User_Can_Recover_By_Tapping_Inline_Error_Banner_On_Mobile));
+            throw;
+        }
         finally
         {
             await mobileContext.CloseAsync();
@@ -133,14 +143,25 @@ public class CartValidationAndRecoveryTests : CheckoutTestBase
             await checkoutButton.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 10000 });
             await checkoutButton.ClickAsync();
 
+            var errorBanner = mobilePage.Locator("#terms-of-service-error");
+            await errorBanner.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 5000 });
+
+            // Allow shake/layout animation to finish before tapping
+            await mobilePage.WaitForTimeoutAsync(400);
+
             // Tap anywhere on the terms container card
             var termsContainer = mobilePage.Locator("#terms-of-service-container");
             await termsContainer.ClickAsync();
 
             var termsCheckbox = mobilePage.Locator("#termsofservice");
-            Assert.That(await termsCheckbox.IsCheckedAsync(), Is.True, "Tapping terms container card should check #termsofservice.");
+            var isChecked = false;
+            for (var i = 0; i < 30 && !isChecked; i++)
+            {
+                isChecked = await termsCheckbox.IsCheckedAsync();
+                if (!isChecked) await Task.Delay(100);
+            }
+            Assert.That(isChecked, Is.True, "Tapping terms container card should check #termsofservice.");
 
-            var errorBanner = mobilePage.Locator("#terms-of-service-error");
             await errorBanner.WaitForAsync(new() { State = WaitForSelectorState.Hidden, Timeout = 3000 });
 
             // Proceed successfully
@@ -148,9 +169,31 @@ public class CartValidationAndRecoveryTests : CheckoutTestBase
             await mobilePage.WaitForURLAsync(url => !url.EndsWith("/cart", StringComparison.OrdinalIgnoreCase), new() { Timeout = 15000 });
             Assert.That(mobilePage.Url, Does.Not.EndWith("/cart"));
         }
+        catch (Exception)
+        {
+            await CaptureMobileScreenshotAsync(mobilePage, nameof(Cart_User_Can_Recover_By_Tapping_Terms_Card_Container));
+            throw;
+        }
         finally
         {
             await mobileContext.CloseAsync();
+        }
+    }
+
+    private static async Task CaptureMobileScreenshotAsync(IPage mobilePage, string testName)
+    {
+        try
+        {
+            var screenshotsDir = Path.Combine(AppContext.BaseDirectory, "Screenshots");
+            Directory.CreateDirectory(screenshotsDir);
+            var filePath = Path.Combine(screenshotsDir, $"{testName}_Mobile_{DateTime.UtcNow:yyyyMMdd_HHmmss}.png");
+            await mobilePage.ScreenshotAsync(new() { Path = filePath, FullPage = true });
+            TestContext.WriteLine($"[MOBILE SCREENSHOT CAPTURED] {filePath}");
+            TestContext.AddTestAttachment(filePath, "Mobile Failure Screenshot");
+        }
+        catch (Exception ex)
+        {
+            TestContext.WriteLine($"Failed to capture mobile screenshot: {ex.Message}");
         }
     }
 

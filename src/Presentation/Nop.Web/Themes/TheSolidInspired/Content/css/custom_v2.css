@@ -4260,7 +4260,8 @@ body {
   accent-color: var(--brand-magenta, #970059);
 }
 
-.terms-of-service-modern label {
+.terms-of-service-modern label,
+.terms-of-service-modern .terms-text {
   flex: 1 !important;
   margin: 0 !important;
   padding: 0 !important;

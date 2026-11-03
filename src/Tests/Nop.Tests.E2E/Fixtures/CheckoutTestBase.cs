@@ -182,16 +182,19 @@ public abstract class CheckoutTestBase
                 var screenshotsDir = Path.Combine(AppContext.BaseDirectory, "Screenshots");
                 Directory.CreateDirectory(screenshotsDir);
 
-                var testName = TestContext.CurrentContext.Test.Name;
-                var fileName = $"{testName}_{DateTime.UtcNow:yyyyMMdd_HHmmss}.png";
-                var filePath = Path.Combine(screenshotsDir, fileName);
-
                 var activePage = Context.Pages.Count > 0 ? Context.Pages[^1] : Page;
                 TestContext.WriteLine($"[FAILURE CURRENT URL] {activePage.Url}");
-                await activePage.ScreenshotAsync(new() { Path = filePath, FullPage = true });
 
-                TestContext.WriteLine($"[SCREENSHOT SAVED ON FAILURE] {filePath}");
-                TestContext.AddTestAttachment(filePath, "Failure Screenshot");
+                if (activePage.Url != "about:blank")
+                {
+                    var testName = TestContext.CurrentContext.Test.Name;
+                    var fileName = $"{testName}_Desktop_{DateTime.UtcNow:yyyyMMdd_HHmmss}.png";
+                    var filePath = Path.Combine(screenshotsDir, fileName);
+
+                    await activePage.ScreenshotAsync(new() { Path = filePath, FullPage = true });
+                    TestContext.WriteLine($"[SCREENSHOT SAVED ON FAILURE] {filePath}");
+                    TestContext.AddTestAttachment(filePath, "Failure Screenshot");
+                }
             }
 
             // Clear shopping cart after capturing any failure screenshots
