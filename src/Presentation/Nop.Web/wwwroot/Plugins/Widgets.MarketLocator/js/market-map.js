@@ -146,7 +146,7 @@ function initMarketMap() {
     let activeId = null;
 
     // ── Map init ──────────────────────────────────────────────────────────────
-    
+
     let map = null;
     try {
         if (msgEl) msgEl.textContent = 'Initializing mapping library...';
@@ -169,8 +169,8 @@ function initMarketMap() {
                 attribution: '© OpenStreetMap contributors'
             });
         }
-        
-        tileLayer.on('tileerror', function(e) {
+
+        tileLayer.on('tileerror', function (e) {
             if (isAzure) {
                 if (msgEl) msgEl.innerHTML = `<span style="color:#c87320; font-weight:bold;">Azure Maps key rejected. Falling back to OpenStreetMap...</span>`;
                 isAzure = false;
@@ -183,7 +183,7 @@ function initMarketMap() {
                 if (msgEl) msgEl.innerHTML = `<span style="color:#c0392b; font-weight:bold;">Tiling error: Maps blocked by network. URL: ${e?.tile?.src}</span>`;
             }
         });
-        
+
         tileLayer.addTo(map);
 
         const mapContainer = document.getElementById('market-map');
@@ -268,7 +268,7 @@ function initMarketMap() {
             data.forEach(addMarker);
             renderCards(data);
             wireFilters();
-            
+
             if (cfg.selectedId) {
                 selectMarket(+cfg.selectedId, false);
             }

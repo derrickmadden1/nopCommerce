@@ -53,6 +53,25 @@ public abstract class CheckoutTestBase
         Page.PageError += (_, err) => TestContext.WriteLine($"[BROWSER ERROR] {err}");
     }
 
+    public async Task<(IBrowserContext MobileContext, IPage MobilePage)> CreateMobileContextAsync(int width = 390, int height = 844)
+    {
+        var mobileContext = await Browser.NewContextAsync(new BrowserNewContextOptions
+        {
+            IgnoreHTTPSErrors = true,
+            ViewportSize = new() { Width = width, Height = height },
+            UserAgent = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
+            IsMobile = true,
+            HasTouch = true
+        });
+
+        await mobileContext.AddInitScriptAsync("(() => { const s = document.createElement('style'); s.textContent = '#eu-cookie-bar-notification { display: none !important; }'; if (document.head) document.head.appendChild(s); else document.addEventListener('DOMContentLoaded', () => document.head.appendChild(s)); })();");
+
+        var mobilePage = await mobileContext.NewPageAsync();
+        mobilePage.Console += (_, msg) => TestContext.WriteLine($"[MOBILE CONSOLE] {msg.Type}: {msg.Text}");
+        mobilePage.PageError += (_, err) => TestContext.WriteLine($"[MOBILE ERROR] {err}");
+        return (mobileContext, mobilePage);
+    }
+
     private async Task EnsureStoreRunningAsync()
     {
         if (await IsStoreListeningAsync(Settings.BaseUrl))
@@ -163,16 +182,19 @@ public abstract class CheckoutTestBase
                 var screenshotsDir = Path.Combine(AppContext.BaseDirectory, "Screenshots");
                 Directory.CreateDirectory(screenshotsDir);
 
-                var testName = TestContext.CurrentContext.Test.Name;
-                var fileName = $"{testName}_{DateTime.UtcNow:yyyyMMdd_HHmmss}.png";
-                var filePath = Path.Combine(screenshotsDir, fileName);
-
                 var activePage = Context.Pages.Count > 0 ? Context.Pages[^1] : Page;
                 TestContext.WriteLine($"[FAILURE CURRENT URL] {activePage.Url}");
-                await activePage.ScreenshotAsync(new() { Path = filePath, FullPage = true });
 
-                TestContext.WriteLine($"[SCREENSHOT SAVED ON FAILURE] {filePath}");
-                TestContext.AddTestAttachment(filePath, "Failure Screenshot");
+                if (activePage.Url != "about:blank")
+                {
+                    var testName = TestContext.CurrentContext.Test.Name;
+                    var fileName = $"{testName}_Desktop_{DateTime.UtcNow:yyyyMMdd_HHmmss}.png";
+                    var filePath = Path.Combine(screenshotsDir, fileName);
+
+                    await activePage.ScreenshotAsync(new() { Path = filePath, FullPage = true });
+                    TestContext.WriteLine($"[SCREENSHOT SAVED ON FAILURE] {filePath}");
+                    TestContext.AddTestAttachment(filePath, "Failure Screenshot");
+                }
             }
 
             // Clear shopping cart after capturing any failure screenshots

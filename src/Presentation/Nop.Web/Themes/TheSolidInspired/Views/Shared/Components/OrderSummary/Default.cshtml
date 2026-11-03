@@ -306,35 +306,50 @@
                         if (Model.TermsOfServiceOnShoppingCartPage)
                         {
                             <div id="terms-of-service-warning-box" title="@T("Checkout.TermsOfService")" style="display: none;">
-                                <p>@T("Checkout.TermsOfService.PleaseAccept")</p>
+                                <p style="margin-bottom: 14px; font-size: 15px; color: #374151;">@T("Checkout.TermsOfService.PleaseAccept")</p>
+                                <button type="button" class="btn-primary" id="btn-accept-terms-modal" style="width: 100%; padding: 10px 16px; font-weight: 600; border-radius: 6px; cursor: pointer;">
+                                    <i class="fas fa-check" style="margin-right: 6px;"></i> @T("Checkout.TermsOfService.IAccept")
+                                </button>
                             </div>
-                            <div class="terms-of-service terms-of-service-modern">
-                                <input id="termsofservice" type="checkbox" name="termsofservice" />
-                                <label for="termsofservice">@T("Checkout.TermsOfService.IAccept")</label>
-                                @if (Model.TermsOfServicePopup)
-                                {
-                                    <a class="read" id="read-terms" role="button" tabindex="0">@T("Checkout.TermsOfService.Read")</a>
-                                    <script asp-location="Footer">
-                                        $(function() {
-                                            $('#read-terms').on('click keyup', function(e) {
-                                                e.preventDefault();
+                            <div class="terms-of-service-wrapper">
+                                <label class="terms-of-service terms-of-service-modern" id="terms-of-service-container" for="termsofservice" onclick="">
+                                    <input id="termsofservice" type="checkbox" name="termsofservice" />
+                                    <span class="terms-text">
+                                        <span>@T("Checkout.TermsOfService.IAccept")</span>
+                                        @if (Model.TermsOfServicePopup)
+                                        {
+                                            <a class="read" id="read-terms" role="button" tabindex="0">@T("Checkout.TermsOfService.Read")</a>
+                                        }
+                                        else
+                                        {
+                                            <a class="read" id="read-terms" href="@await NopUrl.RouteTopicUrlAsync("conditionsofuse")" role="button" tabindex="0">@T("Checkout.TermsOfService.Read")</a>
+                                        }
+                                    </span>
+                                </label>
+                                <div id="terms-of-service-error" class="terms-error-message" role="alert" style="display: none;">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                                    <span>@T("Checkout.TermsOfService.PleaseAccept")</span>
+                                </div>
+                            </div>
+                            @if (Model.TermsOfServicePopup)
+                            {
+                                <script asp-location="Footer">
+                                    $(function() {
+                                        $('#read-terms').on('click keyup', function(e) {
+                                            e.preventDefault();
+                                            e.stopPropagation();
 
-                                                if (e.type == 'click' || (e.type == 'keydown' && e.key === 'Enter'))
-                                                {
-                                                    $(this).trigger("blur");
-                                                    displayPopupContentFromUrl(
-                                                        '@Url.RouteUrl(NopRouteNames.Ajax.TOPIC_POPUP, new { SystemName = "conditionsofuse" })',
-                                                        '@T("Checkout.TermsOfService")');
-                                                }
-                                            });
+                                            if (e.type == 'click' || (e.type == 'keydown' && e.key === 'Enter'))
+                                            {
+                                                $(this).trigger("blur");
+                                                displayPopupContentFromUrl(
+                                                    '@Url.RouteUrl(NopRouteNames.Ajax.TOPIC_POPUP, new { SystemName = "conditionsofuse" })',
+                                                    '@T("Checkout.TermsOfService")');
+                                            }
                                         });
-                                    </script>
-                                }
-                                else
-                                {
-                                    <a class="read" id="read-terms" href="@await NopUrl.RouteTopicUrlAsync("conditionsofuse")" role="button" tabindex="0">@T("Checkout.TermsOfService.Read")</a>
-                                }
-                            </div>
+                                    });
+                                </script>
+                            }
                         }
                         
                         <div class="checkout-buttons checkout-actions">
@@ -342,12 +357,64 @@
                             {
                                 <script asp-location="Footer">
                                     $(function() {
+                                        // Terms dialog accept button handler (if dialog is opened by payment buttons or direct trigger)
+                                        $('#btn-accept-terms-modal').on('click', function(e) {
+                                            e.preventDefault();
+                                            $('#termsofservice').prop('checked', true).trigger('change');
+                                            if ($('#terms-of-service-warning-box').hasClass('ui-dialog-content') && $('#terms-of-service-warning-box').dialog('isOpen')) {
+                                                $('#terms-of-service-warning-box').dialog('close');
+                                            }
+                                        });
+
+                                        // Clicking the inline error banner checks the box and clears error
+                                        $('#terms-of-service-error').on('click', function() {
+                                            $('#termsofservice').prop('checked', true).trigger('change');
+                                        });
+
+                                        // Clicking terms container card toggles checkbox reliably across mobile touch & desktop
+                                        var lastTermsTap = 0;
+                                        $(document).on('click pointerup', '#terms-of-service-container', function(e) {
+                                            if ($(e.target).closest('#read-terms').length > 0) {
+                                                return; // clicking "(read)" opens popup without checking box
+                                            }
+                                            if ($(e.target).is('#termsofservice')) {
+                                                return; // direct interaction with input handles itself
+                                            }
+                                            // Debounce rapid dual events (pointerup then synthetic click)
+                                            var now = Date.now();
+                                            if (now - lastTermsTap < 350) {
+                                                e.preventDefault();
+                                                return;
+                                            }
+                                            lastTermsTap = now;
+
+                                            e.preventDefault();
+                                            var cb = $('#termsofservice');
+                                            cb.prop('checked', !cb.prop('checked')).trigger('change');
+                                        });
+
+                                        // React to state changes on terms checkbox
+                                        $('#termsofservice').on('change', function () {
+                                            if ($(this).is(':checked')) {
+                                                $('#terms-of-service-container').removeClass('terms-error-highlight');
+                                                $('#terms-of-service-error').slideUp(150);
+                                                if ($('#terms-of-service-warning-box').hasClass('ui-dialog-content') && $('#terms-of-service-warning-box').dialog('isOpen')) {
+                                                    $('#terms-of-service-warning-box').dialog('close');
+                                                }
+                                            }
+                                        });
+
                                         $('#checkout').on('click', function () {
-                                            //terms of service
                                             var termOfServiceOk = true;
                                             if ($('#termsofservice').length > 0) {
                                                 if (!$('#termsofservice').is(':checked')) {
-                                                    $("#terms-of-service-warning-box").dialog();
+                                                    $('#terms-of-service-container').addClass('terms-error-highlight');
+                                                    $('#terms-of-service-error').slideDown(150);
+                                                    
+                                                    var termsEl = document.getElementById('terms-of-service-container');
+                                                    if (termsEl) {
+                                                        termsEl.scrollIntoView({ behavior: 'auto', block: 'center' });
+                                                    }
                                                     termOfServiceOk = false;
                                                 } else {
                                                     termOfServiceOk = true;

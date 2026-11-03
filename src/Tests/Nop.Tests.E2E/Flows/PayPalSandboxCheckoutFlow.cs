@@ -42,10 +42,14 @@ public class PayPalSandboxCheckoutFlow : BaseCheckoutFlow
             await DismissCookieNotificationAsync(page);
 
             var termsCheckbox = page.Locator("#termsofservice");
-            if (await termsCheckbox.IsVisibleAsync())
+            if (await termsCheckbox.CountAsync() > 0)
             {
-                TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Checking terms of service checkbox");
-                await termsCheckbox.CheckAsync();
+                if (!await termsCheckbox.IsCheckedAsync())
+                {
+                    TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Checking terms of service checkbox");
+                    await termsCheckbox.CheckAsync();
+                    await page.EvaluateAsync("const cb = document.getElementById('termsofservice'); if (cb && !cb.checked) { cb.checked = true; cb.dispatchEvent(new Event('change', { bubbles: true })); }");
+                }
             }
 
             // 3. Locate PayPal Smart Button based on funding source
@@ -62,7 +66,7 @@ public class PayPalSandboxCheckoutFlow : BaseCheckoutFlow
             await paypalButton.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 25000 });
             TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] PayPal {FundingSource} button visible, preparing popup listener and clicking button");
 
-            var popupTask = page.WaitForPopupAsync(new() { Timeout = 15000 });
+            var popupTask = page.WaitForPopupAsync(new() { Timeout = 40000 });
             await paypalButton.ClickAsync();
 
             IPage paypalPage;
@@ -152,7 +156,7 @@ public class PayPalSandboxCheckoutFlow : BaseCheckoutFlow
             }
             catch
             {
-                submitBtn = paypalPage.Locator("button:has-text('Complete Purchase'), button:has-text('Pay Now'), button:has-text('Agree and Continue'), button:has-text('Agree & Continue'), button:has-text('Save and Continue'), button:has-text('Continue'), #payment-submit-btn, button[name='payment-submit-btn'], [data-testid='submit-button-initial']").Last;
+                submitBtn = paypalPage.Locator("button:has-text('Complete Purchase'), button:has-text('Pay Now'), button:has-text('Agree and Continue'), button:has-text('Agree & Continue'), button:has-text('Save and Continue'), button:has-text('Continue'):not([name='continueshopping']):not(.continue-shopping-button), #payment-submit-btn, button[name='payment-submit-btn'], [data-testid='submit-button-initial']").Last;
                 await submitBtn.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 15000 });
             }
 
