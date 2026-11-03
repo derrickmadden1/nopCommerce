@@ -53,6 +53,25 @@ public abstract class CheckoutTestBase
         Page.PageError += (_, err) => TestContext.WriteLine($"[BROWSER ERROR] {err}");
     }
 
+    public async Task<(IBrowserContext MobileContext, IPage MobilePage)> CreateMobileContextAsync(int width = 390, int height = 844)
+    {
+        var mobileContext = await Browser.NewContextAsync(new BrowserNewContextOptions
+        {
+            IgnoreHTTPSErrors = true,
+            ViewportSize = new() { Width = width, Height = height },
+            UserAgent = "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
+            IsMobile = true,
+            HasTouch = true
+        });
+
+        await mobileContext.AddInitScriptAsync("(() => { const s = document.createElement('style'); s.textContent = '#eu-cookie-bar-notification { display: none !important; }'; if (document.head) document.head.appendChild(s); else document.addEventListener('DOMContentLoaded', () => document.head.appendChild(s)); })();");
+
+        var mobilePage = await mobileContext.NewPageAsync();
+        mobilePage.Console += (_, msg) => TestContext.WriteLine($"[MOBILE CONSOLE] {msg.Type}: {msg.Text}");
+        mobilePage.PageError += (_, err) => TestContext.WriteLine($"[MOBILE ERROR] {err}");
+        return (mobileContext, mobilePage);
+    }
+
     private async Task EnsureStoreRunningAsync()
     {
         if (await IsStoreListeningAsync(Settings.BaseUrl))
