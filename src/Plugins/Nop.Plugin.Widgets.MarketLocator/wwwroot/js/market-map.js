@@ -6,6 +6,54 @@ function initMarketMap() {
     let msgEl = document.getElementById('market-count');
     if (msgEl) msgEl.textContent = 'Init map script running...';
 
+    // Ensure extra-date toggle styles are present even if market-map.css is cached
+    if (!document.getElementById('ml-extra-dates-styles')) {
+        const styleEl = document.createElement('style');
+        styleEl.id = 'ml-extra-dates-styles';
+        styleEl.textContent = `
+            .ml-more-dates-btn {
+                display: inline-flex;
+                align-items: center;
+                background: #ede5d3;
+                color: #3d2b1f;
+                border: 1px solid #dccfb8;
+                border-radius: 999px;
+                padding: 0.1rem 0.5rem;
+                font-size: 0.72rem;
+                font-weight: 600;
+                cursor: pointer;
+                margin-left: 0.25rem;
+                transition: background 0.15s ease, color 0.15s ease;
+            }
+            .ml-more-dates-btn:hover,
+            .ml-more-dates-btn.is-open {
+                background: #4a6741;
+                border-color: #4a6741;
+                color: #ffffff;
+            }
+            .ml-extra-dates {
+                display: none;
+                flex-wrap: wrap;
+                gap: 0.3rem;
+                margin-top: 0.35rem;
+            }
+            .ml-extra-dates.is-open {
+                display: flex !important;
+            }
+            .ml-extra-date-pill {
+                display: inline-block;
+                background: #f5f0e8;
+                color: #3d2b1f;
+                border: 1px solid #ede5d3;
+                border-radius: 5px;
+                padding: 0.1rem 0.45rem;
+                font-size: 0.74rem;
+                font-weight: 500;
+            }
+        `;
+        document.head.appendChild(styleEl);
+    }
+
     const cfg = window.MarketLocatorConfig;
     if (!cfg) {
         if (msgEl) msgEl.textContent = 'ERROR: No MarketLocatorConfig.';
@@ -98,7 +146,7 @@ function initMarketMap() {
         if (!dates || dates.length <= 1) return '';
         const rest = dates.slice(1);
         const pills = rest.map(d => `<span class="ml-extra-date-pill">${d}</span>`).join('');
-        return ` <button type="button" class="ml-more-dates-btn" onclick="event.stopPropagation(); const el = this.nextElementSibling; const open = el.classList.toggle('is-open'); this.textContent = open ? 'hide dates ▴' : '+${rest.length} more ▾';">+${rest.length} more ▾</button><div class="ml-extra-dates" onclick="event.stopPropagation();">${pills}</div>`;
+        return ` <button type="button" class="ml-more-dates-btn" onclick="event.stopPropagation(); const el = this.nextElementSibling; const open = el.classList.toggle('is-open'); el.style.display = open ? 'flex' : 'none'; this.classList.toggle('is-open', open); this.textContent = open ? 'hide dates ▴' : '+${rest.length} more ▾';">+${rest.length} more ▾</button><div class="ml-extra-dates" style="display:none;" onclick="event.stopPropagation();">${pills}</div>`;
     }
 
     function popupHTML(m) {
