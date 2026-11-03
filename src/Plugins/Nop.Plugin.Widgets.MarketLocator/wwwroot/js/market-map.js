@@ -6,7 +6,7 @@ function initMarketMap() {
     let msgEl = document.getElementById('market-count');
     if (msgEl) msgEl.textContent = 'Init map script running...';
 
-    // Ensure extra-date toggle styles are present even if market-map.css is cached
+    // Ensure extra-date toggle and high-contrast popup button styles are present even if market-map.css is cached
     if (!document.getElementById('ml-extra-dates-styles')) {
         const styleEl = document.createElement('style');
         styleEl.id = 'ml-extra-dates-styles';
@@ -49,6 +49,86 @@ function initMarketMap() {
                 padding: 0.1rem 0.45rem;
                 font-size: 0.74rem;
                 font-weight: 500;
+            }
+            .mf-subscribe,
+            a.mf-subscribe {
+                font-size: 0.78rem;
+                font-weight: 600;
+                color: #3d2b1f !important;
+                background: #f5f0e8;
+                border: 1px solid #d8ccb8;
+                text-decoration: none !important;
+                white-space: nowrap;
+                padding: 0.35rem 0.7rem;
+                border-radius: 999px;
+                transition: background 0.15s, border-color 0.15s, color 0.15s;
+            }
+            .mf-subscribe:hover,
+            a.mf-subscribe:hover {
+                background: #4a6741;
+                border-color: #4a6741;
+                color: #ffffff !important;
+            }
+            .ml-popup__name {
+                font-weight: 700;
+                font-size: 0.95rem;
+                color: #3d2b1f;
+                margin: 0.2rem 0 0.35rem;
+            }
+            .ml-popup__meta {
+                display: flex;
+                flex-direction: column;
+                gap: 0.25rem;
+                font-size: 0.82rem;
+                color: #4a3b2f;
+                margin-bottom: 0.65rem;
+            }
+            .ml-popup__actions {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.4rem;
+                margin-top: 0.5rem;
+            }
+            .ml-btn,
+            .leaflet-container a.ml-btn {
+                flex: 1 1 auto;
+                padding: 0.42rem 0.7rem;
+                border-radius: 7px;
+                font-size: 0.76rem;
+                font-weight: 600;
+                cursor: pointer;
+                border: 1px solid transparent;
+                text-align: center;
+                text-decoration: none !important;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                white-space: nowrap;
+                transition: background 0.15s, border-color 0.15s, color 0.15s;
+            }
+            .ml-btn--primary,
+            .leaflet-container a.ml-btn--primary {
+                background: #4a6741 !important;
+                border-color: #3b5334 !important;
+                color: #ffffff !important;
+            }
+            .ml-btn--primary:hover,
+            .leaflet-container a.ml-btn--primary:hover {
+                background: #3b5334 !important;
+                color: #ffffff !important;
+            }
+            .ml-btn--secondary,
+            .leaflet-container a.ml-btn--secondary,
+            .ml-btn--list-back {
+                background: #f5f0e8 !important;
+                border: 1px solid #d8ccb8 !important;
+                color: #3d2b1f !important;
+            }
+            .ml-btn--secondary:hover,
+            .leaflet-container a.ml-btn--secondary:hover,
+            .ml-btn--list-back:hover {
+                background: #e6decb !important;
+                color: #3d2b1f !important;
             }
         `;
         document.head.appendChild(styleEl);
