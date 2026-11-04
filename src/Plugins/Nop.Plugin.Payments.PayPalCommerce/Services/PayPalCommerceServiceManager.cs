@@ -15,6 +15,7 @@ using Nop.Core.Domain.Stores;
 using Nop.Core.Domain.Tax;
 using Nop.Core.Http;
 using Nop.Plugin.Payments.PayPalCommerce.Domain;
+using Nop.Plugin.Payments.PayPalCommerce.Models.Public;
 using Nop.Plugin.Payments.PayPalCommerce.Services.Api;
 using Nop.Plugin.Payments.PayPalCommerce.Services.Api.Authentication;
 using Nop.Plugin.Payments.PayPalCommerce.Services.Api.Identity;
@@ -1306,6 +1307,8 @@ public class PayPalCommerceServiceManager
                 components.Add("card-fields");
             if (placement == ButtonPlacement.PaymentMethod && settings.UseAlternativePayments)
                 components.Add("payment-fields");
+            if (settings.UseFastlane && (placement == ButtonPlacement.Cart || placement == ButtonPlacement.PaymentMethod))
+                components.Add("fastlane");
             if (settings.UseApplePay && placement != ButtonPlacement.Product)
                 components.Add("applepay");
             if (settings.UseGooglePay)
@@ -1333,7 +1336,7 @@ public class PayPalCommerceServiceManager
 
             //client token is required for Advanced Credit and Debit Card Payments
             string clientToken = null;
-            if (placement == ButtonPlacement.PaymentMethod && settings.UseCardFields)
+            if ((placement == ButtonPlacement.PaymentMethod && settings.UseCardFields) || (settings.UseFastlane && (placement == ButtonPlacement.Cart || placement == ButtonPlacement.PaymentMethod)))
             {
                 var identityToken = await _httpClient.RequestAsync<CreateIdentityTokenRequest, CreateIdentityTokenResponse>(new()
                 {
@@ -3812,6 +3815,92 @@ public class PayPalCommerceServiceManager
     #endregion
 
     #endregion
+
+
+    /// <summary>
+    /// Gets customer status (isGuest, hasEmail)
+    /// </summary>
+
+    /// <summary>
+    /// Captures Fastlane customer email, shipping/billing address, and payment token
+    /// </summary>
+    /// <param name="model">Fastlane customer model</param>
+    /// <returns>A task representing the asynchronous operation with result</returns>
+    public async Task<(bool Success, string Message)> CaptureFastlaneCustomerAsync(FastlaneCustomerModel model)
+    {
+        if (model is null || string.IsNullOrWhiteSpace(model.Email))
+            return (false, "Email address is required");
+
+        var customer = await _workContext.GetCurrentCustomerAsync();
+        var store = await _storeContext.GetCurrentStoreAsync();
+
+        // If guest, update email
+        if (await _customerService.IsGuestAsync(customer))
+        {
+            customer.Email = model.Email.Trim();
+            await _customerService.UpdateCustomerAsync(customer);
+        }
+
+        // If authenticated profile details returned, populate addresses
+        if (model.Authenticated && (!string.IsNullOrWhiteSpace(model.Address1) || !string.IsNullOrWhiteSpace(model.FirstName)))
+        {
+            Country country = null;
+            if (!string.IsNullOrWhiteSpace(model.CountryCode))
+                country = await _countryService.GetCountryByTwoLetterIsoCodeAsync(model.CountryCode);
+
+            StateProvince state = null;
+            if (country != null && !string.IsNullOrWhiteSpace(model.StateProvinceCodeOrName))
+            {
+                var states = await _stateProvinceService.GetStateProvincesByCountryIdAsync(country.Id);
+                state = states.FirstOrDefault(sp =>
+                    string.Equals(sp.Abbreviation, model.StateProvinceCodeOrName, StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(sp.Name, model.StateProvinceCodeOrName, StringComparison.OrdinalIgnoreCase));
+            }
+
+            var address = new Nop.Core.Domain.Common.Address
+            {
+                FirstName = model.FirstName ?? string.Empty,
+                LastName = model.LastName ?? string.Empty,
+                Email = model.Email.Trim(),
+                PhoneNumber = model.PhoneNumber,
+                Address1 = model.Address1,
+                Address2 = model.Address2,
+                City = model.City,
+                ZipPostalCode = model.ZipPostalCode,
+                CountryId = country?.Id,
+                StateProvinceId = state?.Id,
+                CreatedOnUtc = DateTime.UtcNow
+            };
+
+            await _customerService.InsertCustomerAddressAsync(customer, address);
+            customer.BillingAddressId = address.Id;
+            customer.ShippingAddressId = address.Id;
+            await _customerService.UpdateCustomerAsync(customer);
+        }
+
+        // Save card / profile token info if provided
+        if (!string.IsNullOrWhiteSpace(model.FastlaneCardId))
+        {
+            await _genericAttributeService.SaveAttributeAsync(customer,
+                PayPalCommerceDefaults.FastlaneCardTokenAttributeName, model.FastlaneCardId, store.Id);
+            await _genericAttributeService.SaveAttributeAsync(customer,
+                PayPalCommerceDefaults.FastlaneProfileAttributeName, JsonConvert.SerializeObject(model), store.Id);
+
+            // Pre-select PayPal Commerce payment method
+            await _genericAttributeService.SaveAttributeAsync(customer,
+                NopCustomerDefaults.SelectedPaymentMethodAttribute, PayPalCommerceDefaults.SystemName, store.Id);
+        }
+
+        return (true, string.Empty);
+    }
+
+    public async Task<(bool IsGuest, bool HasEmail)> GetCustomerStatusAsync()
+    {
+        var customer = await _workContext.GetCurrentCustomerAsync();
+        var isGuest = await _customerService.IsGuestAsync(customer);
+        var hasEmail = !string.IsNullOrWhiteSpace(customer?.Email);
+        return (isGuest, hasEmail);
+    }
 
     #region Nested classes
 

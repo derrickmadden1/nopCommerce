@@ -64,6 +64,15 @@ public class PayPalCommercePublicController : BasePublicController
     }
 
     [HttpPost]
+    public async Task<IActionResult> CaptureFastlaneCustomer([FromBody] FastlaneCustomerModel model)
+    {
+        var (success, message) = await _modelFactory.CaptureFastlaneCustomerAsync(model);
+        if (!success)
+            return Json(new { success = false, message });
+
+        return Json(new { success = true });
+    }
+    [HttpPost]
     public async Task<IActionResult> CreateOrder(int placement, string paymentSource, int cardId, bool saveCard)
     {
         var model = await _modelFactory.PrepareOrderModelAsync((ButtonPlacement)placement, null, paymentSource, cardId, saveCard);

@@ -1,4 +1,4 @@
-﻿using Nop.Core;
+using Nop.Core;
 
 namespace Nop.Plugin.Payments.PayPalCommerce;
 
@@ -31,6 +31,16 @@ public class PayPalCommerceDefaults
     /// Gets the name of a generic attribute to store the payment token identifier
     /// </summary>
     public static string TokenIdAttributeName => "PayPalCommerceTokenId";
+
+    /// <summary>
+    /// Gets the name of a generic attribute to store Fastlane customer profile data
+    /// </summary>
+    public static string FastlaneProfileAttributeName => "PayPalCommerceFastlaneProfile";
+
+    /// <summary>
+    /// Gets the name of a generic attribute to store Fastlane card token
+    /// </summary>
+    public static string FastlaneCardTokenAttributeName => "PayPalCommerceFastlaneCardToken";
 
     /// <summary>
     /// Gets the service URL
@@ -147,6 +157,11 @@ public class PayPalCommerceDefaults
         /// Gets the payment tokens route name
         /// </summary>
         public static string PaymentTokens => "Plugin.Payments.PayPalCommerce.PaymentTokens";
+
+        /// <summary>
+        /// Gets the capture Fastlane customer route name
+        /// </summary>
+        public static string CaptureFastlaneCustomer => "Plugin.Payments.PayPalCommerce.CaptureFastlaneCustomer";
     }
 
     #endregion

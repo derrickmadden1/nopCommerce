@@ -1,0 +1,233 @@
+@model FastlaneCartModel
+@using Nop.Plugin.Payments.PayPalCommerce
+@using Nop.Plugin.Payments.PayPalCommerce.Models.Public
+
+<link rel="stylesheet" href="~/Plugins/Payments.PayPalCommerce/Content/styles.css" />
+
+@if (!string.IsNullOrEmpty(Model.ScriptUrl))
+{
+    <script asp-location="Auto" src="@Model.ScriptUrl" data-page-type="cart" data-client-token="@Model.ClientToken" data-sdk-client-token="@Model.ClientToken" data-partner-attribution-id="@PayPalCommerceDefaults.PartnerHeader.Value"></script>
+}
+
+<div class="fastlane-cart-container" id="fastlane-cart-section">
+    <div class="fastlane-header">
+        <span class="fastlane-title">
+            <i class="fas fa-bolt" style="color: #0070ba;"></i> @T("Plugins.Payments.PayPalCommerce.Fastlane.Title")
+        </span>
+    </div>
+    <div class="fastlane-subtitle">
+        @T("Plugins.Payments.PayPalCommerce.Fastlane.Subtitle")
+    </div>
+    <div class="fastlane-email-wrapper">
+        <input type="email" id="fastlane-email" class="fastlane-email-input" 
+               placeholder="@T("Plugins.Payments.PayPalCommerce.Fastlane.EmailPlaceholder")" 
+               value="@Model.CustomerEmail" autocomplete="email" />
+        <div id="fastlane-watermark" class="fastlane-watermark-wrapper"></div>
+        <div id="fastlane-badge" class="fastlane-badge" style="display: none;">
+            <i class="fas fa-check-circle"></i> <span>@T("Plugins.Payments.PayPalCommerce.Fastlane.Authenticated")</span>
+        </div>
+    </div>
+</div>
+
+<!-- Fastlane Email Intercept Modal -->
+<div id="fastlane-intercept-modal" class="fastlane-modal-backdrop" style="display: none;">
+    <div class="fastlane-modal-card">
+        <button type="button" class="fastlane-modal-close" id="btn-fastlane-close" aria-label="Close">&times;</button>
+        <h3 class="fastlane-modal-title">@T("Plugins.Payments.PayPalCommerce.Fastlane.Title")</h3>
+        <p class="fastlane-modal-desc">@T("Plugins.Payments.PayPalCommerce.Fastlane.ModalPrompt")</p>
+        <div class="fastlane-email-wrapper">
+            <input type="email" id="fastlane-modal-email" class="fastlane-email-input" 
+                   placeholder="@T("Plugins.Payments.PayPalCommerce.Fastlane.EmailPlaceholder")" 
+                   value="@Model.CustomerEmail" autocomplete="email" />
+            <div id="fastlane-modal-watermark" class="fastlane-watermark-wrapper"></div>
+        </div>
+        <button type="button" class="fastlane-modal-btn" id="btn-fastlane-modal-submit">
+            @T("Plugins.Payments.PayPalCommerce.Fastlane.ContinueButton")
+        </button>
+        <button type="button" class="fastlane-modal-skip" id="btn-fastlane-skip">
+            Continue without Fastlane
+        </button>
+    </div>
+</div>
+
+<script asp-location="Footer">
+    $(function () {
+        var fastlaneInstance = null;
+        var fastlaneProfileData = null;
+        var fastlaneCompleted = false;
+        var bypassingIntercept = false;
+        var isProcessing = false;
+
+        async function initFastlane() {
+            if (window.paypal && typeof window.paypal.Fastlane === 'function') {
+                try {
+                    fastlaneInstance = await window.paypal.Fastlane();
+                    if (fastlaneInstance && fastlaneInstance.FastlaneWatermarkComponent) {
+                        try {
+                            var wm1 = await fastlaneInstance.FastlaneWatermarkComponent({ includeAdditionalInfo: true });
+                            wm1.render('#fastlane-watermark');
+                        } catch (e1) { }
+                        try {
+                            var wm2 = await fastlaneInstance.FastlaneWatermarkComponent({ includeAdditionalInfo: true });
+                            wm2.render('#fastlane-modal-watermark');
+                        } catch (e2) { }
+                    }
+                } catch (err) {
+                    console.warn("PayPal Fastlane initialization:", err);
+                }
+            }
+        }
+
+        // Initialize Fastlane once PayPal SDK is loaded
+        if (window.paypal && window.paypal.Fastlane) {
+            initFastlane();
+        } else {
+            $(window).on('load', function() {
+                initFastlane();
+            });
+        }
+
+        function isValidEmail(email) {
+            return email && /^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/.test(email);
+        }
+
+        async function handleFastlaneLookup(email, onComplete) {
+            if (isProcessing) return;
+            isProcessing = true;
+
+            email = (email || '').trim();
+            if (!isValidEmail(email)) {
+                isProcessing = false;
+                if (onComplete) onComplete(false);
+                return;
+            }
+
+            // Sync email inputs
+            $('#fastlane-email').val(email);
+            $('#fastlane-modal-email').val(email);
+
+            if (fastlaneInstance && fastlaneInstance.identity && !fastlaneCompleted) {
+                try {
+                    var lookup = await fastlaneInstance.identity.lookupCustomerByEmail(email);
+                    if (lookup && lookup.customerContextId) {
+                        var auth = await fastlaneInstance.identity.triggerAuthenticationFlow(lookup.customerContextId);
+                        if (auth && auth.authenticationState === 'succeeded') {
+                            fastlaneProfileData = auth.profileData;
+                            fastlaneCompleted = true;
+                            $('#fastlane-badge').fadeIn(150);
+                        }
+                    }
+                } catch (authErr) {
+                    console.warn("Fastlane authentication flow skipped/error:", authErr);
+                }
+            }
+
+            // Capture customer on backend
+            var payload = {
+                email: email,
+                authenticated: !!fastlaneProfileData,
+                firstName: fastlaneProfileData?.name?.firstName || '',
+                lastName: fastlaneProfileData?.name?.lastName || '',
+                phoneNumber: fastlaneProfileData?.shippingAddress?.phoneNumber?.nationalNumber || '',
+                address1: fastlaneProfileData?.shippingAddress?.address?.addressLine1 || '',
+                address2: fastlaneProfileData?.shippingAddress?.address?.addressLine2 || '',
+                city: fastlaneProfileData?.shippingAddress?.address?.adminArea2 || '',
+                stateProvinceCodeOrName: fastlaneProfileData?.shippingAddress?.address?.adminArea1 || '',
+                zipPostalCode: fastlaneProfileData?.shippingAddress?.address?.postalCode || '',
+                countryCode: fastlaneProfileData?.shippingAddress?.address?.countryCode || '',
+                fastlaneCardId: fastlaneProfileData?.card?.id || '',
+                fastlaneCardBrand: fastlaneProfileData?.card?.paymentSource?.brand || '',
+                fastlaneCardLastDigits: fastlaneProfileData?.card?.paymentSource?.lastDigits || ''
+            };
+
+            $.ajax({
+                url: '@Url.RouteUrl(PayPalCommerceDefaults.Route.CaptureFastlaneCustomer)',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(payload),
+                complete: function() {
+                    isProcessing = false;
+                    if (onComplete) onComplete(true);
+                }
+            });
+        }
+
+        function proceedToCheckout() {
+            bypassingIntercept = true;
+            var form = $('#shopping-cart-form');
+            if ($('#fastlane-marker').length === 0) {
+                form.append('<input type="hidden" id="fastlane-marker" name="fastlane" value="true" />');
+            }
+            if ($('#checkout-hidden-submit').length === 0) {
+                form.append('<input type="hidden" id="checkout-hidden-submit" name="checkout" value="checkout" />');
+            }
+            form.submit();
+        }
+
+        // On email blur on cart inline field, do early lookup
+        $('#fastlane-email').on('blur', function() {
+            var email = $(this).val();
+            if (isValidEmail(email) && !fastlaneCompleted) {
+                handleFastlaneLookup(email);
+            }
+        });
+
+        // Intercept Checkout button
+        $('#checkout').on('click', function (e) {
+            if (bypassingIntercept) return true;
+
+            // Terms of service check
+            if ($('#termsofservice').length > 0 && !$('#termsofservice').is(':checked')) {
+                return true; // Let existing terms validation handle it
+            }
+
+            var email = ($('#fastlane-email').val() || '').trim();
+            if (!isValidEmail(email)) {
+                e.preventDefault();
+                e.stopPropagation();
+                $('#fastlane-intercept-modal').fadeIn(150);
+                $('#fastlane-modal-email').focus();
+                return false;
+            }
+
+            // Email exists: run Fastlane lookup/capture then proceed
+            e.preventDefault();
+            e.stopPropagation();
+            var $btn = $(this);
+            var originalText = $btn.text();
+            $btn.prop('disabled', true).text('PROCESSING...');
+
+            handleFastlaneLookup(email, function (success) {
+                $btn.prop('disabled', false).text(originalText);
+                proceedToCheckout();
+            });
+
+            return false;
+        });
+
+        // Modal submit
+        $('#btn-fastlane-modal-submit').on('click', function (e) {
+            e.preventDefault();
+            var modalEmail = ($('#fastlane-modal-email').val() || '').trim();
+            if (!isValidEmail(modalEmail)) {
+                $('#fastlane-modal-email').css('border-color', '#ef4444').focus();
+                return;
+            }
+
+            var $btn = $(this);
+            $btn.prop('disabled', true).text('PROCESSING...');
+
+            handleFastlaneLookup(modalEmail, function () {
+                $('#fastlane-intercept-modal').fadeOut(100);
+                proceedToCheckout();
+            });
+        });
+
+        // Modal close / skip
+        $('#btn-fastlane-close, #btn-fastlane-skip').on('click', function (e) {
+            e.preventDefault();
+            $('#fastlane-intercept-modal').fadeOut(100);
+            proceedToCheckout();
+        });
+    });
+</script>

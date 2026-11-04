@@ -1,4 +1,4 @@
-﻿using Nop.Core.Configuration;
+using Nop.Core.Configuration;
 using Nop.Plugin.Payments.PayPalCommerce.Domain;
 
 namespace Nop.Plugin.Payments.PayPalCommerce;
@@ -99,6 +99,16 @@ public class PayPalCommerceSettings : ISettings
     /// Gets or sets a value indicating whether to use shipment tracking
     /// </summary>
     public bool UseShipmentTracking { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether to use PayPal Fastlane (accelerated guest checkout)
+    /// </summary>
+    public bool UseFastlane { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether to require guest email capture / intercept prior to standard checkout
+    /// </summary>
+    public bool FastlaneRequireEmailIntercept { get; set; }
 
     /// <summary>
     /// Gets or sets a value indicating whether to display buttons on the shopping cart page

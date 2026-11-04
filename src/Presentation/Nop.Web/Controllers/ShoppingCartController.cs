@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Primitives;
 using Nop.Core;
@@ -1395,10 +1395,11 @@ public partial class ShoppingCartController : BasePublicController
             return View(model);
         }
 
+        var isFastlane = string.Equals(form["fastlane"], "true", StringComparison.OrdinalIgnoreCase);
         var anonymousPermissed = _orderSettings.AnonymousCheckoutAllowed
                                  && _customerSettings.UserRegistrationType == UserRegistrationType.Disabled;
 
-        if (anonymousPermissed || !await _customerService.IsGuestAsync(customer))
+        if (anonymousPermissed || !await _customerService.IsGuestAsync(customer) || (isFastlane && _orderSettings.AnonymousCheckoutAllowed))
             return RedirectToRoute(NopRouteNames.Standard.CHECKOUT);
 
         var cartProductIds = cart.Select(ci => ci.ProductId).ToArray();

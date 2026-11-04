@@ -91,6 +91,48 @@ public class PayPalCommerceModelFactory
         };
     }
 
+    /// <summary>
+    /// Prepare Fastlane cart model
+    /// </summary>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task result contains the Fastlane cart model
+    /// </returns>
+    public async Task<FastlaneCartModel> PrepareFastlaneCartModelAsync()
+    {
+        if (!_settings.UseFastlane)
+            return null;
+
+        var (active, _) = await _serviceManager.IsActiveAsync(_settings);
+        if (!active)
+            return null;
+
+        var (((scriptUrl, clientToken, _), (email, _), _, _), _) = await _serviceManager
+            .PreparePaymentDetailsAsync(_settings, ButtonPlacement.Cart, null);
+
+        var (isGuest, hasEmail) = await _serviceManager.GetCustomerStatusAsync();
+
+        return new()
+        {
+            ScriptUrl = scriptUrl,
+            ClientToken = clientToken,
+            CustomerEmail = email,
+            CustomerHasEmail = hasEmail,
+            IsGuest = isGuest,
+            FastlaneRequireEmailIntercept = _settings.FastlaneRequireEmailIntercept
+        };
+    }
+
+    /// <summary>
+    /// Captures Fastlane customer data
+    /// </summary>
+    /// <param name="model">Fastlane customer model</param>
+    /// <returns>A task representing the result</returns>
+    public async Task<(bool Success, string Message)> CaptureFastlaneCustomerAsync(FastlaneCustomerModel model)
+    {
+        return await _serviceManager.CaptureFastlaneCustomerAsync(model);
+    }
+
     #endregion
 
     #region Checkout

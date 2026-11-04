@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Nop.Web.Framework.Models;
 using Nop.Web.Framework.Mvc;
@@ -88,6 +88,14 @@ public record ConfigurationModel : BaseNopModel
 
     [NopResourceDisplayName("Plugins.Payments.PayPalCommerce.Fields.UseShipmentTracking")]
     public bool UseShipmentTracking { get; set; }
+
+    [NopResourceDisplayName("Plugins.Payments.PayPalCommerce.Fields.UseFastlane")]
+    public bool UseFastlane { get; set; }
+    public bool UseFastlane_OverrideForStore { get; set; }
+
+    [NopResourceDisplayName("Plugins.Payments.PayPalCommerce.Fields.FastlaneRequireEmailIntercept")]
+    public bool FastlaneRequireEmailIntercept { get; set; }
+    public bool FastlaneRequireEmailIntercept_OverrideForStore { get; set; }
 
     [NopResourceDisplayName("Plugins.Payments.PayPalCommerce.Fields.ImmediatePaymentRequired")]
     public bool ImmediatePaymentRequired { get; set; }

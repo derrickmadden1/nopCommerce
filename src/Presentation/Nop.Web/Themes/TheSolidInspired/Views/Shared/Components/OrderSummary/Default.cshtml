@@ -424,6 +424,7 @@
                                         });
                                     });
                                 </script>
+                                @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.OrderSummaryCheckoutButtonsBefore, additionalData = Model })
                                 @if (orderSettings.CheckoutDisabled)
                                 {
                                     <div class="checkout-disabled">
