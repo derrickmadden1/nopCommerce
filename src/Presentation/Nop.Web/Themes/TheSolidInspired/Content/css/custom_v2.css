@@ -4277,8 +4277,9 @@ body {
   color: var(--brand-magenta, #970059);
   text-decoration: underline;
   font-weight: 600;
-  margin-left: 4px;
-  display: inline-block;
+  margin-left: 6px;
+  display: inline;
+  white-space: nowrap;
 }
 
 .terms-of-service-modern a:hover,
