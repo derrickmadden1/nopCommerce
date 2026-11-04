@@ -149,9 +149,17 @@ public class CartValidationAndRecoveryTests : CheckoutTestBase
             // Allow shake/layout animation to finish before tapping
             await mobilePage.WaitForTimeoutAsync(400);
 
-            // Tap anywhere on the terms container card
-            var termsContainer = mobilePage.Locator("#terms-of-service-container");
-            await termsContainer.ClickAsync();
+            // Tap on the terms card text (avoiding the separate 'read' link)
+            var termsText = mobilePage.Locator("#terms-of-service-container .terms-label-text");
+            if (await termsText.CountAsync() > 0)
+            {
+                await termsText.ClickAsync();
+            }
+            else
+            {
+                var termsContainer = mobilePage.Locator("#terms-of-service-container");
+                await termsContainer.ClickAsync(new() { Position = new() { X = 40, Y = 20 } });
+            }
 
             var termsCheckbox = mobilePage.Locator("#termsofservice");
             var isChecked = false;
