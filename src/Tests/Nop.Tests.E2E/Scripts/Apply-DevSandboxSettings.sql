@@ -31,6 +31,25 @@ UPDATE Setting
 SET Value = 'https://localhost:58552/plugins/paypalcommerce/webhook'
 WHERE Name = 'paypalcommercesettings.webhookurl';
 
+-- Ensure PayPal Fastlane is enabled for checkout testing
+IF NOT EXISTS (SELECT 1 FROM Setting WHERE Name = 'paypalcommercesettings.usefastlane')
+BEGIN
+    INSERT INTO Setting (Name, Value, StoreId) VALUES ('paypalcommercesettings.usefastlane', 'True', 0);
+END
+ELSE
+BEGIN
+    UPDATE Setting SET Value = 'True' WHERE Name = 'paypalcommercesettings.usefastlane';
+END
+
+IF NOT EXISTS (SELECT 1 FROM Setting WHERE Name = 'paypalcommercesettings.fastlanerequireemailintercept')
+BEGIN
+    INSERT INTO Setting (Name, Value, StoreId) VALUES ('paypalcommercesettings.fastlanerequireemailintercept', 'True', 0);
+END
+ELSE
+BEGIN
+    UPDATE Setting SET Value = 'True' WHERE Name = 'paypalcommercesettings.fastlanerequireemailintercept';
+END
+
 -- Ensure CheckMoneyOrder is enabled for manual offline checkout testing
 IF NOT EXISTS (SELECT 1 FROM Setting WHERE Name = 'paymentsettings.activepaymentmethodsystemnames' AND Value LIKE '%Payments.CheckMoneyOrder%')
 BEGIN

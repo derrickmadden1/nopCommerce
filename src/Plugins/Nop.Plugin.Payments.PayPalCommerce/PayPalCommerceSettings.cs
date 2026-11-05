@@ -103,12 +103,12 @@ public class PayPalCommerceSettings : ISettings
     /// <summary>
     /// Gets or sets a value indicating whether to use PayPal Fastlane (accelerated guest checkout)
     /// </summary>
-    public bool UseFastlane { get; set; }
+    public bool UseFastlane { get; set; } = true;
 
     /// <summary>
     /// Gets or sets a value indicating whether to require guest email capture / intercept prior to standard checkout
     /// </summary>
-    public bool FastlaneRequireEmailIntercept { get; set; }
+    public bool FastlaneRequireEmailIntercept { get; set; } = true;
 
     /// <summary>
     /// Gets or sets a value indicating whether to display buttons on the shopping cart page

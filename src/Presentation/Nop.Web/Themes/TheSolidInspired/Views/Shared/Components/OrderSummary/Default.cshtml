@@ -434,6 +434,7 @@
                                 {
                                     @if (!Context.Request.Path.Value.Contains("/checkout", StringComparison.OrdinalIgnoreCase))
                                     {
+                                        @await Component.InvokeAsync(typeof(WidgetViewComponent), new { widgetZone = PublicWidgetZones.OrderSummaryCheckoutButtonsBefore, additionalData = Model })
                                         <button type="submit" id="checkout" name="checkout" value="checkout" class="btn-primary checkout-button checkout-button-modern" style="width: 100%; text-transform: uppercase; font-weight: bold;">
                                             PROCEED TO CHECKOUT
                                         </button>
