@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using Nop.Core.Domain.Cms;
 using Nop.Core.Domain.Orders;
 using Nop.Core.Domain.Payments;
@@ -283,6 +283,7 @@ public class PayPalCommercePaymentMethod : BasePlugin, IPaymentMethod, IWidgetPl
         {
             PublicWidgetZones.ProductDetailsAddInfo,
             PublicWidgetZones.OrderSummaryContentBefore,
+            PublicWidgetZones.OrderSummaryCheckoutButtonsBefore,
             PublicWidgetZones.HeaderLinksBefore,
             PublicWidgetZones.Footer,
             PublicWidgetZones.OrderSummaryTotals,
@@ -301,6 +302,8 @@ public class PayPalCommercePaymentMethod : BasePlugin, IPaymentMethod, IWidgetPl
     {
         ArgumentNullException.ThrowIfNull(widgetZone);
 
+        if (widgetZone.Equals(PublicWidgetZones.OrderSummaryCheckoutButtonsBefore))
+            return typeof(FastlaneViewComponent);
         if (widgetZone.Equals(PublicWidgetZones.ProductDetailsAddInfo) || widgetZone.Equals(PublicWidgetZones.OrderSummaryContentBefore))
             return typeof(ButtonsViewComponent);
 
@@ -334,6 +337,8 @@ public class PayPalCommercePaymentMethod : BasePlugin, IPaymentMethod, IWidgetPl
             UseVault = false,
             SkipOrderConfirmPage = false,
             UseShipmentTracking = false,
+            UseFastlane = true,
+            FastlaneRequireEmailIntercept = true,
             DisplayButtonsOnPaymentMethod = true,
             DisplayButtonsOnProductDetails = true,
             DisplayButtonsOnShoppingCart = true,
@@ -520,6 +525,16 @@ public class PayPalCommercePaymentMethod : BasePlugin, IPaymentMethod, IWidgetPl
             ["Plugins.Payments.PayPalCommerce.Fields.UseShipmentTracking.Hint"] = "Determine whether to use the package tracking. It allows to automatically sync orders and shipment status with PayPal.",
             ["Plugins.Payments.PayPalCommerce.Fields.UseVault"] = "Use Vault",
             ["Plugins.Payments.PayPalCommerce.Fields.UseVault.Hint"] = "Determine whether to use PayPal Vault. It allows to store buyers payment information and use it in subsequent transactions.",
+            ["Plugins.Payments.PayPalCommerce.Fields.UseFastlane"] = "Use Fastlane by PayPal",
+            ["Plugins.Payments.PayPalCommerce.Fields.UseFastlane.Hint"] = "Determine whether to use PayPal Fastlane for accelerated guest checkout.",
+            ["Plugins.Payments.PayPalCommerce.Fields.FastlaneRequireEmailIntercept"] = "Intercept guest checkout for email",
+            ["Plugins.Payments.PayPalCommerce.Fields.FastlaneRequireEmailIntercept.Hint"] = "Determine whether to intercept guests before standard checkout to capture email early for Fastlane.",
+            ["Plugins.Payments.PayPalCommerce.Fastlane.Title"] = "Fastlane by PayPal",
+            ["Plugins.Payments.PayPalCommerce.Fastlane.Subtitle"] = "Speed through checkout with your saved info",
+            ["Plugins.Payments.PayPalCommerce.Fastlane.EmailPlaceholder"] = "Enter your email address",
+            ["Plugins.Payments.PayPalCommerce.Fastlane.ContinueButton"] = "Continue to Checkout",
+            ["Plugins.Payments.PayPalCommerce.Fastlane.ModalPrompt"] = "Enter your email to accelerate your checkout with Fastlane by PayPal or continue as a guest.",
+            ["Plugins.Payments.PayPalCommerce.Fastlane.Authenticated"] = "Fastlane profile authenticated",
 
             ["Plugins.Payments.PayPalCommerce.GooglePay.Discount"] = "Discount",
             ["Plugins.Payments.PayPalCommerce.GooglePay.Shipping"] = "Shipping",

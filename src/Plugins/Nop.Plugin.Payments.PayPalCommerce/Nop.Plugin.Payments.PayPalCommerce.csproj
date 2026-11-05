@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -34,6 +34,7 @@
     <None Remove="Views\Public\_Buttons.cshtml" />
     <None Remove="Views\Public\_Buttons.Recurring.cshtml" />
     <None Remove="Views\Public\_Messages.cshtml" />
+    <None Remove="Views\Public\_FastlaneCart.cshtml" />
     <None Remove="Views\_ViewImports.cshtml" />
   </ItemGroup>
 
@@ -78,6 +79,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Views\Public\_Buttons.cshtml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Views\Public\_FastlaneCart.cshtml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="Views\Public\_Messages.cshtml">

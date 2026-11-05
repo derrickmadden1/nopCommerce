@@ -1,4 +1,4 @@
-﻿@model ConfigurationModel
+@model ConfigurationModel
 
 @{
     Layout = "_ConfigurePlugin";
@@ -379,6 +379,26 @@
                         <div class="col-md-9">
                             <nop-editor asp-for="UseShipmentTracking" />
                             <span asp-validation-for="UseShipmentTracking"></span>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <div class="col-md-3">
+                            <nop-override-store-checkbox asp-for="UseFastlane_OverrideForStore" asp-input="UseFastlane" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                            <nop-label asp-for="UseFastlane" />
+                        </div>
+                        <div class="col-md-9">
+                            <nop-editor asp-for="UseFastlane" />
+                            <span asp-validation-for="UseFastlane"></span>
+                        </div>
+                    </div>
+                    <div class="form-group row" id="pnlFastlaneRequireEmailIntercept">
+                        <div class="col-md-3">
+                            <nop-override-store-checkbox asp-for="FastlaneRequireEmailIntercept_OverrideForStore" asp-input="FastlaneRequireEmailIntercept" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                            <nop-label asp-for="FastlaneRequireEmailIntercept" />
+                        </div>
+                        <div class="col-md-9">
+                            <nop-editor asp-for="FastlaneRequireEmailIntercept" />
+                            <span asp-validation-for="FastlaneRequireEmailIntercept"></span>
                         </div>
                     </div>
                     <div class="form-group row advanced-setting">

@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Routing;
 using Nop.Web.Framework;
 using Nop.Web.Framework.Mvc.Routing;
@@ -46,6 +46,10 @@ public class RouteProvider : BaseRouteProvider, IRouteProvider
         endpointRouteBuilder.MapControllerRoute(name: PayPalCommerceDefaults.Route.PaymentTokens,
             pattern: $"{lang}/customer/paypal-payment-methods",
             defaults: new { controller = "PayPalCommercePublic", action = "PaymentTokens" });
+
+        endpointRouteBuilder.MapControllerRoute(name: PayPalCommerceDefaults.Route.CaptureFastlaneCustomer,
+            pattern: "Plugins/PayPalCommerce/CaptureFastlaneCustomer",
+            defaults: new { controller = "PayPalCommercePublic", action = "CaptureFastlaneCustomer" });
 
     }
 

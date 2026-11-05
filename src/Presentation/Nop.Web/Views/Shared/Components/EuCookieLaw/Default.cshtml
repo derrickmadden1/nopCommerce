@@ -1,9 +1,28 @@
-
 <script asp-location="Footer">
     $(function() {
-        $('#eu-cookie-bar-notification').show();
+        try {
+            if (sessionStorage.getItem('eu_cookie_dismissed') === 'true') {
+                return;
+            }
+        } catch (e) {}
+
+        $('#eu-cookie-bar-notification').fadeIn(250);
+
+        $('#eu-cookie-close').on('click', function () {
+            $('#eu-cookie-bar-notification').fadeOut(250);
+            try {
+                sessionStorage.setItem('eu_cookie_dismissed', 'true');
+            } catch (e) {}
+            document.dispatchEvent(new CustomEvent('eu-cookie-dismissed', { detail: { accepted: false } }));
+        });
 
         $('#eu-cookie-ok').on('click', function () {
+            $('#eu-cookie-bar-notification').fadeOut(250);
+            try {
+                sessionStorage.setItem('eu_cookie_dismissed', 'true');
+            } catch (e) {}
+            document.dispatchEvent(new CustomEvent('eu-cookie-dismissed', { detail: { accepted: true } }));
+
             if (typeof window.clarity === 'function') {
                 window.clarity('consentv2', {
                     analytics_Storage: 'granted',
@@ -20,17 +39,15 @@
                 data: postData,
                 url: "@Url.RouteUrl(NopRouteNames.Ajax.EU_COOKIE_LAW_ACCEPT)",
                 dataType: "json",
-                success: function (data, textStatus, jqXHR) {
-                    $('#eu-cookie-bar-notification').hide();
-                },
                 error: function (jqXHR, textStatus, errorThrown) {
-                    alert('Cannot store value');
+                    console.warn('Could not persist cookie acceptance:', textStatus);
                 }
             });
         });
     });
 </script>
-<div id="eu-cookie-bar-notification" class="eu-cookie-bar-notification">
+<div id="eu-cookie-bar-notification" class="eu-cookie-bar-notification" role="dialog" aria-label="Cookie consent">
+    <button type="button" class="close-button" id="eu-cookie-close" aria-label="Dismiss cookie notice">&times;</button>
     <div class="content">
         <div class="text">@T("EUCookieLaw.Description2")</div>
         <div class="buttons-more">

@@ -1,4 +1,4 @@
-﻿using System.Linq.Expressions;
+using System.Linq.Expressions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Nop.Core;
@@ -288,6 +288,8 @@ public class PayPalCommerceController : BasePluginController
             UseVault = settings.UseVault,
             SkipOrderConfirmPage = settings.SkipOrderConfirmPage,
             UseShipmentTracking = settings.UseShipmentTracking,
+            UseFastlane = settings.UseFastlane,
+            FastlaneRequireEmailIntercept = settings.FastlaneRequireEmailIntercept,
             ImmediatePaymentRequired = settings.ImmediatePaymentRequired,
             LandingPageId = (int)settings.LandingPage,
             DisplayButtonsOnShoppingCart = settings.DisplayButtonsOnShoppingCart,
@@ -419,6 +421,8 @@ public class PayPalCommerceController : BasePluginController
         settings.UseVault = model.UseVault;
         settings.SkipOrderConfirmPage = model.SkipOrderConfirmPage;
         settings.UseShipmentTracking = model.UseShipmentTracking;
+        settings.UseFastlane = model.UseFastlane;
+        settings.FastlaneRequireEmailIntercept = model.FastlaneRequireEmailIntercept;
         settings.ImmediatePaymentRequired = model.ImmediatePaymentRequired;
         settings.LandingPage = (Nop.Plugin.Payments.PayPalCommerce.Services.Api.Models.Enums.LandingPageType)model.LandingPageId;
         settings.DisplayButtonsOnShoppingCart = model.DisplayButtonsOnShoppingCart;
@@ -444,6 +448,8 @@ public class PayPalCommerceController : BasePluginController
         await SaveSettingAsync(settings, setting => setting.UseVault, storeId, model.UseVault_OverrideForStore);
         await SaveSettingAsync(settings, setting => setting.SkipOrderConfirmPage, storeId, model.SkipOrderConfirmPage_OverrideForStore);
         await SaveSettingAsync(settings, setting => setting.UseShipmentTracking, storeId);
+        await SaveSettingAsync(settings, setting => setting.UseFastlane, storeId, model.UseFastlane_OverrideForStore);
+        await SaveSettingAsync(settings, setting => setting.FastlaneRequireEmailIntercept, storeId, model.FastlaneRequireEmailIntercept_OverrideForStore);
         await SaveSettingAsync(settings, setting => setting.ImmediatePaymentRequired, storeId, model.ImmediatePaymentRequired_OverrideForStore);
         await SaveSettingAsync(settings, setting => setting.LandingPage, storeId, model.LandingPageId_OverrideForStore);
         await SaveSettingAsync(settings, setting

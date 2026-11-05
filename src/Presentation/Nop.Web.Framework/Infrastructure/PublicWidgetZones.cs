@@ -144,6 +144,7 @@ public static partial class PublicWidgetZones
     public static string OrderDetailsShippingAddress => "order_details_shipping_address";
     public static string OrderSummaryBillingAddress => "order_summary_billing_address";
     public static string OrderSummaryCartFooter => "order_summary_cart_footer";
+    public static string OrderSummaryCheckoutButtonsBefore => "order_summary_checkout_buttons_before";
     public static string OrderSummaryContentAfter => "order_summary_content_after";
     public static string OrderSummaryContentBefore => "order_summary_content_before";
     public static string OrderSummaryContentDeals => "order_summary_content_deals";

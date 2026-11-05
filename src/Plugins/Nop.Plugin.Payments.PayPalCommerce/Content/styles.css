@@ -243,3 +243,172 @@ input[type=submit] {
   border-bottom: none;
   padding: 5px 20px 10px;
 }
+
+/* PayPal Fastlane Styles */
+.fastlane-cart-container {
+  margin: 15px 0 10px 0;
+  padding: 14px 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-sizing: border-box;
+}
+
+.fastlane-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.fastlane-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1e293b;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.fastlane-subtitle {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin-bottom: 10px;
+}
+
+.fastlane-email-wrapper {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fastlane-email-input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  color: #1e293b;
+  background: #ffffff;
+  box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.fastlane-email-input:focus {
+  outline: none;
+  border-color: #0070ba;
+  box-shadow: 0 0 0 3px rgba(0, 112, 186, 0.15);
+}
+
+.fastlane-watermark-wrapper {
+  margin-top: 4px;
+  min-height: 20px;
+}
+
+.fastlane-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: #ecfdf5;
+  border: 1px solid #10b981;
+  color: #065f46;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  margin-top: 6px;
+}
+
+/* Modal styles */
+.fastlane-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(2px);
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.fastlane-modal-card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 28px 24px;
+  max-width: 440px;
+  width: 100%;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  position: relative;
+  text-align: left;
+}
+
+.fastlane-modal-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  background: transparent;
+  border: none;
+  font-size: 1.25rem;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+.fastlane-modal-close:hover {
+  color: #334155;
+}
+
+.fastlane-modal-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 6px 0;
+}
+
+.fastlane-modal-desc {
+  font-size: 0.9rem;
+  color: #64748b;
+  margin: 0 0 18px 0;
+  line-height: 1.45;
+}
+
+.fastlane-modal-btn {
+  width: 100%;
+  padding: 12px 20px;
+  background-color: #0070ba;
+  color: #ffffff;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 12px;
+  transition: background-color 0.2s;
+}
+
+.fastlane-modal-btn:hover {
+  background-color: #005ea6;
+}
+
+.fastlane-modal-btn:disabled {
+  background-color: #94a3b8;
+  cursor: not-allowed;
+}
+
+.fastlane-modal-skip {
+  display: block;
+  text-align: center;
+  margin-top: 10px;
+  font-size: 0.85rem;
+  color: #64748b;
+  text-decoration: underline;
+  cursor: pointer;
+  background: none;
+  border: none;
+  width: 100%;
+}
