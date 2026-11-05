@@ -56,7 +56,8 @@
         var fastlaneProfileData = null;
         var fastlaneCompleted = false;
         var bypassingIntercept = false;
-        var isProcessing = false;
+        var activeLookupPromise = null;
+        var lastCapturedEmail = null;
 
         async function initFastlane() {
             if (window.paypal && typeof window.paypal.Fastlane === 'function') {
@@ -92,12 +93,8 @@
         }
 
         async function handleFastlaneLookup(email, onComplete) {
-            if (isProcessing) return;
-            isProcessing = true;
-
             email = (email || '').trim();
             if (!isValidEmail(email)) {
-                isProcessing = false;
                 if (onComplete) onComplete(false);
                 return;
             }
@@ -106,50 +103,78 @@
             $('#fastlane-email').val(email);
             $('#fastlane-modal-email').val(email);
 
-            if (fastlaneInstance && fastlaneInstance.identity && !fastlaneCompleted) {
+            // If a lookup is already in progress, wait for it
+            if (activeLookupPromise) {
                 try {
-                    var lookup = await fastlaneInstance.identity.lookupCustomerByEmail(email);
-                    if (lookup && lookup.customerContextId) {
-                        var auth = await fastlaneInstance.identity.triggerAuthenticationFlow(lookup.customerContextId);
-                        if (auth && auth.authenticationState === 'succeeded') {
-                            fastlaneProfileData = auth.profileData;
-                            fastlaneCompleted = true;
-                            $('#fastlane-badge').fadeIn(150);
-                        }
-                    }
-                } catch (authErr) {
-                    console.warn("Fastlane authentication flow skipped/error:", authErr);
-                }
+                    await activeLookupPromise;
+                } catch (pErr) { }
+                if (onComplete) onComplete(true);
+                return;
             }
 
-            // Capture customer on backend
-            var payload = {
-                email: email,
-                authenticated: !!fastlaneProfileData,
-                firstName: fastlaneProfileData?.name?.firstName || '',
-                lastName: fastlaneProfileData?.name?.lastName || '',
-                phoneNumber: fastlaneProfileData?.shippingAddress?.phoneNumber?.nationalNumber || '',
-                address1: fastlaneProfileData?.shippingAddress?.address?.addressLine1 || '',
-                address2: fastlaneProfileData?.shippingAddress?.address?.addressLine2 || '',
-                city: fastlaneProfileData?.shippingAddress?.address?.adminArea2 || '',
-                stateProvinceCodeOrName: fastlaneProfileData?.shippingAddress?.address?.adminArea1 || '',
-                zipPostalCode: fastlaneProfileData?.shippingAddress?.address?.postalCode || '',
-                countryCode: fastlaneProfileData?.shippingAddress?.address?.countryCode || '',
-                fastlaneCardId: fastlaneProfileData?.card?.id || '',
-                fastlaneCardBrand: fastlaneProfileData?.card?.paymentSource?.brand || '',
-                fastlaneCardLastDigits: fastlaneProfileData?.card?.paymentSource?.lastDigits || ''
-            };
+            // If already captured for this exact email, proceed immediately
+            if (lastCapturedEmail === email && fastlaneCompleted) {
+                if (onComplete) onComplete(true);
+                return;
+            }
 
-            $.ajax({
-                url: '@Url.RouteUrl(PayPalCommerceDefaults.Route.CaptureFastlaneCustomer)',
-                type: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify(payload),
-                complete: function() {
-                    isProcessing = false;
-                    if (onComplete) onComplete(true);
+            activeLookupPromise = (async function () {
+                try {
+                    if (fastlaneInstance && fastlaneInstance.identity && !fastlaneCompleted) {
+                        try {
+                            var lookup = await fastlaneInstance.identity.lookupCustomerByEmail(email);
+                            if (lookup && lookup.customerContextId) {
+                                var auth = await fastlaneInstance.identity.triggerAuthenticationFlow(lookup.customerContextId);
+                                if (auth && auth.authenticationState === 'succeeded') {
+                                    fastlaneProfileData = auth.profileData;
+                                    fastlaneCompleted = true;
+                                    $('#fastlane-badge').fadeIn(150);
+                                }
+                            }
+                        } catch (authErr) {
+                            console.warn("Fastlane authentication flow skipped/error:", authErr);
+                        }
+                    }
+
+                    // Capture customer on backend
+                    var payload = {
+                        email: email,
+                        authenticated: !!fastlaneProfileData,
+                        firstName: fastlaneProfileData?.name?.firstName || '',
+                        lastName: fastlaneProfileData?.name?.lastName || '',
+                        phoneNumber: fastlaneProfileData?.shippingAddress?.phoneNumber?.nationalNumber || '',
+                        address1: fastlaneProfileData?.shippingAddress?.address?.addressLine1 || '',
+                        address2: fastlaneProfileData?.shippingAddress?.address?.addressLine2 || '',
+                        city: fastlaneProfileData?.shippingAddress?.address?.adminArea2 || '',
+                        stateProvinceCodeOrName: fastlaneProfileData?.shippingAddress?.address?.adminArea1 || '',
+                        zipPostalCode: fastlaneProfileData?.shippingAddress?.address?.postalCode || '',
+                        countryCode: fastlaneProfileData?.shippingAddress?.address?.countryCode || '',
+                        fastlaneCardId: fastlaneProfileData?.card?.id || '',
+                        fastlaneCardBrand: fastlaneProfileData?.card?.paymentSource?.brand || '',
+                        fastlaneCardLastDigits: fastlaneProfileData?.card?.paymentSource?.lastDigits || ''
+                    };
+
+                    try {
+                        await $.ajax({
+                            url: '@Url.RouteUrl(PayPalCommerceDefaults.Route.CaptureFastlaneCustomer)',
+                            type: 'POST',
+                            contentType: 'application/json',
+                            data: JSON.stringify(payload)
+                        });
+                        lastCapturedEmail = email;
+                    } catch (ajaxErr) {
+                        console.warn("Fastlane capture ajax error:", ajaxErr);
+                    }
+                } finally {
+                    activeLookupPromise = null;
                 }
-            });
+            })();
+
+            try {
+                await activeLookupPromise;
+            } catch (aErr) { }
+
+            if (onComplete) onComplete(true);
         }
 
         function proceedToCheckout() {
@@ -161,7 +186,14 @@
             if ($('#checkout-hidden-submit').length === 0) {
                 form.append('<input type="hidden" id="checkout-hidden-submit" name="checkout" value="checkout" />');
             }
-            form.submit();
+            if (form.length && form[0]) {
+                form[0].submit();
+            } else {
+                var checkoutBtn = document.getElementById('checkout');
+                if (checkoutBtn) {
+                    checkoutBtn.click();
+                }
+            }
         }
 
         // On email blur on cart inline field, do early lookup
@@ -215,9 +247,11 @@
             }
 
             var $btn = $(this);
+            var originalText = $btn.text();
             $btn.prop('disabled', true).text('PROCESSING...');
 
             handleFastlaneLookup(modalEmail, function () {
+                $btn.prop('disabled', false).text(originalText);
                 $('#fastlane-intercept-modal').fadeOut(100);
                 proceedToCheckout();
             });

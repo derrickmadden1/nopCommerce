@@ -64,6 +64,7 @@ public class PayPalCommercePublicController : BasePublicController
     }
 
     [HttpPost]
+    [IgnoreAntiforgeryToken]
     public async Task<IActionResult> CaptureFastlaneCustomer([FromBody] FastlaneCustomerModel model)
     {
         var (success, message) = await _modelFactory.CaptureFastlaneCustomerAsync(model);
