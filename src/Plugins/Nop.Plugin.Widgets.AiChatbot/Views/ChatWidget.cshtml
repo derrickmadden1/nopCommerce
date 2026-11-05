@@ -1,4 +1,4 @@
-@model Nop.Plugin.Widgets.AiChatbot.AiChatbotSettings
+﻿@model Nop.Plugin.Widgets.AiChatbot.AiChatbotSettings
 
 <style>
     :root {
@@ -804,14 +804,22 @@
                 }
             }, 1200);
 
-            // Trigger teaser speech bubble after 2.8s
+            // Trigger teaser speech bubble after 2.8s (only if cookie consent isn't actively displaying)
             if (teaser && enableTeaser) {
-                setTimeout(() => {
+                function tryShowTeaser() {
                     const teaserDismissed = sessionStorage.getItem('ai_chat_teaser_dismissed');
-                    if (!isOpen && teaserDismissed !== 'true') {
+                    const cookieNotification = document.getElementById('eu-cookie-bar-notification');
+                    const cookieBarVisible = cookieNotification && window.getComputedStyle(cookieNotification).display !== 'none';
+                    if (!isOpen && teaserDismissed !== 'true' && !cookieBarVisible) {
                         teaser.classList.add('visible');
                     }
-                }, 2800);
+                }
+
+                setTimeout(tryShowTeaser, 2800);
+
+                document.addEventListener('eu-cookie-dismissed', function () {
+                    setTimeout(tryShowTeaser, 1500);
+                });
             }
         }
     });
