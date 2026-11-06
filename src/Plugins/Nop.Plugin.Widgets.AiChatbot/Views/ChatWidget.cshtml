@@ -1,4 +1,4 @@
-﻿@model Nop.Plugin.Widgets.AiChatbot.AiChatbotSettings
+@model Nop.Plugin.Widgets.AiChatbot.AiChatbotSettings
 
 <style>
     :root {
@@ -571,7 +571,7 @@
 <div id="ai-chat-bubble" class="@(ViewBag.IsCheckoutPage == true ? "ai-checkout-mode" : "")">
     @if (Model.EnableTeaserBubble)
     {
-        var teaserText = (ViewBag.HasCartItems == true) ? "Ready to checkout?" : Model.TeaserText;
+        var teaserText = Model.TeaserText;
         <div id="ai-chat-teaser" role="tooltip" aria-live="polite">
             <span id="ai-teaser-text">@teaserText</span>
             <button id="ai-teaser-close" aria-label="Dismiss speech bubble">&times;</button>
@@ -616,7 +616,7 @@
     const welcomeMessage = '@Html.Raw(Model.WelcomeMessage)';
     const chatEndpoint = '/AiChatbot/Chat';
     const enableTeaser = @(Model.EnableTeaserBubble ? "true" : "false");
-    const hasCartItems = @(ViewBag.HasCartItems == true ? "true" : "false");
+    const hasCartItems = false;
     const isCheckoutPage = @(ViewBag.IsCheckoutPage == true ? "true" : "false");
 
     const panel = document.getElementById('ai-chat-panel');
@@ -634,8 +634,8 @@
     let initialised = false;
 
     const currentCustomerId = @(ViewBag.CustomerId ?? 0);
-    const activeSessionGuidFromServer = '@(ViewBag.ActiveSessionGuid ?? "")';
-    const activeSessionHistoryRaw = @Html.Raw(ViewBag.ActiveSessionHistory != null ? (string)ViewBag.ActiveSessionHistory : "null");
+    const activeSessionGuidFromServer = '';
+    const activeSessionHistoryRaw = null;
 
     function setSessionCookie(guid) {
         if (!guid) return;
@@ -781,14 +781,54 @@
     try {
         const storedOpen = sessionStorage.getItem('ai_chat_open');
         if (storedOpen === 'true') {
+            openChat();
+        }
+        if (false) {
             isOpen = true;
             panel.classList.add('open');
             toggle.classList.add('active');
             updateMobileViewport();
             if (!initialised) {
                 initialised = true;
+                if (currentCustomerId > 0 && (!history || history.length === 0)) {
+                fetch('/AiChatbot/GetRecentSession')
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data && data.success && data.historyJson) {
+                            try {
+                                const parsed = JSON.parse(data.historyJson);
+                                if (Array.isArray(parsed) && parsed.length > 0) {
+                                    history = parsed;
+                                    sessionGuid = data.sessionGuid;
+                                    setSessionCookie(sessionGuid);
+                                    localStorage.setItem('ai_chat_session_guid', sessionGuid);
+                                    localStorage.setItem('ai_chat_history', JSON.stringify(history));
+                                    messagesEl.innerHTML = '';
+                                    history.forEach(turn => {
+                                        if (turn.role === 'user') appendUserMessage(turn.content);
+                                        else appendBotMessage(turn.content, null);
+                                    });
+                                    return;
+                                }
+                            } catch (e) {}
+                        }
+                        appendBotMessage(welcomeMessage, null);
+                showStarterChips();
+
+        
+                    })
+                    .catch(() => {
+                        appendBotMessage(welcomeMessage, null);
+                showStarterChips();
+
+        
+                    });
+            } else {
                 appendBotMessage(welcomeMessage, null);
                 showStarterChips();
+
+            }
+
             }
         }
     } catch (e) {}
@@ -811,6 +851,16 @@
                     const cookieNotification = document.getElementById('eu-cookie-bar-notification');
                     const cookieBarVisible = cookieNotification && window.getComputedStyle(cookieNotification).display !== 'none';
                     if (!isOpen && teaserDismissed !== 'true' && !cookieBarVisible) {
+                        try {
+                            const cartQtyEl = document.querySelector('.cart-qty') || document.querySelector('.shopping-cart-qty');
+                            if (cartQtyEl) {
+                                const qty = parseInt(cartQtyEl.innerText.replace(/\D/g, ''), 10);
+                                if (!isNaN(qty) && qty > 0) {
+                                    const teaserTextEl = document.getElementById('ai-teaser-text');
+                                    if (teaserTextEl) teaserTextEl.innerText = 'Ready to checkout?';
+                                }
+                            }
+                        } catch (e) {}
                         teaser.classList.add('visible');
                     }
                 }
@@ -860,8 +910,45 @@
 
         if (!initialised) {
             initialised = true;
-            appendBotMessage(welcomeMessage, null);
-            showStarterChips();
+            if (currentCustomerId > 0 && (!history || history.length === 0)) {
+                fetch('/AiChatbot/GetRecentSession')
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data && data.success && data.historyJson) {
+                            try {
+                                const parsed = JSON.parse(data.historyJson);
+                                if (Array.isArray(parsed) && parsed.length > 0) {
+                                    history = parsed;
+                                    sessionGuid = data.sessionGuid;
+                                    setSessionCookie(sessionGuid);
+                                    localStorage.setItem('ai_chat_session_guid', sessionGuid);
+                                    localStorage.setItem('ai_chat_history', JSON.stringify(history));
+                                    messagesEl.innerHTML = '';
+                                    history.forEach(turn => {
+                                        if (turn.role === 'user') appendUserMessage(turn.content);
+                                        else appendBotMessage(turn.content, null);
+                                    });
+                                    return;
+                                }
+                            } catch (e) {}
+                        }
+                        appendBotMessage(welcomeMessage, null);
+                showStarterChips();
+
+        
+                    })
+                    .catch(() => {
+                        appendBotMessage(welcomeMessage, null);
+                showStarterChips();
+
+        
+                    });
+            } else {
+                appendBotMessage(welcomeMessage, null);
+                showStarterChips();
+
+            }
+
         }
     }
 

@@ -112,21 +112,21 @@ public class ChatService
                 new AzureKeyCredential(apiKey)
             );
 
-            // Build context in parallel with fault tolerance
-            var customerContextTask = SafeGetCustomerContextAsync();
-            var relevantProductsTask = SafeSearchProductsAsync(request.Message, request.History);
-            var marketsTask = SafeGetMarketsAsync();
-            var reviewRewardAmountTask = _settingService.GetSettingByKeyAsync<decimal>("reviewrewardsettings.rewardamount", 5.00m);
-            var reviewRewardPercentageTask = _settingService.GetSettingByKeyAsync<bool>("reviewrewardsettings.usepercentage", false);
+            // Build context sequentially to ensure thread-safety for request-scoped database context and avoid connection pool exhaustion
+            var customerContext = await SafeGetCustomerContextAsync();
+            var relevantProductsList = await SafeSearchProductsAsync(request.Message, request.History);
+            var marketsList = await SafeGetMarketsAsync();
+            var rewardAmount = await _settingService.GetSettingByKeyAsync<decimal>("reviewrewardsettings.rewardamount", 5.00m);
+            var usePercentage = await _settingService.GetSettingByKeyAsync<bool>("reviewrewardsettings.usepercentage", false);
 
-            await Task.WhenAll(customerContextTask, relevantProductsTask, marketsTask, reviewRewardAmountTask, reviewRewardPercentageTask);
 
-            var customerContext = customerContextTask.Result;
-            var relevantProductsList = relevantProductsTask.Result;
+
+
+
             var relevantProducts = ProductSearchService.FormatForPrompt(relevantProductsList);
-            var marketsList = marketsTask.Result;
-            var rewardAmount = reviewRewardAmountTask.Result;
-            var usePercentage = reviewRewardPercentageTask.Result;
+
+
+
             var rewardText = usePercentage ? $"{rewardAmount:0.##}%" : $"£{rewardAmount:F2}";
 
             var systemPrompt = BuildSystemPrompt(customerContext, relevantProducts, marketsList, rewardText);
