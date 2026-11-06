@@ -258,6 +258,18 @@ jobs:
         az webapp config appsettings set --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --slot staging --settings ASPNETCORE_ENVIRONMENT="Development" ASPNETCORE_DETAILEDERRORS=true
         az webapp log config --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group rosecottagecroft --slot staging --application-logging filesystem --detailed-error-messages true --failed-request-tracing true
 
+        # Whitelist GitHub Actions Runner IP on staging slot for smoke testing
+        AGENT_IP=$(curl -s https://api.ipify.org || curl -s https://ifconfig.me)
+        echo "Whitelisting GitHub Runner IP: $AGENT_IP on staging slot..."
+        az webapp config access-restriction add \
+          --name ${{ secrets.AZURE_WEBAPP_NAME }} \
+          --resource-group rosecottagecroft \
+          --slot staging \
+          --rule-name "GitHubRunner" \
+          --action Allow \
+          --ip-address "$AGENT_IP/32" \
+          --priority 50
+
     - name: Deploy to Staging
       uses: azure/webapps-deploy@v3
       with:
