@@ -54,6 +54,10 @@ jobs:
             "ConnectionString": "${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}",
             "ContainerName": "nop-config",
             "BlobName": "DataProtectionKeys.xml"
+          },
+          "HostingConfig": {
+            "UseProxy": true,
+            "ForwardedForHeaderName": "CF-Connecting-IP"
           }
         }
         EOF

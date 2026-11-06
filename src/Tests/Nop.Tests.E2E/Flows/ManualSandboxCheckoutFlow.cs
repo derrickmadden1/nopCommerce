@@ -19,13 +19,19 @@ public class ManualSandboxCheckoutFlow : BaseCheckoutFlow
 
     public override async Task<CheckoutResult> RunAsync(IPage page, CancellationToken cancellationToken = default)
     {
+        // 1. Add item to cart
+        await AddTestProductToCartAsync(page);
+
+        // 2. Complete rest of checkout
+        return await CompleteCheckoutFromCartAsync(page, cancellationToken);
+    }
+
+    public async Task<CheckoutResult> CompleteCheckoutFromCartAsync(IPage page, CancellationToken cancellationToken = default)
+    {
         var stopwatch = Stopwatch.StartNew();
 
         try
         {
-            // 1. Add item to cart
-            await AddTestProductToCartAsync(page);
-
             // 2. Go to cart and accept terms
             await ProceedToCartAndAcceptTermsAsync(page);
 

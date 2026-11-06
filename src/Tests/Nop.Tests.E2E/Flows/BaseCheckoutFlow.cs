@@ -62,9 +62,18 @@ public abstract class BaseCheckoutFlow : ICheckoutFlow
         }
 
         // Proceed to Checkout
-        var checkoutButton = page.Locator("#checkout, button[name='checkout'], button:has-text('Checkout'), button:has-text('PROCEED TO CHECKOUT')").First;
+        var checkoutButton = page.Locator("#checkout, button[name='checkout']").First;
         await checkoutButton.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 10000 });
         await checkoutButton.ClickAsync(new() { Force = true });
+
+        // If PayPal Fastlane intercept modal appears, click Continue without Fastlane to proceed to standard checkout
+        var fastlaneSkipBtn = page.Locator("#btn-fastlane-skip");
+        try
+        {
+            await fastlaneSkipBtn.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 1500 });
+            await fastlaneSkipBtn.ClickAsync(new() { Force = true });
+        }
+        catch { }
 
         // Wait for transition away from cart
         await page.WaitForURLAsync(url => !url.ToString().EndsWith("/cart", StringComparison.OrdinalIgnoreCase), new() { Timeout = 15000 });
