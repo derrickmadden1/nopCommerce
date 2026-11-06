@@ -91,6 +91,37 @@ public class AiChatbotController : BasePluginController
         return Json(response);
     }
 
+    /// <summary>
+    /// Lazy-loads recent chat session history on demand when the panel is opened
+    /// </summary>
+    [HttpGet]
+    [Route("AiChatbot/GetRecentSession")]
+    public async Task<IActionResult> GetRecentSession()
+    {
+        if (!_settings.Enabled)
+            return Json(new { success = false });
+
+        var currentCustomer = await _workContext.GetCurrentCustomerAsync();
+        var isGuest = currentCustomer == null || await _customerService.IsGuestAsync(currentCustomer);
+        var customerId = isGuest ? 0 : currentCustomer!.Id;
+
+        if (customerId > 0)
+        {
+            var recentSession = await _chatSessionService.GetRecentCustomerSessionAsync(customerId, 24);
+            if (recentSession != null)
+            {
+                return Json(new
+                {
+                    success = true,
+                    sessionGuid = recentSession.SessionGuid.ToString(),
+                    historyJson = recentSession.MessagesJson
+                });
+            }
+        }
+
+        return Json(new { success = false });
+    }
+
     // ── Admin ─────────────────────────────────────────────────────────────────
 
     [AuthorizeAdmin]
