@@ -1,4 +1,4 @@
-﻿using AwesomeAssertions;
+using AwesomeAssertions;
 using Nop.Core.Domain.Catalog;
 using Nop.Core.Domain.Customers;
 using Nop.Core.Domain.Directory;
@@ -249,5 +249,42 @@ public class PriceCalculationServiceTests : ServiceTest
         _priceCalcService.Round(valueToRounding, roundingType).Should().Be(roundedValue);
     }
 
+
+    [Test]
+    public async Task CanCalculateProductPriceWithAttributePriceAdjustment()
+    {
+        var product = new Product
+        {
+            Price = 8.00M,
+            CustomerEntersPrice = false,
+            Published = true
+        };
+        var customer = new Customer();
+        var store = new Store();
+
+        var attributeValueSmall = new ProductAttributeValue
+        {
+            Name = "Small",
+            PriceAdjustment = 0M
+        };
+
+        var attributeValueLarge = new ProductAttributeValue
+        {
+            Name = "Large",
+            PriceAdjustment = 7.00M
+        };
+
+        var adjSmall = await _priceCalcService.GetProductAttributeValuePriceAdjustmentAsync(product, attributeValueSmall, customer, store);
+        var adjLarge = await _priceCalcService.GetProductAttributeValuePriceAdjustmentAsync(product, attributeValueLarge, customer, store);
+
+        adjSmall.Should().Be(0M);
+        adjLarge.Should().Be(7.00M);
+
+        var (_, finalPriceSmall, _, _) = await _priceCalcService.GetFinalPriceAsync(product, customer, store, adjSmall, false);
+        var (_, finalPriceLarge, _, _) = await _priceCalcService.GetFinalPriceAsync(product, customer, store, adjLarge, false);
+
+        finalPriceSmall.Should().Be(8.00M);
+        finalPriceLarge.Should().Be(15.00M);
+    }
     #endregion
 }
