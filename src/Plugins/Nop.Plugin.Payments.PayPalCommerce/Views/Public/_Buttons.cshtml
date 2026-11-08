@@ -19,7 +19,14 @@
 }
 
 <link rel="stylesheet" href="~/Plugins/Payments.PayPalCommerce/Content/styles.css" />
-<script asp-location="Auto" src="@Model.Script.Url" data-page-type="@pageType" data-client-token="@Model.Script.ClientToken" data-user-id-token="@Model.Script.UserToken" data-partner-attribution-id="@PayPalCommerceDefaults.PartnerHeader.Value"></script>
+@if (Model.Placement == ButtonPlacement.PaymentMethod && !string.IsNullOrEmpty(Model.Script.ClientToken))
+{
+    <script asp-location="Auto" src="@Model.Script.Url" data-page-type="@pageType" data-client-token="@Model.Script.ClientToken" data-user-id-token="@Model.Script.UserToken" data-partner-attribution-id="@PayPalCommerceDefaults.PartnerHeader.Value"></script>
+}
+else
+{
+    <script asp-location="Auto" src="@Model.Script.Url" data-page-type="@pageType" data-user-id-token="@Model.Script.UserToken" data-partner-attribution-id="@PayPalCommerceDefaults.PartnerHeader.Value"></script>
+}
 @if (settings.UseApplePay && Model.Placement != ButtonPlacement.Product)
 {
     <script asp-location="Auto" src="@PayPalCommerceDefaults.ApplePayScriptUrl"></script>

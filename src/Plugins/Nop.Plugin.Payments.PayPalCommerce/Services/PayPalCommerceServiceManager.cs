@@ -1342,7 +1342,28 @@ public class PayPalCommerceServiceManager
                 {
                     CustomerId = CommonHelper.EnsureMaximumLength(GetSha256Hash(customer.CustomerGuid.ToString()), 22)
                 }, settings);
-                clientToken = identityToken?.ClientToken;
+                if (settings.UseFastlane)
+                {
+                    try
+                    {
+                        var fastlaneToken = await _httpClient.RequestAsync<GetAccessTokenRequest, GetAccessTokenResponse>(new()
+                        {
+                            ClientId = settings.ClientId,
+                            Secret = settings.SecretKey,
+                            GrantType = "client_credentials",
+                            ResponseType = "client_token",
+                            Intent = "sdk_init"
+                        }, settings);
+                        clientToken = fastlaneToken?.Token;
+                    }
+                    catch
+                    {
+                        // Fallback to identity token if Fastlane OAuth token request fails
+                    }
+                }
+
+                if (string.IsNullOrEmpty(clientToken))
+                    clientToken = identityToken?.ClientToken;
             }
 
             //user ID token is required for Vault feature

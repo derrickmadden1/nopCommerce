@@ -35,7 +35,8 @@ public abstract class CheckoutTestBase
         Browser = await PlaywrightInstance.Chromium.LaunchAsync(new BrowserTypeLaunchOptions
         {
             Headless = Settings.Headless,
-            SlowMo = Settings.SlowMo
+            SlowMo = Settings.SlowMo,
+            Args = new[] { "--disable-popup-blocking" }
         });
 
         Context = await Browser.NewContextAsync(new BrowserNewContextOptions

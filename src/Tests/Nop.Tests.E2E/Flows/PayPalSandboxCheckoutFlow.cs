@@ -38,7 +38,7 @@ public class PayPalSandboxCheckoutFlow : BaseCheckoutFlow
             // 2. Go to cart and accept terms
             var cartUrl = $"{Settings.BaseUrl.TrimEnd('/')}/cart";
             TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Navigating to cart: {cartUrl}");
-            await page.GotoAsync(cartUrl, new() { WaitUntil = WaitUntilState.Load });
+            await page.GotoAsync(cartUrl, new() { WaitUntil = WaitUntilState.DOMContentLoaded });
             await DismissCookieNotificationAsync(page);
 
             var termsCheckbox = page.Locator("#termsofservice");
@@ -54,7 +54,7 @@ public class PayPalSandboxCheckoutFlow : BaseCheckoutFlow
 
             // 3. Locate PayPal Smart Button based on funding source
             TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Waiting for PayPal Smart Button iframe");
-            var paypalFrame = page.FrameLocator("iframe[name^='__zoid__paypal_buttons'], .paypal-button-container iframe.component-frame, iframe[title='PayPal']");
+            var paypalFrame = page.FrameLocator("iframe.component-frame:not(.invisible), iframe[name^='__zoid__paypal_buttons']:not([name*='prerender'])");
 
             ILocator paypalButton = FundingSource switch
             {
@@ -64,21 +64,67 @@ public class PayPalSandboxCheckoutFlow : BaseCheckoutFlow
             };
 
             await paypalButton.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 25000 });
-            TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] PayPal {FundingSource} button visible, preparing popup listener and clicking button");
+            await Task.Delay(1500);
 
-            var popupTask = page.WaitForPopupAsync(new() { Timeout = 40000 });
-            await paypalButton.ClickAsync();
+            var buttonBox = await paypalButton.BoundingBoxAsync();
+            TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] PayPal {FundingSource} button visible and hydrated, bounding box: X={buttonBox?.X}, Y={buttonBox?.Y}, W={buttonBox?.Width}, H={buttonBox?.Height}");
+
+            var buttonFrame = page.Frames.FirstOrDefault(f => f.Url.Contains("smart/buttons") || f.Url.Contains("paypal.com"));
+
+            var popupTask = page.WaitForPopupAsync(new() { Timeout = 30000 });
+            var contextPageTask = page.Context.WaitForPageAsync(new() { Timeout = 30000 });
+
+            TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Attempting click on PayPal button inside buttonFrame");
+            if (buttonFrame != null)
+            {
+                var fundingAttr = FundingSource switch
+                {
+                    PayPalFundingSource.PayLater => "paylater",
+                    PayPalFundingSource.Card => "card",
+                    _ => "paypal"
+                };
+                
+                // Try clicking the button locator in buttonFrame
+                var btn = buttonFrame.Locator($"[data-funding-source='{fundingAttr}']");
+                await btn.ClickAsync();
+
+                // If popup didn't immediately appear, also trigger click via evaluate
+                var earlyWait = await Task.WhenAny(popupTask, contextPageTask, Task.Delay(2000));
+                if (earlyWait != popupTask && earlyWait != contextPageTask)
+                {
+                    TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Triggering synthetic click via buttonFrame.EvaluateAsync");
+                    await buttonFrame.EvaluateAsync($"document.querySelector(\"[data-funding-source='{fundingAttr}']\").click()");
+                }
+            }
+            else
+            {
+                await paypalButton.ClickAsync();
+            }
 
             IPage paypalPage;
             try
             {
-                paypalPage = await popupTask;
+                var winner = await Task.WhenAny(popupTask, contextPageTask);
+                paypalPage = await winner;
                 TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] PayPal popup opened, url={paypalPage.Url}");
             }
             catch (Exception ex)
             {
-                TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Popup wait timed out or failed ({ex.Message}), falling back to main page");
-                paypalPage = page;
+                TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Popup wait timed out or failed ({ex.Message}), checking context pages...");
+                if (page.Context.Pages.Count > 1)
+                {
+                    paypalPage = page.Context.Pages[^1];
+                    TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Found open popup page in Context.Pages: {paypalPage.Url}");
+                }
+                else
+                {
+                    paypalPage = page;
+                }
+            }
+
+            if (paypalPage.Url.EndsWith("/cart", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException($"PayPal popup window failed to open after clicking {FundingSource} button (stayed on {paypalPage.Url}).");
             }
 
             // 4. Handle PayPal Login / Checkout
@@ -156,7 +202,7 @@ public class PayPalSandboxCheckoutFlow : BaseCheckoutFlow
             }
             catch
             {
-                submitBtn = paypalPage.Locator("button:has-text('Complete Purchase'), button:has-text('Pay Now'), button:has-text('Agree and Continue'), button:has-text('Agree & Continue'), button:has-text('Save and Continue'), button:has-text('Continue'):not([name='continueshopping']):not(.continue-shopping-button), #payment-submit-btn, button[name='payment-submit-btn'], [data-testid='submit-button-initial']").Last;
+                submitBtn = paypalPage.Locator("button:has-text('Complete Purchase'), button:has-text('Pay Now'), button:has-text('Agree and Continue'), button:has-text('Agree & Continue'), button:has-text('Save and Continue'), button:has-text('Continue'):not([name='continueshopping']):not(.continue-shopping-button):not(#btn-fastlane-skip):not(.fastlane-modal-skip), #payment-submit-btn, button[name='payment-submit-btn'], [data-testid='submit-button-initial']").Last;
                 await submitBtn.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 15000 });
             }
 
