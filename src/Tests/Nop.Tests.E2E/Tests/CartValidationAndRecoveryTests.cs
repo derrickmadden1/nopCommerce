@@ -9,6 +9,26 @@ namespace Nop.Tests.E2E.Tests;
 [Category("CartValidation")]
 public class CartValidationAndRecoveryTests : CheckoutTestBase
 {
+    private static async Task ProceedPastCartAsync(IPage page, ILocator checkoutButton)
+    {
+        await checkoutButton.ClickAsync();
+
+        // If PayPal Fastlane intercept modal appears when proceeding with empty email, click skip to proceed to standard checkout
+        var fastlaneSkipBtn = page.Locator("#btn-fastlane-skip");
+        try
+        {
+            await fastlaneSkipBtn.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 1500 });
+            await fastlaneSkipBtn.ClickAsync(new() { Force = true });
+        }
+        catch
+        {
+            // Fastlane modal not triggered or not enabled
+        }
+
+        await page.WaitForURLAsync(url => !url.EndsWith("/cart", StringComparison.OrdinalIgnoreCase), new() { Timeout = 15000 });
+        await page.WaitForLoadStateAsync(LoadState.Load);
+    }
+
     private async Task AddItemToCartAsync(IPage page)
     {
         var productUrl = $"{Settings.BaseUrl.TrimEnd('/')}/{Settings.TestProductSlug.TrimStart('/')}";
@@ -110,10 +130,7 @@ public class CartValidationAndRecoveryTests : CheckoutTestBase
             Assert.That(await termsCheckbox.IsCheckedAsync(), Is.True, "Clicking inline error banner should check #termsofservice.");
 
             // Now click Proceed to Checkout again
-            await checkoutButton.ClickAsync();
-
-            // User should transition away from cart to checkout or login
-            await mobilePage.WaitForURLAsync(url => !url.EndsWith("/cart", StringComparison.OrdinalIgnoreCase), new() { Timeout = 15000 });
+            await ProceedPastCartAsync(mobilePage, checkoutButton);
             Assert.That(mobilePage.Url, Does.Not.EndWith("/cart"), "User should successfully transition to checkout after accepting terms.");
         }
         catch (Exception)
@@ -173,8 +190,7 @@ public class CartValidationAndRecoveryTests : CheckoutTestBase
             await errorBanner.WaitForAsync(new() { State = WaitForSelectorState.Hidden, Timeout = 3000 });
 
             // Proceed successfully
-            await checkoutButton.ClickAsync();
-            await mobilePage.WaitForURLAsync(url => !url.EndsWith("/cart", StringComparison.OrdinalIgnoreCase), new() { Timeout = 15000 });
+            await ProceedPastCartAsync(mobilePage, checkoutButton);
             Assert.That(mobilePage.Url, Does.Not.EndWith("/cart"));
         }
         catch (Exception)
@@ -231,8 +247,7 @@ public class CartValidationAndRecoveryTests : CheckoutTestBase
         Assert.That(await termsCheckbox.IsCheckedAsync(), Is.True);
 
         // Proceed to checkout
-        await checkoutButton.ClickAsync();
-        await Page.WaitForURLAsync(url => !url.EndsWith("/cart", StringComparison.OrdinalIgnoreCase), new() { Timeout = 15000 });
+        await ProceedPastCartAsync(Page, checkoutButton);
         Assert.That(Page.Url, Does.Not.EndWith("/cart"));
     }
 }

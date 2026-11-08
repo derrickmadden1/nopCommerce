@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json;
 
 namespace Nop.Plugin.Payments.PayPalCommerce.Services.Api.Authentication;
@@ -51,6 +51,12 @@ public class GetAccessTokenRequest : IApiRequest
     /// </summary>
     [JsonProperty(PropertyName = "target_customer_id")]
     public string TargetCustomerId { get; set; }
+
+    /// <summary>
+    /// Gets or sets the intent
+    /// </summary>
+    [JsonProperty(PropertyName = "intent")]
+    public string Intent { get; set; }
 
     /// <summary>
     /// Gets the request path

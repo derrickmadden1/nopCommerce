@@ -6,7 +6,7 @@
 
 @if (!string.IsNullOrEmpty(Model.ScriptUrl))
 {
-    <script asp-location="Auto" src="@Model.ScriptUrl" data-page-type="cart" data-client-token="@Model.ClientToken" data-sdk-client-token="@Model.ClientToken" data-partner-attribution-id="@PayPalCommerceDefaults.PartnerHeader.Value"></script>
+    <script asp-location="Auto" src="@Model.ScriptUrl" data-page-type="cart" data-sdk-client-token="@Model.ClientToken" data-partner-attribution-id="@PayPalCommerceDefaults.PartnerHeader.Value"></script>
 }
 
 <div class="fastlane-cart-container" id="fastlane-cart-section">
@@ -177,11 +177,15 @@
             if (onComplete) onComplete(true);
         }
 
-        function proceedToCheckout() {
+        function proceedToCheckout(useFastlane) {
             bypassingIntercept = true;
             var form = $('#shopping-cart-form');
-            if ($('#fastlane-marker').length === 0) {
-                form.append('<input type="hidden" id="fastlane-marker" name="fastlane" value="true" />');
+            if (useFastlane) {
+                if ($('#fastlane-marker').length === 0) {
+                    form.append('<input type="hidden" id="fastlane-marker" name="fastlane" value="true" />');
+                }
+            } else {
+                $('#fastlane-marker').remove();
             }
             if ($('#checkout-hidden-submit').length === 0) {
                 form.append('<input type="hidden" id="checkout-hidden-submit" name="checkout" value="checkout" />');
@@ -231,7 +235,7 @@
 
             handleFastlaneLookup(email, function (success) {
                 $btn.prop('disabled', false).text(originalText);
-                proceedToCheckout();
+                proceedToCheckout(true);
             });
 
             return false;
@@ -253,7 +257,7 @@
             handleFastlaneLookup(modalEmail, function () {
                 $btn.prop('disabled', false).text(originalText);
                 $('#fastlane-intercept-modal').fadeOut(100);
-                proceedToCheckout();
+                proceedToCheckout(true);
             });
         });
 
@@ -261,7 +265,7 @@
         $('#btn-fastlane-close, #btn-fastlane-skip').on('click', function (e) {
             e.preventDefault();
             $('#fastlane-intercept-modal').fadeOut(100);
-            proceedToCheckout();
+            proceedToCheckout(false);
         });
     });
 </script>
