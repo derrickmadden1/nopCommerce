@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Nop.Core;
 using Nop.Core.Domain.Seo;
@@ -100,6 +100,10 @@ public sealed class WwwRequirementAttribute : TypeFilterAttribute
 
             //ignore this rule for localhost
             if (_webHelper.IsLocalRequest(context.HttpContext.Request))
+                return;
+
+            //ignore this rule for Azure default domains (e.g. azurewebsites.net) where www is not supported
+            if (context.HttpContext.Request.Host.Host.EndsWith(".azurewebsites.net", StringComparison.OrdinalIgnoreCase))
                 return;
 
             switch (_seoSettings.WwwRequirement)
