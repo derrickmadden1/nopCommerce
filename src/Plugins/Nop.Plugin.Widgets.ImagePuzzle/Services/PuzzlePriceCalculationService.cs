@@ -45,7 +45,6 @@ public partial class PuzzlePriceCalculationService : PriceCalculationService
         IPuzzleService puzzleService)
         : base(catalogSettings, currencySettings, categoryService, currencyService, customerService, discountService, manufacturerService, priceListService, productAttributeParser, productService, staticCacheManager, genericAttributeService)
     {
-        _genericAttributeService = genericAttributeService;
         _settingService = settingService;
         _puzzleService = puzzleService;
     }
