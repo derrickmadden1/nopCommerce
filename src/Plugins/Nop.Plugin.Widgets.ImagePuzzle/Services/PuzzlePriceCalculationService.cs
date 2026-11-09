@@ -26,7 +26,6 @@ namespace Nop.Plugin.Widgets.ImagePuzzle.Services;
 /// </summary>
 public partial class PuzzlePriceCalculationService : PriceCalculationService
 {
-    private readonly IGenericAttributeService _genericAttributeService;
     private readonly ISettingService _settingService;
     private readonly IPuzzleService _puzzleService;
 
@@ -44,7 +43,7 @@ public partial class PuzzlePriceCalculationService : PriceCalculationService
         IGenericAttributeService genericAttributeService,
         ISettingService settingService,
         IPuzzleService puzzleService)
-        : base(catalogSettings, currencySettings, categoryService, currencyService, customerService, discountService, manufacturerService, priceListService, productAttributeParser, productService, staticCacheManager)
+        : base(catalogSettings, currencySettings, categoryService, currencyService, customerService, discountService, manufacturerService, priceListService, productAttributeParser, productService, staticCacheManager, genericAttributeService)
     {
         _genericAttributeService = genericAttributeService;
         _settingService = settingService;

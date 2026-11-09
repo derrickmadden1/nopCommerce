@@ -1,3 +1,4 @@
+using Nop.Core.Domain.Localization;
 using System.Text.RegularExpressions;
 using FluentMigrator;
 using Nop.Core.Domain.Messages;
@@ -49,6 +50,29 @@ public class DataMigration : Migration
                     shipmentSentTemplate.Body = oldTrackingRegex.Replace(shipmentSentTemplate.Body, trackingLine);
                     _dataProvider.UpdateEntity(shipmentSentTemplate);
                 }
+            }
+        }
+        var languages = _dataProvider.GetTable<Language>().ToList();
+        var lsrTable = _dataProvider.GetTable<LocaleStringResource>();
+        foreach (var lang in languages)
+        {
+            if (!lsrTable.Any(r => r.LanguageId == lang.Id && r.ResourceName == "Admin.Catalog.Products.Fields.FixedPriceBundle"))
+            {
+                _dataProvider.InsertEntity(new LocaleStringResource
+                {
+                    LanguageId = lang.Id,
+                    ResourceName = "Admin.Catalog.Products.Fields.FixedPriceBundle",
+                    ResourceValue = "Fixed price bundle"
+                });
+            }
+            if (!lsrTable.Any(r => r.LanguageId == lang.Id && r.ResourceName == "Admin.Catalog.Products.Fields.FixedPriceBundle.Hint"))
+            {
+                _dataProvider.InsertEntity(new LocaleStringResource
+                {
+                    LanguageId = lang.Id,
+                    ResourceName = "Admin.Catalog.Products.Fields.FixedPriceBundle.Hint",
+                    ResourceValue = "Check if this product is a fixed price bundle. When enabled, associated product prices will not be added to this bundle; the product uses its own base price plus any manual attribute price adjustments, while still tracking stock on associated products."
+                });
             }
         }
     }

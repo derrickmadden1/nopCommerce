@@ -1,4 +1,5 @@
-﻿using Nop.Core.Caching;
+using Nop.Services.Common;
+using Nop.Core.Caching;
 using Nop.Core.Domain.Catalog;
 using Nop.Core.Domain.Customers;
 using Nop.Core.Domain.Directory;
@@ -30,6 +31,7 @@ public partial class PriceCalculationService : IPriceCalculationService
     protected readonly IProductAttributeParser _productAttributeParser;
     protected readonly IProductService _productService;
     protected readonly IStaticCacheManager _staticCacheManager;
+    protected readonly IGenericAttributeService _genericAttributeService;
 
     #endregion
 
@@ -45,7 +47,8 @@ public partial class PriceCalculationService : IPriceCalculationService
         IPriceListService priceListService,
         IProductAttributeParser productAttributeParser,
         IProductService productService,
-        IStaticCacheManager staticCacheManager)
+        IStaticCacheManager staticCacheManager,
+        IGenericAttributeService genericAttributeService)
     {
         _catalogSettings = catalogSettings;
         _currencySettings = currencySettings;
@@ -58,6 +61,7 @@ public partial class PriceCalculationService : IPriceCalculationService
         _productAttributeParser = productAttributeParser;
         _productService = productService;
         _staticCacheManager = staticCacheManager;
+        _genericAttributeService = genericAttributeService;
     }
 
     #endregion
@@ -577,9 +581,27 @@ public partial class PriceCalculationService : IPriceCalculationService
                 break;
             case AttributeValueType.AssociatedToProduct:
                 //bundled product
-                var associatedProduct = await _productService.GetProductByIdAsync(value.AssociatedProductId);
-                if (associatedProduct != null)
-                    adjustment = (await GetFinalPriceAsync(associatedProduct, customer, store)).finalPrice * value.Quantity;
+                var isFixedPriceBundle = product != null && await _genericAttributeService.GetAttributeAsync<bool>(product, NopCatalogDefaults.FixedPriceBundleAttribute);
+                if (isFixedPriceBundle)
+                {
+                    if (value.PriceAdjustmentUsePercentage)
+                    {
+                        if (!productPrice.HasValue)
+                            productPrice = (await GetFinalPriceAsync(product, customer, store, quantity: quantity)).finalPrice;
+
+                        adjustment = (decimal)((float)productPrice * (float)value.PriceAdjustment / 100f);
+                    }
+                    else
+                    {
+                        adjustment = value.PriceAdjustment;
+                    }
+                }
+                else
+                {
+                    var associatedProduct = await _productService.GetProductByIdAsync(value.AssociatedProductId);
+                    if (associatedProduct != null)
+                        adjustment = (await GetFinalPriceAsync(associatedProduct, customer, store)).finalPrice * value.Quantity;
+                }
 
                 break;
             default:

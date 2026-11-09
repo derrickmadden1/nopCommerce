@@ -41,6 +41,11 @@ public static partial class NopCatalogDefaults
     /// </summary>
     public static string ComingSoonAttribute => "ComingSoon";
 
+    /// <summary>
+    /// Gets a name of generic attribute for Fixed Price Bundle
+    /// </summary>
+    public static string FixedPriceBundleAttribute => "FixedPriceBundle";
+
     #endregion
 
     #region Caching defaults
