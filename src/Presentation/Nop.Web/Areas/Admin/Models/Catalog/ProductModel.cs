@@ -372,6 +372,9 @@ public partial record ProductModel : BaseNopEntityModel,
     [NopResourceDisplayName("Admin.Catalog.Products.Fields.ComingSoon")]
     public bool ComingSoon { get; set; }
 
+    [NopResourceDisplayName("Admin.Catalog.Products.Fields.FixedPriceBundle")]
+    public bool FixedPriceBundle { get; set; }
+
     [NopResourceDisplayName("Admin.Catalog.Products.Fields.MarkAsNewStartDateTimeUtc")]
     [UIHint("DateTimeNullable")]
     public DateTime? MarkAsNewStartDateTimeUtc { get; set; }

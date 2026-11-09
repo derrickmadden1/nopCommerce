@@ -949,6 +949,7 @@ public partial class ProductModelFactory : IProductModelFactory
                     .Select(productManufacturer => productManufacturer.ManufacturerId).ToList();
                 model.SelectedPriceListIds = (await _priceListService.GetPriceListsByProductAsync(product)).Select(pl => pl.Id).ToList();
                 model.ComingSoon = await _genericAttributeService.GetAttributeAsync<bool>(product, NopCatalogDefaults.ComingSoonAttribute);
+                model.FixedPriceBundle = await _genericAttributeService.GetAttributeAsync<bool>(product, NopCatalogDefaults.FixedPriceBundleAttribute);
             }
 
             //prepare copy product model
@@ -2286,7 +2287,7 @@ public partial class ProductModelFactory : IProductModelFactory
 
                 productAttributeValueModel.Name = productAttributeMapping.AttributeControlType != AttributeControlType.ColorSquares
                     ? value.Name : $"{value.Name} - {value.ColorSquaresRgb}";
-                if (value.AttributeValueType == AttributeValueType.Simple)
+                if (value.AttributeValueType == AttributeValueType.Simple || value.AttributeValueType == AttributeValueType.AssociatedToProduct)
                 {
                     productAttributeValueModel.PriceAdjustmentStr = value.PriceAdjustment.ToString("G29");
                     if (value.PriceAdjustmentUsePercentage)

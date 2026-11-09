@@ -1181,6 +1181,7 @@ public partial class ProductController : BaseAdminController
 
             //coming soon attribute
             await _genericAttributeService.SaveAttributeAsync(product, NopCatalogDefaults.ComingSoonAttribute, model.ComingSoon);
+            await _genericAttributeService.SaveAttributeAsync(product, NopCatalogDefaults.FixedPriceBundleAttribute, model.FixedPriceBundle);
 
             _notificationService.SuccessNotification(await _localizationService.GetResourceAsync("Admin.Catalog.Products.Added"));
 
@@ -1379,6 +1380,7 @@ public partial class ProductController : BaseAdminController
 
             //coming soon attribute
             await _genericAttributeService.SaveAttributeAsync(product, NopCatalogDefaults.ComingSoonAttribute, model.ComingSoon);
+            await _genericAttributeService.SaveAttributeAsync(product, NopCatalogDefaults.FixedPriceBundleAttribute, model.FixedPriceBundle);
 
             //back in stock & now available notifications
             var isPurchasable = product.ManageInventoryMethod != ManageInventoryMethod.ManageStock ||

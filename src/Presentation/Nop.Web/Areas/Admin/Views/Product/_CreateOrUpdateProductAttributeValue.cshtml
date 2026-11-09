@@ -1,4 +1,4 @@
-﻿@model ProductAttributeValueModel
+@model ProductAttributeValueModel
 
 @using Nop.Core.Domain.Catalog
 @using Nop.Services
@@ -41,8 +41,8 @@
     } else if (selectedProductTypeId == @(((int) AttributeValueType.AssociatedToProduct).ToString())) {
         $('#group-associated-product').showElement();
         $('#group-customer-enters-qty').showElement();
-        $('#group-price-adjustment').hideElement();
-        $('#group-price-adjustment-percentage').hideElement();
+        $('#group-price-adjustment').showElement();
+        $('#group-price-adjustment-percentage').showElement();
         $('#group-weight-adjustment').hideElement();
         $('#group-cost').hideElement();
         toggleCustomerEntersQty();

@@ -3537,6 +3537,12 @@
   <LocaleResource Name="Admin.Catalog.Products.Fields.ComingSoon.Hint">
     <Value>Check to mark the product as coming soon.</Value>
   </LocaleResource>
+  <LocaleResource Name="Admin.Catalog.Products.Fields.FixedPriceBundle">
+    <Value>Fixed price bundle</Value>
+  </LocaleResource>
+  <LocaleResource Name="Admin.Catalog.Products.Fields.FixedPriceBundle.Hint">
+    <Value>Check if this product is a fixed price bundle. When enabled, associated product prices will not be added to this bundle; the product uses its own base price plus any manual attribute price adjustments, while still tracking stock on associated products.</Value>
+  </LocaleResource>
   <LocaleResource Name="Admin.Catalog.Products.Fields.MarkAsNew">
     <Value>Mark as new</Value>
   </LocaleResource>
