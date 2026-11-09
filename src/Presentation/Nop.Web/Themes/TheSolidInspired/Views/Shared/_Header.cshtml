@@ -557,12 +557,6 @@
 
     // Diagnostics & Event Bindings
     document.addEventListener("DOMContentLoaded", function() {
-        // Diagnostic Log
-        const panel = document.getElementById("mini-cart-panel");
-        if (panel) {
-            console.log("DIAGNOSTIC - Mini Cart Display:", window.getComputedStyle(panel).display);
-            console.log("DIAGNOSTIC - Mini Cart Inline:", panel.getAttribute("style"));
-        }
 
         const cartTrigger = document.getElementById("topcartlink");
         if (cartTrigger) {
