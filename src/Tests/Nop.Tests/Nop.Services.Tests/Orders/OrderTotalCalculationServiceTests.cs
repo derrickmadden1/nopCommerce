@@ -1,4 +1,4 @@
-﻿using AwesomeAssertions;
+using AwesomeAssertions;
 using Nop.Core.Domain.Catalog;
 using Nop.Core.Domain.Customers;
 using Nop.Core.Domain.Discounts;
@@ -729,5 +729,29 @@ public class OrderTotalCalculationServiceTests : ServiceTest
         GetService<IOrderTotalCalculationService>().CheckMinimumRewardPointsToUseRequirement(1).Should().BeFalse();
         GetService<IOrderTotalCalculationService>().CheckMinimumRewardPointsToUseRequirement(2).Should().BeTrue();
         GetService<IOrderTotalCalculationService>().CheckMinimumRewardPointsToUseRequirement(10).Should().BeTrue();
+    }
+
+    [Test]
+    public async Task CanGetShoppingCartTotalWithEmptyCartAndOrderTotalDiscount()
+    {
+        var discount = new Discount
+        {
+            IsActive = true,
+            Name = "Order Total Discount Test",
+            DiscountType = DiscountType.AssignedToOrderTotal,
+            DiscountAmount = 5,
+            DiscountLimitation = DiscountLimitationType.Unlimited
+        };
+        await _discountService.InsertDiscountAsync(discount);
+
+        var emptyCart = new List<ShoppingCartItem>();
+
+        var (scTotal, discountAmount, appliedDiscounts, appliedGiftCards, redeemedRewardPoints, redeemedRewardPointsAmount) =
+            await _orderTotalCalcService.GetShoppingCartTotalAsync(emptyCart, usePaymentMethodAdditionalFee: false);
+
+        discountAmount.Should().Be(0);
+        appliedDiscounts.Count.Should().Be(0);
+
+        await _discountService.DeleteDiscountAsync(discount);
     }
 }

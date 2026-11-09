@@ -887,7 +887,8 @@ public partial class CustomerService : ICustomerService
     /// </returns>
     public virtual async Task<string[]> ParseAppliedDiscountCouponCodesAsync(Customer customer)
     {
-        ArgumentNullException.ThrowIfNull(customer);
+        if (customer == null)
+            return Array.Empty<string>();
 
         var existingCouponCodes = await _genericAttributeService.GetAttributeAsync<string>(customer, NopCustomerDefaults.DiscountCouponCodeAttribute);
 
@@ -1021,7 +1022,8 @@ public partial class CustomerService : ICustomerService
     /// </returns>
     public virtual async Task<string[]> ParseAppliedGiftCardCouponCodesAsync(Customer customer)
     {
-        ArgumentNullException.ThrowIfNull(customer);
+        if (customer == null)
+            return Array.Empty<string>();
 
         var existingCouponCodes = await _genericAttributeService.GetAttributeAsync<string>(customer, NopCustomerDefaults.GiftCardCouponCodesAttribute);
 

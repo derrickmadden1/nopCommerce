@@ -1,4 +1,5 @@
 using System.Globalization;
+using Nop.Core.Domain.Orders;
 using Nop.Plugin.Payments.PayPalCommerce.Domain;
 using Nop.Plugin.Payments.PayPalCommerce.Models.Admin;
 using Nop.Plugin.Payments.PayPalCommerce.Models.Public;
@@ -136,6 +137,18 @@ public class PayPalCommerceModelFactory
     #endregion
 
     #region Checkout
+
+    /// <summary>
+    /// Check whether the checkout is enabled for the customer
+    /// </summary>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task result contains the check results; shopping cart
+    /// </returns>
+    public async Task<(bool IsEnabled, bool LoginIsRequired, IList<ShoppingCartItem> Cart)> CheckoutIsEnabledAsync()
+    {
+        return await _serviceManager.CheckoutIsEnabledAsync();
+    }
 
     /// <summary>
     /// Prepare the checkout payment info model

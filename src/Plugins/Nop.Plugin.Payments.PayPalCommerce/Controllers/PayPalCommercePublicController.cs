@@ -48,6 +48,13 @@ public class PayPalCommercePublicController : BasePublicController
 
     public async Task<IActionResult> PluginPaymentInfo()
     {
+        var (isEnabled, loginIsRequired, cart) = await _modelFactory.CheckoutIsEnabledAsync();
+        if (loginIsRequired)
+            return Challenge();
+
+        if (!isEnabled || cart == null || !cart.Any())
+            return RedirectToRoute(NopRouteNames.General.CART);
+
         var model = await _modelFactory.PrepareCheckoutPaymentInfoModelAsync();
 
         return View("~/Plugins/Payments.PayPalCommerce/Views/Public/PluginPaymentInfo.cshtml", model);
