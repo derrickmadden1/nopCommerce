@@ -279,10 +279,22 @@ jobs:
 
     - name: Warm Up & Smoke Test
       run: |
-        echo "Waiting 90 seconds for initialization..."
-        sleep 90
-        URL="https://${{ secrets.AZURE_WEBAPP_NAME }}-staging.azurewebsites.net"
-        RESPONSE=$(curl -sL --retry 5 --retry-delay 30 "$URL")
+        HOST="${{ secrets.AZURE_WEBAPP_NAME }}-staging.azurewebsites.net"
+        URL="https://$HOST"
+
+        echo "Waiting for DNS resolution of $HOST..."
+        for i in {1..30}; do
+          if nslookup "$HOST" > /dev/null 2>&1 || getent hosts "$HOST" > /dev/null 2>&1; then
+            echo "DNS resolved successfully after $((i * 10))s."
+            break
+          fi
+          echo "DNS not yet resolved, waiting 10s... ($i/30)"
+          sleep 10
+        done
+
+        echo "Waiting 60 seconds for app initialization..."
+        sleep 60
+        RESPONSE=$(curl -sL --retry 10 --retry-delay 15 --retry-all-errors "$URL")
         if echo "$RESPONSE" | grep -qi "${{ env.SMOKE_TEST_KEYWORD }}"; then
           echo "SUCCESS: Store loaded."
         else
