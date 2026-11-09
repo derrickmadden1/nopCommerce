@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using Nop.Core;
 using Nop.Core.Domain.Catalog;
 using Nop.Core.Domain.Common;
@@ -116,7 +116,7 @@ public partial class OrderTotalCalculationService : IOrderTotalCalculationServic
         decimal orderSubTotal)
     {
         var discountAmount = decimal.Zero;
-        if (_catalogSettings.IgnoreDiscounts)
+        if (customer == null || _catalogSettings.IgnoreDiscounts)
             return (discountAmount, new List<Discount>());
 
         var allDiscounts = await _discountService.GetAllDiscountsAsync(DiscountType.AssignedToOrderSubTotal);
@@ -155,7 +155,7 @@ public partial class OrderTotalCalculationService : IOrderTotalCalculationServic
     {
         var appliedDiscounts = new List<Discount>();
         var shippingDiscountAmount = decimal.Zero;
-        if (_catalogSettings.IgnoreDiscounts)
+        if (customer == null || _catalogSettings.IgnoreDiscounts)
             return (shippingDiscountAmount, appliedDiscounts);
 
         var allDiscounts = await _discountService.GetAllDiscountsAsync(DiscountType.AssignedToShipping);
@@ -195,7 +195,7 @@ public partial class OrderTotalCalculationService : IOrderTotalCalculationServic
     protected virtual async Task<(decimal orderDiscount, List<Discount> appliedDiscounts)> GetOrderTotalDiscountAsync(Customer customer, decimal orderTotal)
     {
         var discountAmount = decimal.Zero;
-        if (_catalogSettings.IgnoreDiscounts)
+        if (customer == null || _catalogSettings.IgnoreDiscounts)
             return (discountAmount, new List<Discount>());
 
         var allDiscounts = await _discountService.GetAllDiscountsAsync(DiscountType.AssignedToOrderTotal);
@@ -1374,7 +1374,9 @@ public partial class OrderTotalCalculationService : IOrderTotalCalculationServic
             resultTemp = await _priceCalculationService.RoundPriceAsync(resultTemp);
 
         //order total discount
-        var (discountAmount, appliedDiscounts) = await GetOrderTotalDiscountAsync(customer, resultTemp);
+        var (discountAmount, appliedDiscounts) = customer != null
+            ? await GetOrderTotalDiscountAsync(customer, resultTemp)
+            : (decimal.Zero, new List<Discount>());
 
         //sub totals with discount        
         if (resultTemp < discountAmount)
@@ -1390,7 +1392,8 @@ public partial class OrderTotalCalculationService : IOrderTotalCalculationServic
 
         //let's apply gift cards now (gift cards that can be used)
         var appliedGiftCards = new List<AppliedGiftCard>();
-        resultTemp = await AppliedGiftCardsAsync(cart, appliedGiftCards, customer, resultTemp);
+        if (customer != null)
+            resultTemp = await AppliedGiftCardsAsync(cart, appliedGiftCards, customer, resultTemp);
 
         if (resultTemp < decimal.Zero)
             resultTemp = decimal.Zero;
@@ -1406,7 +1409,8 @@ public partial class OrderTotalCalculationService : IOrderTotalCalculationServic
         var orderTotal = resultTemp;
 
         //reward points
-        (redeemedRewardPoints, redeemedRewardPointsAmount) = await SetRewardPointsAsync(redeemedRewardPoints, redeemedRewardPointsAmount, useRewardPoints, customer, orderTotal);
+        if (customer != null)
+            (redeemedRewardPoints, redeemedRewardPointsAmount) = await SetRewardPointsAsync(redeemedRewardPoints, redeemedRewardPointsAmount, useRewardPoints, customer, orderTotal);
 
         orderTotal -= redeemedRewardPointsAmount;
 

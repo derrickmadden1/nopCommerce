@@ -273,7 +273,7 @@ public class PayPalCommerceServiceManager
                 ButtonPlacement.Cart => subTotal,
                 ButtonPlacement.Product when product is not null
                     => (await _priceCalculationService.GetFinalPriceAsync(product, customer, store)).finalPrice, //+ subTotal,
-                ButtonPlacement.PaymentMethod
+                ButtonPlacement.PaymentMethod when cart.Any()
                     => (await _orderTotalCalculationService.GetShoppingCartTotalAsync(cart, null, usePaymentMethodAdditionalFee: false))
                         .shoppingCartTotal ?? subTotal,
                 _ => (decimal?)null
