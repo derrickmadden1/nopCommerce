@@ -39,15 +39,7 @@
             <span asp-validation-for="FixedPriceBundle"></span>
         </div>
     </div>
-    <div class="form-group row">
-        <div class="col-md-3">
-            <nop-label asp-for="DynamicDualPreview" />
-        </div>
-        <div class="col-md-9">
-            <nop-editor asp-for="DynamicDualPreview" />
-            <span asp-validation-for="DynamicDualPreview"></span>
-        </div>
-    </div>
+
     <div class="form-group row @(Model.ProductEditorSettingsModel.OldPrice ? null : "advanced-setting")">
         <div class="col-md-3">
             <nop-label asp-for="OldPrice" />
