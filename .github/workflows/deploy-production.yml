@@ -283,18 +283,28 @@ jobs:
         URL="https://$HOST"
 
         echo "Waiting for DNS resolution of $HOST..."
+        RESOLVED_IP=""
         for i in {1..30}; do
-          if nslookup "$HOST" > /dev/null 2>&1 || getent hosts "$HOST" > /dev/null 2>&1; then
-            echo "DNS resolved successfully after $((i * 10))s."
+          RESOLVED_IP=$(dig +short "$HOST" 2>/dev/null | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+' | head -n 1)
+          if [ -z "$RESOLVED_IP" ]; then
+            RESOLVED_IP=$(getent ahostsv4 "$HOST" 2>/dev/null | head -n 1 | awk '{print $1}')
+          fi
+          if [ -n "$RESOLVED_IP" ]; then
+            echo "DNS resolved successfully ($RESOLVED_IP) after $((i * 10))s."
             break
           fi
           echo "DNS not yet resolved, waiting 10s... ($i/30)"
           sleep 10
         done
 
+        if [ -z "$RESOLVED_IP" ]; then
+          echo "ERROR: DNS failed to resolve $HOST within 300 seconds."
+          exit 1
+        fi
+
         echo "Waiting 60 seconds for app initialization..."
         sleep 60
-        RESPONSE=$(curl -sL --retry 10 --retry-delay 15 --retry-all-errors "$URL")
+        RESPONSE=$(curl -sSL --retry 10 --retry-delay 15 --retry-all-errors "$URL")
         if echo "$RESPONSE" | grep -qi "${{ env.SMOKE_TEST_KEYWORD }}"; then
           echo "SUCCESS: Store loaded."
         else
