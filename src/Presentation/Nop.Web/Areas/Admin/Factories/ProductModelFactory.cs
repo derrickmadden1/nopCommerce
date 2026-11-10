@@ -1,4 +1,4 @@
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Net;
 using System.Text;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -950,6 +950,7 @@ public partial class ProductModelFactory : IProductModelFactory
                 model.SelectedPriceListIds = (await _priceListService.GetPriceListsByProductAsync(product)).Select(pl => pl.Id).ToList();
                 model.ComingSoon = await _genericAttributeService.GetAttributeAsync<bool>(product, NopCatalogDefaults.ComingSoonAttribute);
                 model.FixedPriceBundle = await _genericAttributeService.GetAttributeAsync<bool>(product, NopCatalogDefaults.FixedPriceBundleAttribute);
+                model.DynamicDualPreview = await _genericAttributeService.GetAttributeAsync<bool>(product, NopCatalogDefaults.DynamicDualPreviewAttribute);
             }
 
             //prepare copy product model

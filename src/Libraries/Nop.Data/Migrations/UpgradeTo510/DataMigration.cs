@@ -1,4 +1,4 @@
-using Nop.Core.Domain.Localization;
+﻿using Nop.Core.Domain.Localization;
 using System.Text.RegularExpressions;
 using FluentMigrator;
 using Nop.Core.Domain.Messages;
@@ -72,6 +72,24 @@ public class DataMigration : Migration
                     LanguageId = lang.Id,
                     ResourceName = "Admin.Catalog.Products.Fields.FixedPriceBundle.Hint",
                     ResourceValue = "Check if this product is a fixed price bundle. When enabled, associated product prices will not be added to this bundle; the product uses its own base price plus any manual attribute price adjustments, while still tracking stock on associated products."
+                });
+            }
+            if (!lsrTable.Any(r => r.LanguageId == lang.Id && r.ResourceName == "Admin.Catalog.Products.Fields.DynamicDualPreview"))
+            {
+                _dataProvider.InsertEntity(new LocaleStringResource
+                {
+                    LanguageId = lang.Id,
+                    ResourceName = "Admin.Catalog.Products.Fields.DynamicDualPreview",
+                    ResourceValue = "Dynamic dual preview"
+                });
+            }
+            if (!lsrTable.Any(r => r.LanguageId == lang.Id && r.ResourceName == "Admin.Catalog.Products.Fields.DynamicDualPreview.Hint"))
+            {
+                _dataProvider.InsertEntity(new LocaleStringResource
+                {
+                    LanguageId = lang.Id,
+                    ResourceName = "Admin.Catalog.Products.Fields.DynamicDualPreview.Hint",
+                    ResourceValue = "Check to dynamically display a side-by-side preview of the selected bundle attributes (e.g. soap and candle together) in the main product image gallery. If unchecked, the product defaults to standard nopCommerce attribute combinations."
                 });
             }
         }

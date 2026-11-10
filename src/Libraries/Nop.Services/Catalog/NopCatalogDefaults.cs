@@ -1,4 +1,4 @@
-using Nop.Core.Caching;
+﻿using Nop.Core.Caching;
 
 namespace Nop.Services.Catalog;
 
@@ -45,6 +45,11 @@ public static partial class NopCatalogDefaults
     /// Gets a name of generic attribute for Fixed Price Bundle
     /// </summary>
     public static string FixedPriceBundleAttribute => "FixedPriceBundle";
+
+    /// <summary>
+    /// Gets a name of generic attribute for Dynamic Dual Preview
+    /// </summary>
+    public static string DynamicDualPreviewAttribute => "DynamicDualPreview";
 
     #endregion
 

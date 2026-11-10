@@ -1,4 +1,4 @@
-@model ProductDetailsModel
+﻿@model ProductDetailsModel
 @using Nop.Core
 @using Nop.Core.Domain.Catalog
 @using Nop.Core.Domain.Media
@@ -44,7 +44,10 @@
                                             attributeValue.Name :
                                             T("Products.ProductAttributes.PriceAdjustment", attributeValue.Name, attributeValue.PriceAdjustment,
                                                 attributeValue.CustomerEntersQty ? T("Products.ProductAttributes.PriceAdjustment.PerItem").Text : string.Empty).Text;
-                                        <option data-attr-value="@attributeValue.Id" selected="@attributeValue.IsPreSelected" value="@attributeValue.Id">@attributeName</option>
+                                        var picUrl = !string.IsNullOrEmpty(attributeValue.ImageSquaresPictureModel?.FullSizeImageUrl)
+                                            ? attributeValue.ImageSquaresPictureModel.FullSizeImageUrl
+                                            : attributeValue.ImageSquaresPictureModel?.ImageUrl;
+                                        <option data-attr-value="@attributeValue.Id" data-picture-url="@picUrl" data-option-name="@attributeValue.Name" selected="@attributeValue.IsPreSelected" value="@attributeValue.Id">@attributeName</option>
                                     }
                                 </select>
                                 foreach (var attributeValue in attribute.Values.Where(value => value.CustomerEntersQty))
@@ -70,8 +73,12 @@
                                             attributeValue.Name :
                                             T("Products.ProductAttributes.PriceAdjustment", attributeValue.Name, attributeValue.PriceAdjustment,
                                                 attributeValue.CustomerEntersQty ? T("Products.ProductAttributes.PriceAdjustment.PerItem").Text : string.Empty).Text;
-                                        <li data-attr-value="@attributeValue.Id">
+                                        var picUrl = !string.IsNullOrEmpty(attributeValue.ImageSquaresPictureModel?.FullSizeImageUrl)
+                                            ? attributeValue.ImageSquaresPictureModel.FullSizeImageUrl
+                                            : attributeValue.ImageSquaresPictureModel?.ImageUrl;
+                                        <li data-attr-value="@attributeValue.Id" data-picture-url="@picUrl" data-option-name="@attributeValue.Name">
                                             <input id="@(controlId)_@(attributeValue.Id)" type="radio" name="@(controlId)" value="@attributeValue.Id" checked="@attributeValue.IsPreSelected"
+                                                   data-picture-url="@picUrl" data-option-name="@attributeValue.Name"
                                                    @(attribute.Values.Any(value => value.CustomerEntersQty) ? Html.Raw($"onclick=\"showHideRadioQuantity('{controlId}')\"") : null) />
                                             <label for="@(controlId)_@(attributeValue.Id)">@attributeName</label>
 
@@ -280,19 +287,23 @@
                                         var attributeName = string.IsNullOrEmpty(attributeValue.PriceAdjustment) ?
                                             attributeValue.Name :
                                             T("Products.ProductAttributes.PriceAdjustment", attributeValue.Name, attributeValue.PriceAdjustment, string.Empty).Text;
-                                        var imgUrl = !string.IsNullOrEmpty(attributeValue.ImageSquaresPictureModel?.ImageUrl)
+                                        var thumbUrl = !string.IsNullOrEmpty(attributeValue.ImageSquaresPictureModel?.ImageUrl)
                                             ? attributeValue.ImageSquaresPictureModel.ImageUrl
                                             : attributeValue.ImageSquaresPictureModel?.FullSizeImageUrl;
-                                        <li data-attr-value="@attributeValue.Id" class="picker-card-item @(attributeValue.IsPreSelected ? "selected-value" : null)">
+                                        var fullPicUrl = !string.IsNullOrEmpty(attributeValue.ImageSquaresPictureModel?.FullSizeImageUrl)
+                                            ? attributeValue.ImageSquaresPictureModel.FullSizeImageUrl
+                                            : attributeValue.ImageSquaresPictureModel?.ImageUrl;
+                                        <li data-attr-value="@attributeValue.Id" data-picture-url="@fullPicUrl" data-option-name="@attributeValue.Name" class="picker-card-item @(attributeValue.IsPreSelected ? "selected-value" : null)">
                                             <label for="@(controlId)_@(attributeValue.Id)" class="picker-card-label">
                                                 <input id="@(controlId)_@(attributeValue.Id)" type="radio" name="@(controlId)" value="@attributeValue.Id" checked="@attributeValue.IsPreSelected"
+                                                       data-picture-url="@fullPicUrl" data-option-name="@attributeValue.Name"
                                                        class="picker-radio"
                                                        @(attribute.Values.Any(value => value.CustomerEntersQty) ? Html.Raw($"onclick=\"showHideRadioQuantity('{controlId}', true)\"") : null) />
                                                 <span class="attribute-square-card">
-                                                    @if (!string.IsNullOrEmpty(imgUrl))
+                                                    @if (!string.IsNullOrEmpty(thumbUrl))
                                                     {
                                                         <span class="attribute-square-img-wrap">
-                                                            <img src="@imgUrl" alt="@attributeName" class="attribute-square-img" loading="lazy" />
+                                                            <img src="@thumbUrl" alt="@attributeName" class="attribute-square-img" loading="lazy" />
                                                         </span>
                                                     }
                                                     <span class="attribute-square-name">@attributeName</span>
@@ -476,7 +487,22 @@
                             }
                         }
                         if (data.pictureDefaultSizeUrl) {
-                            $('#main-product-img-@Model.Id').attr("src", data.pictureDefaultSizeUrl);
+                            @if (Model.DynamicDualPreview)
+                            {
+                                <text>
+                                $('#dynamic-dual-showcase-@Model.Id').hide();
+                                </text>
+                            }
+                            $('#main-product-img-@Model.Id').attr("src", data.pictureDefaultSizeUrl).show();
+                            $('#main-product-img-lightbox-anchor-@Model.Id').show();
+                        }
+                        @if (Model.DynamicDualPreview)
+                        {
+                            <text>
+                            else {
+                                updateDualPreview_@(Model.Id)();
+                            }
+                            </text>
                         }
                         if (data.pictureFullSizeUrl) {
                             $('#main-product-img-lightbox-anchor-@Model.Id').attr("href", data.pictureFullSizeUrl);
@@ -506,6 +532,80 @@
             $(function() {
                 @(attributeChangeHandlerFuncName)();
                 @Html.Raw(attributeChangeScriptsBuilder.ToString())
+            });
+        </script>
+    }
+
+    @if (Model.DynamicDualPreview)
+    {
+        <script asp-location="Footer">
+            function updateDualPreview_@(Model.Id)() {
+                var $showcase = $('#dynamic-dual-showcase-@Model.Id');
+                if (!$showcase.length) return;
+
+                var items = [];
+                $('.attributes [data-attr]').each(function() {
+                    var $attr = $(this);
+                    var attrId = $attr.data('attr');
+                    var prompt = $('#@(NopCatalogDefaults.ProductAttributePrefix)textprompt_' + attrId).text().trim() || 'Choice';
+                    var imgUrl = '';
+                    var optName = '';
+
+                    if ($attr.is('select')) {
+                        var $selected = $attr.find('option:selected');
+                        if ($selected.length && $selected.val() != '0') {
+                            imgUrl = $selected.data('picture-url') || '';
+                            optName = $selected.data('option-name') || $selected.text().trim();
+                        }
+                    } else {
+                        var $checked = $attr.find('input:checked');
+                        if ($checked.length) {
+                            imgUrl = $checked.data('picture-url') || $checked.closest('li').data('picture-url') || '';
+                            optName = $checked.data('option-name') || $checked.closest('li').data('option-name') || $checked.next('label').text().trim();
+                        }
+                    }
+
+                    if (imgUrl || optName) {
+                        items.push({ prompt: prompt, name: optName, imgUrl: imgUrl });
+                    }
+                });
+
+                if (items.length >= 2 && (items[0].imgUrl || items[1].imgUrl)) {
+                    var $c1 = $('#dual-item-1-@Model.Id');
+                    $c1.find('.dual-card-type').text(items[0].prompt);
+                    $c1.find('.dual-card-title').text(items[0].name);
+                    if (items[0].imgUrl) {
+                        $c1.find('.dual-card-img').attr('src', items[0].imgUrl).attr('alt', items[0].name);
+                        $c1.find('.dual-card-img-wrap').show();
+                    } else {
+                        $c1.find('.dual-card-img-wrap').hide();
+                    }
+
+                    var $c2 = $('#dual-item-2-@Model.Id');
+                    $c2.find('.dual-card-type').text(items[1].prompt);
+                    $c2.find('.dual-card-title').text(items[1].name);
+                    if (items[1].imgUrl) {
+                        $c2.find('.dual-card-img').attr('src', items[1].imgUrl).attr('alt', items[1].name);
+                        $c2.find('.dual-card-img-wrap').show();
+                    } else {
+                        $c2.find('.dual-card-img-wrap').hide();
+                    }
+
+                    $('#main-product-img-@Model.Id').hide();
+                    $('#main-product-img-lightbox-anchor-@Model.Id').hide();
+                    $showcase.show();
+                } else {
+                    $showcase.hide();
+                    $('#main-product-img-@Model.Id').show();
+                    $('#main-product-img-lightbox-anchor-@Model.Id').show();
+                }
+            }
+
+            $(function() {
+                updateDualPreview_@(Model.Id)();
+                $('.attributes').on('change click', 'input, select', function() {
+                    updateDualPreview_@(Model.Id)();
+                });
             });
         </script>
     }

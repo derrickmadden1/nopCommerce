@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using System.Net;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Newtonsoft.Json;
@@ -1518,6 +1518,7 @@ public partial class ProductModelFactory : IProductModelFactory
         //standard properties
         var model = await GetModel(product);
         model.ComingSoon = await _genericAttributeService.GetAttributeAsync<bool>(product, NopCatalogDefaults.ComingSoonAttribute);
+        model.DynamicDualPreview = await _genericAttributeService.GetAttributeAsync<bool>(product, NopCatalogDefaults.DynamicDualPreviewAttribute);
 
         //automatically generate product description?
         if (_seoSettings.GenerateProductMetaDescription && string.IsNullOrEmpty(model.MetaDescription))
