@@ -53,41 +53,39 @@
 
         if (productImg) {
             function triggerPuzzle(e) {
+                if (e) {
+                    // Ignore contextmenu triggered by touch long-press on mobile/touch screens
+                    if (e.type === 'contextmenu' && (e.pointerType === 'touch' || (window.matchMedia && window.matchMedia('(pointer: coarse)').matches))) {
+                        return;
+                    }
+                    e.preventDefault();
+                }
                 if (!document.getElementById('puzzle-overlay').classList.contains('active')) {
-                    if (e) e.preventDefault();
                     startPuzzle(productImg.src, puzzleGridSize);
                 }
             }
 
-            // Add the puzzle hint badge
+            // Add the puzzle hint badge (primary trigger on mobile and desktop)
             if (!document.querySelector('.puzzle-hint-badge')) {
                 const badge = document.createElement('div');
                 badge.className = 'puzzle-hint-badge';
-                badge.title = 'Right-click or Long-press to play the image puzzle!';
+                badge.title = 'Play the image puzzle to unlock your discount!';
+                badge.setAttribute('role', 'button');
+                badge.setAttribute('aria-label', 'Play the image puzzle');
                 
                 productImg.parentElement.style.position = 'relative'; 
                 productImg.parentElement.appendChild(badge);
 
-                badge.onclick = triggerPuzzle;
-                badge.oncontextmenu = triggerPuzzle;
-
-                // Badge Long Press
-                let badgeTimer;
-                badge.ontouchstart = (e) => {
-                    badgeTimer = window.setTimeout(() => triggerPuzzle(e), 800);
-                };
-                badge.ontouchend = () => clearTimeout(badgeTimer);
+                badge.addEventListener('click', triggerPuzzle);
             }
 
-            // Image Handle Right Click
-            productImg.addEventListener('contextmenu', triggerPuzzle);
-
-            // Image Handle Long Press (Mobile)
-            let pressTimer;
-            productImg.addEventListener('touchstart', (e) => {
-                pressTimer = window.setTimeout(() => triggerPuzzle(e), 800);
+            // Desktop only: Image Right Click (Easter egg)
+            productImg.addEventListener('contextmenu', (e) => {
+                if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) {
+                    return; // Ignore on touch screens so pull-to-refresh and long-press work normally
+                }
+                triggerPuzzle(e);
             });
-            productImg.addEventListener('touchend', () => clearTimeout(pressTimer));
         } else {
             console.log("ImagePuzzle: NO VISIBLE image found in '.picture img' [V7]");
         }
