@@ -147,57 +147,80 @@
     </div>
     @if (Model.PictureModels.Count > 1)
     {
-        <style>
-            .picture-thumbs {
-                display: flex;
-                flex-direction: row;
-                flex-wrap: nowrap;
-                overflow-x: auto;
-                gap: 10px;
-                margin-top: 15px;
-                padding-bottom: 10px;
-                -webkit-overflow-scrolling: touch;
-            }
-            .picture-thumbs::-webkit-scrollbar {
-                height: 6px;
-            }
-            .picture-thumbs::-webkit-scrollbar-track {
-                background: #f1f1f1; 
-                border-radius: 4px;
-            }
-            .picture-thumbs::-webkit-scrollbar-thumb {
-                background: #c1c1c1; 
-                border-radius: 4px;
-            }
-            .picture-thumbs::-webkit-scrollbar-thumb:hover {
-                background: #a8a8a8; 
-            }
-            .picture-thumbs .thumb-item {
-                flex: 0 0 auto;
-                cursor: pointer;
-            }
-            .picture-thumbs .thumb-item img {
-                display: block;
-            }
-        </style>
-        <div class="picture-thumbs">
-            @foreach (var picture in Model.PictureModels)
-            {
-                <div class="thumb-item" data-pictureid="@picture.Id">
-                    <img src="@picture.ThumbImageUrl" alt="@picture.AlternateText" title="@picture.Title" data-defaultsize="@picture.ImageUrl" data-fullsize="@picture.FullSizeImageUrl" />
-                </div>
-            }
+        <div class="picture-thumbs-wrapper" id="picture-thumbs-wrapper-@Model.Id">
+            <button type="button" class="thumb-nav prev" id="thumb-nav-prev-@Model.Id" aria-label="Previous thumbnails" style="display: none;">&lsaquo;</button>
+            <div class="picture-thumbs" id="picture-thumbs-@Model.Id">
+                @foreach (var picture in Model.PictureModels)
+                {
+                    <div class="thumb-item" data-pictureid="@picture.Id">
+                        <img src="@picture.ThumbImageUrl" alt="@picture.AlternateText" title="@picture.Title" data-defaultsize="@picture.ImageUrl" data-fullsize="@picture.FullSizeImageUrl" />
+                    </div>
+                }
+            </div>
+            <button type="button" class="thumb-nav next" id="thumb-nav-next-@Model.Id" aria-label="Next thumbnails" style="display: none;">&rsaquo;</button>
         </div>
         <script asp-location="Footer">
             $(function() {
-                $('.thumb-item img').on('click',
-                    function() {
-                        $('#main-product-img-@Model.Id').attr('src', $(this).attr('data-defaultsize'));
-                        $('#main-product-img-@Model.Id').attr('title', $(this).attr('title'));
-                        $('#main-product-img-@Model.Id').attr('alt', $(this).attr('alt'));
-                        $('#main-product-img-lightbox-anchor-@Model.Id').attr('href', $(this).attr('data-fullsize'));
-                        $('#main-product-img-lightbox-anchor-@Model.Id').attr('title', $(this).attr('title'));
-                    });
+                var $wrap = $('#picture-thumbs-wrapper-@Model.Id');
+                var $thumbs = $('#picture-thumbs-@Model.Id');
+                var $prev = $('#thumb-nav-prev-@Model.Id');
+                var $next = $('#thumb-nav-next-@Model.Id');
+
+                function updateThumbNav() {
+                    var el = $thumbs[0];
+                    if (!el) return;
+                    var hasOverflow = el.scrollWidth > el.clientWidth + 5;
+                    if (!hasOverflow) {
+                        $prev.hide();
+                        $next.hide();
+                        return;
+                    }
+                    $prev.show().prop('disabled', el.scrollLeft <= 4);
+                    $next.show().prop('disabled', el.scrollLeft + el.clientWidth >= el.scrollWidth - 4);
+                }
+
+                $prev.on('click', function(e) {
+                    e.preventDefault();
+                    $thumbs.animate({ scrollLeft: $thumbs.scrollLeft() - 240 }, 220, updateThumbNav);
+                });
+
+                $next.on('click', function(e) {
+                    e.preventDefault();
+                    $thumbs.animate({ scrollLeft: $thumbs.scrollLeft() + 240 }, 220, updateThumbNav);
+                });
+
+                $thumbs.on('scroll', function() {
+                    updateThumbNav();
+                });
+
+                $(window).on('resize', function() {
+                    updateThumbNav();
+                });
+
+                $('.thumb-item', $thumbs).on('click', function() {
+                    var $img = $(this).find('img');
+                    $('.thumb-item', $thumbs).removeClass('active');
+                    $(this).addClass('active');
+
+                    @if (Model.DynamicDualPreview)
+                    {
+                        <text>
+                        $('#dynamic-dual-showcase-@Model.Id').hide();
+                        </text>
+                    }
+                    $('#main-product-img-@Model.Id').attr('src', $img.attr('data-defaultsize')).show();
+                    $('#main-product-img-@Model.Id').attr('title', $img.attr('title'));
+                    $('#main-product-img-@Model.Id').attr('alt', $img.attr('alt'));
+                    $('#main-product-img-lightbox-anchor-@Model.Id').attr('href', $img.attr('data-fullsize')).show();
+                    $('#main-product-img-lightbox-anchor-@Model.Id').attr('title', $img.attr('title'));
+                });
+
+                // Periodic or post-render check in case thumbs are hidden by attribute combinations
+                setTimeout(updateThumbNav, 200);
+                setTimeout(updateThumbNav, 600);
+                $(document).on('product_attributes_changed', function() {
+                    setTimeout(updateThumbNav, 50);
+                });
             });
         </script>
     }
