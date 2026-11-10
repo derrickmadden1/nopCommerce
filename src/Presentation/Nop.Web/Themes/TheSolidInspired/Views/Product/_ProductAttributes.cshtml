@@ -486,21 +486,21 @@
                                 $('#@(NopCatalogDefaults.ProductAttributePrefix)input_' + data.disabledattributemappingids[i]).hide();
                             }
                         }
-                        if (data.pictureDefaultSizeUrl) {
-                            @if (Model.DynamicDualPreview)
-                            {
-                                <text>
-                                $('#dynamic-dual-showcase-@Model.Id').hide();
-                                </text>
-                            }
-                            $('#main-product-img-@Model.Id').attr("src", data.pictureDefaultSizeUrl).show();
-                            $('#main-product-img-lightbox-anchor-@Model.Id').show();
-                        }
                         @if (Model.DynamicDualPreview)
                         {
                             <text>
-                            else {
-                                updateDualPreview_@(Model.Id)();
+                            updateDualPreview_@(Model.Id)();
+                            if (data.pictureDefaultSizeUrl) {
+                                $('#main-product-img-@Model.Id').attr("src", data.pictureDefaultSizeUrl);
+                            }
+                            </text>
+                        }
+                        else
+                        {
+                            <text>
+                            if (data.pictureDefaultSizeUrl) {
+                                $('#main-product-img-@Model.Id').attr("src", data.pictureDefaultSizeUrl).show();
+                                $('#main-product-img-lightbox-anchor-@Model.Id').show();
                             }
                             </text>
                         }
@@ -594,6 +594,7 @@
                     $('#main-product-img-@Model.Id').hide();
                     $('#main-product-img-lightbox-anchor-@Model.Id').hide();
                     $showcase.show();
+                    $('.picture-thumbs .thumb-item').removeClass('active');
                 } else {
                     $showcase.hide();
                     $('#main-product-img-@Model.Id').show();
