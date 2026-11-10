@@ -991,23 +991,30 @@ public partial class ProductModelFactory : IProductModelFactory
                         valueModel.PriceAdjustmentValue = priceAdjustment;
                     }
 
-                    //"image square" picture (with with "image squares" attribute type only)
-                    if (attributeValue.ImageSquaresPictureId > 0)
+                    //"image square" picture (with "image squares" attribute type only)
+                    var imageSquaresPictureId = attributeValue.ImageSquaresPictureId;
+                    if (imageSquaresPictureId == 0 && attributeValue.AttributeValueType == AttributeValueType.AssociatedToProduct && attributeValue.AssociatedProductId > 0)
+                    {
+                        var defaultProductPicture = (await _productService.GetProductPicturesByProductIdAsync(attributeValue.AssociatedProductId)).FirstOrDefault();
+                        if (defaultProductPicture != null)
+                            imageSquaresPictureId = defaultProductPicture.PictureId;
+                    }
+
+                    if (imageSquaresPictureId > 0)
                     {
                         var productAttributeImageSquarePictureCacheKey = _staticCacheManager.PrepareKeyForDefaultCache(NopModelCacheDefaults.ProductAttributeImageSquarePictureModelKey
-                            , attributeValue.ImageSquaresPictureId,
+                            , imageSquaresPictureId,
                             _webHelper.IsCurrentConnectionSecured(),
                             await _storeContext.GetCurrentStoreAsync());
                         valueModel.ImageSquaresPictureModel = await _staticCacheManager.GetAsync(productAttributeImageSquarePictureCacheKey, async () =>
                         {
-                            var imageSquaresPicture = await _pictureService.GetPictureByIdAsync(attributeValue.ImageSquaresPictureId);
+                            var imageSquaresPicture = await _pictureService.GetPictureByIdAsync(imageSquaresPictureId);
 
                             (var fullSizeImageUrl, imageSquaresPicture) = await _pictureService.GetPictureUrlAsync(imageSquaresPicture);
-                            (var imageUrl, imageSquaresPicture) = await _pictureService.GetPictureUrlAsync(imageSquaresPicture, _mediaSettings.ImageSquarePictureSize);
+                            (var imageUrl, imageSquaresPicture) = await _pictureService.GetPictureUrlAsync(imageSquaresPicture, Math.Max(_mediaSettings.ImageSquarePictureSize, 200));
 
                             if (imageSquaresPicture != null)
                             {
-
                                 return new PictureModel
                                 {
                                     FullSizeImageUrl = fullSizeImageUrl,
