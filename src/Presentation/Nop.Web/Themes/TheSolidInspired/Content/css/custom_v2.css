@@ -6590,3 +6590,265 @@ iframe[src*="songbird"] {
   overflow-y: auto !important;
   box-sizing: border-box !important;
 }
+/* ==========================================================================
+   PRODUCT ATTRIBUTES & BUNDLE PICKERS (Solid Inspired Theme)
+   ========================================================================== */
+
+.attributes {
+  margin: 25px 0;
+}
+
+.attributes dl {
+  margin: 0;
+  padding: 0;
+}
+
+.attributes dt {
+  margin: 22px 0 12px;
+  font-family: var(--heading-font);
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--dark-grey);
+}
+
+.attributes dt .text-prompt {
+  display: inline-block;
+  margin: 0;
+}
+
+.attributes dt .required {
+  color: var(--brand-magenta);
+  font-weight: 700;
+  margin-left: 4px;
+}
+
+.attributes dd {
+  margin: 0 0 24px 0;
+  padding: 0;
+}
+
+/* Dropdowns */
+.attributes select {
+  width: 100%;
+  max-width: 440px;
+  padding: 12px 16px;
+  font-family: var(--body-font);
+  font-size: 0.95rem;
+  color: var(--dark-grey);
+  background-color: #fff;
+  border: 1.5px solid var(--border-color);
+  border-radius: 8px;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+}
+
+.attributes select:focus {
+  border-color: var(--brand-magenta);
+  box-shadow: 0 0 0 3px rgba(184, 29, 125, 0.12);
+}
+
+/* Standard Radio & Checkbox Lists */
+.attributes .option-list:not(.attribute-squares) {
+  list-style: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+}
+
+.attributes .option-list:not(.attribute-squares) li {
+  list-style: none !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  font-size: 0.95rem !important;
+  color: var(--dark-grey) !important;
+  cursor: pointer !important;
+}
+
+.attributes .option-list:not(.attribute-squares) input[type="radio"],
+.attributes .option-list:not(.attribute-squares) input[type="checkbox"] {
+  accent-color: var(--brand-magenta) !important;
+  width: 18px !important;
+  height: 18px !important;
+  margin: 0 !important;
+  cursor: pointer !important;
+}
+
+/* ==========================================================================
+   IMAGE SQUARES / BUNDLE PICKER CARDS
+   ========================================================================== */
+
+.attributes .attribute-squares.image-squares {
+  list-style: none !important;
+  padding: 0 !important;
+  margin: 10px 0 20px 0 !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 14px !important;
+}
+
+.attributes .attribute-squares.image-squares li,
+.attributes .attribute-squares.image-squares .picker-card-item {
+  list-style: none !important;
+  list-style-type: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  position: relative !important;
+  display: inline-flex !important;
+}
+
+.attributes .attribute-squares.image-squares label,
+.attributes .attribute-squares.image-squares .picker-card-label {
+  display: block !important;
+  margin: 0 !important;
+  cursor: pointer !important;
+  text-decoration: none !important;
+}
+
+/* Hide raw radio inputs completely */
+.attributes .attribute-squares.image-squares input[type="radio"],
+.attributes .attribute-squares.image-squares .picker-radio,
+.attributes .attribute-squares.image-squares .attribute-square-radio {
+  position: absolute !important;
+  opacity: 0 !important;
+  width: 0 !important;
+  height: 0 !important;
+  pointer-events: none !important;
+  margin: 0 !important;
+  left: -9999px !important;
+}
+
+/* Card container */
+.attributes .attribute-squares.image-squares .attribute-square-card {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  width: 125px !important;
+  min-height: 145px !important;
+  padding: 10px 8px !important;
+  background: #ffffff !important;
+  border: 2px solid var(--border-color) !important;
+  border-radius: 12px !important;
+  box-sizing: border-box !important;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  text-align: center !important;
+  position: relative !important;
+}
+
+.attributes .attribute-squares.image-squares .attribute-square-card:hover {
+  border-color: #cbd5e0 !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Selected card styling */
+.attributes .attribute-squares.image-squares li.selected-value .attribute-square-card,
+.attributes .attribute-squares.image-squares label:has(input:checked) .attribute-square-card {
+  border-color: var(--brand-magenta) !important;
+  background-color: rgba(184, 29, 125, 0.03) !important;
+  box-shadow: 0 0 0 1px var(--brand-magenta), 0 6px 18px rgba(184, 29, 125, 0.12) !important;
+}
+
+/* Selected checkmark indicator badge */
+.attributes .attribute-squares.image-squares li.selected-value .attribute-square-card::before,
+.attributes .attribute-squares.image-squares label:has(input:checked) .attribute-square-card::before {
+  content: "✓" !important;
+  position: absolute !important;
+  top: 6px !important;
+  right: 6px !important;
+  width: 20px !important;
+  height: 20px !important;
+  background-color: var(--brand-magenta) !important;
+  color: #fff !important;
+  border-radius: 50% !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 1 !important;
+  box-shadow: 0 2px 5px rgba(184, 29, 125, 0.3) !important;
+  z-index: 2 !important;
+}
+
+/* Thumbnail image wrapper */
+.attributes .attribute-squares.image-squares .attribute-square-img-wrap {
+  width: 90px !important;
+  height: 90px !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+  background-color: #f7fafc !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin-bottom: 8px !important;
+}
+
+.attributes .attribute-squares.image-squares .attribute-square-img {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 90px !important;
+  max-height: 90px !important;
+  object-fit: cover !important;
+  display: block !important;
+  border-radius: 8px !important;
+  transition: transform 0.3s ease !important;
+}
+
+.attributes .attribute-squares.image-squares .attribute-square-card:hover .attribute-square-img {
+  transform: scale(1.05) !important;
+}
+
+/* Option name text */
+.attributes .attribute-squares.image-squares .attribute-square-name {
+  font-family: var(--body-font) !important;
+  font-size: 0.82rem !important;
+  font-weight: 600 !important;
+  color: var(--dark-grey) !important;
+  line-height: 1.3 !important;
+  text-align: center !important;
+  word-break: break-word !important;
+}
+
+.attributes .attribute-squares.image-squares li.selected-value .attribute-square-name,
+.attributes .attribute-squares.image-squares label:has(input:checked) .attribute-square-name {
+  color: var(--brand-magenta) !important;
+}
+
+/* Safety constraints: eliminate giant unconstrained fallback images */
+.tooltip-container {
+  display: none !important;
+}
+
+.tooltip-body img,
+.attributes img {
+  max-width: 100% !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 576px) {
+  .attributes .attribute-squares.image-squares {
+    gap: 10px !important;
+  }
+  .attributes .attribute-squares.image-squares .attribute-square-card {
+    width: 105px !important;
+    min-height: 130px !important;
+    padding: 8px 6px !important;
+  }
+  .attributes .attribute-squares.image-squares .attribute-square-img-wrap {
+    width: 78px !important;
+    height: 78px !important;
+  }
+  .attributes .attribute-squares.image-squares .attribute-square-img {
+    max-width: 78px !important;
+    max-height: 78px !important;
+  }
+  .attributes .attribute-squares.image-squares .attribute-square-name {
+    font-size: 0.78rem !important;
+  }
+}
