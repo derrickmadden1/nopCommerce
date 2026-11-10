@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Language Name="English">
   <LocaleResource Name="Account.AccountActivation">
     <Value>Account activation</Value>
@@ -3542,6 +3542,12 @@
   </LocaleResource>
   <LocaleResource Name="Admin.Catalog.Products.Fields.FixedPriceBundle.Hint">
     <Value>Check if this product is a fixed price bundle. When enabled, associated product prices will not be added to this bundle; the product uses its own base price plus any manual attribute price adjustments, while still tracking stock on associated products.</Value>
+  </LocaleResource>
+  <LocaleResource Name="Admin.Catalog.Products.Fields.DynamicDualPreview">
+    <Value>Dynamic dual preview</Value>
+  </LocaleResource>
+  <LocaleResource Name="Admin.Catalog.Products.Fields.DynamicDualPreview.Hint">
+    <Value>Check to dynamically display a side-by-side preview of the selected bundle attributes (e.g. soap and candle together) in the main product image gallery. If unchecked, the product defaults to standard nopCommerce attribute combinations.</Value>
   </LocaleResource>
   <LocaleResource Name="Admin.Catalog.Products.Fields.MarkAsNew">
     <Value>Mark as new</Value>

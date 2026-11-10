@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Primitives;
 using Newtonsoft.Json;
@@ -1182,6 +1182,7 @@ public partial class ProductController : BaseAdminController
             //coming soon attribute
             await _genericAttributeService.SaveAttributeAsync(product, NopCatalogDefaults.ComingSoonAttribute, model.ComingSoon);
             await _genericAttributeService.SaveAttributeAsync(product, NopCatalogDefaults.FixedPriceBundleAttribute, model.FixedPriceBundle);
+            await _genericAttributeService.SaveAttributeAsync(product, NopCatalogDefaults.DynamicDualPreviewAttribute, model.DynamicDualPreview);
 
             _notificationService.SuccessNotification(await _localizationService.GetResourceAsync("Admin.Catalog.Products.Added"));
 
@@ -1381,6 +1382,7 @@ public partial class ProductController : BaseAdminController
             //coming soon attribute
             await _genericAttributeService.SaveAttributeAsync(product, NopCatalogDefaults.ComingSoonAttribute, model.ComingSoon);
             await _genericAttributeService.SaveAttributeAsync(product, NopCatalogDefaults.FixedPriceBundleAttribute, model.FixedPriceBundle);
+            await _genericAttributeService.SaveAttributeAsync(product, NopCatalogDefaults.DynamicDualPreviewAttribute, model.DynamicDualPreview);
 
             //back in stock & now available notifications
             var isPurchasable = product.ManageInventoryMethod != ManageInventoryMethod.ManageStock ||

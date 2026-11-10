@@ -1,4 +1,4 @@
-@model ProductDetailsModel
+﻿@model ProductDetailsModel
 
 @{
     var isComingSoon = Model.ComingSoon;
@@ -112,6 +112,37 @@
         else
         {
             <img alt="@Model.DefaultPictureModel.AlternateText" src="@Model.DefaultPictureModel.ImageUrl" title="@Model.DefaultPictureModel.Title" id="main-product-img-@Model.Id" />
+        }
+        @if (Model.DynamicDualPreview)
+        {
+            <div id="dynamic-dual-showcase-@Model.Id" class="dynamic-dual-showcase" style="display: none;">
+                <div class="dual-showcase-header">
+                    <span class="dual-showcase-badge">YOUR BUNDLE SELECTION</span>
+                </div>
+                <div class="dual-showcase-body">
+                    <div class="dual-showcase-card dual-item-1" id="dual-item-1-@Model.Id">
+                        <div class="dual-card-img-wrap">
+                            <img src="" alt="" class="dual-card-img" />
+                        </div>
+                        <div class="dual-card-info">
+                            <span class="dual-card-type"></span>
+                            <span class="dual-card-title"></span>
+                        </div>
+                    </div>
+                    <div class="dual-showcase-divider">
+                        <span class="dual-plus-circle">&amp;</span>
+                    </div>
+                    <div class="dual-showcase-card dual-item-2" id="dual-item-2-@Model.Id">
+                        <div class="dual-card-img-wrap">
+                            <img src="" alt="" class="dual-card-img" />
+                        </div>
+                        <div class="dual-card-info">
+                            <span class="dual-card-type"></span>
+                            <span class="dual-card-title"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
         }
     </div>
     @if (Model.PictureModels.Count > 1)

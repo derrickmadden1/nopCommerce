@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Nop.Web.Areas.Admin.Models.Settings;
 using Nop.Web.Framework.Models;
@@ -374,6 +374,9 @@ public partial record ProductModel : BaseNopEntityModel,
 
     [NopResourceDisplayName("Admin.Catalog.Products.Fields.FixedPriceBundle")]
     public bool FixedPriceBundle { get; set; }
+
+    [NopResourceDisplayName("Admin.Catalog.Products.Fields.DynamicDualPreview")]
+    public bool DynamicDualPreview { get; set; }
 
     [NopResourceDisplayName("Admin.Catalog.Products.Fields.MarkAsNewStartDateTimeUtc")]
     [UIHint("DateTimeNullable")]
