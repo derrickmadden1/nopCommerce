@@ -530,11 +530,81 @@
                 });
             }
             $(function() {
+                restoreOrPreselectBundle_@(Model.Id)();
+                saveBundleSelection_@(Model.Id)();
                 @(attributeChangeHandlerFuncName)();
                 @Html.Raw(attributeChangeScriptsBuilder.ToString())
             });
         </script>
     }
+
+    <script asp-location="Footer">
+        function restoreOrPreselectBundle_@(Model.Id)() {
+            var saved = null;
+            try {
+                var raw = localStorage.getItem('nop_bundle_selection_@Model.Id');
+                if (raw) saved = JSON.parse(raw);
+            } catch (e) {}
+
+            $('.attributes [data-attr]').each(function() {
+                var $attr = $(this);
+                var attrId = $attr.data('attr');
+
+                if ($attr.is('select')) {
+                    var savedVal = saved ? saved[attrId] : null;
+                    if (savedVal && $attr.find('option[value="' + savedVal + '"]').length) {
+                        $attr.val(savedVal);
+                    } else if ($attr.val() === '0' || !$attr.val()) {
+                        var $firstOpt = $attr.find('option').not('[value="0"]').first();
+                        if ($firstOpt.length) {
+                            $attr.val($firstOpt.val());
+                        }
+                    }
+                } else {
+                    var $radios = $attr.find('input:radio');
+                    if ($radios.length) {
+                        var savedVal = saved ? saved[attrId] : null;
+                        var $toCheck = null;
+
+                        if (savedVal) {
+                            $toCheck = $radios.filter('[value="' + savedVal + '"]');
+                        }
+                        if ((!$toCheck || !$toCheck.length) && !$radios.filter(':checked').length) {
+                            // First visit or no selection: preselect the first option
+                            $toCheck = $radios.first();
+                        }
+
+                        if ($toCheck && $toCheck.length) {
+                            $radios.prop('checked', false);
+                            $toCheck.prop('checked', true);
+                            $attr.find('li').removeClass('selected-value');
+                            $toCheck.closest('li').addClass('selected-value');
+                        }
+                    }
+                }
+            });
+        }
+
+        function saveBundleSelection_@(Model.Id)() {
+            try {
+                var selection = {};
+                $('.attributes [data-attr]').each(function() {
+                    var $attr = $(this);
+                    var attrId = $attr.data('attr');
+                    if ($attr.is('select')) {
+                        var val = $attr.val();
+                        if (val && val !== '0') selection[attrId] = val;
+                    } else {
+                        var $checked = $attr.find('input:checked');
+                        if ($checked.length) {
+                            selection[attrId] = $checked.val();
+                        }
+                    }
+                });
+                localStorage.setItem('nop_bundle_selection_@Model.Id', JSON.stringify(selection));
+            } catch (e) {}
+        }
+    </script>
 
     @if (Model.DynamicDualPreview)
     {
@@ -603,8 +673,11 @@
             }
 
             $(function() {
+                restoreOrPreselectBundle_@(Model.Id)();
+                saveBundleSelection_@(Model.Id)();
                 updateDualPreview_@(Model.Id)();
                 $('.attributes').on('change click', 'input, select', function() {
+                    saveBundleSelection_@(Model.Id)();
                     updateDualPreview_@(Model.Id)();
                 });
             });
