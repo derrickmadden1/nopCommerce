@@ -609,9 +609,10 @@ h6 {
 }
 
 .header-modern.sticky-shrink .header-utility {
-  margin-top: -50px;
-  opacity: 0;
-  pointer-events: none;
+  margin-top: 0;
+  opacity: 1;
+  pointer-events: auto;
+  padding: 6px 0;
 }
 
 .header-modern.sticky-shrink .header-main-area {
