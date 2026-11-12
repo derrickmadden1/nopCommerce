@@ -529,12 +529,6 @@
                     }
                 });
             }
-            $(function() {
-                restoreOrPreselectBundle_@(Model.Id)();
-                saveBundleSelection_@(Model.Id)();
-                @(attributeChangeHandlerFuncName)();
-                @Html.Raw(attributeChangeScriptsBuilder.ToString())
-            });
         </script>
     }
 
@@ -546,15 +540,17 @@
                 if (raw) saved = JSON.parse(raw);
             } catch (e) {}
 
+            var hasSavedData = Boolean(saved && typeof saved === 'object' && Object.keys(saved).length > 0);
+
             $('.attributes [data-attr]').each(function() {
                 var $attr = $(this);
-                var attrId = $attr.data('attr');
+                var attrIdStr = String($attr.data('attr'));
 
                 if ($attr.is('select')) {
-                    var savedVal = saved ? saved[attrId] : null;
+                    var savedVal = hasSavedData && (saved[attrIdStr] !== undefined ? String(saved[attrIdStr]) : null);
                     if (savedVal && $attr.find('option[value="' + savedVal + '"]').length) {
                         $attr.val(savedVal);
-                    } else if ($attr.val() === '0' || !$attr.val()) {
+                    } else if (!hasSavedData && ($attr.val() === '0' || !$attr.val())) {
                         var $firstOpt = $attr.find('option').not('[value="0"]').first();
                         if ($firstOpt.length) {
                             $attr.val($firstOpt.val());
@@ -563,15 +559,19 @@
                 } else {
                     var $radios = $attr.find('input:radio');
                     if ($radios.length) {
-                        var savedVal = saved ? saved[attrId] : null;
+                        var savedVal = hasSavedData && (saved[attrIdStr] !== undefined ? String(saved[attrIdStr]) : null);
                         var $toCheck = null;
 
                         if (savedVal) {
-                            $toCheck = $radios.filter('[value="' + savedVal + '"]');
+                            $toCheck = $radios.filter(function() {
+                                return String($(this).val()) === savedVal;
+                            });
                         }
-                        if ((!$toCheck || !$toCheck.length) && !$radios.filter(':checked').length) {
-                            // First visit or no selection: preselect the first option
-                            $toCheck = $radios.first();
+
+                        // If no saved selection for this product (first visit), preselect the first radio
+                        if (!hasSavedData && (!$toCheck || !$toCheck.length)) {
+                            var $alreadyChecked = $radios.filter(':checked');
+                            $toCheck = $alreadyChecked.length ? $alreadyChecked.first() : $radios.first();
                         }
 
                         if ($toCheck && $toCheck.length) {
@@ -583,6 +583,8 @@
                     }
                 }
             });
+
+            return hasSavedData;
         }
 
         function saveBundleSelection_@(Model.Id)() {
@@ -590,25 +592,26 @@
                 var selection = {};
                 $('.attributes [data-attr]').each(function() {
                     var $attr = $(this);
-                    var attrId = $attr.data('attr');
+                    var attrIdStr = String($attr.data('attr'));
                     if ($attr.is('select')) {
                         var val = $attr.val();
-                        if (val && val !== '0') selection[attrId] = val;
+                        if (val && val !== '0') selection[attrIdStr] = String(val);
                     } else {
                         var $checked = $attr.find('input:checked');
                         if ($checked.length) {
-                            selection[attrId] = $checked.val();
+                            selection[attrIdStr] = String($checked.val());
                         }
                     }
                 });
-                localStorage.setItem('nop_bundle_selection_@Model.Id', JSON.stringify(selection));
+                if (Object.keys(selection).length > 0) {
+                    localStorage.setItem('nop_bundle_selection_@Model.Id', JSON.stringify(selection));
+                }
             } catch (e) {}
         }
-    </script>
 
-    @if (Model.DynamicDualPreview)
-    {
-        <script asp-location="Footer">
+        @if (Model.DynamicDualPreview)
+        {
+            <text>
             function updateDualPreview_@(Model.Id)() {
                 var $showcase = $('#dynamic-dual-showcase-@Model.Id');
                 if (!$showcase.length) return;
@@ -671,16 +674,66 @@
                     $('#main-product-img-lightbox-anchor-@Model.Id').show();
                 }
             }
+            </text>
+        }
 
-            $(function() {
-                restoreOrPreselectBundle_@(Model.Id)();
-                saveBundleSelection_@(Model.Id)();
-                updateDualPreview_@(Model.Id)();
-                $('.attributes').on('change click', 'input, select', function() {
+        $(function() {
+            // Click handler directly on card items (handles hidden/pointer-events:none inputs)
+            $(document).on('click', '.attributes .picker-card-item, .attributes .attribute-squares li', function(e) {
+                var $li = $(this).closest('li');
+                var $radio = $li.find('input[type="radio"]');
+                if ($radio.length) {
+                    $li.closest('ul').find('li').removeClass('selected-value');
+                    $li.addClass('selected-value');
+                    if (!$radio.is(':checked')) {
+                        $radio.prop('checked', true);
+                    }
+                    $radio.trigger('change');
                     saveBundleSelection_@(Model.Id)();
-                    updateDualPreview_@(Model.Id)();
-                });
+                    if (typeof updateDualPreview_@(Model.Id) === 'function') {
+                        updateDualPreview_@(Model.Id)();
+                    }
+                    @if (catalogSettings.AjaxProcessAttributeChange)
+                    {
+                        <text>
+                        if (typeof @(attributeChangeHandlerFuncName) === 'function') {
+                            @(attributeChangeHandlerFuncName)();
+                        }
+                        </text>
+                    }
+                }
             });
-        </script>
-    }
+
+            // Change listener for standard inputs & selects
+            $(document).on('change', '.attributes input, .attributes select', function() {
+                var $this = $(this);
+                if ($this.is(':radio')) {
+                    $this.closest('ul').find('li').removeClass('selected-value');
+                    $this.closest('li').addClass('selected-value');
+                }
+                saveBundleSelection_@(Model.Id)();
+                if (typeof updateDualPreview_@(Model.Id) === 'function') {
+                    updateDualPreview_@(Model.Id)();
+                }
+            });
+
+            // Restore saved bundle selection on load, or preselect defaults on first visit
+            var hadSaved = restoreOrPreselectBundle_@(Model.Id)();
+            if (!hadSaved) {
+                saveBundleSelection_@(Model.Id)();
+            }
+            if (typeof updateDualPreview_@(Model.Id) === 'function') {
+                updateDualPreview_@(Model.Id)();
+            }
+            @if (catalogSettings.AjaxProcessAttributeChange)
+            {
+                <text>
+                if (typeof @(attributeChangeHandlerFuncName) === 'function') {
+                    @(attributeChangeHandlerFuncName)();
+                }
+                @Html.Raw(attributeChangeScriptsBuilder.ToString())
+                </text>
+            }
+        });
+    </script>
 }

@@ -296,6 +296,12 @@ public class PayPalCommerceModelFactory
 
         var ((order, payNow), error) = await _serviceManager.OrderIsApprovedAsync(_settings, orderId, null, liabilityShift);
         if (!string.IsNullOrEmpty(error))
+        {
+            var fallback = await _localizationService.GetResourceAsync("Plugins.Payments.PayPalCommerce.Order.Error");
+            model.Error = SanitizeUserErrorMessage(error, fallback);
+            return model;
+        }
+        if (!string.IsNullOrEmpty(error))
             model.Error = error;
         else
             (model.OrderId, model.PayNow) = (order?.Id, payNow);
@@ -333,6 +339,12 @@ public class PayPalCommerceModelFactory
         //order is approved now
         var ((order, _), error) = await _serviceManager.OrderIsApprovedAsync(_settings, orderId, orderGuid, liabilityShift);
         if (!string.IsNullOrEmpty(error))
+        {
+            var fallback = await _localizationService.GetResourceAsync("Plugins.Payments.PayPalCommerce.Order.Error");
+            model.Error = SanitizeUserErrorMessage(error, fallback);
+            return model;
+        }
+        if (!string.IsNullOrEmpty(error))
             model.Error = error;
         else
             model.OrderId = order?.Id;
@@ -358,6 +370,12 @@ public class PayPalCommerceModelFactory
 
         //first place an order
         var ((nopOrder, order), error) = await _serviceManager.PlaceOrderAsync(_settings, orderId, liabilityShift);
+        if (!string.IsNullOrEmpty(error))
+        {
+            var fallback = await _localizationService.GetResourceAsync("Plugins.Payments.PayPalCommerce.Order.Error");
+            model.Error = SanitizeUserErrorMessage(error, fallback);
+            return model;
+        }
         if (!string.IsNullOrEmpty(error))
             model.Error = error;
         else if (order is null)
