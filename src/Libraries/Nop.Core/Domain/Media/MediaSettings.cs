@@ -1,4 +1,4 @@
-﻿using Nop.Core.Configuration;
+using Nop.Core.Configuration;
 
 namespace Nop.Core.Domain.Media;
 
@@ -91,6 +91,11 @@ public partial class MediaSettings : ISettings
     /// Gets or sets a default quality used for image generation
     /// </summary>
     public int DefaultImageQuality { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether to convert uploaded images to WebP format
+    /// </summary>
+    public bool ConvertToWebp { get; set; } = true;
 
     /// <summary>
     /// Gets or sets a value indicating whether single (thumbs/) or multiple (thumbs/001/ and thumbs/002/) directories will be used for picture thumbs

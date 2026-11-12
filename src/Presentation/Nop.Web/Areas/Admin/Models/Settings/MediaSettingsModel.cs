@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using Nop.Web.Framework.Models;
 using Nop.Web.Framework.Mvc.ModelBinding;
 
@@ -76,6 +76,10 @@ public partial record MediaSettingsModel : BaseNopModel, ISettingsModel
     [NopResourceDisplayName("Admin.Configuration.Settings.Media.DefaultImageQuality")]
     public int DefaultImageQuality { get; set; }
     public bool DefaultImageQuality_OverrideForStore { get; set; }
+
+    [NopResourceDisplayName("Admin.Configuration.Settings.Media.ConvertToWebp")]
+    public bool ConvertToWebp { get; set; }
+    public bool ConvertToWebp_OverrideForStore { get; set; }
 
     [NopResourceDisplayName("Admin.Configuration.Settings.Media.ImportProductImagesUsingHash")]
     public bool ImportProductImagesUsingHash { get; set; }

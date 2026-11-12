@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using Nop.Core;
 using Nop.Core.Domain.Catalog;
 using Nop.Core.Domain.Media;
@@ -211,6 +211,18 @@ public partial interface IPictureService
     /// The task result contains the picture binary or throws a <see cref="NopException"/>
     /// </returns>
     Task<byte[]> ValidatePictureAsync(byte[] pictureBinary, string mimeType, string fileName);
+
+    /// <summary>
+    /// Validates picture binary and converts to WebP if applicable
+    /// </summary>
+    /// <param name="pictureBinary">Picture binary</param>
+    /// <param name="mimeType">MIME type</param>
+    /// <param name="fileName">Name of file</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task result contains the converted picture binary and mime type
+    /// </returns>
+    Task<(byte[] PictureBinary, string MimeType)> ValidateAndConvertPictureAsync(byte[] pictureBinary, string mimeType, string fileName);
 
     /// <summary>
     /// Gets or sets a value indicating whether the images should be stored in data base.
