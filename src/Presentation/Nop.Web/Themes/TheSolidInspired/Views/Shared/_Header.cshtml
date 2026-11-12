@@ -465,6 +465,63 @@
         }
     }
 
+    function handleMiniCartNavigate(button, url) {
+        if (!button || button.disabled || button.classList.contains('is-loading')) {
+            return false;
+        }
+
+        if (!button.dataset.originalHtml) {
+            button.dataset.originalHtml = button.innerHTML;
+        }
+
+        button.disabled = true;
+        button.classList.add('is-loading');
+        button.setAttribute('aria-busy', 'true');
+
+        var loadingText = button.getAttribute('data-loading-text') || 'Loading...';
+        button.innerHTML = '<span class="cart-btn-spinner" aria-hidden="true"></span><span>' + loadingText + '</span>';
+
+        var container = button.closest('.buttons');
+        if (container) {
+            var siblings = container.querySelectorAll('button');
+            siblings.forEach(function(btn) {
+                if (btn !== button) {
+                    btn.disabled = true;
+                    btn.style.pointerEvents = 'none';
+                    btn.style.opacity = '0.6';
+                    btn.setAttribute('data-disabled-by-loading', 'true');
+                }
+            });
+        }
+
+        if (typeof setLocation === 'function') {
+            setLocation(url);
+        } else {
+            window.location.href = url;
+        }
+        return false;
+    }
+
+    window.addEventListener('pageshow', function() {
+        var loadingButtons = document.querySelectorAll('#flyout-cart .buttons button.is-loading');
+        loadingButtons.forEach(function(btn) {
+            btn.disabled = false;
+            btn.classList.remove('is-loading');
+            btn.removeAttribute('aria-busy');
+            btn.style.pointerEvents = '';
+            if (btn.dataset.originalHtml) {
+                btn.innerHTML = btn.dataset.originalHtml;
+            }
+        });
+        var disabledButtons = document.querySelectorAll('#flyout-cart .buttons button[data-disabled-by-loading]');
+        disabledButtons.forEach(function(btn) {
+            btn.disabled = false;
+            btn.style.pointerEvents = '';
+            btn.style.opacity = '';
+            btn.removeAttribute('data-disabled-by-loading');
+        });
+    });
+
     function openMobileNav() {
         const panel = document.getElementById("mobile-nav-panel");
         const overlay = document.getElementById("mobile-nav-overlay");

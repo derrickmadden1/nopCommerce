@@ -1,4 +1,4 @@
-﻿@model MiniShoppingCartModel
+@model MiniShoppingCartModel
 
 @using Nop.Core.Domain.Catalog
 
@@ -49,7 +49,7 @@
             <div class="buttons">
                 @if (Model.DisplayShoppingCartButton)
                 {
-                    <button type="button" class="button-1 cart-button" onclick="setLocation('@(Url.RouteUrl(NopRouteNames.General.CART))')">@T("ShoppingCart.Mini.ViewCart")</button>
+                    <button type="button" class="button-1 cart-button" onclick="if (typeof handleMiniCartNavigate === 'function') { handleMiniCartNavigate(this, '@(Url.RouteUrl(NopRouteNames.General.CART))'); } else { setLocation('@(Url.RouteUrl(NopRouteNames.General.CART))'); }" data-loading-text="Loading...">@T("ShoppingCart.Mini.ViewCart")</button>
                 }
                 @if (Model.DisplayCheckoutButton)
                 {
@@ -62,7 +62,7 @@
                     {
                         checkoutUrl = Url.RouteUrl(NopRouteNames.Standard.CHECKOUT);
                     }
-                    <button type="button" class="button-1 checkout-button" onclick="setLocation('@checkoutUrl')">@T("Checkout.Button")</button>
+                    <button type="button" class="button-1 checkout-button" onclick="if (typeof handleMiniCartNavigate === 'function') { handleMiniCartNavigate(this, '@checkoutUrl'); } else { setLocation('@checkoutUrl'); }" data-loading-text="Loading...">@T("Checkout.Button")</button>
                 }
             </div>
         }
