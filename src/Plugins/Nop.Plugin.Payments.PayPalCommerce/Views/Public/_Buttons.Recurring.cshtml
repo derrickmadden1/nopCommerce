@@ -308,6 +308,53 @@
     }
 
     function approveCallback(data, actions) {
+        if (data && data.liabilityShift === 'NO') {
+            displayBarNotification('3D Secure contingency is not resolved', 'error', 0);
+            return actions && typeof actions.reject === 'function' ? actions.reject() : Promise.reject();
+        }
+        displayAjaxLoading(true);
+        waitingPayPal = true;
+
+        var postData = {
+            orderId: data.orderID ?? data.orderId,
+            liabilityShift: data.liabilityShift
+        };
+        addAntiForgeryToken(postData);
+
+        return new Promise(function (resolve, reject) {
+            $.ajax({
+                async: true,
+                type: 'POST',
+                url: '@(Url.Action("ApproveOrder", "PayPalCommercePublic"))',
+                data: postData,
+                success: function (data, textStatus, jqXHR) {
+                    if (data.redirect) {
+                        setLocation(data.redirect);
+                        resolve();
+                    } else {
+                        displayAjaxLoading(false);
+                        waitingPayPal = false;
+                        if (data.error) {
+                            displayBarNotification(data.error, 'error', 0);
+                        }
+                        setLocation('@Url.RouteUrl(NopRouteNames.General.CART)');
+                        resolve();
+                    }
+                },
+                error: function (jqXHR, textStatus, errorThrown) {
+                    displayAjaxLoading(false);
+                    waitingPayPal = false;
+                    var errText = errorThrown || textStatus;
+                    if (errText) {
+                        displayBarNotification(errText, 'error', 0);
+                    }
+                    reject(new Error(errText || 'Approve error'));
+                }
+            });
+        });
+    }
+
+    function _legacyApproveCallback_deprecated(data, actions) {
         var redirectUrl = '';
 
         //check liability shift
@@ -349,14 +396,35 @@
                 }
             }
         });
-        setLocation(redirectUrl);
+        setLocation(redirectUrl); } // end deprecated approveCallback
     }
 
     function errorCallback(err) {
         if (err && err.message && err.message.indexOf('Expected an order id to be passed') !== -1) {
             return;
         }
-        displayBarNotification(err.message, 'error', 0);
+        if (!err) return;
+        var msg = (typeof err === 'string') ? err : (err.message || '');
+        if (msg.indexOf('Expected an order id to be passed') !== -1 ||
+            msg.indexOf('postMessage') !== -1 ||
+            msg.indexOf('approveCallback') !== -1 ||
+            msg.indexOf('No ack for postMessage') !== -1 ||
+            msg.indexOf('closed') !== -1 ||
+            waitingPayPal) {
+            console.warn('PayPal non-critical error suppressed:', msg);
+            return;
+        }
+        var userFriendlyMessage = msg;
+        if (userFriendlyMessage.indexOf('Error:') === 0 || 
+            userFriendlyMessage.indexOf('https://') !== -1 || 
+            userFriendlyMessage.indexOf('window') !== -1 ||
+            userFriendlyMessage.indexOf('{') !== -1) {
+            userFriendlyMessage = '@T("Plugins.Payments.PayPalCommerce.Order.Error")';
+            if (!userFriendlyMessage || userFriendlyMessage.indexOf('Plugins.Payments.PayPalCommerce') !== -1) {
+                userFriendlyMessage = 'There was an issue processing your PayPal payment. Please try again or contact us.';
+            }
+        }
+        displayBarNotification(userFriendlyMessage, 'error', 0);
     }
 
 </script>
