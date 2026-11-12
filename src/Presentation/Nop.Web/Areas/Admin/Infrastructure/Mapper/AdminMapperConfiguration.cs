@@ -1149,6 +1149,7 @@ public partial class AdminMapperConfiguration : BaseMapperProfile
             .ForMember(model => model.OrderThumbPictureSize_OverrideForStore, options => options.Ignore())
             .ForMember(model => model.CategoryThumbPictureSize_OverrideForStore, options => options.Ignore())
             .ForMember(model => model.DefaultImageQuality_OverrideForStore, options => options.Ignore())
+            .ForMember(model => model.ConvertToWebp_OverrideForStore, options => options.Ignore())
             .ForMember(model => model.DefaultPictureZoomEnabled_OverrideForStore, options => options.Ignore())
             .ForMember(model => model.ImportProductImagesUsingHash_OverrideForStore, options => options.Ignore())
             .ForMember(model => model.ManufacturerThumbPictureSize_OverrideForStore, options => options.Ignore())

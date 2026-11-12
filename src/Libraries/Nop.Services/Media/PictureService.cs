@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.StaticFiles;
 using Nop.Core;
 using Nop.Core.Domain.Catalog;
@@ -781,7 +781,7 @@ public partial class PictureService : IPictureService
         seoFilename = CommonHelper.EnsureMaximumLength(seoFilename, 100);
 
         if (validateBinary)
-            pictureBinary = await ValidatePictureAsync(pictureBinary, mimeType, seoFilename);
+            (pictureBinary, mimeType) = await ValidateAndConvertPictureAsync(pictureBinary, mimeType, seoFilename);
 
         var picture = new Picture
         {
@@ -893,14 +893,14 @@ public partial class PictureService : IPictureService
         seoFilename = CommonHelper.EnsureMaximumLength(seoFilename, 100);
 
         if (validateBinary)
-            pictureBinary = await ValidatePictureAsync(pictureBinary, mimeType, seoFilename);
+            (pictureBinary, mimeType) = await ValidateAndConvertPictureAsync(pictureBinary, mimeType, seoFilename);
 
         var picture = await GetPictureByIdAsync(pictureId);
         if (picture == null)
             return null;
 
         //delete old thumbs if a picture has been changed
-        if (seoFilename != picture.SeoFilename)
+        if (seoFilename != picture.SeoFilename || mimeType != picture.MimeType)
             await _thumbService.DeletePictureThumbsAsync(picture);
 
         picture.MimeType = mimeType;
@@ -1001,7 +1001,17 @@ public partial class PictureService : IPictureService
     /// A task that represents the asynchronous operation
     /// The task result contains the picture binary or throws a <see cref="NopException"/>
     /// </returns>
-    public virtual Task<byte[]> ValidatePictureAsync(byte[] pictureBinary, string mimeType, string fileName)
+    /// <summary>
+    /// Validates picture binary and converts to WebP if applicable
+    /// </summary>
+    /// <param name="pictureBinary">Picture binary</param>
+    /// <param name="mimeType">Mime type</param>
+    /// <param name="fileName">Name of file</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task result contains the converted picture binary and mime type
+    /// </returns>
+    public virtual Task<(byte[] PictureBinary, string MimeType)> ValidateAndConvertPictureAsync(byte[] pictureBinary, string mimeType, string fileName)
     {
         try
         {
@@ -1034,14 +1044,35 @@ public partial class PictureService : IPictureService
                     image = SKBitmap.Decode(pictureBinary);
             }
 
-            //resize the image in accordance with the maximum size
-            if (Math.Max(image.Height, image.Width) <= _mediaSettings.MaximumImageSize)
-                return Task.FromResult(pictureBinary);
+            if (image == null)
+                throw new NopException($"Cannot decode picture binary (file name: {fileName})");
 
-            var format = GetImageFormatByMimeType(mimeType);
-            pictureBinary = ImageResize(image, format, _mediaSettings.MaximumImageSize);
+            using (image)
+            {
+                var shouldConvertToWebp = _mediaSettings.ConvertToWebp && !isSvg && ShouldConvertToWebp(mimeType);
+                var isOversized = Math.Max(image.Height, image.Width) > _mediaSettings.MaximumImageSize;
 
-            return Task.FromResult(pictureBinary);
+                if (!shouldConvertToWebp && !isOversized)
+                    return Task.FromResult((pictureBinary, mimeType));
+
+                var targetFormat = shouldConvertToWebp ? SKEncodedImageFormat.Webp : GetImageFormatByMimeType(mimeType);
+                var targetMimeType = shouldConvertToWebp ? MimeTypes.ImageWebp : mimeType;
+
+                byte[] resultBinary;
+                if (isOversized)
+                {
+                    resultBinary = ImageResize(image, targetFormat, _mediaSettings.MaximumImageSize);
+                }
+                else
+                {
+                    var quality = _mediaSettings.DefaultImageQuality > 0 ? _mediaSettings.DefaultImageQuality : 80;
+                    using var skImage = SKImage.FromBitmap(image);
+                    using var data = skImage.Encode(targetFormat, quality);
+                    resultBinary = data?.ToArray() ?? pictureBinary;
+                }
+
+                return Task.FromResult((resultBinary, targetMimeType));
+            }
         }
         catch (Exception exc)
         {
@@ -1049,6 +1080,38 @@ public partial class PictureService : IPictureService
         }
     }
 
+    /// <summary>
+    /// Validates input picture dimensions
+    /// </summary>
+    /// <param name="pictureBinary">Picture binary</param>
+    /// <param name="mimeType">MIME type</param>
+    /// <param name="fileName">Name of file</param>
+    /// <returns>
+    /// A task that represents the asynchronous operation
+    /// The task result contains the picture binary or throws a <see cref="NopException"/>
+    /// </returns>
+    public virtual async Task<byte[]> ValidatePictureAsync(byte[] pictureBinary, string mimeType, string fileName)
+    {
+        var (resultBinary, _) = await ValidateAndConvertPictureAsync(pictureBinary, mimeType, fileName);
+        return resultBinary;
+    }
+
+    /// <summary>
+    /// Determines whether the MIME type should be converted to WebP
+    /// </summary>
+    /// <param name="mimeType">Mime type</param>
+    /// <returns>True if the image should be converted to WebP; otherwise, false</returns>
+    protected virtual bool ShouldConvertToWebp(string mimeType)
+    {
+        if (string.IsNullOrEmpty(mimeType))
+            return false;
+
+        var lower = mimeType.ToLowerInvariant();
+        return lower is "image/jpeg" or "image/jpg" or "image/pjpeg"
+            or "image/png" or "image/x-png"
+            or "image/bmp" or "image/x-bmp"
+            or "image/tiff" or "image/tif";
+    }
     /// <summary>
     /// Get product picture (for shopping cart and order details pages)
     /// </summary>
@@ -1272,3 +1335,4 @@ public partial class PictureService : IPictureService
 
     #endregion
 }
+
