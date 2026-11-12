@@ -4116,8 +4116,8 @@ body {
   }
 }
 
-.method-card-modern.selected,
-.method-card-modern:has(input[type="radio"]:checked) {
+.method-card-modern:has(input[type="radio"]:checked),
+.method-card-modern.selected:not(:has(input[type="radio"]:not(:checked))) {
   border-color: var(--brand-magenta);
   background: rgba(184, 29, 125, 0.02);
   box-shadow: 0 5px 15px rgba(184, 29, 125, 0.1);
@@ -4126,6 +4126,7 @@ body {
 .method-card-modern input[type="radio"] {
   position: absolute;
   opacity: 0;
+  pointer-events: none;
 }
 
 .method-card-modern .method-content {
@@ -4157,8 +4158,8 @@ body {
   color: var(--brand-magenta);
 }
 
-.method-card-modern.selected .method-name,
-.method-card-modern:has(input[type="radio"]:checked) .method-name {
+.method-card-modern:has(input[type="radio"]:checked) .method-name,
+.method-card-modern.selected:not(:has(input[type="radio"]:not(:checked))) .method-name {
   color: var(--brand-magenta);
 }
 
@@ -4204,8 +4205,8 @@ body {
   transition: all 0.3s ease;
 }
 
-.method-card-modern.selected .method-select-icon,
-.method-card-modern:has(input[type="radio"]:checked) .method-select-icon {
+.method-card-modern:has(input[type="radio"]:checked) .method-select-icon,
+.method-card-modern.selected:not(:has(input[type="radio"]:not(:checked))) .method-select-icon {
   color: var(--brand-magenta);
 }
 

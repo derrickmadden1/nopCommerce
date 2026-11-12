@@ -54,17 +54,28 @@
 
                         <script asp-location="Footer">
                             $(function() {
+                                function syncShippingSelection() {
+                                    $('.method-grid-modern .method-card-modern').each(function() {
+                                        var $card = $(this);
+                                        var isChecked = $card.find('input[type="radio"]').is(':checked');
+                                        $card.toggleClass('selected', isChecked);
+                                    });
+                                }
+
                                 $('.method-grid-modern').on('change', 'input[type="radio"]', function() {
-                                    var $grid = $(this).closest('.method-grid-modern');
-                                    $grid.find('.method-card-modern').removeClass('selected');
-                                    $(this).closest('.method-card-modern').addClass('selected');
+                                    syncShippingSelection();
                                 });
-                                $('.method-grid-modern').on('click', '.method-card-modern', function() {
+
+                                $('.method-grid-modern').on('click', '.method-card-modern', function(e) {
                                     var $radio = $(this).find('input[type="radio"]');
-                                    if (!$radio.prop('checked')) {
-                                        $radio.prop('checked', true).trigger('change');
+                                    if (!$(e.target).is('input[type="radio"]')) {
+                                        $radio.prop('checked', true);
                                     }
+                                    syncShippingSelection();
+                                    $radio.trigger('change');
                                 });
+
+                                syncShippingSelection();
                             });
                         </script>
 

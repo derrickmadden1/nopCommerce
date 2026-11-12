@@ -84,17 +84,28 @@
 
                     <script asp-location="Footer">
                         $(function() {
-                            $('.method-grid-modern').on('change', 'input[type="radio"]', function() {
-                                var $grid = $(this).closest('.method-grid-modern');
-                                $grid.find('.method-card-modern').removeClass('selected');
-                                $(this).closest('.method-card-modern').addClass('selected');
+                            function syncPaymentSelection() {
+                                $('#payment-method-grid-modern .method-card-modern').each(function() {
+                                    var $card = $(this);
+                                    var isChecked = $card.find('input[type="radio"]').is(':checked');
+                                    $card.toggleClass('selected', isChecked);
+                                });
+                            }
+
+                            $('#payment-method-grid-modern').on('change', 'input[type="radio"]', function() {
+                                syncPaymentSelection();
                             });
-                            $('.method-grid-modern').on('click', '.method-card-modern', function() {
+
+                            $('#payment-method-grid-modern').on('click', '.method-card-modern', function(e) {
                                 var $radio = $(this).find('input[type="radio"]');
-                                if (!$radio.prop('checked')) {
-                                    $radio.prop('checked', true).trigger('change');
+                                if (!$(e.target).is('input[type="radio"]')) {
+                                    $radio.prop('checked', true);
                                 }
+                                syncPaymentSelection();
+                                $radio.trigger('change');
                             });
+
+                            syncPaymentSelection();
                         });
                     </script>
 
