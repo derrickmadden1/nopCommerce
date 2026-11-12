@@ -1225,42 +1225,65 @@ body {
     font-size: 0.6rem;
   }
 
-  /* Compact sticky header on mobile */
+  /* Compact single-row sticky header on mobile (Option A: ~44px) */
+  .header-modern.sticky-shrink .announcement-bar {
+    display: none !important;
+  }
+
   .header-modern.sticky-shrink .header-utility {
-    display: none;
+    display: none !important;
   }
 
   .header-modern.sticky-shrink .header-main-area {
-    padding: 8px 15px;
+    padding: 6px 15px !important;
   }
 
   .header-modern.sticky-shrink .header-logo-row {
-    flex-direction: row;
-    justify-content: space-between;
-    gap: 10px;
-    margin-bottom: 0;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    gap: 8px !important;
+    min-height: unset !important;
+    margin-bottom: 0 !important;
+    padding: 0 !important;
+  }
+
+  .header-modern.sticky-shrink .mobile-menu-toggle {
+    padding: 5px 10px !important;
+    font-size: 0.7rem !important;
+    flex-shrink: 0 !important;
+  }
+
+  .header-modern.sticky-shrink .header-logo {
+    flex: 1 1 auto !important;
+    text-align: center !important;
+    padding: 0 4px !important;
   }
 
   .header-modern.sticky-shrink .header-logo img {
-    max-height: 35px !important;
+    max-height: 32px !important;
+  }
+
+  .header-modern.sticky-shrink .header-mobile-spacer {
+    display: block !important;
+    flex: 0 0 68px !important;
+    width: 68px !important;
+    height: 1px !important;
   }
 
   .header-modern.sticky-shrink .header-search-cart {
-    gap: 10px;
+    display: none !important;
+    /* Search is accessible via mobile bottom nav */
   }
 
   .header-modern.sticky-shrink .main-nav-row {
-    display: none;
-    /* Hide navigation when sticky on mobile */
+    display: none !important;
   }
 
-  .header-modern.sticky-shrink .mobile-category-strip {
-    padding: 6px 12px;
-  }
-
-  .header-modern.sticky-shrink .category-chip {
-    padding: 5px 12px;
-    font-size: 0.74rem;
+  .header-modern.sticky-shrink .mobile-category-strip-wrapper {
+    display: none !important;
+    /* Categories accessible via mobile bottom nav or Menu */
   }
 
   /* Navigation - Hide mega menu or convert to mobile */
