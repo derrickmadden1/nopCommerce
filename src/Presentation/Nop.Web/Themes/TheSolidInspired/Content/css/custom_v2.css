@@ -2618,6 +2618,7 @@ body {
   0% {
     transform: rotate(0deg);
   }
+
   100% {
     transform: rotate(360deg);
   }
@@ -6655,6 +6656,7 @@ iframe[src*="songbird"] {
   overflow-y: auto !important;
   box-sizing: border-box !important;
 }
+
 /* ==========================================================================
    PRODUCT ATTRIBUTES & BUNDLE PICKERS (Solid Inspired Theme)
    ========================================================================== */
@@ -6900,23 +6902,28 @@ iframe[src*="songbird"] {
   .attributes .attribute-squares.image-squares {
     gap: 10px !important;
   }
+
   .attributes .attribute-squares.image-squares .attribute-square-card {
     width: 105px !important;
     min-height: 130px !important;
     padding: 8px 6px !important;
   }
+
   .attributes .attribute-squares.image-squares .attribute-square-img-wrap {
     width: 78px !important;
     height: 78px !important;
   }
+
   .attributes .attribute-squares.image-squares .attribute-square-img {
     max-width: 78px !important;
     max-height: 78px !important;
   }
+
   .attributes .attribute-squares.image-squares .attribute-square-name {
     font-size: 0.78rem !important;
   }
 }
+
 /* ==========================================================================
    DYNAMIC DUAL PREVIEW SHOWCASE
    ========================================================================== */
@@ -6935,8 +6942,15 @@ iframe[src*="songbird"] {
 }
 
 @keyframes dualFadeIn {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .dual-showcase-header {
@@ -7065,22 +7079,27 @@ iframe[src*="songbird"] {
   .dynamic-dual-showcase {
     padding: 10px;
   }
+
   .dual-showcase-body {
     gap: 8px;
   }
+
   .dual-card-img-wrap {
     max-width: 130px;
     max-height: 130px;
   }
+
   .dual-plus-circle {
     width: 28px;
     height: 28px;
     font-size: 13px;
   }
+
   .dual-card-title {
     font-size: 0.8rem;
   }
 }
+
 /* ==========================================================================
    PRODUCT GALLERY & THUMBNAILS SLIDER FIX
    ========================================================================== */
