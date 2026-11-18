@@ -43,6 +43,7 @@ public class PayPalSettings
 {
     public string SandboxBuyerEmail { get; set; } = "";
     public string SandboxBuyerPassword { get; set; } = "";
+    public string PayLaterProductSlug { get; set; } = "chamomile-and-calendula-face-and-body-balm";
 }
 
 public static class TestConfig

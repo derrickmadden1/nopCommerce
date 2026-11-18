@@ -33,7 +33,31 @@ public class PayPalSandboxCheckoutFlow : BaseCheckoutFlow
             TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Starting PayPal Sandbox Checkout Flow ({FundingSource})");
 
             // 1. Add item to cart
-            await AddTestProductToCartAsync(page);
+            if (FundingSource == PayPalFundingSource.PayLater)
+            {
+                await EnsurePayLaterProductInCartAsync(page);
+            }
+            else
+            {
+                await AddTestProductToCartAsync(page);
+            }
+
+            // Ensure buyer-country=GB is passed to PayPal JS SDK in sandbox for UK Pay Later eligibility
+            await page.RouteAsync("**/sdk/js*", async route =>
+            {
+                var url = route.Request.Url;
+                if (!url.Contains("buyer-country="))
+                {
+                    var separator = url.Contains('?') ? "&" : "?";
+                    var modifiedUrl = $"{url}{separator}buyer-country=GB";
+                    TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] [PayPal SDK Route] Appending buyer-country=GB for sandbox funding eligibility");
+                    await route.ContinueAsync(new() { Url = modifiedUrl });
+                }
+                else
+                {
+                    await route.ContinueAsync();
+                }
+            });
 
             // 2. Go to cart and accept terms
             var cartUrl = $"{Settings.BaseUrl.TrimEnd('/')}/cart";
@@ -616,64 +640,105 @@ public class PayPalSandboxCheckoutFlow : BaseCheckoutFlow
                     else if (screenText.Contains("Link a card") || (screenText.Contains("Card number") && await targetFrame.Locator("button:has-text('Link Card'), button:has-text('Link')").CountAsync() > 0))
                     {
                         TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] On 'Link a card' screen, filling card inputs");
+                        lastActionTime = DateTime.UtcNow;
+
                         try
                         {
-                            var cardInputs = targetFrame.Locator("input:not([type='hidden']):not([type='checkbox']):not([type='radio'])");
-                            var count = await cardInputs.CountAsync();
-                            TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Found {count} inputs on Link a card screen");
+                            // 1. Try filling Expiry via specific selector in targetFrame or main page
+                            var expInput = targetFrame.Locator("input[name*='exp' i], input[id*='exp' i], input[placeholder*='MM' i], input[aria-label*='exp' i], input[autocomplete*='cc-exp']").First;
+                            if (await expInput.CountAsync() == 0 || !await expInput.IsVisibleAsync())
+                                expInput = paypalPage.Locator("input[name*='exp' i], input[id*='exp' i], input[placeholder*='MM' i], input[aria-label*='exp' i], input[autocomplete*='cc-exp']").First;
 
-                            if (count >= 3)
+                            if (await expInput.CountAsync() > 0 && await expInput.IsVisibleAsync())
                             {
-                                var cardNum = cardInputs.Nth(0);
-                                await cardNum.ClickAsync();
-                                await cardNum.PressAsync("ControlOrMeta+A");
-                                await cardNum.PressAsync("Backspace");
-                                await cardNum.PressSequentiallyAsync("4111111111111111", new() { Delay = 30 });
-                                await Task.Delay(400);
-
-                                var exp = cardInputs.Nth(1);
-                                await exp.ClickAsync();
-                                await exp.PressAsync("ControlOrMeta+A");
-                                await exp.PressAsync("Backspace");
-                                await exp.PressSequentiallyAsync("1228", new() { Delay = 30 });
-                                await Task.Delay(400);
-
-                                var cvv = cardInputs.Nth(2);
-                                await cvv.ClickAsync();
-                                await cvv.PressAsync("ControlOrMeta+A");
-                                await cvv.PressAsync("Backspace");
-                                await cvv.PressSequentiallyAsync("123", new() { Delay = 30 });
-                                await Task.Delay(400);
-                            }
-                            else
-                            {
-                                var cardInput = targetFrame.Locator("input[id*='card' i], input[name*='card' i]").First;
-                                if (await cardInput.CountAsync() > 0)
-                                {
-                                    await cardInput.ClickAsync();
-                                    await cardInput.PressSequentiallyAsync("4111111111111111", new() { Delay = 30 });
-                                }
-                                var expInput = targetFrame.Locator("input[id*='exp' i], input[name*='exp' i]").First;
-                                if (await expInput.CountAsync() > 0)
-                                {
-                                    await expInput.ClickAsync();
-                                    await expInput.PressSequentiallyAsync("1228", new() { Delay = 30 });
-                                }
-                                var cvvInput = targetFrame.Locator("input[id*='cvv' i], input[name*='cvv' i], input[placeholder*='CVV' i]").First;
-                                if (await cvvInput.CountAsync() > 0)
-                                {
-                                    await cvvInput.ClickAsync();
-                                    await cvvInput.PressSequentiallyAsync("123", new() { Delay = 30 });
-                                }
+                                TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Found Expiry input, typing 1228");
+                                await expInput.ClickAsync();
+                                await expInput.PressAsync("ControlOrMeta+A");
+                                await expInput.PressAsync("Backspace");
+                                await expInput.PressSequentiallyAsync("1228", new() { Delay = 40 });
+                                await Task.Delay(300);
                             }
 
-                            var linkBtn = targetFrame.Locator("button:has-text('Link Card'), button:has-text('Link'), button:has-text('Save')").Last;
+                            // 2. Try filling CVV via specific selector in targetFrame or main page
+                            var cvvInput = targetFrame.Locator("input[name*='cvv' i], input[id*='cvv' i], input[name*='security' i], input[id*='security' i], input[placeholder*='CVV' i], input[aria-label*='cvv' i], input[aria-label*='csc' i], input[aria-label*='security' i], input[autocomplete*='cc-csc']").First;
+                            if (await cvvInput.CountAsync() == 0 || !await cvvInput.IsVisibleAsync())
+                                cvvInput = paypalPage.Locator("input[name*='cvv' i], input[id*='cvv' i], input[name*='security' i], input[id*='security' i], input[placeholder*='CVV' i], input[aria-label*='cvv' i], input[aria-label*='csc' i], input[aria-label*='security' i], input[autocomplete*='cc-csc']").First;
+
+                            if (await cvvInput.CountAsync() > 0 && await cvvInput.IsVisibleAsync())
+                            {
+                                TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Found CVV input, typing 123");
+                                await cvvInput.ClickAsync();
+                                await cvvInput.PressAsync("ControlOrMeta+A");
+                                await cvvInput.PressAsync("Backspace");
+                                await cvvInput.PressSequentiallyAsync("123", new() { Delay = 40 });
+                                await Task.Delay(300);
+                            }
+
+                            // 3. Fallback: also run DOM evaluate across all frames to ensure Expiry and CVV are populated
+                            foreach (var f in paypalPage.Frames)
+                            {
+                                try
+                                {
+                                    await f.EvaluateAsync(@"() => {
+                                        const inputs = Array.from(document.querySelectorAll('input:not([type=""hidden""]):not([type=""checkbox""]):not([type=""radio""])'));
+                                        for (const inp of inputs) {
+                                            const label = ((inp.getAttribute('aria-label') || '') + ' ' + (inp.placeholder || '') + ' ' + (inp.name || '') + ' ' + (inp.id || '')).toLowerCase();
+                                            if ((label.includes('exp') || label.includes('mm')) && !inp.value) {
+                                                inp.focus();
+                                                inp.value = '12/28';
+                                                inp.dispatchEvent(new Event('input', { bubbles: true }));
+                                                inp.dispatchEvent(new Event('change', { bubbles: true }));
+                                                inp.blur();
+                                            } else if ((label.includes('cvv') || label.includes('security') || label.includes('csc')) && !inp.value) {
+                                                inp.focus();
+                                                inp.value = '123';
+                                                inp.dispatchEvent(new Event('input', { bubbles: true }));
+                                                inp.dispatchEvent(new Event('change', { bubbles: true }));
+                                                inp.blur();
+                                            }
+                                        }
+                                    }");
+                                }
+                                catch { }
+                            }
+
+                            await Task.Delay(500);
+
+                            // 4. Click 'Link Card' button
+                            var linkBtn = targetFrame.Locator("button:has-text('Link Card'), button:has-text('Link card'), button:has-text('Link'), [role='button']:has-text('Link')").Last;
+                            if (await linkBtn.CountAsync() == 0 || !await linkBtn.IsVisibleAsync())
+                                linkBtn = paypalPage.Locator("button:has-text('Link Card'), button:has-text('Link card'), button:has-text('Link'), [role='button']:has-text('Link')").Last;
+
                             if (await linkBtn.CountAsync() > 0 && await linkBtn.IsVisibleAsync())
                             {
                                 TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Clicking 'Link Card' button");
                                 lastActionTime = DateTime.UtcNow;
                                 await linkBtn.ClickAsync(new() { Force = true });
-                                await Task.Delay(4000);
+                                await Task.Delay(5000);
+                                continue;
+                            }
+                            else
+                            {
+                                // Try DOM click on Link Card button in all frames
+                                foreach (var f in paypalPage.Frames)
+                                {
+                                    try
+                                    {
+                                        var clicked = await f.EvaluateAsync<bool>(@"() => {
+                                            const btn = Array.from(document.querySelectorAll('button, [role=""button""]')).find(b => (b.innerText || '').toLowerCase().includes('link'));
+                                            if (btn) { btn.click(); return true; }
+                                            return false;
+                                        }");
+                                        if (clicked)
+                                        {
+                                            TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Clicked Link Card button via DOM evaluate in frame {f.Url}");
+                                            lastActionTime = DateTime.UtcNow;
+                                            await Task.Delay(5000);
+                                            break;
+                                        }
+                                    }
+                                    catch { }
+                                }
                                 continue;
                             }
                         }
@@ -772,6 +837,65 @@ public class PayPalSandboxCheckoutFlow : BaseCheckoutFlow
                 OrderNumber: null,
                 Duration: stopwatch.Elapsed,
                 ErrorMessage: ex.Message);
+        }
+    }
+
+    private async Task EnsurePayLaterProductInCartAsync(IPage page)
+    {
+        try
+        {
+            var slug = !string.IsNullOrWhiteSpace(Settings.PayPal?.PayLaterProductSlug)
+                ? Settings.PayPal.PayLaterProductSlug
+                : "chamomile-and-calendula-face-and-body-balm";
+
+            var productUrl = $"{Settings.BaseUrl.TrimEnd('/')}/{slug.TrimStart('/')}";
+            TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] [PayLater] Navigating to product page to meet £30 Pay Later minimum threshold: {productUrl}");
+            await page.GotoAsync(productUrl, new() { WaitUntil = WaitUntilState.Load });
+            await DismissCookieNotificationAsync(page);
+
+            // If product has attribute dropdowns (e.g. size), select first valid non-empty option
+            var attrSelects = page.Locator("select[name^='product_attribute_']");
+            var selectCount = await attrSelects.CountAsync();
+            for (var i = 0; i < selectCount; i++)
+            {
+                var select = attrSelects.Nth(i);
+                if (await select.IsVisibleAsync())
+                {
+                    var options = await select.Locator("option").AllAsync();
+                    foreach (var opt in options)
+                    {
+                        var val = await opt.GetAttributeAsync("value");
+                        if (!string.IsNullOrWhiteSpace(val) && val != "0")
+                        {
+                            TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] [PayLater] Selecting product attribute value: {val}");
+                            await select.SelectOptionAsync(val);
+                            await Task.Delay(1000);
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // Set quantity to 5 to guarantee subtotal >= £30.00 (e.g. 5 * £8.00 = £40.00)
+            var qtyInput = page.Locator("input.qty-input, input[id^='product_enteredQuantity']").First;
+            if (await qtyInput.CountAsync() > 0 && await qtyInput.IsVisibleAsync())
+            {
+                TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] [PayLater] Setting product quantity to 5");
+                await qtyInput.FillAsync("5");
+                await Task.Delay(500);
+            }
+
+            // Click Add to Cart
+            var addToCartButton = page.Locator(".add-to-cart-button, button[id^='add-to-cart-button']").First;
+            await addToCartButton.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 10000 });
+            TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] [PayLater] Clicking Add to Cart button");
+            await addToCartButton.ClickAsync(new() { Force = true });
+            await Task.Delay(2500);
+        }
+        catch (Exception ex)
+        {
+            TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] [PayLater] Failed to add Pay Later product: {ex.Message}. Falling back to default test product.");
+            await AddTestProductToCartAsync(page);
         }
     }
 }

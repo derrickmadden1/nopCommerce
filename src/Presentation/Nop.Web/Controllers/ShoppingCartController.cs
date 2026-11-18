@@ -1412,7 +1412,7 @@ public partial class ShoppingCartController : BasePublicController
             return Challenge();
         }
 
-        return RedirectToRoute(NopRouteNames.Standard.LOGIN_CHECKOUT_AS_GUEST, new { returnUrl = Url.RouteUrl(NopRouteNames.General.CART) });
+        return RedirectToRoute(NopRouteNames.Standard.LOGIN_CHECKOUT_AS_GUEST, new { returnUrl = Url.RouteUrl(NopRouteNames.Standard.CHECKOUT) });
     }
 
     [HttpPost, ActionName("Cart")]

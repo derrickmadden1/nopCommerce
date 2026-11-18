@@ -1,4 +1,4 @@
-﻿using System.Text.Encodings.Web;
+using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Primitives;
 using Newtonsoft.Json;
@@ -84,6 +84,7 @@ public partial class CustomerController : BasePublicController
     protected readonly IPictureService _pictureService;
     protected readonly IPriceFormatter _priceFormatter;
     protected readonly IProductService _productService;
+    protected readonly IShoppingCartService _shoppingCartService;
     protected readonly ISmsService _smsService;
     protected readonly IStateProvinceService _stateProvinceService;
     protected readonly IStoreContext _storeContext;
@@ -137,6 +138,7 @@ public partial class CustomerController : BasePublicController
         IPictureService pictureService,
         IPriceFormatter priceFormatter,
         IProductService productService,
+        IShoppingCartService shoppingCartService,
         ISmsService smsService,
         IStateProvinceService stateProvinceService,
         IStoreContext storeContext,
@@ -185,6 +187,7 @@ public partial class CustomerController : BasePublicController
         _pictureService = pictureService;
         _priceFormatter = priceFormatter;
         _productService = productService;
+        _shoppingCartService = shoppingCartService;
         _smsService = smsService;
         _stateProvinceService = stateProvinceService;
         _storeContext = storeContext;
@@ -1027,6 +1030,8 @@ public partial class CustomerController : BasePublicController
 
         if (await _customerService.IsRegisteredAsync(customer))
         {
+            var prevCustomer = customer;
+
             //Already registered customer. 
             await _authenticationService.SignOutAsync();
 
@@ -1037,6 +1042,9 @@ public partial class CustomerController : BasePublicController
 
             //Save a new record
             await _workContext.SetCurrentCustomerAsync(customer);
+
+            //migrate shopping cart from previous customer
+            await _shoppingCartService.MigrateShoppingCartAsync(prevCustomer, customer, true);
         }
 
         customer.RegisteredInStoreId = store.Id;
@@ -1334,8 +1342,18 @@ public partial class CustomerController : BasePublicController
                                 returnUrl = Url.RouteUrl(NopRouteNames.Standard.OTP_PHONE_VERIFICATION,
                                     new { typeId = (int)PhoneVerificationFlowEnum.RegisterStandard, returnUrl });
                             else
-                                returnUrl = Url.RouteUrl(NopRouteNames.Standard.REGISTER_RESULT,
-                                    new { resultId = (int)UserRegistrationType.Standard, returnUrl });
+                            {
+                                var isCheckoutReturnUrl = !string.IsNullOrEmpty(returnUrl) &&
+                                    Url.IsLocalUrl(returnUrl) &&
+                                    (returnUrl.Contains("checkout", StringComparison.OrdinalIgnoreCase) ||
+                                     returnUrl.Equals(Url.RouteUrl(NopRouteNames.Standard.CHECKOUT), StringComparison.OrdinalIgnoreCase));
+
+                                if (!isCheckoutReturnUrl)
+                                {
+                                    returnUrl = Url.RouteUrl(NopRouteNames.Standard.REGISTER_RESULT,
+                                        new { resultId = (int)UserRegistrationType.Standard, returnUrl });
+                                }
+                            }
 
                             return await _customerRegistrationService.SignInCustomerAsync(customer, returnUrl, true);
 

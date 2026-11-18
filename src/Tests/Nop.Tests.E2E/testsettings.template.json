@@ -26,7 +26,8 @@
     },
     "PayPal": {
       "SandboxBuyerEmail": "",
-      "SandboxBuyerPassword": ""
+      "SandboxBuyerPassword": "",
+      "PayLaterProductSlug": "chamomile-and-calendula-face-and-body-balm"
     }
   }
 }
