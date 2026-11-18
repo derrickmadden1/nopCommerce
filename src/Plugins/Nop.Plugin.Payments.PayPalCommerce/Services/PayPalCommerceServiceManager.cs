@@ -1327,7 +1327,7 @@ public class PayPalCommerceServiceManager
                 DisableFunding = settings.DisabledFunding,
                 Vault = settings.UseVault && !isGuest,
                 Debug = false,
-                //BuyerCountry = null,    //PayPal auto detects this
+                BuyerCountry = settings.UseSandbox ? (currencyCode.Equals("GBP", StringComparison.OrdinalIgnoreCase) ? "GB" : (currencyCode.Equals("USD", StringComparison.OrdinalIgnoreCase) ? "US" : null)) : null,
                 //Locale = null,          //PayPal auto detects this
                 //IntegrationDate = null  //defaults to the date when client ID was created
             };

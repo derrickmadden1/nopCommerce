@@ -939,22 +939,32 @@ else
 
     async function getGooglePayConfig() {
         if (!googlePayConfig) {
-            googlePayConfig = await paypal.Googlepay().config();
+            try {
+                googlePayConfig = await paypal.Googlepay().config();
+            } catch (err) {
+                console.warn('GooglePay config unavailable:', err);
+                return { allowedPaymentMethods: [], merchantInfo: {} };
+            }
         }
-        var allowedPaymentMethods = googlePayConfig.allowedPaymentMethods;
-        var merchantInfo = googlePayConfig.merchantInfo;
+        var allowedPaymentMethods = googlePayConfig?.allowedPaymentMethods || [];
+        var merchantInfo = googlePayConfig?.merchantInfo || {};
         return { allowedPaymentMethods, merchantInfo };
     }
 
     async function onGooglePayLoaded() {
-        var { allowedPaymentMethods } = await getGooglePayConfig();
-        var isReadyToPayRequest = { apiVersion: 2, apiVersionMinor: 0, allowedPaymentMethods: allowedPaymentMethods };
-        var paymentsClient = getGooglePayClient();
-        paymentsClient.isReadyToPay(isReadyToPayRequest).then(response => {
-            if (response.result) {
-                addGooglePayButton();
-            }
-        });
+        try {
+            var { allowedPaymentMethods } = await getGooglePayConfig();
+            if (!allowedPaymentMethods || allowedPaymentMethods.length === 0) return;
+            var isReadyToPayRequest = { apiVersion: 2, apiVersionMinor: 0, allowedPaymentMethods: allowedPaymentMethods };
+            var paymentsClient = getGooglePayClient();
+            paymentsClient.isReadyToPay(isReadyToPayRequest).then(response => {
+                if (response.result) {
+                    addGooglePayButton();
+                }
+            });
+        } catch (e) {
+            console.warn('onGooglePayLoaded unavailable:', e);
+        }
     }
 
     function addGooglePayButton() {

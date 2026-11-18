@@ -56,7 +56,7 @@
                     var checkoutUrl = "";
                     if (Model.AnonymousCheckoutAllowed && Model.CurrentCustomerIsGuest)
                     {
-                        checkoutUrl = Url.RouteUrl(NopRouteNames.Standard.LOGIN_CHECKOUT_AS_GUEST, new { returnUrl = Url.RouteUrl(NopRouteNames.General.CART) });
+                        checkoutUrl = Url.RouteUrl(NopRouteNames.Standard.LOGIN_CHECKOUT_AS_GUEST, new { returnUrl = Url.RouteUrl(NopRouteNames.Standard.CHECKOUT) });
                     }
                     else
                     {
