@@ -2192,14 +2192,14 @@ public class PayPalCommerceServiceManager
                     .GetStateProvinceByAbbreviationAsync(shippingAddress.AdminArea1, shippingCountry?.Id);
 
                 var shippingName = shipping.Name?.FullName;
-                var shippingFirstName = payerFirstName 
-                    ?? (shippingName?.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault()) 
-                    ?? customer.FirstName;
-                var shippingLastName = payerLastName 
-                    ?? (shippingName?.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length > 1 
+                var shippingFirstName = (shippingName?.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault()) 
+                    ?? customer.FirstName
+                    ?? payerFirstName;
+                var shippingLastName = (shippingName?.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length > 1 
                         ? string.Join(" ", shippingName.Split(' ', StringSplitOptions.RemoveEmptyEntries).Skip(1)) 
                         : null) 
-                    ?? customer.LastName;
+                    ?? customer.LastName
+                    ?? payerLastName;
 
                 var newShippingAddress = await PrepareCustomerAddressAsync(customer, new()
                 {
