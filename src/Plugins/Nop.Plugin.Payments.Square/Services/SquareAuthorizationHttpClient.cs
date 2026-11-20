@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using Microsoft.Net.Http.Headers;
 using Newtonsoft.Json;
 using Nop.Core;
@@ -55,6 +55,8 @@ public class SquareAuthorizationHttpClient
         try
         {
             var settings = await _settingService.LoadSettingAsync<SquarePaymentSettings>(storeId);
+            if ((string.IsNullOrEmpty(settings.ApplicationId) || string.IsNullOrEmpty(settings.ApplicationSecret)) && storeId != 0)
+                settings = await _settingService.LoadSettingAsync<SquarePaymentSettings>(0);
 
             //get response
             var request = new ObtainAccessTokenRequest
@@ -70,8 +72,10 @@ public class SquareAuthorizationHttpClient
 
             var response = await _httpClient.SendAsync(httpRequest);
 
-            //return received access token
             var responseContent = await response.Content.ReadAsStringAsync();
+            if (!response.IsSuccessStatusCode)
+                throw new NopException($"Square authorization request failed with status {(int)response.StatusCode} ({response.StatusCode}): {responseContent}");
+
             var accessTokenResponse = JsonConvert.DeserializeObject<ObtainAccessTokenResponse>(responseContent);
             return (accessTokenResponse?.AccessToken, accessTokenResponse?.RefreshToken);
         }
@@ -92,6 +96,15 @@ public class SquareAuthorizationHttpClient
         try
         {
             var settings = await _settingService.LoadSettingAsync<SquarePaymentSettings>(storeId);
+            if (string.IsNullOrEmpty(settings.RefreshToken) && storeId != 0)
+            {
+                var globalSettings = await _settingService.LoadSettingAsync<SquarePaymentSettings>(0);
+                if (!string.IsNullOrEmpty(globalSettings.RefreshToken))
+                    settings = globalSettings;
+            }
+
+            if (string.IsNullOrEmpty(settings.RefreshToken))
+                throw new NopException("Square refresh token is empty. Please click 'Obtain access token' in the Square plugin configuration.");
 
             //get response
             var request = new ObtainAccessTokenRequest
@@ -107,8 +120,10 @@ public class SquareAuthorizationHttpClient
 
             var response = await _httpClient.SendAsync(httpRequest);
 
-            //return received access token
             var responseContent = await response.Content.ReadAsStringAsync();
+            if (!response.IsSuccessStatusCode)
+                throw new NopException($"Square token renewal request failed with status {(int)response.StatusCode} ({response.StatusCode}): {responseContent}");
+
             var accessTokenResponse = JsonConvert.DeserializeObject<ObtainAccessTokenResponse>(responseContent);
             return (accessTokenResponse?.AccessToken, accessTokenResponse?.RefreshToken);
         }

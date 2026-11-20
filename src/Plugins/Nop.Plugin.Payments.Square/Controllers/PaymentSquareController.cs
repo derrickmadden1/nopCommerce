@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Nop.Core;
 using Nop.Plugin.Payments.Square.Domain;
@@ -8,6 +8,7 @@ using Nop.Services.Configuration;
 using Nop.Services.Localization;
 using Nop.Services.Messages;
 using Nop.Services.Security;
+using Nop.Services.Stores;
 using Nop.Web.Framework;
 using Nop.Web.Framework.Controllers;
 using Nop.Web.Framework.Mvc.Filters;
@@ -24,6 +25,7 @@ public class PaymentSquareController : BasePaymentController
     private readonly IPermissionService _permissionService;
     private readonly ISettingService _settingService;
     private readonly IStoreContext _storeContext;
+    private readonly IStoreService _storeService;
     private readonly SquarePaymentManager _squarePaymentManager;
 
     #endregion
@@ -35,6 +37,7 @@ public class PaymentSquareController : BasePaymentController
         IPermissionService permissionService,
         ISettingService settingService,
         IStoreContext storeContext,
+        IStoreService storeService,
         SquarePaymentManager squarePaymentManager)
     {
         _localizationService = localizationService;
@@ -42,6 +45,7 @@ public class PaymentSquareController : BasePaymentController
         _permissionService = permissionService;
         _settingService = settingService;
         _storeContext = storeContext;
+        _storeService = storeService;
         _squarePaymentManager = squarePaymentManager;
     }
 
@@ -96,7 +100,8 @@ public class PaymentSquareController : BasePaymentController
         //prepare business locations, every payment a merchant processes is associated with one of these locations
         if (!string.IsNullOrEmpty(settings.AccessToken))
         {
-            model.Locations = (await _squarePaymentManager.GetActiveLocationsAsync(storeScope)).Select(location =>
+            var activeLocations = await _squarePaymentManager.GetActiveLocationsAsync(storeScope);
+            model.Locations = activeLocations.Select(location =>
             {
                 var name = location.BusinessName;
                 if (!location.Name.Equals(location.BusinessName))
@@ -108,6 +113,12 @@ public class PaymentSquareController : BasePaymentController
                 var selectLocationText = await _localizationService.GetResourceAsync("Plugins.Payments.Square.Fields.Location.Select");
                 model.Locations.Insert(0, new SelectListItem { Text = selectLocationText, Value = "0" });
             }
+        }
+
+        // if existing location is not in the list (e.g. temporary API failure or token 401), preserve it in the dropdown so it is not lost on save
+        if (!string.IsNullOrEmpty(settings.LocationId) && !settings.LocationId.Equals("0") && !model.Locations.Any(x => x.Value.Equals(settings.LocationId)))
+        {
+            model.Locations.Insert(0, new SelectListItem { Text = $"Current Location ({settings.LocationId})", Value = settings.LocationId, Selected = true });
         }
 
         //add the special item for 'there are no location' with value 0
@@ -163,6 +174,15 @@ public class PaymentSquareController : BasePaymentController
             if (settings.UseSandbox)
                 settings.AccessToken = string.Empty;
         }
+
+        // Prevent wiping an existing valid location if the form posted "0" or empty because the dropdown failed to load from Square
+        if ((string.IsNullOrEmpty(model.LocationId) || model.LocationId.Equals("0"))
+            && !string.IsNullOrEmpty(settings.LocationId) && !settings.LocationId.Equals("0")
+            && model.UseSandbox == settings.UseSandbox)
+        {
+            model.LocationId = settings.LocationId;
+        }
+
         settings.LocationId = model.UseSandbox == settings.UseSandbox ? model.LocationId : string.Empty;
         settings.UseSandbox = model.UseSandbox;
         settings.Use3ds = model.Use3ds;
@@ -246,6 +266,22 @@ public class PaymentSquareController : BasePaymentController
             await _settingService.SaveSettingAsync(settings, x => x.AccessToken, storeScope, false);
             await _settingService.SaveSettingAsync(settings, x => x.RefreshToken, storeScope, false);
 
+            // Synchronize other store scopes so store 0 and individual stores do not hold conflicting/stale tokens
+            var allStores = await _storeService.GetAllStoresAsync();
+            if (storeScope == 0)
+            {
+                foreach (var store in allStores)
+                {
+                    await _settingService.SaveSettingAsync(settings, x => x.AccessToken, store.Id, false);
+                    await _settingService.SaveSettingAsync(settings, x => x.RefreshToken, store.Id, false);
+                }
+            }
+            else if (allStores.Count <= 1)
+            {
+                await _settingService.SaveSettingAsync(settings, x => x.AccessToken, 0, false);
+                await _settingService.SaveSettingAsync(settings, x => x.RefreshToken, 0, false);
+            }
+
             await _settingService.ClearCacheAsync();
 
             _notificationService.SuccessNotification(await _localizationService.GetResourceAsync("Plugins.Payments.Square.ObtainAccessToken.Success"));
@@ -283,7 +319,26 @@ public class PaymentSquareController : BasePaymentController
 
             //if access token successfully revoked, delete it from the settings
             settings.AccessToken = string.Empty;
-            await _settingService.SaveSettingAsync(settings, x => x.AccessToken, storeScope);
+            settings.RefreshToken = string.Empty;
+            await _settingService.SaveSettingAsync(settings, x => x.AccessToken, storeScope, false);
+            await _settingService.SaveSettingAsync(settings, x => x.RefreshToken, storeScope, false);
+
+            var allStores = await _storeService.GetAllStoresAsync();
+            if (storeScope == 0)
+            {
+                foreach (var store in allStores)
+                {
+                    await _settingService.SaveSettingAsync(settings, x => x.AccessToken, store.Id, false);
+                    await _settingService.SaveSettingAsync(settings, x => x.RefreshToken, store.Id, false);
+                }
+            }
+            else if (allStores.Count <= 1)
+            {
+                await _settingService.SaveSettingAsync(settings, x => x.AccessToken, 0, false);
+                await _settingService.SaveSettingAsync(settings, x => x.RefreshToken, 0, false);
+            }
+
+            await _settingService.ClearCacheAsync();
 
             _notificationService.SuccessNotification(await _localizationService.GetResourceAsync("Plugins.Payments.Square.RevokeAccessTokens.Success"));
         }

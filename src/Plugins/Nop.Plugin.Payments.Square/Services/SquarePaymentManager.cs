@@ -19,6 +19,7 @@ public class SquarePaymentManager
 
     private readonly ILogger _logger;
     private readonly ISettingService _settingService;
+    private readonly IStoreContext _storeContext;
     private readonly IWorkContext _workContext;
     private readonly SquareAuthorizationHttpClient _squareAuthorizationHttpClient;
 
@@ -28,11 +29,13 @@ public class SquarePaymentManager
 
     public SquarePaymentManager(ILogger logger,
         ISettingService settingService,
+        IStoreContext storeContext,
         IWorkContext workContext,
         SquareAuthorizationHttpClient squareAuthorizationHttpClient)
     {
         _logger = logger;
         _settingService = settingService;
+        _storeContext = storeContext;
         _workContext = workContext;
         _squareAuthorizationHttpClient = squareAuthorizationHttpClient;
     }
@@ -49,6 +52,27 @@ public class SquarePaymentManager
     private async Task<ISquareClient> CreateSquareClientAsync(int storeId)
     {
         var settings = await _settingService.LoadSettingAsync<SquarePaymentSettings>(storeId);
+
+        // Fallback: if token is empty for requested storeId, check fallback store scopes
+        if (string.IsNullOrEmpty(settings.AccessToken))
+        {
+            if (storeId == 0)
+            {
+                var currentStoreId = (await _storeContext.GetCurrentStoreAsync())?.Id ?? 0;
+                if (currentStoreId > 0)
+                {
+                    var storeSettings = await _settingService.LoadSettingAsync<SquarePaymentSettings>(currentStoreId);
+                    if (!string.IsNullOrEmpty(storeSettings.AccessToken))
+                        settings = storeSettings;
+                }
+            }
+            else
+            {
+                var globalSettings = await _settingService.LoadSettingAsync<SquarePaymentSettings>(0);
+                if (!string.IsNullOrEmpty(globalSettings.AccessToken))
+                    settings = globalSettings;
+            }
+        }
 
         //validate access token
         if (settings.UseSandbox && string.IsNullOrEmpty(settings.AccessToken))
@@ -134,7 +158,15 @@ public class SquarePaymentManager
         var client = await CreateSquareClientAsync(storeId);
         var settings = await _settingService.LoadSettingAsync<SquarePaymentSettings>(storeId);
 
-        if (string.IsNullOrEmpty(settings.LocationId))
+        // Fallback for LocationId if storeId has no location configured
+        if ((string.IsNullOrEmpty(settings.LocationId) || settings.LocationId == "0") && storeId > 0)
+        {
+            var globalSettings = await _settingService.LoadSettingAsync<SquarePaymentSettings>(0);
+            if (!string.IsNullOrEmpty(globalSettings.LocationId) && globalSettings.LocationId != "0")
+                settings.LocationId = globalSettings.LocationId;
+        }
+
+        if (string.IsNullOrEmpty(settings.LocationId) || settings.LocationId == "0")
             return null;
 
         try
