@@ -6928,6 +6928,12 @@ iframe[src*="songbird"] {
    DYNAMIC DUAL PREVIEW SHOWCASE
    ========================================================================== */
 
+.picture-gallery:has(.dynamic-dual-showcase) .picture > a,
+.picture-gallery:has(.dynamic-dual-showcase) .picture > img:not(.dual-card-img),
+.picture-gallery:has(.dynamic-dual-showcase) .picture-thumbs-wrapper {
+  display: none !important;
+}
+
 .dynamic-dual-showcase {
   width: 100%;
   max-width: 580px;

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Nop.Core.Domain.Catalog;
 using Nop.Plugin.DiscountRules.MultiBuy.Services;
 using Nop.Services.Catalog;
+using Nop.Services.Common;
 using Nop.Services.Configuration;
 using Nop.Services.Discounts;
 using Nop.Services.Seo;
@@ -17,6 +18,7 @@ public class MultiBuyBundleSyncService
 
     private readonly ICategoryService _categoryService;
     private readonly IDiscountService _discountService;
+    private readonly IGenericAttributeService _genericAttributeService;
     private readonly IProductAttributeService _productAttributeService;
     private readonly IProductService _productService;
     private readonly ISettingService _settingService;
@@ -29,6 +31,7 @@ public class MultiBuyBundleSyncService
     public MultiBuyBundleSyncService(
         ICategoryService categoryService,
         IDiscountService discountService,
+        IGenericAttributeService genericAttributeService,
         IProductAttributeService productAttributeService,
         IProductService productService,
         ISettingService settingService,
@@ -36,6 +39,7 @@ public class MultiBuyBundleSyncService
     {
         _categoryService = categoryService;
         _discountService = discountService;
+        _genericAttributeService = genericAttributeService;
         _productAttributeService = productAttributeService;
         _productService = productService;
         _settingService = settingService;
@@ -176,6 +180,12 @@ public class MultiBuyBundleSyncService
                 IsFeaturedProduct = false,
                 DisplayOrder = 1
             });
+        }
+
+        // Enable dynamic dual preview for 2-item bundles
+        if (settings.BundleSize == 2)
+        {
+            await _genericAttributeService.SaveAttributeAsync(product, NopCatalogDefaults.DynamicDualPreviewAttribute, true);
         }
 
         // Generate product attributes and associated values

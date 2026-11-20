@@ -643,8 +643,10 @@
                     }
                 });
 
-                if (items.length >= 2 && (items[0].imgUrl || items[1].imgUrl)) {
-                    var $c1 = $('#dual-item-1-@Model.Id');
+                var $c1 = $('#dual-item-1-@Model.Id');
+                var $c2 = $('#dual-item-2-@Model.Id');
+
+                if (items.length > 0) {
                     $c1.find('.dual-card-type').text(items[0].prompt);
                     $c1.find('.dual-card-title').text(items[0].name);
                     if (items[0].imgUrl) {
@@ -653,8 +655,9 @@
                     } else {
                         $c1.find('.dual-card-img-wrap').hide();
                     }
+                }
 
-                    var $c2 = $('#dual-item-2-@Model.Id');
+                if (items.length > 1) {
                     $c2.find('.dual-card-type').text(items[1].prompt);
                     $c2.find('.dual-card-title').text(items[1].name);
                     if (items[1].imgUrl) {
@@ -663,16 +666,12 @@
                     } else {
                         $c2.find('.dual-card-img-wrap').hide();
                     }
-
-                    $('#main-product-img-@Model.Id').hide();
-                    $('#main-product-img-lightbox-anchor-@Model.Id').hide();
-                    $showcase.show();
-                    $('.picture-thumbs .thumb-item').removeClass('active');
-                } else {
-                    $showcase.hide();
-                    $('#main-product-img-@Model.Id').show();
-                    $('#main-product-img-lightbox-anchor-@Model.Id').show();
                 }
+
+                $('#main-product-img-@Model.Id').hide();
+                $('#main-product-img-lightbox-anchor-@Model.Id').hide();
+                $showcase.show();
+                $('.picture-thumbs .thumb-item').removeClass('active');
             }
             </text>
         }
