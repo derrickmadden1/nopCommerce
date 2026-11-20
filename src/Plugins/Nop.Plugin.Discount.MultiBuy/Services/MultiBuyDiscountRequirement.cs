@@ -47,6 +47,12 @@ namespace Nop.Plugin.DiscountRules.MultiBuy.Services
             await _localizationService.AddOrUpdateLocaleResourceAsync("Plugins.DiscountRules.MultiBuy.Fields.Products", "Restricted products");
             await _localizationService.AddOrUpdateLocaleResourceAsync("Plugins.DiscountRules.MultiBuy.Fields.BundleType", "Bundle type");
             await _localizationService.AddOrUpdateLocaleResourceAsync("Plugins.DiscountRules.MultiBuy.Fields.BundleType.Hint", "Select 'Any' to let customers mix & match eligible items, or 'All' to require every eligible item to be purchased together as a complete bundle.");
+            await _localizationService.AddOrUpdateLocaleResourceAsync("Plugins.DiscountRules.MultiBuy.Fields.BundledProduct", "Linked bundle product");
+            await _localizationService.AddOrUpdateLocaleResourceAsync("Plugins.DiscountRules.MultiBuy.Fields.BundledProduct.Hint", "Choose a customizable bundle product from the catalog linked to this MultiBuy discount offer.");
+            await _localizationService.AddOrUpdateLocaleResourceAsync("Plugins.DiscountRules.MultiBuy.Fields.TargetCategory", "Target category");
+            await _localizationService.AddOrUpdateLocaleResourceAsync("Plugins.DiscountRules.MultiBuy.Fields.TargetCategory.Hint", "Select the category (e.g. 'Offers') to which the bundle product will be assigned.");
+            await _localizationService.AddOrUpdateLocaleResourceAsync("Plugins.DiscountRules.MultiBuy.Fields.AttributePromptTemplate", "Attribute prompt template");
+            await _localizationService.AddOrUpdateLocaleResourceAsync("Plugins.DiscountRules.MultiBuy.Fields.AttributePromptTemplate.Hint", "Template for the attribute prompts. Use {0} as a placeholder for the item number (e.g. 'Choose Item {0}').");
 
             await base.InstallAsync();
         }
@@ -57,6 +63,12 @@ namespace Nop.Plugin.DiscountRules.MultiBuy.Services
             await _localizationService.DeleteLocaleResourceAsync("Plugins.DiscountRules.MultiBuy.Fields.Products");
             await _localizationService.DeleteLocaleResourceAsync("Plugins.DiscountRules.MultiBuy.Fields.BundleType");
             await _localizationService.DeleteLocaleResourceAsync("Plugins.DiscountRules.MultiBuy.Fields.BundleType.Hint");
+            await _localizationService.DeleteLocaleResourceAsync("Plugins.DiscountRules.MultiBuy.Fields.BundledProduct");
+            await _localizationService.DeleteLocaleResourceAsync("Plugins.DiscountRules.MultiBuy.Fields.BundledProduct.Hint");
+            await _localizationService.DeleteLocaleResourceAsync("Plugins.DiscountRules.MultiBuy.Fields.TargetCategory");
+            await _localizationService.DeleteLocaleResourceAsync("Plugins.DiscountRules.MultiBuy.Fields.TargetCategory.Hint");
+            await _localizationService.DeleteLocaleResourceAsync("Plugins.DiscountRules.MultiBuy.Fields.AttributePromptTemplate");
+            await _localizationService.DeleteLocaleResourceAsync("Plugins.DiscountRules.MultiBuy.Fields.AttributePromptTemplate.Hint");
             
             await base.UninstallAsync();
         }

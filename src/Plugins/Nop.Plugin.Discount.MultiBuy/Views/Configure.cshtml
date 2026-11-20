@@ -11,6 +11,9 @@
             var bundlesize = $("#@Html.IdFor(model => model.BundleSize)").val();
             var bundleprice = $("#@Html.IdFor(model => model.BundlePrice)").val();
             var applyacrossmixedproducts = $("#@Html.IdFor(model => model.ApplyAcrossMixedProducts)").is(':checked');
+            var bundledproductid = $("#@Html.IdFor(model => model.BundledProductId)").val();
+            var targetcategoryid = $("#@Html.IdFor(model => model.TargetCategoryId)").val();
+            var prompttemplate = $("#@Html.IdFor(model => model.AttributePromptTemplate)").val();
             var discountId = @Model.DiscountId;
             var requirementId = @Model.RequirementId;
 
@@ -24,6 +27,9 @@
             postData[prefix + "BundleSize"] = bundlesize;
             postData[prefix + "BundlePrice"] = bundleprice;
             postData[prefix + "ApplyAcrossMixedProducts"] = applyacrossmixedproducts;
+            postData[prefix + "BundledProductId"] = bundledproductid;
+            postData[prefix + "TargetCategoryId"] = targetcategoryid;
+            postData[prefix + "AttributePromptTemplate"] = prompttemplate;
             addAntiForgeryToken(postData);
 
             $.ajax({
@@ -115,6 +121,80 @@
 
 <div class="form-group row">
     <div class="col-md-3 requirement-label-col">
+        <nop-label asp-for="TargetCategoryId" />
+    </div>
+    <div class="col-md-9 requirement-data-col">
+        <div class="requirement-data-input">
+            <nop-select asp-for="TargetCategoryId" asp-items="Model.AvailableCategories" />
+        </div>
+    </div>
+</div>
+
+<div class="form-group row">
+    <div class="col-md-3 requirement-label-col">
+        <nop-label asp-for="AttributePromptTemplate" />
+    </div>
+    <div class="col-md-9 requirement-data-col">
+        <div class="requirement-data-input">
+            <nop-editor asp-for="AttributePromptTemplate" />
+        </div>
+    </div>
+</div>
+
+<div class="form-group row">
+    <div class="col-md-3 requirement-label-col">
+        <nop-label asp-for="BundledProductId" />
+    </div>
+    <div class="col-md-9 requirement-data-col">
+        <div class="requirement-data-input">
+            @if (Model.BundledProductId > 0)
+            {
+                <input type="hidden" asp-for="BundledProductId" />
+                <div class="alert alert-info d-flex align-items-center justify-content-between p-2 mb-2" id="linkedBundleProductInfo@(Model.RequirementId)">
+                    <div>
+                        <strong>Linked Bundle Product:</strong>
+                        <a href="@Url.Action("Edit", "Product", new { id = Model.BundledProductId })" target="_blank" class="font-weight-bold ml-1">
+                            @(string.IsNullOrEmpty(Model.BundledProductName) ? $"Product #{Model.BundledProductId}" : Model.BundledProductName)
+                        </a>
+                        <span class="badge @(Model.BundledProductPublished ? "bg-success text-white" : "bg-warning text-dark") ml-2">
+                            @(Model.BundledProductPublished ? "Published" : "Draft (Unpublished)")
+                        </span>
+                    </div>
+                    <div class="btn-group btn-group-sm">
+                        <button type="button" class="btn btn-default btn-sm" id="btnSyncBundleProduct@(Model.RequirementId)" title="Sync attributes and price now">
+                            <i class="fas fa-sync-alt"></i> Sync Now
+                        </button>
+                        <button type="button" class="btn btn-danger btn-sm" id="btnUnlinkBundleProduct@(Model.RequirementId)" title="Unlink bundle product">
+                            <i class="fas fa-unlink"></i> Unlink
+                        </button>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="input-group">
+                    <nop-editor asp-for="BundledProductId" />
+                    @if (Model.RequirementId > 0)
+                    {
+                        <div class="input-group-btn input-group-append">
+                            <button type="button" id="btnCreateBundleProduct@(Model.RequirementId)" class="btn btn-success">
+                                <i class="fas fa-magic"></i> Create New Bundle Product
+                            </button>
+                        </div>
+                    }
+                </div>
+                @if (Model.RequirementId == 0)
+                {
+                    <span class="text-muted small">Save this requirement first, then you can create or link a bundle product.</span>
+                }
+            }
+            <div id="bundle-action-msg@(Model.RequirementId)" class="small margin-t-5" style="display:none;"></div>
+        </div>
+    </div>
+</div>
+
+<div class="form-group row">
+    <div class="col-md-3 requirement-label-col">
         <nop-label asp-for="ProductIds" />
     </div>
     <div class="col-md-9 requirement-data-col">
@@ -148,6 +228,134 @@
     </div>
 </div>
 <nop-alert asp-alert-id="saveMultiBuyrequirementAlert" />
+
+<script type="text/javascript">
+    $(function() {
+        $('#btnCreateBundleProduct@(Model.RequirementId)').on("click", function() {
+            var $btn = $(this);
+            $btn.prop('disabled', true);
+            var $msg = $('#bundle-action-msg@(Model.RequirementId)');
+            $msg.removeClass('text-danger text-success').addClass('text-info').text('Creating bundle product and generating attributes...').show();
+
+            // First ensure current form settings (price, eligible products, etc.) are saved
+            var productIds = $("#@Html.IdFor(model => model.ProductIds)").val();
+            var bundletypeid = $("#@Html.IdFor(model => model.BundleTypeId)").val();
+            var bundlesize = $("#@Html.IdFor(model => model.BundleSize)").val();
+            var bundleprice = $("#@Html.IdFor(model => model.BundlePrice)").val();
+            var applyacrossmixedproducts = $("#@Html.IdFor(model => model.ApplyAcrossMixedProducts)").is(':checked');
+            var targetcategoryid = $("#@Html.IdFor(model => model.TargetCategoryId)").val();
+            var prompttemplate = $("#@Html.IdFor(model => model.AttributePromptTemplate)").val();
+
+            var prefix = "DiscountRulesMultiBuy" + @Model.RequirementId + ".";
+            var postData = {
+                DiscountId: @Model.DiscountId,
+                RequirementId: @Model.RequirementId
+            };
+            postData[prefix + "ProductIds"] = productIds;
+            postData[prefix + "BundleTypeId"] = bundletypeid;
+            postData[prefix + "BundleSize"] = bundlesize;
+            postData[prefix + "BundlePrice"] = bundleprice;
+            postData[prefix + "ApplyAcrossMixedProducts"] = applyacrossmixedproducts;
+            postData[prefix + "TargetCategoryId"] = targetcategoryid;
+            postData[prefix + "AttributePromptTemplate"] = prompttemplate;
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("Configure", "DiscountRulesMultiBuy"))",
+                data: postData,
+                success: function() {
+                    // Now create bundle product
+                    var createData = {
+                        discountId: @Model.DiscountId,
+                        requirementId: @Model.RequirementId,
+                        targetCategoryId: targetcategoryid,
+                        promptTemplate: prompttemplate
+                    };
+                    addAntiForgeryToken(createData);
+
+                    $.ajax({
+                        cache: false,
+                        type: "POST",
+                        url: "@(Url.Action("CreateBundleProduct", "DiscountRulesMultiBuy"))",
+                        data: createData,
+                        success: function(resp) {
+                            $msg.removeClass('text-info text-danger').addClass('text-success').text('Bundle product created successfully! Reloading...');
+                            setTimeout(function() {
+                                $("#discountRequirementContainer").trigger('nopnewdiscountruleadded', [@Model.RequirementId]);
+                            }, 500);
+                        },
+                        error: function(err) {
+                            $btn.prop('disabled', false);
+                            $msg.removeClass('text-info text-success').addClass('text-danger').text('Failed to create bundle product.');
+                        }
+                    });
+                },
+                error: function() {
+                    $btn.prop('disabled', false);
+                    $msg.removeClass('text-info text-success').addClass('text-danger').text('Please verify discount requirement settings and try again.');
+                }
+            });
+        });
+
+        $('#btnUnlinkBundleProduct@(Model.RequirementId)').on("click", function() {
+            if (!confirm('Are you sure you want to unlink this bundle product? The product will be kept in the catalog as Draft (Unpublished).'))
+                return;
+
+            var $btn = $(this);
+            $btn.prop('disabled', true);
+            var $msg = $('#bundle-action-msg@(Model.RequirementId)');
+            $msg.removeClass('text-danger text-success').addClass('text-info').text('Unlinking...').show();
+
+            var postData = {
+                requirementId: @Model.RequirementId
+            };
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("UnlinkBundleProduct", "DiscountRulesMultiBuy"))",
+                data: postData,
+                success: function() {
+                    $("#discountRequirementContainer").trigger('nopnewdiscountruleadded', [@Model.RequirementId]);
+                },
+                error: function() {
+                    $btn.prop('disabled', false);
+                    $msg.removeClass('text-info text-success').addClass('text-danger').text('Failed to unlink bundle product.');
+                }
+            });
+        });
+
+        $('#btnSyncBundleProduct@(Model.RequirementId)').on("click", function() {
+            var $btn = $(this);
+            $btn.prop('disabled', true);
+            var $msg = $('#bundle-action-msg@(Model.RequirementId)');
+            $msg.removeClass('text-danger text-success').addClass('text-info').text('Syncing bundle product...').show();
+
+            var postData = {
+                requirementId: @Model.RequirementId
+            };
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("SyncBundleProduct", "DiscountRulesMultiBuy"))",
+                data: postData,
+                success: function() {
+                    $btn.prop('disabled', false);
+                    $msg.removeClass('text-info text-danger').addClass('text-success').text('Bundle product synced successfully!').delay(3000).fadeOut();
+                },
+                error: function() {
+                    $btn.prop('disabled', false);
+                    $msg.removeClass('text-info text-success').addClass('text-danger').text('Failed to sync bundle product.');
+                }
+            });
+        });
+    });
+</script>
 
 <script type="text/javascript">
     $(function() {
