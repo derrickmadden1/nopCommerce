@@ -549,19 +549,21 @@ public class SquarePaymentMethod : BasePlugin, IPaymentMethod
     /// </returns>
     public async Task<bool> HidePaymentMethodAsync(IList<ShoppingCartItem> cart)
     {
-        var storeId = (await _storeContext.GetCurrentStoreAsync()).Id;
+        var store = await _storeContext.GetCurrentStoreAsync();
+        var storeId = store?.Id ?? 0;
         var settings = await _settingService.LoadSettingAsync<SquarePaymentSettings>(storeId);
 
         // Fallback to Store 0 if not configured per-store
-        if (string.IsNullOrEmpty(settings.AccessToken) && storeId > 0)
+        if (string.IsNullOrEmpty(settings?.AccessToken) && storeId > 0)
         {
             var globalSettings = await _settingService.LoadSettingAsync<SquarePaymentSettings>(0);
-            if (!string.IsNullOrEmpty(globalSettings.AccessToken))
+            if (!string.IsNullOrEmpty(globalSettings?.AccessToken))
                 settings = globalSettings;
         }
 
         // Hide if core credentials or location are missing
-        if (string.IsNullOrEmpty(settings.ApplicationId) 
+        if (settings == null
+            || string.IsNullOrEmpty(settings.ApplicationId) 
             || string.IsNullOrEmpty(settings.AccessToken) 
             || string.IsNullOrEmpty(settings.LocationId) 
             || settings.LocationId.Equals("0"))
@@ -570,15 +572,18 @@ public class SquarePaymentMethod : BasePlugin, IPaymentMethod
         }
 
         // Check whether active location can be successfully retrieved from Square
-        try
+        if (_squarePaymentManager != null)
         {
-            var location = await _squarePaymentManager.GetSelectedActiveLocationAsync(storeId);
-            if (location == null)
+            try
+            {
+                var location = await _squarePaymentManager.GetSelectedActiveLocationAsync(storeId);
+                if (location == null)
+                    return true;
+            }
+            catch
+            {
                 return true;
-        }
-        catch
-        {
-            return true;
+            }
         }
 
         return false;
