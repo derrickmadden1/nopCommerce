@@ -2,6 +2,7 @@
 
 @using Nop.Core
 @using Nop.Core.Domain.Catalog
+@using Nop.Core.Domain.Orders
 @using Nop.Core.Domain.Seo
 @using Nop.Services.Html
 
@@ -79,13 +80,6 @@
                         }
 
                         <div class="product-actions-section">
-                            <!--attributes-->
-                            @{
-                                var dataDictAttributes = new ViewDataDictionary(ViewData);
-                                dataDictAttributes.TemplateInfo.HtmlFieldPrefix = $"attributes_{Model.Id}";
-                                @await Html.PartialAsync("_ProductAttributes", Model, dataDictAttributes)
-                            }
-                            
                             <!--add to cart-->
                             @if (Model.ComingSoon)
                             {
@@ -104,6 +98,22 @@
                                 var dataDictAddToCart = new ViewDataDictionary(ViewData);
                                 dataDictAddToCart.TemplateInfo.HtmlFieldPrefix = $"addtocart_{Model.Id}";
                                 @await Html.PartialAsync("_AddToCart", Model.AddToCart, dataDictAddToCart)
+                            }
+
+                            <!--attributes-->
+                            @{
+                                var dataDictAttributes = new ViewDataDictionary(ViewData);
+                                dataDictAttributes.TemplateInfo.HtmlFieldPrefix = $"attributes_{Model.Id}";
+                                @await Html.PartialAsync("_ProductAttributes", Model, dataDictAttributes)
+                            }
+
+                            @if (Model.ProductAttributes.Count > 0 && !Model.ComingSoon && !Model.AddToCart.DisableBuyButton)
+                            {
+                                <div class="add-to-cart add-to-cart-bottom" style="margin-top: 25px;">
+                                    <button type="button" class="button-1 add-to-cart-button" onclick="$('#add-to-cart-button-@Model.Id').trigger('click');">
+                                        @(Model.AddToCart.UpdatedShoppingCartItemId > 0 && Model.AddToCart.UpdateShoppingCartItemType.HasValue && Model.AddToCart.UpdateShoppingCartItemType.Value == ShoppingCartType.ShoppingCart ? T("ShoppingCart.AddToCart.Update").Text : T("ShoppingCart.AddToCart").Text)
+                                    </button>
+                                </div>
                             }
                         </div>
 

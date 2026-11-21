@@ -65,6 +65,18 @@ public class PayPalSandboxCheckoutFlow : BaseCheckoutFlow
             await page.GotoAsync(cartUrl, new() { WaitUntil = WaitUntilState.DOMContentLoaded });
             await DismissCookieNotificationAsync(page);
 
+            if (FundingSource == PayPalFundingSource.PayLater)
+            {
+                var emptyCart = page.Locator(".order-summary-content .no-data");
+                if (await emptyCart.CountAsync() > 0 && await emptyCart.IsVisibleAsync())
+                {
+                    TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Cart is empty, re-adding Pay Later items to meet threshold...");
+                    await AddTestProductToCartWithHighQuantityAsync(page);
+                    await page.GotoAsync(cartUrl, new() { WaitUntil = WaitUntilState.DOMContentLoaded });
+                    await DismissCookieNotificationAsync(page);
+                }
+            }
+
             var termsCheckbox = page.Locator("#termsofservice");
             if (await termsCheckbox.CountAsync() > 0)
             {
@@ -885,17 +897,87 @@ public class PayPalSandboxCheckoutFlow : BaseCheckoutFlow
                 await Task.Delay(500);
             }
 
-            // Click Add to Cart
+            // Click Add to Cart and await completion
             var addToCartButton = page.Locator(".add-to-cart-button, button[id^='add-to-cart-button']").First;
             await addToCartButton.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 10000 });
             TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] [PayLater] Clicking Add to Cart button");
+
+            var responseTask = page.WaitForResponseAsync(
+                r => r.Url.Contains("/addproducttocart/") && r.Status == 200,
+                new() { Timeout = 10000 });
+
             await addToCartButton.ClickAsync(new() { Force = true });
-            await Task.Delay(2500);
+
+            try
+            {
+                await responseTask;
+            }
+            catch
+            {
+                await Task.Delay(2500);
+            }
+
+            var notification = page.Locator("#bar-notification .bar-notification.success");
+            try
+            {
+                await notification.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 5000 });
+            }
+            catch { }
         }
         catch (Exception ex)
         {
-            TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] [PayLater] Failed to add Pay Later product: {ex.Message}. Falling back to default test product.");
-            await AddTestProductToCartAsync(page);
+            TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] [PayLater] Failed to add Pay Later product: {ex.Message}. Falling back to high quantity test product.");
+            await AddTestProductToCartWithHighQuantityAsync(page);
+        }
+    }
+
+    private async Task AddTestProductToCartWithHighQuantityAsync(IPage page)
+    {
+        try
+        {
+            var productUrl = $"{Settings.BaseUrl.TrimEnd('/')}/{Settings.TestProductSlug.TrimStart('/')}";
+            TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] [PayLater] Adding test product '{Settings.TestProductSlug}' with high quantity to satisfy £30 Pay Later threshold: {productUrl}");
+            await page.GotoAsync(productUrl, new() { WaitUntil = WaitUntilState.Load });
+            await DismissCookieNotificationAsync(page);
+
+            // Set quantity to 3500 (at £0.01 = £35.00, satisfying £30 threshold)
+            var qtyInput = page.Locator("input.qty-input, input[id^='product_enteredQuantity']").First;
+            if (await qtyInput.CountAsync() > 0 && await qtyInput.IsVisibleAsync())
+            {
+                TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] [PayLater] Setting product quantity to 3500");
+                await qtyInput.FillAsync("3500");
+                await Task.Delay(500);
+            }
+
+            var addToCartButton = page.Locator(".add-to-cart-button, button[id^='add-to-cart-button']").First;
+            await addToCartButton.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 10000 });
+            TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] [PayLater] Clicking Add to Cart button");
+
+            var responseTask = page.WaitForResponseAsync(
+                r => r.Url.Contains("/addproducttocart/") && r.Status == 200,
+                new() { Timeout = 10000 });
+
+            await addToCartButton.ClickAsync(new() { Force = true });
+
+            try
+            {
+                await responseTask;
+            }
+            catch
+            {
+                await Task.Delay(2500);
+            }
+
+            var notification = page.Locator("#bar-notification .bar-notification.success");
+            try
+            {
+                await notification.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 5000 });
+            }
+            catch { }
+        }
+        catch (Exception ex)
+        {
+            TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] [PayLater] AddTestProductToCartWithHighQuantityAsync failed: {ex.Message}");
         }
     }
 }

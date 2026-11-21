@@ -845,6 +845,10 @@ h6 {
   color: var(--dark-grey, #333);
 }
 
+.product-actions-section .add-to-cart:not(.add-to-cart-bottom) {
+  margin-bottom: 25px;
+}
+
 /* --- PRODUCT DETAILS (MODERN) --- */
 .product-essential-modern {
   display: grid;

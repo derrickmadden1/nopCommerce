@@ -163,6 +163,8 @@ public class MultiBuyBundleSyncService
             AllowCustomerReviews = true,
             IsShipEnabled = true,
             ManageInventoryMethod = ManageInventoryMethod.DontManageStock,
+            OrderMinimumQuantity = 1,
+            OrderMaximumQuantity = 10000,
             CreatedOnUtc = DateTime.UtcNow,
             UpdatedOnUtc = DateTime.UtcNow
         };
@@ -181,6 +183,9 @@ public class MultiBuyBundleSyncService
                 DisplayOrder = 1
             });
         }
+
+        // Enable fixed price bundle so associated product prices are not added on top of the bundle price
+        await _genericAttributeService.SaveAttributeAsync(product, NopCatalogDefaults.FixedPriceBundleAttribute, true);
 
         // Enable dynamic dual preview for 2-item bundles
         if (settings.BundleSize == 2)
@@ -218,15 +223,46 @@ public class MultiBuyBundleSyncService
         if (product == null || product.Deleted)
             return;
 
-        // 1. Sync Price
+        // 1. Sync Price and Quantity settings
+        var productUpdated = false;
         if (product.Price != settings.BundlePrice)
         {
             product.Price = settings.BundlePrice;
+            productUpdated = true;
+        }
+        if (product.OrderMinimumQuantity < 1)
+        {
+            product.OrderMinimumQuantity = 1;
+            productUpdated = true;
+        }
+        if (product.OrderMaximumQuantity < 1)
+        {
+            product.OrderMaximumQuantity = 10000;
+            productUpdated = true;
+        }
+        if (productUpdated)
+        {
             product.UpdatedOnUtc = DateTime.UtcNow;
             await _productService.UpdateProductAsync(product);
         }
 
-        // 2. Sync Category if specified
+        // 2. Ensure FixedPriceBundle is enabled so associated product prices are not added on top of bundle price
+        var isFixedPrice = await _genericAttributeService.GetAttributeAsync<bool>(product, NopCatalogDefaults.FixedPriceBundleAttribute);
+        if (!isFixedPrice)
+        {
+            await _genericAttributeService.SaveAttributeAsync(product, NopCatalogDefaults.FixedPriceBundleAttribute, true);
+        }
+
+        if (settings.BundleSize == 2)
+        {
+            var isDualPreview = await _genericAttributeService.GetAttributeAsync<bool>(product, NopCatalogDefaults.DynamicDualPreviewAttribute);
+            if (!isDualPreview)
+            {
+                await _genericAttributeService.SaveAttributeAsync(product, NopCatalogDefaults.DynamicDualPreviewAttribute, true);
+            }
+        }
+
+        // 3. Sync Category if specified
         if (targetCategoryId > 0)
         {
             var productCategories = await _categoryService.GetProductCategoriesByProductIdAsync(product.Id);
@@ -242,7 +278,7 @@ public class MultiBuyBundleSyncService
             }
         }
 
-        // 3. Sync Attributes and Associated Values
+        // 4. Sync Attributes and Associated Values
         await SyncBundleAttributesAsync(product, settings, promptTemplate);
     }
 

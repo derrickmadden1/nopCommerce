@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Microsoft.Playwright;
 using Nop.Tests.E2E.Fixtures;
 using Nop.Tests.E2E.Flows;
@@ -168,7 +169,7 @@ public class SquareCheckoutTests : CheckoutTestBase
     public async Task Square_PaymentInfo_When_SDK_Fails_Initialization_Displays_Friendly_Message_And_Prevents_Submission()
     {
         // Intercept Square Web Payments SDK CDN script and simulate an HTTP 403 / failure
-        await Page.RouteAsync("**/web.squarecdn.com/**", async route =>
+        await Page.RouteAsync(new Regex(@"squarecdn\.com"), async route =>
         {
             await route.FulfillAsync(new()
             {
@@ -215,7 +216,7 @@ public class SquareCheckoutTests : CheckoutTestBase
         }
         finally
         {
-            await Page.UnrouteAsync("**/web.squarecdn.com/**");
+            await Page.UnrouteAsync(new Regex(@"squarecdn\.com"));
         }
     }
 
