@@ -67,8 +67,8 @@ public class PayPalSandboxCheckoutFlow : BaseCheckoutFlow
 
             if (FundingSource == PayPalFundingSource.PayLater)
             {
-                var emptyCart = page.Locator(".order-summary-content .no-data");
-                if (await emptyCart.CountAsync() > 0 && await emptyCart.IsVisibleAsync())
+                var emptyCart = page.Locator(".order-summary-content .no-data, .cart-empty, .no-data");
+                if (await emptyCart.CountAsync() > 0 && await emptyCart.First.IsVisibleAsync())
                 {
                     TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Cart is empty, re-adding Pay Later items to meet threshold...");
                     await AddTestProductToCartWithHighQuantityAsync(page);
@@ -866,7 +866,7 @@ public class PayPalSandboxCheckoutFlow : BaseCheckoutFlow
             await DismissCookieNotificationAsync(page);
 
             // If product has attribute dropdowns (e.g. size), select first valid non-empty option
-            var attrSelects = page.Locator("select[name^='product_attribute_']");
+            var attrSelects = page.Locator("select[name*='product_attribute_'], select[data-attr]");
             var selectCount = await attrSelects.CountAsync();
             for (var i = 0; i < selectCount; i++)
             {
@@ -881,7 +881,7 @@ public class PayPalSandboxCheckoutFlow : BaseCheckoutFlow
                         {
                             TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] [PayLater] Selecting product attribute value: {val}");
                             await select.SelectOptionAsync(val);
-                            await Task.Delay(1000);
+                            await Task.Delay(1500);
                             break;
                         }
                     }
