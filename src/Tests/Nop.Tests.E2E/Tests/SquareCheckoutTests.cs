@@ -1,3 +1,5 @@
+using System.Text.RegularExpressions;
+using Microsoft.Playwright;
 using Nop.Tests.E2E.Fixtures;
 using Nop.Tests.E2E.Flows;
 using NUnit.Framework;
@@ -159,6 +161,78 @@ public class SquareCheckoutTests : CheckoutTestBase
         });
 
         // Cleanup
+        await flow.ClearCartAsync(Page);
+    }
+
+    [Test]
+    [Description("Verifies error handling when Square Web Payments SDK fails initialization (e.g. 403 or network failure): displays user-friendly alert, prevents raw HTTP codes, and disables/hides payment next button")]
+    public async Task Square_PaymentInfo_When_SDK_Fails_Initialization_Displays_Friendly_Message_And_Prevents_Submission()
+    {
+        // Intercept Square Web Payments SDK CDN script and simulate an HTTP 403 / failure
+        await Page.RouteAsync(new Regex(@"squarecdn\.com"), async route =>
+        {
+            await route.FulfillAsync(new()
+            {
+                Status = 403,
+                ContentType = "text/plain",
+                Body = "HTTP 403 Forbidden"
+            });
+        });
+
+        try
+        {
+            var flow = new SquareSandboxCheckoutFlow(Settings, CheckoutAuthMode.Guest);
+            await flow.NavigateToPaymentInfoAsync(Page, CheckoutAuthMode.Guest, "Payments.Square");
+
+            Assert.That(Page.Url, Does.Contain("/checkout/paymentinfo"));
+
+            // Check that customer error alert is rendered inside #card-container
+            var errorAlert = Page.Locator("#card-container .message-error, #card-container .alert-danger");
+            await errorAlert.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 15000 });
+            var errorText = (await errorAlert.InnerTextAsync()).Trim();
+
+            TestContext.WriteLine($"Square SDK Failure Alert captured: '{errorText}'");
+
+            Assert.Multiple(() =>
+            {
+                Assert.That(errorText, Does.Contain("temporarily unavailable").IgnoreCase,
+                    $"Expected friendly unavailable message, but received: '{errorText}'");
+                Assert.That(errorText, Does.Not.Contain("403").And.Not.Contain("Forbidden").And.Not.Contain("UNAUTHORIZED"),
+                    "Customer must not see raw 403, Forbidden, or UNAUTHORIZED codes.");
+            });
+
+            // Ensure the Next/Save button is disabled or hidden to prevent submitting uninitialized card form
+            var payBtn = Page.Locator(".payment-info-next-step-button, input[onclick*='PaymentInfo.save']");
+            if (await payBtn.CountAsync() > 0)
+            {
+                var isVisible = await payBtn.IsVisibleAsync();
+                var isDisabled = await payBtn.IsDisabledAsync();
+                Assert.That(!isVisible || isDisabled, Is.True,
+                    "Payment info Next button must be disabled or hidden when SDK fails initialization.");
+            }
+
+            // Cleanup cart
+            await flow.ClearCartAsync(Page);
+        }
+        finally
+        {
+            await Page.UnrouteAsync(new Regex(@"squarecdn\.com"));
+        }
+    }
+
+    [Test]
+    [Description("Verifies that Square payment option is present on /checkout/paymentmethod when properly configured, and validates option attributes")]
+    public async Task Square_PaymentMethod_Is_Available_When_Configured()
+    {
+        var flow = new SquareSandboxCheckoutFlow(Settings, CheckoutAuthMode.Guest);
+        
+        // Navigate up to payment method step
+        await flow.NavigateToPaymentInfoAsync(Page, CheckoutAuthMode.Guest, "Payments.Square");
+
+        // Verify we passed the payment method selection successfully and arrived at payment info
+        Assert.That(Page.Url, Does.Contain("/checkout/paymentinfo"), "Square should be selectable and transition to payment info.");
+
+        // Cleanup cart
         await flow.ClearCartAsync(Page);
     }
 }

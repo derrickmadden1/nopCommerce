@@ -29,6 +29,7 @@ public class DiscountRulesMultiBuyController : BasePluginController
     private readonly IProductModelFactory _productModelFactory;
     private readonly IProductService _productService;
     private readonly ISettingService _settingService;
+    private readonly MultiBuyBundleSyncService _multiBuyBundleSyncService;
 
     #endregion
 
@@ -37,12 +38,14 @@ public class DiscountRulesMultiBuyController : BasePluginController
     public DiscountRulesMultiBuyController(IDiscountService discountService,
         IProductModelFactory productModelFactory,
         IProductService productService,
-        ISettingService settingService)
+        ISettingService settingService,
+        MultiBuyBundleSyncService multiBuyBundleSyncService)
     {
         _discountService = discountService;
         _productModelFactory = productModelFactory;
         _productService = productService;
         _settingService = settingService;
+        _multiBuyBundleSyncService = multiBuyBundleSyncService;
     }
 
     #endregion
@@ -105,8 +108,23 @@ public class DiscountRulesMultiBuyController : BasePluginController
             {
                 new() { Value = "0", Text = "Any (Mix & Match)", Selected = requirementSettings.BundleType == MultiBuyBundleType.Any },
                 new() { Value = "1", Text = "All (Complete Bundle / Set)", Selected = requirementSettings.BundleType == MultiBuyBundleType.All }
-            }
+            },
+            BundledProductId = requirementSettings.BundledProductId,
+            AttributePromptTemplate = string.IsNullOrEmpty(requirementSettings.AttributePromptTemplate) ? "Choose Item {0}" : requirementSettings.AttributePromptTemplate,
+            TargetCategoryId = requirementSettings.TargetCategoryId
         };
+
+        if (requirementSettings.BundledProductId > 0)
+        {
+            var bundledProduct = await _productService.GetProductByIdAsync(requirementSettings.BundledProductId);
+            if (bundledProduct != null)
+            {
+                model.BundledProductName = bundledProduct.Name;
+                model.BundledProductPublished = bundledProduct.Published;
+            }
+        }
+
+        model.AvailableCategories = await _multiBuyBundleSyncService.GetAvailableCategoriesAsync(requirementSettings.TargetCategoryId);
 
         //set the HTML field prefix
         ViewData.TemplateInfo.HtmlFieldPrefix = string.Format(DiscountRequirementDefaults.HTML_FIELD_PREFIX, discountRequirementId ?? 0);
@@ -132,6 +150,15 @@ public class DiscountRulesMultiBuyController : BasePluginController
 
         if (Request.Form.ContainsKey($"{prefix}.BundleTypeId") && int.TryParse(Request.Form[$"{prefix}.BundleTypeId"], out var bundleTypeId))
             model.BundleTypeId = bundleTypeId;
+
+        if (Request.Form.ContainsKey($"{prefix}.BundledProductId") && int.TryParse(Request.Form[$"{prefix}.BundledProductId"], out var bundledProductId))
+            model.BundledProductId = bundledProductId;
+
+        if (Request.Form.ContainsKey($"{prefix}.TargetCategoryId") && int.TryParse(Request.Form[$"{prefix}.TargetCategoryId"], out var targetCategoryId))
+            model.TargetCategoryId = targetCategoryId;
+
+        if (Request.Form.ContainsKey($"{prefix}.AttributePromptTemplate") && !string.IsNullOrWhiteSpace(Request.Form[$"{prefix}.AttributePromptTemplate"]))
+            model.AttributePromptTemplate = Request.Form[$"{prefix}.AttributePromptTemplate"];
 
         //parse eligible product IDs from the string
         var eligibleProductIds = new List<int>();
@@ -198,13 +225,104 @@ public class DiscountRulesMultiBuyController : BasePluginController
             BundlePrice = model.BundlePrice,
             ApplyAcrossMixedProducts = model.ApplyAcrossMixedProducts,
             BundleType = (MultiBuyBundleType)model.BundleTypeId,
-            EligibleProductIds = eligibleProductIds
+            EligibleProductIds = eligibleProductIds,
+            BundledProductId = model.BundledProductId,
+            TargetCategoryId = model.TargetCategoryId,
+            AttributePromptTemplate = string.IsNullOrWhiteSpace(model.AttributePromptTemplate) ? "Choose Item {0}" : model.AttributePromptTemplate
         };
 
         var settingsKey = string.Format(DiscountRequirementDefaults.SETTINGS_KEY, discountRequirement.Id);
         await _settingService.SetSettingAsync(settingsKey, Newtonsoft.Json.JsonConvert.SerializeObject(settings));
 
-        return Ok(new { NewRequirementId = discountRequirement.Id });
+        // Full sync to linked bundle product if configured
+        if (settings.BundledProductId > 0)
+        {
+            await _multiBuyBundleSyncService.SyncBundleProductAsync(
+                settings.BundledProductId,
+                settings,
+                settings.AttributePromptTemplate,
+                settings.TargetCategoryId);
+        }
+
+        return Ok(new { NewRequirementId = discountRequirement.Id, BundledProductId = settings.BundledProductId });
+    }
+
+    [HttpPost]
+    [CheckPermission(StandardPermission.Promotions.DISCOUNTS_CREATE_EDIT_DELETE)]
+    public async Task<IActionResult> CreateBundleProduct(int discountId, int requirementId, int targetCategoryId, string promptTemplate)
+    {
+        if (discountId <= 0 || requirementId <= 0)
+            return BadRequest(new { Errors = new[] { "Invalid discount or requirement ID" } });
+
+        var settingsKey = string.Format(DiscountRequirementDefaults.SETTINGS_KEY, requirementId);
+        var requirementSettingsJson = await _settingService.GetSettingByKeyAsync<string>(settingsKey);
+        var settings = !string.IsNullOrEmpty(requirementSettingsJson)
+            ? Newtonsoft.Json.JsonConvert.DeserializeObject<MultiBuyRequirementSettings>(requirementSettingsJson)
+            : new MultiBuyRequirementSettings();
+
+        if (settings == null)
+            return BadRequest(new { Errors = new[] { "Requirement settings not found" } });
+
+        var product = await _multiBuyBundleSyncService.CreateBundleProductAsync(
+            discountId,
+            requirementId,
+            settings,
+            promptTemplate,
+            targetCategoryId);
+
+        return Ok(new
+        {
+            Success = true,
+            ProductId = product.Id,
+            ProductName = product.Name,
+            Published = product.Published
+        });
+    }
+
+    [HttpPost]
+    [CheckPermission(StandardPermission.Promotions.DISCOUNTS_CREATE_EDIT_DELETE)]
+    public async Task<IActionResult> UnlinkBundleProduct(int requirementId)
+    {
+        if (requirementId <= 0)
+            return BadRequest(new { Errors = new[] { "Invalid requirement ID" } });
+
+        var settingsKey = string.Format(DiscountRequirementDefaults.SETTINGS_KEY, requirementId);
+        var requirementSettingsJson = await _settingService.GetSettingByKeyAsync<string>(settingsKey);
+        if (string.IsNullOrEmpty(requirementSettingsJson))
+            return Ok(new { Success = true });
+
+        var settings = Newtonsoft.Json.JsonConvert.DeserializeObject<MultiBuyRequirementSettings>(requirementSettingsJson);
+        if (settings != null)
+        {
+            await _multiBuyBundleSyncService.UnlinkBundleProductAsync(requirementId, settings);
+        }
+
+        return Ok(new { Success = true });
+    }
+
+    [HttpPost]
+    [CheckPermission(StandardPermission.Promotions.DISCOUNTS_CREATE_EDIT_DELETE)]
+    public async Task<IActionResult> SyncBundleProduct(int requirementId)
+    {
+        if (requirementId <= 0)
+            return BadRequest(new { Errors = new[] { "Invalid requirement ID" } });
+
+        var settingsKey = string.Format(DiscountRequirementDefaults.SETTINGS_KEY, requirementId);
+        var requirementSettingsJson = await _settingService.GetSettingByKeyAsync<string>(settingsKey);
+        if (string.IsNullOrEmpty(requirementSettingsJson))
+            return BadRequest(new { Errors = new[] { "Settings not found" } });
+
+        var settings = Newtonsoft.Json.JsonConvert.DeserializeObject<MultiBuyRequirementSettings>(requirementSettingsJson);
+        if (settings == null || settings.BundledProductId <= 0)
+            return BadRequest(new { Errors = new[] { "No bundle product is linked to this requirement" } });
+
+        await _multiBuyBundleSyncService.SyncBundleProductAsync(
+            settings.BundledProductId,
+            settings,
+            settings.AttributePromptTemplate,
+            settings.TargetCategoryId);
+
+        return Ok(new { Success = true });
     }
 
     [CheckPermission(StandardPermission.Catalog.PRODUCTS_VIEW)]

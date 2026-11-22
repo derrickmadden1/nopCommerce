@@ -258,7 +258,7 @@ END
 ELSE
 BEGIN
     UPDATE Product
-    SET Published = 1, Deleted = 0, StockQuantity = 9999, Price = 0.01, DisableBuyButton = 0, AllowCustomerReviews = 1
+    SET Published = 1, Deleted = 0, StockQuantity = 9999, Price = 0.01, DisableBuyButton = 0, AllowCustomerReviews = 1, OrderMinimumQuantity = 1, OrderMaximumQuantity = 10000
     WHERE Sku = 'TEST-E2E-001';
     
     PRINT 'Verified existing test product (Sku TEST-E2E-001).';

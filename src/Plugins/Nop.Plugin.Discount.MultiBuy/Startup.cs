@@ -14,6 +14,7 @@ namespace Nop.Plugin.Discount.MultiBuy
             // register the multi-buy requirement rule and calculator service
             services.AddScoped<IDiscountRequirementRule, MultiBuyDiscountRequirement>();
             services.AddScoped<MultiBuyDiscountService>();
+            services.AddScoped<MultiBuyBundleSyncService>();
 
             // override order total calculation with multi-buy aware implementation
             services.AddScoped<IOrderTotalCalculationService, MultiBuyOrderTotalCalculationService>();

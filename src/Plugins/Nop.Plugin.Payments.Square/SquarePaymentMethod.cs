@@ -188,7 +188,22 @@ public class SquarePaymentMethod : BasePlugin, IPaymentMethod
             return "There was an issue processing your payment details. Please check your information and try again.";
         }
 
-        return error;
+        // Authentication, authorization, 401, 403, location, or infrastructure errors
+        if (error.Contains("UNAUTHORIZED", StringComparison.OrdinalIgnoreCase) ||
+            error.Contains("AUTHENTICATION_ERROR", StringComparison.OrdinalIgnoreCase) ||
+            error.Contains("FORBIDDEN", StringComparison.OrdinalIgnoreCase) ||
+            error.Contains("HTTP 401", StringComparison.OrdinalIgnoreCase) ||
+            error.Contains("HTTP 403", StringComparison.OrdinalIgnoreCase) ||
+            error.Contains("Location is a required parameter", StringComparison.OrdinalIgnoreCase) ||
+            error.Contains("Location", StringComparison.OrdinalIgnoreCase) ||
+            error.Contains("ACCESS_TOKEN", StringComparison.OrdinalIgnoreCase) ||
+            error.Contains("oauth", StringComparison.OrdinalIgnoreCase) ||
+            error.Contains("ApiException", StringComparison.OrdinalIgnoreCase))
+        {
+            return "Credit card payment is temporarily unavailable. Please choose another payment method or contact store support.";
+        }
+
+        return "There was an issue processing your payment. Please check your details or try another payment method.";
     }
 
     /// <summary>
@@ -199,52 +214,68 @@ public class SquarePaymentMethod : BasePlugin, IPaymentMethod
     /// <returns>The asynchronous task whose result contains the Process payment result</returns>
     private async Task<ProcessPaymentResult> ProcessPaymentAsync(ProcessPaymentRequest paymentRequest, bool isRecurringPayment)
     {
-        //create charge request
-        var squarePaymentRequest = await CreatePaymentRequestAsync(paymentRequest, isRecurringPayment);
-
-        //charge transaction for current store
-        var storeId = (await _storeContext.GetCurrentStoreAsync()).Id;
-        var (payment, error) = await _squarePaymentManager.CreatePaymentAsync(squarePaymentRequest, storeId);
-        if (payment == null)
-            throw new NopException(FormatCustomerPaymentError(error));
-
-        //save card after successful payment if requested or required for recurring payments
-        var customer = await _customerService.GetCustomerByIdAsync(paymentRequest.CustomerId);
-        var isGuest = await _customerService.IsGuestAsync(customer);
-        var saveCardKey = await _localizationService.GetResourceAsync("Plugins.Payments.Square.Fields.SaveCard.Key");
-        var saveCardRequested = paymentRequest.CustomValues.TryGetValue(saveCardKey, out var saveCardValue)
-            && bool.TryParse(saveCardValue?.Value, out var saveCard)
-            && saveCard;
-
-        if ((saveCardRequested && !isGuest) || isRecurringPayment)
+        try
         {
-            paymentRequest.CustomValues.Remove(saveCardKey);
-            await SaveCustomerCardAfterPaymentAsync(customer, payment.Id, storeId, isRecurringPayment, paymentRequest);
+            //create charge request
+            var squarePaymentRequest = await CreatePaymentRequestAsync(paymentRequest, isRecurringPayment);
+
+            //charge transaction for current store
+            var storeId = (await _storeContext.GetCurrentStoreAsync()).Id;
+            var (payment, error) = await _squarePaymentManager.CreatePaymentAsync(squarePaymentRequest, storeId);
+            if (payment == null)
+            {
+                return new ProcessPaymentResult
+                {
+                    Errors = new List<string> { FormatCustomerPaymentError(error) }
+                };
+            }
+
+            //save card after successful payment if requested or required for recurring payments
+            var customer = await _customerService.GetCustomerByIdAsync(paymentRequest.CustomerId);
+            var isGuest = await _customerService.IsGuestAsync(customer);
+            var saveCardKey = await _localizationService.GetResourceAsync("Plugins.Payments.Square.Fields.SaveCard.Key");
+            var saveCardRequested = paymentRequest.CustomValues.TryGetValue(saveCardKey, out var saveCardValue)
+                && bool.TryParse(saveCardValue?.Value, out var saveCard)
+                && saveCard;
+
+            if ((saveCardRequested && !isGuest) || isRecurringPayment)
+            {
+                paymentRequest.CustomValues.Remove(saveCardKey);
+                await SaveCustomerCardAfterPaymentAsync(customer, payment.Id, storeId, isRecurringPayment, paymentRequest);
+            }
+
+            //get transaction details
+            var paymentStatus = payment.Status;
+            var paymentResult = $"Payment was processed. Status is {paymentStatus}";
+
+            //return result
+            var result = new ProcessPaymentResult
+            {
+                NewPaymentStatus = GetPaymentStatus(paymentStatus)
+            };
+
+            if (_squarePaymentSettings.TransactionMode == TransactionMode.Authorize)
+            {
+                result.AuthorizationTransactionId = payment.Id;
+                result.AuthorizationTransactionResult = paymentResult;
+            }
+
+            if (_squarePaymentSettings.TransactionMode == TransactionMode.Charge)
+            {
+                result.CaptureTransactionId = payment.Id;
+                result.CaptureTransactionResult = paymentResult;
+            }
+
+            return result;
         }
-
-        //get transaction details
-        var paymentStatus = payment.Status;
-        var paymentResult = $"Payment was processed. Status is {paymentStatus}";
-
-        //return result
-        var result = new ProcessPaymentResult
+        catch (Exception ex)
         {
-            NewPaymentStatus = GetPaymentStatus(paymentStatus)
-        };
-
-        if (_squarePaymentSettings.TransactionMode == TransactionMode.Authorize)
-        {
-            result.AuthorizationTransactionId = payment.Id;
-            result.AuthorizationTransactionResult = paymentResult;
+            await _logger.ErrorAsync($"Square payment error: {ex.Message}", ex);
+            return new ProcessPaymentResult
+            {
+                Errors = new List<string> { FormatCustomerPaymentError(ex.Message) }
+            };
         }
-
-        if (_squarePaymentSettings.TransactionMode == TransactionMode.Charge)
-        {
-            result.CaptureTransactionId = payment.Id;
-            result.CaptureTransactionResult = paymentResult;
-        }
-
-        return result;
     }
 
     /// <summary>
@@ -516,9 +547,46 @@ public class SquarePaymentMethod : BasePlugin, IPaymentMethod
     /// A task that represents the asynchronous operation
     /// The task result contains the rue - hide; false - display.
     /// </returns>
-    public Task<bool> HidePaymentMethodAsync(IList<ShoppingCartItem> cart)
+    public async Task<bool> HidePaymentMethodAsync(IList<ShoppingCartItem> cart)
     {
-        return Task.FromResult(false);
+        var store = await _storeContext.GetCurrentStoreAsync();
+        var storeId = store?.Id ?? 0;
+        var settings = await _settingService.LoadSettingAsync<SquarePaymentSettings>(storeId);
+
+        // Fallback to Store 0 if not configured per-store
+        if (string.IsNullOrEmpty(settings?.AccessToken) && storeId > 0)
+        {
+            var globalSettings = await _settingService.LoadSettingAsync<SquarePaymentSettings>(0);
+            if (!string.IsNullOrEmpty(globalSettings?.AccessToken))
+                settings = globalSettings;
+        }
+
+        // Hide if core credentials or location are missing
+        if (settings == null
+            || string.IsNullOrEmpty(settings.ApplicationId) 
+            || string.IsNullOrEmpty(settings.AccessToken) 
+            || string.IsNullOrEmpty(settings.LocationId) 
+            || settings.LocationId.Equals("0"))
+        {
+            return true;
+        }
+
+        // Check whether active location can be successfully retrieved from Square
+        if (_squarePaymentManager != null)
+        {
+            try
+            {
+                var location = await _squarePaymentManager.GetSelectedActiveLocationAsync(storeId);
+                if (location == null)
+                    return true;
+            }
+            catch
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /// <summary>

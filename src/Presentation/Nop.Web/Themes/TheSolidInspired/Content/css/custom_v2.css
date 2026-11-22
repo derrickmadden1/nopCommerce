@@ -845,6 +845,10 @@ h6 {
   color: var(--dark-grey, #333);
 }
 
+.product-actions-section .add-to-cart:not(.add-to-cart-bottom) {
+  margin-bottom: 25px;
+}
+
 /* --- PRODUCT DETAILS (MODERN) --- */
 .product-essential-modern {
   display: grid;
@@ -6927,6 +6931,12 @@ iframe[src*="songbird"] {
 /* ==========================================================================
    DYNAMIC DUAL PREVIEW SHOWCASE
    ========================================================================== */
+
+.picture-gallery:has(.dynamic-dual-showcase) .picture > a,
+.picture-gallery:has(.dynamic-dual-showcase) .picture > img:not(.dual-card-img),
+.picture-gallery:has(.dynamic-dual-showcase) .picture-thumbs-wrapper {
+  display: none !important;
+}
 
 .dynamic-dual-showcase {
   width: 100%;

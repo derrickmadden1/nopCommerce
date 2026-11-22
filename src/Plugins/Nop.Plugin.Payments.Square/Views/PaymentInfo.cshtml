@@ -3,6 +3,19 @@
 @{
     Layout = "";
     var scriptUrl = settings.UseSandbox ? SquarePaymentDefaults.SandboxPaymentFormScriptPath : SquarePaymentDefaults.PaymentFormScriptPath;
+    var isConfigured = !string.IsNullOrEmpty(settings.ApplicationId) 
+        && !string.IsNullOrEmpty(settings.AccessToken) 
+        && !string.IsNullOrEmpty(settings.LocationId) 
+        && settings.LocationId != "0";
+}
+
+@if (!isConfigured)
+{
+    <div class="message-error" style="margin: 15px 0; padding: 16px 20px; border-radius: 8px; border-left: 5px solid #e53e3e; background-color: #fff5f5; color: #c53030; font-size: 0.95rem; display: flex; align-items: center; gap: 12px;">
+        <i class="fas fa-exclamation-circle" style="font-size: 1.25rem; flex-shrink: 0;"></i>
+        <span>Credit card payment is temporarily unavailable. Please return to the previous step and select another payment method.</span>
+    </div>
+    return;
 }
 
 <script src="@scriptUrl" asp-exclude-from-bundle="true" asp-location="Footer"></script>
@@ -219,22 +232,40 @@
             }
         }
 
-        var payments = window.Square.payments('@settings.ApplicationId', '@settings.LocationId');
+        var payments;
+        try {
+            payments = window.Square.payments('@settings.ApplicationId', '@settings.LocationId');
+        } catch (e) {
+            console.error('Square payments initialization failed', e);
+            $('#card-container').html('<div class="message-error" style="margin: 15px 0; padding: 14px; border-radius: 6px; background-color: #fff5f5; color: #c53030;">Credit card payment is temporarily unavailable. Please choose another payment method.</div>');
+            payButton.hide();
+            displayAjaxLoading(false);
+            return;
+        }
+
         let card;
         try {
             card = await initializeCard(payments);
         } catch (e) {
             console.error('Initializing Card failed', e);
+            $('#card-container').html('<div class="message-error" style="margin: 15px 0; padding: 14px; border-radius: 6px; background-color: #fff5f5; color: #c53030;">Credit card payment is temporarily unavailable. Please choose another payment method.</div>');
+            payButton.hide();
+            displayAjaxLoading(false);
             return;
         }
         displayAjaxLoading(false);
 
         payButton.click(async function () {
             if (payButton.prop('disabled')) return;
+            var selectedStoredCardId = $('#@Html.IdFor(model => model.StoredCardId)').val();
+            if (!card && (!selectedStoredCardId || selectedStoredCardId == '@(Guid.Empty.ToString())')) {
+                $('#card-container').html('<div class="message-error" style="margin: 15px 0; padding: 14px; border-radius: 6px; background-color: #fff5f5; color: #c53030;">Credit card payment is temporarily unavailable. Please choose another payment method.</div>');
+                displayAjaxLoading(false);
+                return false;
+            }
             payButton.prop('disabled', true).addClass('loading');
             displayAjaxLoading(true);
             try {
-                var selectedStoredCardId = $('#@Html.IdFor(model => model.StoredCardId)').val();
                 if ((!selectedStoredCardId || selectedStoredCardId == '@(Guid.Empty.ToString())')) {
                     await handlePaymentMethodSubmission(card);
                 } else if (use3ds) {

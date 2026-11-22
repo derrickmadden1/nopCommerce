@@ -98,30 +98,24 @@
             </style>
             <span class="out-of-stock-ribbon">OUT OF STOCK</span>
         }
-        @if (Model.DefaultPictureZoomEnabled && Model.PictureModels.Count == 1)
-        {
-            <a href="@Model.DefaultPictureModel.FullSizeImageUrl" title="@Model.DefaultPictureModel.Title" id="main-product-img-lightbox-anchor-@Model.Id">
-                <img alt="@Model.DefaultPictureModel.AlternateText" src="@Model.DefaultPictureModel.ImageUrl" title="@Model.DefaultPictureModel.Title" id="main-product-img-@Model.Id" />
-            </a>
-            <script asp-location="Footer">
-                $(function() {
-                    $('#main-product-img-lightbox-anchor-@Model.Id').magnificPopup({ type: 'image' });
-                });
-            </script>
-        }
-        else
-        {
-            <img alt="@Model.DefaultPictureModel.AlternateText" src="@Model.DefaultPictureModel.ImageUrl" title="@Model.DefaultPictureModel.Title" id="main-product-img-@Model.Id" />
-        }
         @if (Model.DynamicDualPreview)
         {
-            <div id="dynamic-dual-showcase-@Model.Id" class="dynamic-dual-showcase" style="display: none;">
+            <style>
+                .picture-gallery .picture > a,
+                .picture-gallery .picture > img:not(.dual-card-img),
+                #main-product-img-@Model.Id,
+                #main-product-img-lightbox-anchor-@Model.Id,
+                #picture-thumbs-wrapper-@Model.Id {
+                    display: none !important;
+                }
+            </style>
+            <div id="dynamic-dual-showcase-@Model.Id" class="dynamic-dual-showcase">
                 <div class="dual-showcase-header">
                     <span class="dual-showcase-badge">YOUR BUNDLE SELECTION</span>
                 </div>
                 <div class="dual-showcase-body">
                     <div class="dual-showcase-card dual-item-1" id="dual-item-1-@Model.Id">
-                        <div class="dual-card-img-wrap">
+                        <div class="dual-card-img-wrap" style="display: none;">
                             <img src="" alt="" class="dual-card-img" />
                         </div>
                         <div class="dual-card-info">
@@ -133,7 +127,7 @@
                         <span class="dual-plus-circle">&amp;</span>
                     </div>
                     <div class="dual-showcase-card dual-item-2" id="dual-item-2-@Model.Id">
-                        <div class="dual-card-img-wrap">
+                        <div class="dual-card-img-wrap" style="display: none;">
                             <img src="" alt="" class="dual-card-img" />
                         </div>
                         <div class="dual-card-info">
@@ -143,9 +137,32 @@
                     </div>
                 </div>
             </div>
+            <div style="display: none !important;">
+                <a href="@Model.DefaultPictureModel.FullSizeImageUrl" title="@Model.DefaultPictureModel.Title" id="main-product-img-lightbox-anchor-@Model.Id">
+                    <img alt="@Model.DefaultPictureModel.AlternateText" src="@Model.DefaultPictureModel.ImageUrl" title="@Model.DefaultPictureModel.Title" id="main-product-img-@Model.Id" />
+                </a>
+            </div>
+        }
+        else
+        {
+            @if (Model.DefaultPictureZoomEnabled && Model.PictureModels.Count == 1)
+            {
+                <a href="@Model.DefaultPictureModel.FullSizeImageUrl" title="@Model.DefaultPictureModel.Title" id="main-product-img-lightbox-anchor-@Model.Id">
+                    <img alt="@Model.DefaultPictureModel.AlternateText" src="@Model.DefaultPictureModel.ImageUrl" title="@Model.DefaultPictureModel.Title" id="main-product-img-@Model.Id" />
+                </a>
+                <script asp-location="Footer">
+                    $(function() {
+                        $('#main-product-img-lightbox-anchor-@Model.Id').magnificPopup({ type: 'image' });
+                    });
+                </script>
+            }
+            else
+            {
+                <img alt="@Model.DefaultPictureModel.AlternateText" src="@Model.DefaultPictureModel.ImageUrl" title="@Model.DefaultPictureModel.Title" id="main-product-img-@Model.Id" />
+            }
         }
     </div>
-    @if (Model.PictureModels.Count > 1)
+    @if (!Model.DynamicDualPreview && Model.PictureModels.Count > 1)
     {
         <div class="picture-thumbs-wrapper" id="picture-thumbs-wrapper-@Model.Id">
             <button type="button" class="thumb-nav prev" id="thumb-nav-prev-@Model.Id" aria-label="Previous thumbnails" style="display: none;">&lsaquo;</button>

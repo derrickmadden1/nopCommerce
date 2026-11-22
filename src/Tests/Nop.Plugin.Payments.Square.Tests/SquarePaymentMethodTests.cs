@@ -5,6 +5,8 @@ using Moq;
 using Nop.Core;
 using Nop.Core.Domain.Common;
 using Nop.Core.Domain.Directory;
+using Nop.Core.Domain.Orders;
+using Nop.Core.Domain.Stores;
 using Nop.Plugin.Payments.Square;
 using Nop.Plugin.Payments.Square.Domain;
 using Nop.Plugin.Payments.Square.Models;
@@ -28,6 +30,7 @@ namespace Nop.Plugin.Payments.Square.Tests;
 public class SquarePaymentMethodTests : BaseNopTest
 {
     private Mock<ILocalizationService> _localizationService = null!;
+    private Mock<ILogger> _logger = null!;
     private Mock<IStoreContext> _storeContext = null!;
     private Mock<ISettingService> _settingService = null!;
     private SquarePaymentMethod _paymentMethod = null!;
@@ -36,6 +39,7 @@ public class SquarePaymentMethodTests : BaseNopTest
     public void Setup()
     {
         _localizationService = new Mock<ILocalizationService>();
+        _logger = new Mock<ILogger>();
         _storeContext = new Mock<IStoreContext>();
         _settingService = new Mock<ISettingService>();
 
@@ -54,7 +58,7 @@ public class SquarePaymentMethodTests : BaseNopTest
             null, // ICustomerService
             null, // IGenericAttributeService
             _localizationService.Object,
-            null, // ILogger
+            _logger.Object,
             null, // IOrderTotalCalculationService
             null, // INopHtmlHelper
             _settingService.Object,
@@ -165,5 +169,99 @@ public class SquarePaymentMethodTests : BaseNopTest
 
         // Assert
         request.CustomValues.Should().NotContain(cv => cv.Name == "StoredCard");
+    }
+
+    [Test]
+    public async Task HidePaymentMethodAsync_Should_Return_True_When_LocationId_Is_Empty()
+    {
+        var store = new Store { Id = 1 };
+        _storeContext.Setup(x => x.GetCurrentStoreAsync()).ReturnsAsync(store);
+
+        var settings = new SquarePaymentSettings
+        {
+            ApplicationId = "sq0idp-test",
+            AccessToken = "EAAA-test",
+            LocationId = ""
+        };
+        _settingService.Setup(x => x.LoadSettingAsync<SquarePaymentSettings>(1)).ReturnsAsync(settings);
+
+        var result = await _paymentMethod.HidePaymentMethodAsync(new List<ShoppingCartItem>());
+        result.Should().BeTrue();
+    }
+
+    [Test]
+    public async Task HidePaymentMethodAsync_Should_Return_True_When_LocationId_Is_Zero()
+    {
+        var store = new Store { Id = 1 };
+        _storeContext.Setup(x => x.GetCurrentStoreAsync()).ReturnsAsync(store);
+
+        var settings = new SquarePaymentSettings
+        {
+            ApplicationId = "sq0idp-test",
+            AccessToken = "EAAA-test",
+            LocationId = "0"
+        };
+        _settingService.Setup(x => x.LoadSettingAsync<SquarePaymentSettings>(1)).ReturnsAsync(settings);
+
+        var result = await _paymentMethod.HidePaymentMethodAsync(new List<ShoppingCartItem>());
+        result.Should().BeTrue();
+    }
+
+    [Test]
+    public async Task HidePaymentMethodAsync_Should_Return_True_When_AccessToken_Is_Empty()
+    {
+        var store = new Store { Id = 1 };
+        _storeContext.Setup(x => x.GetCurrentStoreAsync()).ReturnsAsync(store);
+
+        var settings = new SquarePaymentSettings
+        {
+            ApplicationId = "sq0idp-test",
+            AccessToken = "",
+            LocationId = "L123"
+        };
+        _settingService.Setup(x => x.LoadSettingAsync<SquarePaymentSettings>(1)).ReturnsAsync(settings);
+
+        var result = await _paymentMethod.HidePaymentMethodAsync(new List<ShoppingCartItem>());
+        result.Should().BeTrue();
+    }
+
+    [Test]
+    public async Task HidePaymentMethodAsync_Should_Return_True_When_ApplicationId_Is_Empty()
+    {
+        var store = new Store { Id = 1 };
+        _storeContext.Setup(x => x.GetCurrentStoreAsync()).ReturnsAsync(store);
+
+        var settings = new SquarePaymentSettings
+        {
+            ApplicationId = "",
+            AccessToken = "EAAA-test",
+            LocationId = "L123"
+        };
+        _settingService.Setup(x => x.LoadSettingAsync<SquarePaymentSettings>(1)).ReturnsAsync(settings);
+
+        var result = await _paymentMethod.HidePaymentMethodAsync(new List<ShoppingCartItem>());
+        result.Should().BeTrue();
+    }
+
+    [Test]
+    public async Task ValidatePaymentFormAsync_Should_Sanitize_Raw_Errors_To_User_Friendly_Message()
+    {
+        var form = new FormCollection(new Dictionary<string, StringValues>
+        {
+            { nameof(PaymentInfoModel.Errors), new StringValues("HTTP 403 Forbidden|Category: AUTHENTICATION_ERROR") }
+        });
+
+        var errors = await _paymentMethod.ValidatePaymentFormAsync(form);
+        errors.Should().NotBeEmpty();
+        errors.Should().ContainSingle();
+        errors.First().Should().Be("There was an issue processing your payment details. Please check your information and try again.");
+    }
+
+    [Test]
+    public async Task ValidatePaymentFormAsync_Should_Return_Empty_When_No_Errors()
+    {
+        var form = new FormCollection(new Dictionary<string, StringValues>());
+        var errors = await _paymentMethod.ValidatePaymentFormAsync(form);
+        errors.Should().BeEmpty();
     }
 }

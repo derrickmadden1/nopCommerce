@@ -37,5 +37,29 @@ namespace Nop.Plugin.DiscountRules.MultiBuy.Models
         public List<int> EligibleProductIds { get; set; } = new();
 
         public List<ProductDisplayModel> EligibleProducts { get; set; } = new();
+
+        /// <summary>
+        /// Identifier of the linked bundle product in the catalog.
+        /// </summary>
+        [NopResourceDisplayName("Plugins.DiscountRules.MultiBuy.Fields.BundledProduct")]
+        public int BundledProductId { get; set; }
+
+        public string BundledProductName { get; set; }
+
+        public bool BundledProductPublished { get; set; }
+
+        /// <summary>
+        /// Text prompt template for generated attributes (e.g. "Choose Item {0}").
+        /// </summary>
+        [NopResourceDisplayName("Plugins.DiscountRules.MultiBuy.Fields.AttributePromptTemplate")]
+        public string AttributePromptTemplate { get; set; } = "Choose Item {0}";
+
+        /// <summary>
+        /// Identifier of the target category for the bundle product.
+        /// </summary>
+        [NopResourceDisplayName("Plugins.DiscountRules.MultiBuy.Fields.TargetCategory")]
+        public int TargetCategoryId { get; set; }
+
+        public IList<SelectListItem> AvailableCategories { get; set; } = new List<SelectListItem>();
     }
 }

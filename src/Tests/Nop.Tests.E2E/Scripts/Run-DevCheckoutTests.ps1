@@ -72,18 +72,24 @@ Write-Host "`n[2/4] Checking store connectivity at $TargetUrl..." -ForegroundCol
 function Test-StoreEndpoint {
     param ([string]$url)
     try {
-        if ($PSVersionTable.PSVersion.Major -ge 6) {
-            $response = Invoke-WebRequest -Uri $url -SkipCertificateCheck -TimeoutSec 3 -ErrorAction SilentlyContinue
-        } else {
-            [System.Net.ServicePointManager]::ServerCertificateValidationCallback = { $true }
-            $response = Invoke-WebRequest -Uri $url -UseBasicParsing -TimeoutSec 3 -ErrorAction SilentlyContinue
+        [System.Net.ServicePointManager]::ServerCertificateValidationCallback = { $true }
+        $req = [System.Net.HttpWebRequest]::Create($url)
+        $req.Timeout = 3000
+        $req.AllowAutoRedirect = $true
+        $resp = $req.GetResponse()
+        $code = [int]$resp.StatusCode
+        $resp.Close()
+        return ($code -ge 200 -and $code -lt 500)
+    }
+    catch [System.Net.WebException] {
+        if ($_.Response) {
+            $code = [int]$_.Response.StatusCode
+            $_.Response.Close()
+            return ($code -ge 200 -and $code -lt 500)
         }
-        return ($response.StatusCode -ge 200 -and $response.StatusCode -lt 400)
+        return $false
     }
     catch {
-        if ($_.Exception.Response -and [int]$_.Exception.Response.StatusCode -lt 500) {
-            return $true
-        }
         return $false
     }
 }
@@ -103,9 +109,9 @@ else {
     $startInfo = New-Object System.Diagnostics.ProcessStartInfo
     $startInfo.FileName = "dotnet"
     if (Test-Path $dllPath) {
-        $startInfo.Arguments = "`"$dllPath`""
+        $startInfo.Arguments = "`"$dllPath`" --urls `"https://localhost:$Port;http://localhost:$($Port + 1)`""
     } else {
-        $startInfo.Arguments = "run --project `"$WebProjectDir\Nop.Web.csproj`""
+        $startInfo.Arguments = "run --project `"$WebProjectDir\Nop.Web.csproj`" --urls `"https://localhost:$Port;http://localhost:$($Port + 1)`""
     }
     $startInfo.WorkingDirectory = $WebProjectDir
     $startInfo.UseShellExecute = $false
@@ -116,9 +122,9 @@ else {
     $serverProcess = [System.Diagnostics.Process]::Start($startInfo)
     $startedByScript = $true
 
-    Write-Host "Waiting for store to warm up at $TargetUrl (up to 60s)..." -NoNewline
+    Write-Host "Waiting for store to warm up at $TargetUrl (up to 120s)..." -NoNewline
     $ready = $false
-    for ($i = 0; $i -lt 30; $i++) {
+    for ($i = 0; $i -lt 60; $i++) {
         Start-Sleep -Seconds 2
         Write-Host "." -NoNewline
         if (Test-StoreEndpoint $TargetUrl) {

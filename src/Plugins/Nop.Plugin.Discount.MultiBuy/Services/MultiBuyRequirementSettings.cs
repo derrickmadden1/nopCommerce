@@ -45,6 +45,21 @@ namespace Nop.Plugin.DiscountRules.MultiBuy.Services
         /// Type of bundle: Any (mix & match) or All (complete set).
         /// </summary>
         public MultiBuyBundleType BundleType { get; set; } = MultiBuyBundleType.Any;
+
+        /// <summary>
+        /// Identifier of the linked bundle product in the catalog.
+        /// </summary>
+        public int BundledProductId { get; set; }
+
+        /// <summary>
+        /// Text prompt template for generated attributes (e.g. "Choose Item {0}").
+        /// </summary>
+        public string AttributePromptTemplate { get; set; } = "Choose Item {0}";
+
+        /// <summary>
+        /// Identifier of the target category (e.g. "Offers") for the bundle product.
+        /// </summary>
+        public int TargetCategoryId { get; set; }
     }
 }
 
