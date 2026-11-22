@@ -877,6 +877,7 @@ public partial class ShoppingCartController : BasePublicController
     //handle product attribute selection event. this way we return new price, overridden gtin/sku/mpn
     //currently we use this method on the product details pages
     [HttpPost]
+    [IgnoreAntiforgeryToken]
     public virtual async Task<IActionResult> ProductDetails_AttributeChange(int productId, bool validateAttributeConditions,
         bool loadPicture, IFormCollection form)
     {
