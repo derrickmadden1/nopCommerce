@@ -582,4 +582,32 @@ public static class ApplicationBuilderExtensions
 
         application.UseWebMarkupMin();
     }
+
+    /// <summary>
+    /// Configure middleware to prevent caching of dynamic HTML responses
+    /// </summary>
+    /// <param name="application">Builder for configuring an application's request pipeline</param>
+    public static void UseDynamicResponseCacheControl(this IApplicationBuilder application)
+    {
+        application.Use(async (context, next) =>
+        {
+            context.Response.OnStarting(() =>
+            {
+                if (context.Response.ContentType != null &&
+                    context.Response.ContentType.StartsWith("text/html", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (!context.Response.Headers.TryGetValue(HeaderNames.CacheControl, out var cacheControl) || string.IsNullOrEmpty(cacheControl))
+                    {
+                        context.Response.Headers[HeaderNames.CacheControl] = "no-cache, no-store, must-revalidate";
+                        context.Response.Headers[HeaderNames.Pragma] = "no-cache";
+                        context.Response.Headers[HeaderNames.Expires] = "0";
+                    }
+                }
+
+                return Task.CompletedTask;
+            });
+
+            await next();
+        });
+    }
 }

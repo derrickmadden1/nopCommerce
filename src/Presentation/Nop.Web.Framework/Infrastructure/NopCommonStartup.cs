@@ -57,6 +57,9 @@ public partial class NopCommonStartup : INopStartup
         //check whether database is installed
         application.UseInstallUrl();
 
+        //prevent caching of dynamic HTML responses
+        application.UseDynamicResponseCacheControl();
+
         //use HTTP session
         application.UseSession();
 
