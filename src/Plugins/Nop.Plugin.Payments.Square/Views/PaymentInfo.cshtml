@@ -21,6 +21,81 @@
 <script src="@scriptUrl" asp-exclude-from-bundle="true" asp-location="Footer"></script>
 
 <style type="text/css">
+    .square-loading-placeholder {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 25px 20px;
+        margin: 15px auto;
+        max-width: 500px;
+        width: 100%;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        box-sizing: border-box;
+    }
+
+    .square-spinner {
+        width: 32px;
+        height: 32px;
+        border: 3px solid #e2e8f0;
+        border-top: 3px solid #1b1b1b;
+        border-radius: 50%;
+        animation: square-spin 0.8s linear infinite;
+        margin-bottom: 12px;
+    }
+
+    @@keyframes square-spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .square-loading-title {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #475569;
+        margin-bottom: 16px;
+    }
+
+    .square-skeleton-card {
+        width: 100%;
+    }
+
+    .square-skeleton-row {
+        display: flex;
+        gap: 10px;
+    }
+
+    .square-skeleton-line {
+        background-color: #f1f5f9;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .square-skeleton-half {
+        flex: 1;
+    }
+
+    .square-skeleton-line::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        background: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.6) 50%, rgba(255, 255, 255, 0) 100%);
+        animation: square-shimmer 1.4s infinite;
+    }
+
+    @@keyframes square-shimmer {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
+    }
+
     select.square-input {
         height: 36px;
         border: 1px solid #ddd;
@@ -246,7 +321,9 @@
         let card;
         try {
             card = await initializeCard(payments);
+            $('#square-loading-indicator').fadeOut(250, function () { $(this).remove(); });
         } catch (e) {
+            $('#square-loading-indicator').remove();
             console.error('Initializing Card failed', e);
             $('#card-container').html('<div class="message-error" style="margin: 15px 0; padding: 14px; border-radius: 6px; background-color: #fff5f5; color: #c53030;">Credit card payment is temporarily unavailable. Please choose another payment method.</div>');
             payButton.hide();
@@ -254,6 +331,9 @@
             return;
         }
         displayAjaxLoading(false);
+        setTimeout(function () {
+            $('#square-loading-indicator').fadeOut(250);
+        }, 8000);
 
         payButton.click(async function () {
             if (payButton.prop('disabled')) return;
@@ -344,6 +424,17 @@
 }
 
 <div id="payment-form">
+    <div id="square-loading-indicator" class="square-loading-placeholder">
+        <div class="square-spinner"></div>
+        <div class="square-loading-title">Loading secure card fields...</div>
+        <div class="square-skeleton-card">
+            <div class="square-skeleton-line" style="height: 44px; margin-bottom: 10px;"></div>
+            <div class="square-skeleton-row">
+                <div class="square-skeleton-line square-skeleton-half" style="height: 44px;"></div>
+                <div class="square-skeleton-line square-skeleton-half" style="height: 44px;"></div>
+            </div>
+        </div>
+    </div>
     <div id="card-container"></div>
 </div>
 <div id="payment-status-container"></div>
