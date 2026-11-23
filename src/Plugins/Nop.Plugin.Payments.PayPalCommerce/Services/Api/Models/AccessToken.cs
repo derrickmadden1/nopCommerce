@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 
 namespace Nop.Plugin.Payments.PayPalCommerce.Services.Api.Models;
 
