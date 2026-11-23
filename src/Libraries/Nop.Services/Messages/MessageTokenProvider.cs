@@ -634,7 +634,7 @@ public partial class MessageTokenProvider : IMessageTokenProvider
                 unitPriceStr = await _priceFormatter.FormatPriceAsync(unitPriceExclTaxInCustomerCurrency, true, order.CustomerCurrencyCode, languageId, false);
             }
 
-            sb.AppendLine($"<td style=\"padding: 0.6em 0.4em;text-align: right;\">{unitPriceStr}</td>");
+            sb.AppendLine($"<td style=\"padding: 0.6em 0.4em;text-align: right;\">{WebUtility.HtmlEncode(unitPriceStr)}</td>");
 
             sb.AppendLine($"<td style=\"padding: 0.6em 0.4em;text-align: center;\">{orderItem.Quantity}</td>");
 
@@ -652,7 +652,7 @@ public partial class MessageTokenProvider : IMessageTokenProvider
                 priceStr = await _priceFormatter.FormatPriceAsync(priceExclTaxInCustomerCurrency, true, order.CustomerCurrencyCode, languageId, false);
             }
 
-            sb.AppendLine($"<td style=\"padding: 0.6em 0.4em;text-align: right;\">{priceStr}</td>");
+            sb.AppendLine($"<td style=\"padding: 0.6em 0.4em;text-align: right;\">{WebUtility.HtmlEncode(priceStr)}</td>");
 
             sb.AppendLine("</tr>");
         }
