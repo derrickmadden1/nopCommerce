@@ -7749,3 +7749,39 @@ iframe[src*="songbird"] {
     text-align: center;
   }
 }
+
+/* ==========================================================================
+   Checkout and Next Buttons - Loading and Anti-Duplicate Click UX
+   ========================================================================== */
+.is-submitting,
+.btn-primary.is-submitting,
+.checkout-button.is-submitting,
+.checkout-button-modern.is-submitting,
+.next-step-btn.is-submitting,
+.confirm-order-btn-modern.is-submitting,
+.button-1.is-submitting {
+  pointer-events: none !important;
+  cursor: wait !important;
+  opacity: 0.85 !important;
+  position: relative !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.btn-spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: btnSpin 0.75s linear infinite;
+  flex-shrink: 0;
+  vertical-align: middle;
+  margin-right: 8px;
+}
+
+@keyframes btnSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

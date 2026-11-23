@@ -195,3 +195,100 @@ function addAntiForgeryToken(data) {
     }
     return data;
 };
+
+// Checkout & Next buttons: visual loading state & anti-duplicate click UX
+$(document).ready(function () {
+    var checkoutButtonSelectors = [
+        '#checkout',
+        '.checkout-button',
+        '.checkout-button-modern',
+        '.next-step-btn',
+        '.new-address-next-step-button',
+        '.shipping-method-next-step-button',
+        '.payment-method-next-step-button',
+        '.payment-info-next-step-button',
+        '.confirm-order-btn-modern',
+        '.confirm-order-next-step-button'
+    ].join(', ');
+
+    function resetButton($btn) {
+        if (!$btn || !$btn.length) return;
+        $btn.removeClass('is-submitting');
+        $btn.css({
+            'pointer-events': '',
+            'min-width': ''
+        });
+        $btn.removeAttr('aria-busy');
+        var originalHtml = $btn.data('orig-html');
+        if (originalHtml) {
+            $btn.html(originalHtml);
+        }
+    }
+
+    $(document).on('click', checkoutButtonSelectors, function (e) {
+        var $btn = $(this);
+
+        // Prevent multiple clicks if already submitting or disabled
+        if ($btn.hasClass('is-submitting') || $btn.prop('disabled')) {
+            e.preventDefault();
+            return false;
+        }
+
+        // Ignore hidden buttons (e.g. PayPal/Square fallback buttons)
+        if ($btn.is(':hidden') || $btn.hasClass('hidden-button')) {
+            return;
+        }
+
+        // 1. Terms of service check
+        var $terms = $('#termsofservice');
+        if ($terms.length > 0 && !$terms.is(':checked')) {
+            return; // Let the terms validation alert the user; do not lock button
+        }
+
+        // 2. Client-side form validation check
+        var $form = $btn.closest('form');
+        if ($form.length > 0 && typeof $form.valid === 'function') {
+            if (!$form.valid()) {
+                return; // Form validation failed; do not enter loading state
+            }
+        }
+
+        // 3. Save original HTML and button width so button dimensions remain stable
+        if (!$btn.data('orig-html')) {
+            $btn.data('orig-html', $btn.html());
+        }
+        var btnWidth = $btn.outerWidth();
+        if (btnWidth > 0) {
+            $btn.css('min-width', btnWidth + 'px');
+        }
+
+        // Lock button clicks immediately
+        $btn.css('pointer-events', 'none');
+        $btn.addClass('is-submitting');
+        $btn.attr('aria-busy', 'true');
+
+        // Choose appropriate loading message
+        var isProceed = $btn.is('#checkout') || $btn.hasClass('checkout-button') || $btn.hasClass('checkout-button-modern');
+        var isConfirm = $btn.hasClass('confirm-order-btn-modern') || $btn.hasClass('confirm-order-next-step-button');
+        var loadingText = isProceed ? 'Proceeding...' : (isConfirm ? 'Confirming...' : 'Processing...');
+
+        $btn.html('<span class="btn-spinner" aria-hidden="true"></span> ' + loadingText);
+
+        // Safety timeout in case the request stays on same page (e.g. server validation or latency)
+        setTimeout(function () {
+            if ($btn.hasClass('is-submitting')) {
+                resetButton($btn);
+            }
+        }, 12000);
+    });
+
+    // Reset button state when restoring page from back-forward cache (BFCache)
+    window.addEventListener('pageshow', function () {
+        $(checkoutButtonSelectors).each(function () {
+            var $btn = $(this);
+            if ($btn.hasClass('is-submitting')) {
+                resetButton($btn);
+            }
+        });
+    });
+});
