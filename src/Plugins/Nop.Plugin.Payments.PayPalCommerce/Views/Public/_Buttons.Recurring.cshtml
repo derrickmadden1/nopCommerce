@@ -8,7 +8,10 @@
 }
 
 <link rel="stylesheet" href="~/Plugins/Payments.PayPalCommerce/Content/styles.css" />
-<script asp-location="Auto" src="@Model.Script.Url" data-page-type="checkout" data-client-token="@Model.Script.ClientToken" data-user-id-token="@Model.Script.UserToken" data-partner-attribution-id="@PayPalCommerceDefaults.PartnerHeader.Value"></script>
+<script asp-location="Auto" src="@Model.Script.Url" data-page-type="checkout"
+        @(string.IsNullOrWhiteSpace(Model.Script.ClientToken) ? null : Html.Raw($"data-client-token=\"{Model.Script.ClientToken}\""))
+        @(string.IsNullOrWhiteSpace(Model.Script.UserToken) ? null : Html.Raw($"data-user-id-token=\"{Model.Script.UserToken}\""))
+        data-partner-attribution-id="@PayPalCommerceDefaults.PartnerHeader.Value"></script>
 
 <div id="@paypalButtonContainer" class="paypal-button-container"></div>
 <div id="@paypalCardButtonContainer" class="paypal-button-container"></div>

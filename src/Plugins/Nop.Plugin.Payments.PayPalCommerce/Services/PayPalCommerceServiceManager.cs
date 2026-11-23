@@ -1354,7 +1354,7 @@ public class PayPalCommerceServiceManager
                             ResponseType = "client_token",
                             Intent = "sdk_init"
                         }, settings);
-                        clientToken = fastlaneToken?.Token;
+                        clientToken = fastlaneToken?.ClientToken;
                     }
                     catch
                     {

@@ -34,6 +34,12 @@ public class AccessToken
     public string UserIdToken { get; set; }
 
     /// <summary>
+    /// Gets or sets the client token
+    /// </summary>
+    [JsonProperty(PropertyName = "client_token")]
+    public string ClientToken { get; set; }
+
+    /// <summary>
     /// Gets or sets the scope
     /// </summary>
     [JsonProperty(PropertyName = "scope")]
