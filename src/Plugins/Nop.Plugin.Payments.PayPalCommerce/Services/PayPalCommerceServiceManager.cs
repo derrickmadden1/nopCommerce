@@ -1342,7 +1342,7 @@ public class PayPalCommerceServiceManager
                 {
                     CustomerId = CommonHelper.EnsureMaximumLength(GetSha256Hash(customer.CustomerGuid.ToString()), 22)
                 }, settings);
-                if (settings.UseFastlane)
+                if (settings.UseFastlane && placement == ButtonPlacement.Cart)
                 {
                     try
                     {
@@ -1354,7 +1354,7 @@ public class PayPalCommerceServiceManager
                             ResponseType = "client_token",
                             Intent = "sdk_init"
                         }, settings);
-                        clientToken = fastlaneToken?.ClientToken;
+                        clientToken = fastlaneToken?.Token ?? fastlaneToken?.ClientToken;
                     }
                     catch
                     {

@@ -8,7 +8,7 @@
 {
     if (!string.IsNullOrEmpty(Model.ClientToken))
     {
-        <script asp-location="Auto" src="@Model.ScriptUrl" data-page-type="cart" data-sdk-client-token="@Model.ClientToken" data-client-token="@Model.ClientToken" data-partner-attribution-id="@PayPalCommerceDefaults.PartnerHeader.Value"></script>
+        <script asp-location="Auto" src="@Model.ScriptUrl" data-page-type="cart" data-sdk-client-token="@Model.ClientToken" data-partner-attribution-id="@PayPalCommerceDefaults.PartnerHeader.Value"></script>
     }
     else
     {

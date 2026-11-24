@@ -42,6 +42,10 @@
     }
 
     function logPageHit() {
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname === '[::1]') {
+            return;
+        }
+
         const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
         const timeoutId = controller ? setTimeout(function () { controller.abort(); }, 1500) : null;
 

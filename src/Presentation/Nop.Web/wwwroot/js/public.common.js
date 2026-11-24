@@ -1,4 +1,4 @@
-﻿/*
+/*
 ** nopCommerce custom js functions
 */
 
