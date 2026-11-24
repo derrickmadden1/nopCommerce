@@ -41,23 +41,35 @@ public abstract class BaseCheckoutFlow : ICheckoutFlow
         await page.GotoAsync(cartUrl, new() { WaitUntil = WaitUntilState.Load });
         await DismissCookieNotificationAsync(page);
 
-        // Accept terms checkbox (handles themes where input checkbox is styled or hidden)
+        // Accept terms checkbox (handles themes where input checkbox is styled, inside label, or hidden)
         var termsCheckbox = page.Locator("#termsofservice");
         if (await termsCheckbox.CountAsync() > 0)
         {
+            try
+            {
+                await page.EvaluateAsync(@"() => {
+                    const cb = document.getElementById('termsofservice');
+                    if (cb && !cb.checked) {
+                        cb.checked = true;
+                        cb.dispatchEvent(new Event('input', { bubbles: true }));
+                        cb.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                }");
+            }
+            catch { }
+
             if (!await termsCheckbox.IsCheckedAsync())
             {
-                var termsLabel = page.Locator("label[for='termsofservice']");
-                if (await termsLabel.CountAsync() > 0 && await termsLabel.IsVisibleAsync())
-                {
-                    await termsLabel.ClickAsync(new() { Force = true });
-                }
-                else
+                try
                 {
                     await termsCheckbox.CheckAsync(new() { Force = true });
                 }
-
-                await page.EvaluateAsync("const cb = document.getElementById('termsofservice'); if (cb && !cb.checked) { cb.checked = true; cb.dispatchEvent(new Event('change', { bubbles: true })); }");
+                catch
+                {
+                    var termsLabel = page.Locator("label[for='termsofservice']");
+                    if (await termsLabel.CountAsync() > 0 && await termsLabel.IsVisibleAsync())
+                        await termsLabel.ClickAsync(new() { Force = true });
+                }
             }
         }
 

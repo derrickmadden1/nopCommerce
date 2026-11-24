@@ -6,7 +6,14 @@
 
 @if (!string.IsNullOrEmpty(Model.ScriptUrl))
 {
-    <script asp-location="Auto" src="@Model.ScriptUrl" data-page-type="cart" data-sdk-client-token="@Model.ClientToken" data-partner-attribution-id="@PayPalCommerceDefaults.PartnerHeader.Value"></script>
+    if (!string.IsNullOrEmpty(Model.ClientToken))
+    {
+        <script asp-location="Auto" src="@Model.ScriptUrl" data-page-type="cart" data-sdk-client-token="@Model.ClientToken" data-partner-attribution-id="@PayPalCommerceDefaults.PartnerHeader.Value"></script>
+    }
+    else
+    {
+        <script asp-location="Auto" src="@Model.ScriptUrl" data-page-type="cart" data-partner-attribution-id="@PayPalCommerceDefaults.PartnerHeader.Value"></script>
+    }
 }
 
 <div class="fastlane-cart-container" id="fastlane-cart-section">

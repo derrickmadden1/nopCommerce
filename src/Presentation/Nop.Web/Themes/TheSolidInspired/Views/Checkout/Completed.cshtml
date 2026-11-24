@@ -1,0 +1,288 @@
+@model CheckoutCompletedModel
+@using Nop.Core.Domain.Catalog
+@using Nop.Core.Domain.Orders
+@using Nop.Services.Orders
+@using Nop.Services.Customers
+@using Nop.Web.Factories
+@using Nop.Web.Models.Checkout
+@using Nop.Web.Models.Order
+@inject IOrderService orderService
+@inject IOrderModelFactory orderModelFactory
+@inject ICustomerService customerService
+@inject IWorkContext workContext
+
+@{
+    Layout = "_ColumnsOne";
+
+    //title
+    NopHtml.AddTitleParts(T("PageTitle.Checkout").Text);
+    //page class
+    NopHtml.AppendPageCssClassParts("html-checkout-page");
+    NopHtml.AppendPageCssClassParts("html-order-completed-page");
+
+    var order = await orderService.GetOrderByIdAsync(Model.OrderId);
+    OrderDetailsModel orderDetails = null;
+    if (order != null)
+    {
+        orderDetails = await orderModelFactory.PrepareOrderDetailsModelAsync(order);
+    }
+
+    var customer = await workContext.GetCurrentCustomerAsync();
+    var isGuest = await customerService.IsGuestAsync(customer);
+}
+
+<div class="page checkout-page order-completed-page section-container">
+    @await Component.InvokeAsync("CheckoutProgress", new { step = CheckoutProgressStep.Complete })
+
+    <div class="page-body checkout-data">
+        @await Component.InvokeAsync("Widget", new { widgetZone = PublicWidgetZones.CheckoutCompletedTop, additionalData = Model })
+
+        <div class="order-completed-modern">
+            <!-- Hero Header -->
+            <div class="order-completed-hero">
+                <div class="order-completed-icon">
+                    <i class="fas fa-check"></i>
+                </div>
+                <h1 class="order-completed-title">@T("Checkout.YourOrderHasBeenSuccessfullyProcessed")</h1>
+                <p class="order-completed-subtitle">Thank you for your purchase! We've received your order and are preparing it.</p>
+                
+                <div class="order-completed-badge-wrap">
+                    <span class="order-badge">
+                        <i class="fas fa-receipt"></i> @T("Checkout.OrderNumber"): <strong>@(Model.CustomOrderNumber ?? Model.OrderId.ToString())</strong>
+                    </span>
+                    @if (orderDetails != null)
+                    {
+                        <span class="order-date-badge">
+                            <i class="far fa-calendar-alt"></i> @orderDetails.CreatedOn.ToString("dd MMM yyyy, HH:mm")
+                        </span>
+                    }
+                </div>
+            </div>
+
+            <!-- Email Notification Card -->
+            @if (orderDetails?.BillingAddress != null && !string.IsNullOrEmpty(orderDetails.BillingAddress.Email))
+            {
+                <div class="order-completed-notice">
+                    <div class="notice-icon">
+                        <i class="fas fa-envelope-open-text"></i>
+                    </div>
+                    <div class="notice-text">
+                        A confirmation receipt has been sent to <strong>@orderDetails.BillingAddress.Email</strong>.
+                        We will email you shipping and tracking updates as soon as your parcel is dispatched.
+                    </div>
+                </div>
+            }
+
+            <!-- Guest User: Prompt to create account -->
+            @if (isGuest && orderDetails?.BillingAddress != null && !string.IsNullOrEmpty(orderDetails.BillingAddress.Email))
+            {
+                <div class="order-guest-register-card">
+                    <div class="guest-register-content">
+                        <div class="guest-register-icon">
+                            <i class="fas fa-user-plus"></i>
+                        </div>
+                        <div class="guest-register-info">
+                            <h3>Save your details for next time?</h3>
+                            <p>Create an account with <strong>@orderDetails.BillingAddress.Email</strong> to track shipments, view your order history, and checkout faster.</p>
+                        </div>
+                    </div>
+                    <div class="guest-register-action">
+                        <a href="@Url.RouteUrl(NopRouteNames.Standard.REGISTER, new { email = orderDetails.BillingAddress.Email })" class="btn-primary-outline register-btn">
+                            <i class="fas fa-user-check"></i> Create Account
+                        </a>
+                    </div>
+                </div>
+            }
+
+            @if (orderDetails != null)
+            {
+                <!-- Order Summary & Items -->
+                <div class="order-completed-summary-card">
+                    <div class="summary-card-header">
+                        <h2><i class="fas fa-box-open"></i> Order Summary</h2>
+                        @if (!string.IsNullOrEmpty(orderDetails.OrderStatusText))
+                        {
+                            <span class="order-status-pill status-@orderDetails.OrderStatus.ToString().ToLowerInvariant()">
+                                <i class="fas fa-circle"></i> @orderDetails.OrderStatusText
+                            </span>
+                        }
+                    </div>
+
+                    <!-- Items List -->
+                    @if (orderDetails.Items.Count > 0)
+                    {
+                        <div class="order-completed-items-table">
+                            <div class="items-table-header">
+                                <span class="col-product">Item</span>
+                                <span class="col-price">Price</span>
+                                <span class="col-quantity">Qty</span>
+                                <span class="col-total">Total</span>
+                            </div>
+                            <div class="items-table-body">
+                                @foreach (var item in orderDetails.Items)
+                                {
+                                    <div class="item-row">
+                                        <div class="col-product item-product-info">
+                                            @if (item.Picture != null && !string.IsNullOrEmpty(item.Picture.ImageUrl))
+                                            {
+                                                <div class="item-thumb">
+                                                    <img src="@item.Picture.ImageUrl" alt="@item.ProductName" />
+                                                </div>
+                                            }
+                                            <div class="item-meta">
+                                                <a href="@(await NopUrl.RouteGenericUrlAsync<Product>(item.ProductSeName))" class="item-name">@item.ProductName</a>
+                                                @if (!string.IsNullOrEmpty(item.AttributeInfo))
+                                                {
+                                                    <div class="item-attributes">
+                                                        @Html.Raw(item.AttributeInfo)
+                                                    </div>
+                                                }
+                                                @if (orderDetails.ShowSku && !string.IsNullOrEmpty(item.Sku))
+                                                {
+                                                    <div class="item-sku">SKU: @item.Sku</div>
+                                                }
+                                            </div>
+                                        </div>
+                                        <div class="col-price item-unit-price" data-label="Price">
+                                            @item.UnitPrice
+                                        </div>
+                                        <div class="col-quantity item-qty" data-label="Quantity">
+                                            × @item.Quantity
+                                        </div>
+                                        <div class="col-total item-subtotal" data-label="Total">
+                                            <strong>@item.SubTotal</strong>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Totals Breakdown -->
+                    <div class="order-completed-totals-wrap">
+                        <div class="totals-table">
+                            @if (!string.IsNullOrEmpty(orderDetails.OrderSubtotal))
+                            {
+                                <div class="total-row">
+                                    <span class="label">@T("Order.SubTotal"):</span>
+                                    <span class="value">@orderDetails.OrderSubtotal</span>
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(orderDetails.OrderSubTotalDiscount))
+                            {
+                                <div class="total-row discount">
+                                    <span class="label">@T("Order.SubTotalDiscount"):</span>
+                                    <span class="value">-@orderDetails.OrderSubTotalDiscount</span>
+                                </div>
+                            }
+                            @if (orderDetails.IsShippable && !string.IsNullOrEmpty(orderDetails.OrderShipping))
+                            {
+                                <div class="total-row">
+                                    <span class="label">
+                                        @T("Order.Shipping")
+                                        @if (!string.IsNullOrEmpty(orderDetails.ShippingMethod))
+                                        {
+                                            <small>(@orderDetails.ShippingMethod)</small>
+                                        }:
+                                    </span>
+                                    <span class="value">@orderDetails.OrderShipping</span>
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(orderDetails.PaymentMethodAdditionalFee))
+                            {
+                                <div class="total-row">
+                                    <span class="label">@T("Order.PaymentMethodAdditionalFee"):</span>
+                                    <span class="value">@orderDetails.PaymentMethodAdditionalFee</span>
+                                </div>
+                            }
+                            @if (orderDetails.DisplayTax && !string.IsNullOrEmpty(orderDetails.Tax))
+                            {
+                                <div class="total-row">
+                                    <span class="label">@T("Order.Tax"):</span>
+                                    <span class="value">@orderDetails.Tax</span>
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(orderDetails.OrderTotalDiscount))
+                            {
+                                <div class="total-row discount">
+                                    <span class="label">@T("Order.TotalDiscount"):</span>
+                                    <span class="value">-@orderDetails.OrderTotalDiscount</span>
+                                </div>
+                            }
+                            <div class="total-row grand-total">
+                                <span class="label">@T("Order.OrderTotal"):</span>
+                                <span class="value">@orderDetails.OrderTotal</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Shipping & Payment Information Grid -->
+                <div class="order-completed-details-grid">
+                    @if (orderDetails.IsShippable && orderDetails.ShippingAddress != null)
+                    {
+                        <div class="details-card">
+                            <div class="card-icon"><i class="fas fa-shipping-fast"></i></div>
+                            <div class="card-content">
+                                <h3>@T("Order.ShippingAddress")</h3>
+                                <div class="address-name">@orderDetails.ShippingAddress.FirstName @orderDetails.ShippingAddress.LastName</div>
+                                <div class="address-line">@orderDetails.ShippingAddress.Address1</div>
+                                @if (!string.IsNullOrEmpty(orderDetails.ShippingAddress.Address2))
+                                {
+                                    <div class="address-line">@orderDetails.ShippingAddress.Address2</div>
+                                }
+                                <div class="address-line">
+                                    @orderDetails.ShippingAddress.City@(string.IsNullOrEmpty(orderDetails.ShippingAddress.ZipPostalCode) ? "" : $", {orderDetails.ShippingAddress.ZipPostalCode}")
+                                </div>
+                                <div class="address-line">@orderDetails.ShippingAddress.CountryName</div>
+                                @if (!string.IsNullOrEmpty(orderDetails.ShippingMethod))
+                                {
+                                    <div class="shipping-method-info">
+                                        <i class="fas fa-truck"></i> @orderDetails.ShippingMethod
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    <div class="details-card">
+                        <div class="card-icon"><i class="fas fa-credit-card"></i></div>
+                        <div class="card-content">
+                            <h3>@T("Order.BillingAddress") & Payment</h3>
+                            @if (orderDetails.BillingAddress != null)
+                            {
+                                <div class="address-name">@orderDetails.BillingAddress.FirstName @orderDetails.BillingAddress.LastName</div>
+                                <div class="address-line">@orderDetails.BillingAddress.Address1</div>
+                                <div class="address-line">
+                                    @orderDetails.BillingAddress.City@(string.IsNullOrEmpty(orderDetails.BillingAddress.ZipPostalCode) ? "" : $", {orderDetails.BillingAddress.ZipPostalCode}")
+                                </div>
+                                <div class="address-line">@orderDetails.BillingAddress.CountryName</div>
+                            }
+                            @if (!string.IsNullOrEmpty(orderDetails.PaymentMethod))
+                            {
+                                <div class="payment-method-info">
+                                    <i class="fas fa-wallet"></i> @orderDetails.PaymentMethod
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Action Buttons Footer -->
+            <div class="order-completed-actions">
+                <a href="@Url.RouteUrl(NopRouteNames.General.HOMEPAGE)" class="btn-primary continue-shopping-btn">
+                    <i class="fas fa-shopping-bag"></i> Continue Shopping
+                </a>
+                <a href="@Url.RouteUrl(NopRouteNames.Standard.PRINT_ORDER_DETAILS, new { orderId = Model.OrderId })" target="_blank" class="btn-primary-outline print-order-btn">
+                    <i class="fas fa-print"></i> Print Receipt
+                </a>
+                <a href="@Url.RouteUrl(NopRouteNames.Standard.ORDER_DETAILS, new { orderId = Model.OrderId })" class="btn-primary-outline view-details-btn">
+                    <i class="fas fa-file-invoice"></i> View Order Details
+                </a>
+            </div>
+        </div>
+
+        @await Component.InvokeAsync("Widget", new { widgetZone = PublicWidgetZones.CheckoutCompletedBottom, additionalData = Model })
+    </div>
+</div>

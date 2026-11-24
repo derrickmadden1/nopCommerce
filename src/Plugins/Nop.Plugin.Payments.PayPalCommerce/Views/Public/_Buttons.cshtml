@@ -19,13 +19,21 @@
 }
 
 <link rel="stylesheet" href="~/Plugins/Payments.PayPalCommerce/Content/styles.css" />
-@if (Model.Placement == ButtonPlacement.PaymentMethod && !string.IsNullOrEmpty(Model.Script.ClientToken))
+@if (Model.Placement == ButtonPlacement.PaymentMethod && !string.IsNullOrEmpty(Model.Script.ClientToken) && !string.IsNullOrEmpty(Model.Script.UserToken))
 {
     <script asp-location="Auto" src="@Model.Script.Url" data-page-type="@pageType" data-client-token="@Model.Script.ClientToken" data-user-id-token="@Model.Script.UserToken" data-partner-attribution-id="@PayPalCommerceDefaults.PartnerHeader.Value"></script>
 }
-else
+else if (Model.Placement == ButtonPlacement.PaymentMethod && !string.IsNullOrEmpty(Model.Script.ClientToken))
+{
+    <script asp-location="Auto" src="@Model.Script.Url" data-page-type="@pageType" data-client-token="@Model.Script.ClientToken" data-partner-attribution-id="@PayPalCommerceDefaults.PartnerHeader.Value"></script>
+}
+else if (!string.IsNullOrEmpty(Model.Script.UserToken))
 {
     <script asp-location="Auto" src="@Model.Script.Url" data-page-type="@pageType" data-user-id-token="@Model.Script.UserToken" data-partner-attribution-id="@PayPalCommerceDefaults.PartnerHeader.Value"></script>
+}
+else
+{
+    <script asp-location="Auto" src="@Model.Script.Url" data-page-type="@pageType" data-partner-attribution-id="@PayPalCommerceDefaults.PartnerHeader.Value"></script>
 }
 @if (settings.UseApplePay && Model.Placement != ButtonPlacement.Product)
 {
@@ -38,6 +46,144 @@ else
 @if (settings.UseSandbox || settings.ConfiguratorSupported)
 {
     <script asp-location="Auto" src="@PayPalCommerceDefaults.MerchantConfiguratorScriptUrl" defer></script>
+}
+
+<style>
+    .paypal-loading-placeholder {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 30px 20px;
+        margin: 15px auto 25px auto;
+        max-width: 500px;
+        width: 100%;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+        box-sizing: border-box;
+    }
+    .paypal-spinner {
+        width: 34px;
+        height: 34px;
+        border: 3px solid #e2e8f0;
+        border-top: 3px solid #0070ba;
+        border-radius: 50%;
+        animation: paypal-spin 0.8s linear infinite;
+        margin-bottom: 12px;
+    }
+    @@keyframes paypal-spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    .paypal-loading-title {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #475569;
+        margin-bottom: 18px;
+        letter-spacing: 0.2px;
+    }
+    .paypal-skeleton-box {
+        width: 100%;
+        max-width: 420px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    .paypal-skeleton-button {
+        width: 100%;
+        height: 45px;
+        border-radius: 6px;
+        position: relative;
+        overflow: hidden;
+    }
+    .paypal-skeleton-gold {
+        background-color: #ffc439;
+        opacity: 0.35;
+    }
+    .paypal-skeleton-dark {
+        background-color: #2c2e2f;
+        opacity: 0.25;
+    }
+    .paypal-skeleton-divider {
+        text-align: center;
+        margin: 8px 0;
+        color: #94a3b8;
+        font-size: 0.8rem;
+        font-weight: 600;
+        position: relative;
+    }
+    .paypal-skeleton-divider::before,
+    .paypal-skeleton-divider::after {
+        content: "";
+        position: absolute;
+        top: 50%;
+        width: 40%;
+        height: 1px;
+        background-color: #e2e8f0;
+    }
+    .paypal-skeleton-divider::before { left: 0; }
+    .paypal-skeleton-divider::after { right: 0; }
+    .paypal-skeleton-fields {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    .paypal-skeleton-row {
+        display: flex;
+        gap: 10px;
+    }
+    .paypal-skeleton-field {
+        height: 42px;
+        background-color: #f1f5f9;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        position: relative;
+        overflow: hidden;
+        width: 100%;
+    }
+    .paypal-skeleton-half {
+        flex: 1;
+    }
+    .paypal-skeleton-button::after,
+    .paypal-skeleton-field::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        background: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.6) 50%, rgba(255, 255, 255, 0) 100%);
+        animation: paypal-shimmer 1.4s infinite;
+    }
+    @@keyframes paypal-shimmer {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
+    }
+</style>
+
+@if (Model.Placement == ButtonPlacement.PaymentMethod)
+{
+    <div id="paypal-loading-indicator" class="paypal-loading-placeholder">
+        <div class="paypal-spinner"></div>
+        <div class="paypal-loading-title">Loading secure payment options...</div>
+        <div class="paypal-skeleton-box">
+            <div class="paypal-skeleton-button paypal-skeleton-gold"></div>
+            <div class="paypal-skeleton-button paypal-skeleton-dark"></div>
+            @if (settings.UseCardFields)
+            {
+                <div class="paypal-skeleton-divider"><span>OR</span></div>
+                <div class="paypal-skeleton-fields">
+                    <div class="paypal-skeleton-field"></div>
+                    <div class="paypal-skeleton-row">
+                        <div class="paypal-skeleton-field paypal-skeleton-half"></div>
+                        <div class="paypal-skeleton-field paypal-skeleton-half"></div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
 }
 
 <div id="@paypalButtonContainer" class="paypal-button-container"></div>
@@ -123,7 +269,19 @@ else
                 tagline: '@(Model.Placement == ButtonPlacement.Product || settings.StyleLayout == "horizontal" ? settings.StyleTagline : string.Empty)'
             }
         });
-        paypalButtonContainer.render('#@paypalButtonContainer')
+        var buttonsPromise = paypalButtonContainer.render('#@paypalButtonContainer');
+        if (buttonsPromise && typeof buttonsPromise.then === 'function') {
+            buttonsPromise.then(function () {
+                $('#paypal-loading-indicator').fadeOut(250, function () { $(this).remove(); });
+            }).catch(function () {
+                $('#paypal-loading-indicator').fadeOut(250);
+            });
+        } else {
+            $('#paypal-loading-indicator').fadeOut(250);
+        }
+        setTimeout(function () {
+            $('#paypal-loading-indicator').fadeOut(250);
+        }, 8000);
 
         //render Card Fields (if available)
         if ($('#@paypalCardContainer').length > 0) {
@@ -491,7 +649,19 @@ else
                     onCancel: cancelCallback,
                     onError: errorCallback
                 });
-                paypalButtonContainer.render('#@paypalButtonContainer')
+                var buttonsPromise = paypalButtonContainer.render('#@paypalButtonContainer');
+        if (buttonsPromise && typeof buttonsPromise.then === 'function') {
+            buttonsPromise.then(function () {
+                $('#paypal-loading-indicator').fadeOut(250, function () { $(this).remove(); });
+            }).catch(function () {
+                $('#paypal-loading-indicator').fadeOut(250);
+            });
+        } else {
+            $('#paypal-loading-indicator').fadeOut(250);
+        }
+        setTimeout(function () {
+            $('#paypal-loading-indicator').fadeOut(250);
+        }, 8000);
                 if ($('#@paypalApmContainer').length > 0) {
                     $('#@paypalApmContainer').after($('#@paypalButtonContainer'));
                 }

@@ -1,4 +1,4 @@
-﻿@model MessagesModel
+@model MessagesModel
 
 @{
     var paypalMessagesContainer = "paypal-messages-container";
@@ -39,13 +39,15 @@
 
         $('#@paypalMessagesContainer').show();
 
-        if ($('#@paypalMessagesContainer').length > 0) {
+        if ($('#@paypalMessagesContainer').length > 0 && '@Model.Amount' && '@Model.Amount' !== '0' && '@Model.Amount' !== '0.00') {
             var messages = window.merchantConfigurators?.generateMessagingCodeSnippet({
                 messageConfig: @Html.Raw(Model.Config),
                 productPrice: '@Model.Amount',
             });
-            $('#@paypalMessagesContainer').append(messages);
-            $('.total-info').after($('#@paypalMessagesContainer'));
+            if (messages) {
+                $('#@paypalMessagesContainer').append(messages);
+                $('.total-info').after($('#@paypalMessagesContainer'));
+            }
         }
 
         $('#@paypalMessagesContainer').addClass('pay-later-total-info');

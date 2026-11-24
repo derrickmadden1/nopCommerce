@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+using Newtonsoft.Json;
 
 namespace Nop.Plugin.Payments.PayPalCommerce.Services.Api.Models;
 
@@ -32,6 +32,12 @@ public class AccessToken
     /// </summary>
     [JsonProperty(PropertyName = "id_token")]
     public string UserIdToken { get; set; }
+
+    /// <summary>
+    /// Gets or sets the client token
+    /// </summary>
+    [JsonProperty(PropertyName = "client_token")]
+    public string ClientToken { get; set; }
 
     /// <summary>
     /// Gets or sets the scope
