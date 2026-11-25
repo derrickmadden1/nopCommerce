@@ -38,7 +38,7 @@
                     @foreach (var picture in Model.PictureModels)
                     {
                         <a class="swiper-slide" href="@(await NopUrl.RouteGenericUrlAsync<Product>(new { SeName = Model.SeName }))" title="@picture.Title">
-                            <img alt="@picture.AlternateText" src="@picture.ImageUrl" title="@picture.Title" />
+                            <img alt="@picture.AlternateText" src="@picture.ImageUrl" title="@picture.Title" width="415" height="415" loading="lazy" decoding="async" />
                         </a>
                     }
                 </div>
@@ -59,7 +59,7 @@
         {
             var picture = Model.PictureModels.FirstOrDefault();
             <a href="@(await NopUrl.RouteGenericUrlAsync<Product>(new { SeName = Model.SeName }))" title="@picture?.Title">
-                <img alt="@picture?.AlternateText" src="@picture?.ImageUrl" title="@picture?.Title" />
+                <img alt="@picture?.AlternateText" src="@picture?.ImageUrl" title="@picture?.Title" width="415" height="415" loading="lazy" decoding="async" />
             </a>
         }
     </div>

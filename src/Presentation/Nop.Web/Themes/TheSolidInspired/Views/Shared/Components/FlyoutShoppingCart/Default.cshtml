@@ -17,7 +17,7 @@
                         {
                             <div class="picture">
                                 <a href="@(await NopUrl.RouteGenericUrlAsync<Product>(new { SeName = item.ProductSeName }))" title="@item.Picture.Title">
-                                    <img alt="@item.Picture.AlternateText" src="@item.Picture.ImageUrl" title="@item.Picture.Title" />
+                                    <img alt="@item.Picture.AlternateText" src="@item.Picture.ImageUrl" title="@item.Picture.Title" width="70" height="70" loading="lazy" decoding="async" />
                                 </a>
                             </div>
                         }
