@@ -10,11 +10,11 @@
 <link rel="stylesheet" href="~/Plugins/Payments.PayPalCommerce/Content/styles.css" />
 @if (!string.IsNullOrEmpty(Model.Script.ClientToken) && !string.IsNullOrEmpty(Model.Script.UserToken))
 {
-    <script asp-location="Auto" src="@Model.Script.Url" data-page-type="checkout" data-client-token="@Model.Script.ClientToken" data-user-id-token="@Model.Script.UserToken" data-partner-attribution-id="@PayPalCommerceDefaults.PartnerHeader.Value"></script>
+    <script asp-location="Auto" src="@Model.Script.Url" data-page-type="checkout" data-sdk-client-token="@Model.Script.ClientToken" data-client-token="@Model.Script.ClientToken" data-user-id-token="@Model.Script.UserToken" data-partner-attribution-id="@PayPalCommerceDefaults.PartnerHeader.Value"></script>
 }
 else if (!string.IsNullOrEmpty(Model.Script.ClientToken))
 {
-    <script asp-location="Auto" src="@Model.Script.Url" data-page-type="checkout" data-client-token="@Model.Script.ClientToken" data-partner-attribution-id="@PayPalCommerceDefaults.PartnerHeader.Value"></script>
+    <script asp-location="Auto" src="@Model.Script.Url" data-page-type="checkout" data-sdk-client-token="@Model.Script.ClientToken" data-client-token="@Model.Script.ClientToken" data-partner-attribution-id="@PayPalCommerceDefaults.PartnerHeader.Value"></script>
 }
 else if (!string.IsNullOrEmpty(Model.Script.UserToken))
 {
@@ -54,25 +54,25 @@ else
 
         <div id="new-card-fields-container" class="paypal-new-card-fields">
             <div id="card-name-group" class="paypal-card-form-group">
-                <label for="card-name-field-container" class="paypal-field-label">@lblCardName</label>
+                <label class="paypal-field-label">@lblCardName</label>
                 <div id="card-name-field-container" class="paypal-field-input-wrapper"></div>
                 <span id="card-name-error" class="field-validation-error paypal-field-error"></span>
             </div>
 
             <div id="card-number-group" class="paypal-card-form-group">
-                <label for="card-number-field-container" class="paypal-field-label">@lblCardNumber</label>
+                <label class="paypal-field-label">@lblCardNumber</label>
                 <div id="card-number-field-container" class="paypal-field-input-wrapper"></div>
                 <span id="card-number-error" class="field-validation-error paypal-field-error"></span>
             </div>
 
             <div class="paypal-card-row">
                 <div id="card-expiry-group" class="paypal-card-form-group paypal-card-half">
-                    <label for="card-expiry-field-container" class="paypal-field-label">@lblCardExpiry</label>
+                    <label class="paypal-field-label">@lblCardExpiry</label>
                     <div id="card-expiry-field-container" class="paypal-field-input-wrapper"></div>
                     <span id="card-expiry-error" class="field-validation-error paypal-field-error"></span>
                 </div>
                 <div id="card-cvv-group" class="paypal-card-form-group paypal-card-half">
-                    <label for="card-cvv-field-container" class="paypal-field-label">@lblCardCvv</label>
+                    <label class="paypal-field-label">@lblCardCvv</label>
                     <div id="card-cvv-field-container" class="paypal-field-input-wrapper"></div>
                     <span id="card-cvv-error" class="field-validation-error paypal-field-error"></span>
                 </div>
@@ -133,9 +133,8 @@ else
                     'outline': 'none',
                     'box-shadow': 'none',
                     'background': 'transparent',
-                    'padding': '0',
-                    'width': '100%',
-                    'height': '100%'
+                    'padding': '0 12px',
+                    'line-height': '46px'
                 },
                 ':focus': {
                     'border': 'none',
@@ -144,6 +143,9 @@ else
                     'color': '#1e293b'
                 },
                 '::placeholder': {
+                    'color': '#94a3b8'
+                },
+                ':placeholder': {
                     'color': '#94a3b8'
                 },
                 '.invalid': {
