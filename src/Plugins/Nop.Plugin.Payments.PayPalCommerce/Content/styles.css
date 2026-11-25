@@ -469,12 +469,14 @@ input[type=submit] {
 }
 
 .paypal-field-input-wrapper {
-  height: 50px;
+  height: 48px;
   padding: 0 12px;
   background: #ffffff;
   border: 1px solid #cbd5e1;
   border-radius: 6px;
   box-sizing: border-box;
+  display: flex;
+  align-items: center;
   position: relative;
   transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
 }
@@ -483,6 +485,8 @@ input[type=submit] {
   height: 100% !important;
   width: 100% !important;
   border: none !important;
+  background: transparent !important;
+  display: block !important;
 }
 
 .paypal-field-input-wrapper:hover {
