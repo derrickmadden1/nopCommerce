@@ -194,6 +194,8 @@ else
         box-sizing: border-box;
         display: flex;
         align-items: stretch;
+        cursor: text;
+        position: relative;
         transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
     }
     .paypal-field-input-wrapper iframe {
@@ -496,40 +498,31 @@ else
                     'border': 'none',
                     'outline': 'none',
                     'box-shadow': 'none',
-                    'background': 'transparent',
-                    'padding': '12px 0',
-                    'line-height': '24px',
-                    'height': '48px'
+                    'background': 'transparent'
                 },
                 ':focus': {
-                    'border': 'none',
+                    'color': '#1e293b',
                     'outline': 'none',
-                    'box-shadow': 'none'
-                },
-                'input:focus': {
                     'border': 'none',
-                    'outline': 'none',
                     'box-shadow': 'none'
-                },
-                '::placeholder': {
-                    'color': '#94a3b8'
                 },
                 '.invalid': {
                     'color': '#e53e3e',
-                    'border': 'none',
                     'outline': 'none',
-                    'box-shadow': 'none'
-                },
-                'input.invalid': {
-                    'color': '#e53e3e',
                     'border': 'none',
-                    'outline': 'none',
                     'box-shadow': 'none'
                 },
                 '.valid': {
                     'color': '#16a34a'
                 }
             };
+
+            $(document).on('click', '.paypal-field-input-wrapper', function () {
+                var $iframe = $(this).find('iframe');
+                if ($iframe.length) {
+                    $iframe[0].focus();
+                }
+            });
 
             function getFieldElements(fieldName) {
                 switch (fieldName) {
