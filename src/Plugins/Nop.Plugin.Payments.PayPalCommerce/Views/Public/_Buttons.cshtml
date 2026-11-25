@@ -166,6 +166,7 @@ else
         margin: 15px auto 10px auto;
         padding: 0;
         text-align: left;
+        transition: opacity 0.25s ease;
     }
     .paypal-card-form-group {
         margin-bottom: 16px;
@@ -381,7 +382,7 @@ else
     var lblSavedCard = T("Plugins.Payments.PayPalCommerce.Card.SelectSavedCard").Text;
     if (string.IsNullOrEmpty(lblSavedCard) || lblSavedCard.IndexOf("plugins.", StringComparison.OrdinalIgnoreCase) != -1) { lblSavedCard = "Saved card"; }
 
-    <div id="@paypalCardContainer" class="paypal-card-container">
+    <div id="@paypalCardContainer" class="paypal-card-container" style="opacity: 0; pointer-events: none;">
         <div id="saved-cards-container" style="display: none">
             <div class="paypal-card-form-group">
                 <label for="saved-cards" class="paypal-field-label">@lblSavedCard</label>
@@ -487,19 +488,21 @@ else
                 tagline: '@(Model.Placement == ButtonPlacement.Product || settings.StyleLayout == "horizontal" ? settings.StyleTagline : string.Empty)'
             }
         });
+        function dismissLoadingIndicator() {
+            var $indicator = $('#paypal-loading-indicator');
+            if ($indicator.length > 0) {
+                $indicator.stop(true, true).fadeOut(200, function () { $(this).remove(); });
+            }
+            $('#@paypalCardContainer').css({ 'opacity': '1', 'pointer-events': 'auto' });
+        }
+
         var buttonsPromise = paypalButtonContainer.render('#@paypalButtonContainer');
         if (buttonsPromise && typeof buttonsPromise.then === 'function') {
-            buttonsPromise.then(function () {
-                $('#paypal-loading-indicator').fadeOut(250, function () { $(this).remove(); });
-            }).catch(function () {
-                $('#paypal-loading-indicator').fadeOut(250);
-            });
+            buttonsPromise.then(dismissLoadingIndicator).catch(dismissLoadingIndicator);
         } else {
-            $('#paypal-loading-indicator').fadeOut(250);
+            dismissLoadingIndicator();
         }
-        setTimeout(function () {
-            $('#paypal-loading-indicator').fadeOut(250);
-        }, 8000);
+        setTimeout(dismissLoadingIndicator, 1500);
 
         //render Card Fields (if available)
         if ($('#@paypalCardContainer').length > 0) {
@@ -705,25 +708,33 @@ else
             });
 
             if (cardFields.isEligible()) {
-                cardFields.NumberField({
-                    placeholder: 'Card number',
-                    style: cardStyle
-                }).render('#card-number-field-container');
+                var fieldPromises = [
+                    cardFields.NumberField({
+                        placeholder: 'Card number',
+                        style: cardStyle
+                    }).render('#card-number-field-container'),
 
-                cardFields.ExpiryField({
-                    placeholder: 'MM / YY',
-                    style: cardStyle
-                }).render('#card-expiry-field-container');
+                    cardFields.ExpiryField({
+                        placeholder: 'MM / YY',
+                        style: cardStyle
+                    }).render('#card-expiry-field-container'),
 
-                cardFields.CVVField({
-                    placeholder: 'CVV',
-                    style: cardStyle
-                }).render('#card-cvv-field-container');
+                    cardFields.CVVField({
+                        placeholder: 'CVV',
+                        style: cardStyle
+                    }).render('#card-cvv-field-container'),
 
-                cardFields.NameField({
-                    placeholder: 'Name on card',
-                    style: cardStyle
-                }).render('#card-name-field-container');
+                    cardFields.NameField({
+                        placeholder: 'Name on card',
+                        style: cardStyle
+                    }).render('#card-name-field-container')
+                ];
+
+                Promise.all(fieldPromises).then(function () {
+                    dismissLoadingIndicator();
+                }).catch(function () {
+                    dismissLoadingIndicator();
+                });
 
                 $('#@paypalCardContainer').before('<div id="paypal-divider" class="divider"><span>OR</span></div>');
                 $('#card-field-submit-button').show();
@@ -1131,19 +1142,7 @@ else
                     onCancel: cancelCallback,
                     onError: errorCallback
                 });
-                var buttonsPromise = paypalButtonContainer.render('#@paypalButtonContainer');
-        if (buttonsPromise && typeof buttonsPromise.then === 'function') {
-            buttonsPromise.then(function () {
-                $('#paypal-loading-indicator').fadeOut(250, function () { $(this).remove(); });
-            }).catch(function () {
-                $('#paypal-loading-indicator').fadeOut(250);
-            });
-        } else {
-            $('#paypal-loading-indicator').fadeOut(250);
-        }
-        setTimeout(function () {
-            $('#paypal-loading-indicator').fadeOut(250);
-        }, 8000);
+                paypalButtonContainer.render('#@paypalButtonContainer');
                 if ($('#@paypalApmContainer').length > 0) {
                     $('#@paypalApmContainer').after($('#@paypalButtonContainer'));
                 }
