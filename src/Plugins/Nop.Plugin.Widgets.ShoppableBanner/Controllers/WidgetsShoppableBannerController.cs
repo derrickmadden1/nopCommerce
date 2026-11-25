@@ -70,7 +70,8 @@ namespace Nop.Plugin.Widgets.ShoppableBanner.Controllers
                         ProductId = hotspot.ProductId,
                         ProductName = product?.Name ?? "Unknown Product",
                         PositionX = hotspot.PositionX,
-                        PositionY = hotspot.PositionY
+                        PositionY = hotspot.PositionY,
+                        ShowOnMobile = hotspot.ShowOnMobile
                     });
                 }
             }
@@ -114,7 +115,8 @@ namespace Nop.Plugin.Widgets.ShoppableBanner.Controllers
                     ProductId = hotspot.ProductId,
                     ProductName = product?.Name ?? "Unknown Product",
                     PositionX = hotspot.PositionX,
-                    PositionY = hotspot.PositionY
+                    PositionY = hotspot.PositionY,
+                    ShowOnMobile = hotspot.ShowOnMobile
                 });
             }
 
@@ -131,7 +133,7 @@ namespace Nop.Plugin.Widgets.ShoppableBanner.Controllers
 
         // Endpoint to add a new hotspot from the UI
         [HttpPost]
-        public async Task<IActionResult> HotspotAdd(int productId, decimal positionX, decimal positionY)
+        public async Task<IActionResult> HotspotAdd(int productId, decimal positionX, decimal positionY, bool showOnMobile = true)
         {
             if (productId <= 0)
                 return Json(new { success = false, message = "Valid Product ID is required." });
@@ -147,7 +149,8 @@ namespace Nop.Plugin.Widgets.ShoppableBanner.Controllers
             {
                 ProductId = productId,
                 PositionX = positionX,
-                PositionY = positionY
+                PositionY = positionY,
+                ShowOnMobile = showOnMobile
             });
 
             await _settingService.SaveSettingAsync(settings, storeScope);
@@ -174,9 +177,9 @@ namespace Nop.Plugin.Widgets.ShoppableBanner.Controllers
             return new NullJsonResult();
         }
 
-        // Endpoint to update a hotspot's coordinates
+        // Endpoint to update a hotspot's coordinates or mobile visibility
         [HttpPost]
-        public async Task<IActionResult> HotspotUpdate(int productId, decimal positionX, decimal positionY)
+        public async Task<IActionResult> HotspotUpdate(int productId, decimal? positionX, decimal? positionY, bool? showOnMobile)
         {
             var storeScope = await _storeContext.GetActiveStoreScopeConfigurationAsync();
             var settings = await _settingService.LoadSettingAsync<ShoppableBannerSettings>(storeScope);
@@ -185,8 +188,12 @@ namespace Nop.Plugin.Widgets.ShoppableBanner.Controllers
             if (hotspot == null)
                 return Json(new { success = false, message = "Hotspot not found." });
 
-            hotspot.PositionX = positionX;
-            hotspot.PositionY = positionY;
+            if (positionX.HasValue)
+                hotspot.PositionX = positionX.Value;
+            if (positionY.HasValue)
+                hotspot.PositionY = positionY.Value;
+            if (showOnMobile.HasValue)
+                hotspot.ShowOnMobile = showOnMobile.Value;
 
             await _settingService.SaveSettingAsync(settings, storeScope);
             await _settingService.ClearCacheAsync();

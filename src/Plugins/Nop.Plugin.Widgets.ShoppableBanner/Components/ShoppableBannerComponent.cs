@@ -80,7 +80,8 @@ namespace Nop.Plugin.Widgets.ShoppableBanner.Components
                         PositionX = hotspot.PositionX,
                         PositionY = hotspot.PositionY,
                         PictureUrl = pictureUrl,
-                        Price = formattedPrice
+                        Price = formattedPrice,
+                        ShowOnMobile = hotspot.ShowOnMobile
                     });
                 }
             }

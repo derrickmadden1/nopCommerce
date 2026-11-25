@@ -39,6 +39,7 @@ namespace Nop.Plugin.Widgets.ShoppableBanner.Models
         public string ProductName { get; set; }
         public decimal PositionX { get; set; }
         public decimal PositionY { get; set; }
+        public bool ShowOnMobile { get; set; } = true;
     }
 
     public record HotspotPagedListModel : BasePagedListModel<HotspotListModel>

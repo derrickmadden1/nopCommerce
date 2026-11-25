@@ -48,29 +48,32 @@
             </div>
         </div>
 
-        <div class="mobile-product-stack">
-            <h3 class="mobile-stack-title">Featured products</h3>
-            <div class="mobile-grid">
-                @foreach (var product in Model.Hotspots)
-                {
-                    <div class="mobile-product-card" data-product-id="@product.ProductId" role="button" tabindex="0" aria-label="@product.ProductName">
-                        @if (!string.IsNullOrEmpty(product.PictureUrl))
-                        {
-                            <div class="mobile-card-image">
-                                <img src="@product.PictureUrl" alt="@product.ProductName" width="140" height="140" loading="lazy" decoding="async" />
+        @if (Model.Hotspots.Any(x => x.ShowOnMobile))
+        {
+            <div class="mobile-product-stack">
+                <h3 class="mobile-stack-title">Featured products</h3>
+                <div class="mobile-grid">
+                    @foreach (var product in Model.Hotspots.Where(x => x.ShowOnMobile))
+                    {
+                        <div class="mobile-product-card" data-product-id="@product.ProductId" role="button" tabindex="0" aria-label="@product.ProductName">
+                            @if (!string.IsNullOrEmpty(product.PictureUrl))
+                            {
+                                <div class="mobile-card-image">
+                                    <img src="@product.PictureUrl" alt="@product.ProductName" width="140" height="140" loading="lazy" decoding="async" />
+                                </div>
+                            }
+                            <div class="mobile-card-details">
+                                <span class="product-name">@product.ProductName</span>
+                                <span class="product-price">@product.Price</span>
+                                <button type="button" class="btn btn-action add-to-cart-mobile" data-product-id="@product.ProductId" aria-label="Shop @product.ProductName now">
+                                    Shop Now
+                                </button>
                             </div>
-                        }
-                        <div class="mobile-card-details">
-                            <span class="product-name">@product.ProductName</span>
-                            <span class="product-price">@product.Price</span>
-                            <button type="button" class="btn btn-action add-to-cart-mobile" data-product-id="@product.ProductId" aria-label="Shop @product.ProductName now">
-                                Shop Now
-                            </button>
                         </div>
-                    </div>
-                }
+                    }
+                </div>
             </div>
-        </div>
+        }
     </div>
 
 </div>

@@ -118,6 +118,10 @@
                                         <label>Product ID</label>
                                         <input type="number" id="add-product-id" class="form-control" placeholder="e.g. 42" />
                                     </div>
+                                    <div class="form-group form-check">
+                                        <input type="checkbox" id="add-show-on-mobile" class="form-check-input" checked="checked" />
+                                        <label class="form-check-label" for="add-show-on-mobile">Show on mobile</label>
+                                    </div>
                                     <button type="button" id="btn-add-hotspot" class="btn btn-primary mt-2">Add to Banner</button>
                                 </div>
                             </div>
@@ -148,6 +152,13 @@
                                     Width = "100",
                                     Render = new RenderCustom("renderColumnPositionY")
                                 },
+                                new ColumnProperty(nameof(HotspotListModel.ShowOnMobile))
+                                {
+                                    Title = "Show on mobile",
+                                    Width = "120",
+                                    ClassName = NopColumnClassDefaults.CenterAll,
+                                    Render = new RenderCustom("renderColumnShowOnMobile")
+                                },
                                 new ColumnProperty(nameof(HotspotListModel.Id))
                                 {
                                     Title = "Delete",
@@ -171,6 +182,11 @@
 
     function renderColumnPositionY(data, type, row, meta) {
         return '<input type="number" step="0.01" min="0" max="100" class="form-control form-control-sm hotspot-edit-input" data-field="positionY" data-product-id="' + row.ProductId + '" value="' + parseFloat(data).toFixed(2) + '" style="width: 80px;" />';
+    }
+
+    function renderColumnShowOnMobile(data, type, row, meta) {
+        const isChecked = data === true || data === 'true';
+        return '<div class="text-center"><input type="checkbox" class="hotspot-show-on-mobile-checkbox" data-product-id="' + row.ProductId + '" ' + (isChecked ? 'checked="checked"' : '') + ' /></div>';
     }
 
     function saveHotspotPosition(productId, x, y) {
@@ -299,6 +315,36 @@
             }
         });
 
+        // Trigger save when Show on mobile checkbox changes
+        $(document).on('change', '.hotspot-show-on-mobile-checkbox', function () {
+            const $checkbox = $(this);
+            const productId = $checkbox.data('product-id');
+            const isChecked = $checkbox.is(':checked');
+
+            var postData = {
+                productId: productId,
+                showOnMobile: isChecked
+            };
+            addAntiForgeryToken(postData);
+
+            $.ajax({
+                cache: false,
+                type: "POST",
+                url: "@(Url.Action("HotspotUpdate", "WidgetsShoppableBanner", new { area = "Admin" }))",
+                data: postData,
+                success: function (data) {
+                    if (!data.success) {
+                        alert(data.message || 'Failed to update hotspot.');
+                        $checkbox.prop('checked', !isChecked);
+                    }
+                },
+                error: function () {
+                    alert('Failed to update hotspot.');
+                    $checkbox.prop('checked', !isChecked);
+                }
+            });
+        });
+
         const img = document.getElementById('banner-preview');
         if (img) {
             img.addEventListener('click', function (e) {
@@ -315,6 +361,7 @@
             const x = $('#add-x').val();
             const y = $('#add-y').val();
             const productId = $('#add-product-id').val();
+            const showOnMobile = $('#add-show-on-mobile').is(':checked');
 
             if (!productId || !x || !y) {
                 alert('Please select a point on the image and enter a Product ID.');
@@ -324,7 +371,8 @@
             var postData = {
                 productId: productId,
                 positionX: x,
-                positionY: y
+                positionY: y,
+                showOnMobile: showOnMobile
             };
 
             addAntiForgeryToken(postData);
@@ -337,6 +385,7 @@
                 success: function (data) {
                     if (data.success) {
                         $('#add-product-id').val(''); // Clear input
+                        $('#add-show-on-mobile').prop('checked', true);
                         updateTable('#hotspots-grid'); // Refresh the datatable
                     } else {
                         alert(data.message);
