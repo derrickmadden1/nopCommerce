@@ -288,6 +288,49 @@
         padding-top: 0 !important;
     }
 
+    /* Main Navigation: prevent menu pointers and text from wrapping to next line */
+    .main-nav-row .mega-menu-root {
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        justify-content: center !important;
+        gap: 32px !important;
+    }
+
+    .main-nav-row .mega-menu-item>a {
+        display: inline-flex !important;
+        align-items: center !important;
+        white-space: nowrap !important;
+    }
+
+    .main-nav-row .mega-menu-item:has(.mega-menu-panel)>a::after {
+        content: '▼' !important;
+        font-size: 0.6rem !important;
+        margin-left: 6px !important;
+        display: inline-block !important;
+        flex-shrink: 0 !important;
+        vertical-align: middle !important;
+    }
+
+    @@media (max-width: 1250px) {
+        .main-nav-row .mega-menu-root {
+            gap: 22px !important;
+        }
+        .main-nav-row .mega-menu-item>a {
+            font-size: 0.85rem !important;
+            letter-spacing: 0.5px !important;
+        }
+    }
+
+    @@media (max-width: 1050px) {
+        .main-nav-row .mega-menu-root {
+            gap: 14px !important;
+        }
+        .main-nav-row .mega-menu-item>a {
+            font-size: 0.8rem !important;
+            letter-spacing: 0.3px !important;
+        }
+    }
+
     /* Product Image Wrapper & Swiper CLS Prevention */
     .product-image-wrapper {
         display: block !important;
