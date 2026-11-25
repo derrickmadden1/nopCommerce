@@ -161,6 +161,130 @@ else
         0% { transform: translateX(-100%); }
         100% { transform: translateX(100%); }
     }
+    .paypal-card-container {
+        max-width: 480px;
+        margin: 15px auto 10px auto;
+        padding: 0;
+        text-align: left;
+    }
+    .paypal-card-form-group {
+        margin-bottom: 16px;
+        text-align: left;
+        width: 100%;
+        box-sizing: border-box;
+    }
+    .paypal-field-label {
+        display: block;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #334155;
+        margin-bottom: 6px;
+        letter-spacing: 0.2px;
+        text-align: left;
+    }
+    .paypal-field-input-wrapper {
+        height: 48px;
+        padding: 0 12px;
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        box-sizing: border-box;
+        display: flex;
+        align-items: center;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+    }
+    .paypal-field-input-wrapper iframe {
+        height: 100% !important;
+        width: 100% !important;
+        border: none !important;
+    }
+    .paypal-field-input-wrapper:hover {
+        border-color: #94a3b8;
+    }
+    .paypal-field-input-wrapper.is-focused {
+        border-color: #0070ba !important;
+        box-shadow: 0 0 0 3px rgba(0, 112, 186, 0.15) !important;
+    }
+    .paypal-field-input-wrapper.has-error {
+        border-color: #e53e3e !important;
+        background-color: #fffdfd !important;
+        box-shadow: 0 0 0 3px rgba(229, 62, 62, 0.15) !important;
+    }
+    .paypal-field-error {
+        display: none;
+        color: #e53e3e;
+        font-size: 0.825rem;
+        font-weight: 500;
+        margin-top: 5px;
+        line-height: 1.35;
+        text-align: left;
+    }
+    .paypal-card-row {
+        display: flex;
+        gap: 14px;
+        width: 100%;
+        box-sizing: border-box;
+    }
+    .paypal-card-half {
+        flex: 1;
+        min-width: 0;
+    }
+    .paypal-select-card {
+        height: 48px;
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        font-size: 0.95rem;
+        background-color: #ffffff;
+        color: #1e293b;
+        box-sizing: border-box;
+    }
+    #card-form-general-error {
+        display: none;
+        margin: 12px 0;
+        padding: 12px 16px;
+        border-radius: 6px;
+        border-left: 4px solid #e53e3e;
+        background-color: #fff5f5;
+        color: #c53030;
+        font-size: 0.9rem;
+        font-weight: 500;
+        line-height: 1.4;
+        text-align: left;
+    }
+    #card-field-submit-button.paypal-button {
+        width: 100% !important;
+        height: 48px !important;
+        background: #0070ba !important;
+        color: #ffffff !important;
+        border: none !important;
+        border-radius: 6px !important;
+        font-weight: 600 !important;
+        font-size: 1rem !important;
+        cursor: pointer !important;
+        margin-top: 10px !important;
+        box-shadow: 0 2px 6px rgba(0, 112, 186, 0.25) !important;
+        transition: background-color 0.2s, box-shadow 0.2s !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+    #card-field-submit-button.paypal-button:hover {
+        background: #005ea6 !important;
+        box-shadow: 0 4px 12px rgba(0, 112, 186, 0.35) !important;
+    }
+    #card-field-submit-button.paypal-button:disabled,
+    #card-field-submit-button.paypal-button-disabled {
+        opacity: 0.6 !important;
+        cursor: not-allowed !important;
+    }
+    @@media (max-width: 600px) {
+        .paypal-card-row {
+            flex-direction: column;
+            gap: 0;
+        }
+    }
 </style>
 
 @if (Model.Placement == ButtonPlacement.PaymentMethod)
@@ -193,18 +317,60 @@ else
 }
 @if (Model.Placement == ButtonPlacement.PaymentMethod && settings.UseCardFields)
 {
+    var lblCardNumber = T("Plugins.Payments.PayPalCommerce.Card.Number").Text;
+    if (string.IsNullOrEmpty(lblCardNumber) || lblCardNumber.StartsWith("Plugins.")) { lblCardNumber = "Card number"; }
+
+    var lblCardExpiry = T("Plugins.Payments.PayPalCommerce.Card.Expiry").Text;
+    if (string.IsNullOrEmpty(lblCardExpiry) || lblCardExpiry.StartsWith("Plugins.")) { lblCardExpiry = "Expiration date"; }
+
+    var lblCardCvv = T("Plugins.Payments.PayPalCommerce.Card.CVV").Text;
+    if (string.IsNullOrEmpty(lblCardCvv) || lblCardCvv.StartsWith("Plugins.")) { lblCardCvv = "Security code (CVV)"; }
+
+    var lblCardName = T("Plugins.Payments.PayPalCommerce.Card.Name").Text;
+    if (string.IsNullOrEmpty(lblCardName) || lblCardName.StartsWith("Plugins.")) { lblCardName = "Cardholder name"; }
+
     <div id="@paypalCardContainer" class="paypal-card-container">
         <div id="saved-cards-container" style="display: none">
-            <select id="saved-cards" name="saved-cards" class="card_field" onchange="changeSavedCard(this.value);"></select>
+            <div class="paypal-card-form-group">
+                <label for="saved-cards" class="paypal-field-label">@T("Plugins.Payments.PayPalCommerce.Card.Prefix") @T("Plugins.Payments.PayPalCommerce.Card.SelectSavedCard", "Saved Card")</label>
+                <select id="saved-cards" name="saved-cards" class="card_field paypal-select-card" onchange="changeSavedCard(this.value);"></select>
+            </div>
         </div>
-        <div id="card-number-field-container"></div>
-        <div id="card-expiry-field-container"></div>
-        <div id="card-cvv-field-container"></div>
-        <div id="card-name-field-container"></div>
-        <div id="card-vault" class="card-vault card_field" style="display: none">
-            <input type="checkbox" id="vault" name="vault" />
-            <label>@T("Plugins.Payments.PayPalCommerce.Card.Save")</label>
+
+        <div id="new-card-fields-container" class="paypal-new-card-fields">
+            <div id="card-name-group" class="paypal-card-form-group">
+                <label for="card-name-field-container" class="paypal-field-label">@lblCardName</label>
+                <div id="card-name-field-container" class="paypal-field-input-wrapper"></div>
+                <span id="card-name-error" class="field-validation-error paypal-field-error"></span>
+            </div>
+
+            <div id="card-number-group" class="paypal-card-form-group">
+                <label for="card-number-field-container" class="paypal-field-label">@lblCardNumber</label>
+                <div id="card-number-field-container" class="paypal-field-input-wrapper"></div>
+                <span id="card-number-error" class="field-validation-error paypal-field-error"></span>
+            </div>
+
+            <div class="paypal-card-row">
+                <div id="card-expiry-group" class="paypal-card-form-group paypal-card-half">
+                    <label for="card-expiry-field-container" class="paypal-field-label">@lblCardExpiry</label>
+                    <div id="card-expiry-field-container" class="paypal-field-input-wrapper"></div>
+                    <span id="card-expiry-error" class="field-validation-error paypal-field-error"></span>
+                </div>
+                <div id="card-cvv-group" class="paypal-card-form-group paypal-card-half">
+                    <label for="card-cvv-field-container" class="paypal-field-label">@lblCardCvv</label>
+                    <div id="card-cvv-field-container" class="paypal-field-input-wrapper"></div>
+                    <span id="card-cvv-error" class="field-validation-error paypal-field-error"></span>
+                </div>
+            </div>
+
+            <div id="card-vault" class="card-vault card_field" style="display: none">
+                <input type="checkbox" id="vault" name="vault" />
+                <label for="vault">@T("Plugins.Payments.PayPalCommerce.Card.Save")</label>
+            </div>
         </div>
+
+        <div id="card-form-general-error" class="message-error" style="display: none;"></div>
+
         <button id="card-field-submit-button" type="button" class="button-1 confirm-order-next-step-button paypal-button" style="display: none">
             @T("Plugins.Payments.PayPalCommerce.Card.Button")
         </button>
@@ -285,18 +451,210 @@ else
 
         //render Card Fields (if available)
         if ($('#@paypalCardContainer').length > 0) {
+            var cardStyle = {
+                'input': {
+                    'font-size': '15px',
+                    'font-family': 'Montserrat, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                    'color': '#1e293b'
+                },
+                '::placeholder': {
+                    'color': '#94a3b8'
+                },
+                '.invalid': {
+                    'color': '#e53e3e'
+                },
+                '.valid': {
+                    'color': '#16a34a'
+                }
+            };
+
+            function getFieldElements(fieldName) {
+                switch (fieldName) {
+                    case 'cardNumberField':
+                        return {
+                            wrapper: $('#card-number-field-container'),
+                            error: $('#card-number-error')
+                        };
+                    case 'cardExpiryField':
+                        return {
+                            wrapper: $('#card-expiry-field-container'),
+                            error: $('#card-expiry-error')
+                        };
+                    case 'cardCvvField':
+                        return {
+                            wrapper: $('#card-cvv-field-container'),
+                            error: $('#card-cvv-error')
+                        };
+                    case 'cardNameField':
+                        return {
+                            wrapper: $('#card-name-field-container'),
+                            error: $('#card-name-error')
+                        };
+                    default:
+                        return null;
+                }
+            }
+
+            function showFieldError(fieldName, message) {
+                var els = getFieldElements(fieldName);
+                if (!els) return;
+                els.wrapper.addClass('has-error');
+                els.error.text(message).show();
+            }
+
+            function clearFieldError(fieldName) {
+                var els = getFieldElements(fieldName);
+                if (!els) return;
+                els.wrapper.removeClass('has-error');
+                els.error.text('').hide();
+            }
+
+            function clearAllFieldErrors() {
+                $('.paypal-field-input-wrapper').removeClass('has-error is-focused');
+                $('.paypal-field-error').text('').hide();
+                $('#card-form-general-error').text('').hide();
+            }
+
+            function setFieldFocus(fieldName, isFocused) {
+                var els = getFieldElements(fieldName);
+                if (!els) return;
+                if (isFocused) {
+                    els.wrapper.addClass('is-focused');
+                } else {
+                    els.wrapper.removeClass('is-focused');
+                }
+            }
+
+            function handleCardFieldStateChange(data) {
+                if (!data || !data.fields) return;
+                for (var key in data.fields) {
+                    if (data.fields.hasOwnProperty(key)) {
+                        var f = data.fields[key];
+                        if (f && f.isValid) {
+                            clearFieldError(key);
+                        }
+                    }
+                }
+            }
+
+            function validateSingleField(data, fieldKey) {
+                if (!data || !data.fields || !data.fields[fieldKey]) return;
+                var f = data.fields[fieldKey];
+                if (f.isEmpty) {
+                    return;
+                }
+                if (!f.isValid) {
+                    if (fieldKey === 'cardNumberField') {
+                        showFieldError('cardNumberField', 'Please enter a valid card number');
+                    } else if (fieldKey === 'cardExpiryField') {
+                        showFieldError('cardExpiryField', 'Please enter a valid expiration date (MM/YY)');
+                    } else if (fieldKey === 'cardCvvField') {
+                        showFieldError('cardCvvField', 'Please enter a valid security code (3 or 4 digits)');
+                    } else if (fieldKey === 'cardNameField') {
+                        showFieldError('cardNameField', 'Please enter the name on your card');
+                    }
+                } else {
+                    clearFieldError(fieldKey);
+                }
+            }
+
+            function validateAllFields(state) {
+                clearAllFieldErrors();
+                var hasError = false;
+                if (!state || !state.fields) return false;
+
+                var fNum = state.fields.cardNumberField;
+                if (fNum) {
+                    if (fNum.isEmpty) {
+                        showFieldError('cardNumberField', 'Please enter your card number');
+                        hasError = true;
+                    } else if (!fNum.isValid) {
+                        showFieldError('cardNumberField', 'Please enter a valid card number');
+                        hasError = true;
+                    }
+                }
+
+                var fExp = state.fields.cardExpiryField;
+                if (fExp) {
+                    if (fExp.isEmpty) {
+                        showFieldError('cardExpiryField', 'Please enter the expiration date');
+                        hasError = true;
+                    } else if (!fExp.isValid) {
+                        showFieldError('cardExpiryField', 'Please enter a valid expiration date (MM/YY)');
+                        hasError = true;
+                    }
+                }
+
+                var fCvv = state.fields.cardCvvField;
+                if (fCvv) {
+                    if (fCvv.isEmpty) {
+                        showFieldError('cardCvvField', 'Please enter the security code (CVV)');
+                        hasError = true;
+                    } else if (!fCvv.isValid) {
+                        showFieldError('cardCvvField', 'Please enter a valid security code (3 or 4 digits)');
+                        hasError = true;
+                    }
+                }
+
+                var fName = state.fields.cardNameField;
+                if (fName && $('#card-name-field-container').is(':visible')) {
+                    if (fName.isEmpty) {
+                        showFieldError('cardNameField', 'Please enter the name on your card');
+                        hasError = true;
+                    } else if (!fName.isValid) {
+                        showFieldError('cardNameField', 'Please enter a valid cardholder name');
+                        hasError = true;
+                    }
+                }
+
+                return hasError;
+            }
+
             var cardFields = paypal.CardFields({
                 createOrder: createOrderCallback,
                 onApprove: approveCallback,
                 onCancel: cancelCallback,
-                onError: errorCallback
+                onError: errorCallback,
+                style: cardStyle,
+                inputEvents: {
+                    onChange: function (data) {
+                        handleCardFieldStateChange(data);
+                    },
+                    onFocus: function (data) {
+                        if (data && data.emittedBy) {
+                            setFieldFocus(data.emittedBy, true);
+                        }
+                    },
+                    onBlur: function (data) {
+                        if (data && data.emittedBy) {
+                            setFieldFocus(data.emittedBy, false);
+                            validateSingleField(data, data.emittedBy);
+                        }
+                    }
+                }
             });
 
             if (cardFields.isEligible()) {
-                cardFields.NumberField().render('#card-number-field-container');
-                cardFields.CVVField().render('#card-cvv-field-container');
-                cardFields.ExpiryField().render('#card-expiry-field-container');
-                cardFields.NameField().render('#card-name-field-container');
+                cardFields.NumberField({
+                    placeholder: 'Card number',
+                    style: cardStyle
+                }).render('#card-number-field-container');
+
+                cardFields.ExpiryField({
+                    placeholder: 'MM / YY',
+                    style: cardStyle
+                }).render('#card-expiry-field-container');
+
+                cardFields.CVVField({
+                    placeholder: 'CVV',
+                    style: cardStyle
+                }).render('#card-cvv-field-container');
+
+                cardFields.NameField({
+                    placeholder: 'Name on card',
+                    style: cardStyle
+                }).render('#card-name-field-container');
+
                 $('#@paypalCardContainer').before('<div id="paypal-divider" class="divider"><span>OR</span></div>');
                 $('#card-field-submit-button').show();
                 var vaultEnabled = @((!string.IsNullOrEmpty(Model.Script.UserToken)).ToString().ToLower());
@@ -350,10 +708,11 @@ else
                 if (waitingPayPal !== false)
                     return;
 
-                $('#card-field-submit-button').prop('disabled', true);
-                $('#card-field-submit-button').addClass('paypal-button-disabled');
+                clearAllFieldErrors();
                 var cardId = $('#saved-cards').val();
                 if (cardId > 0) {
+                    $('#card-field-submit-button').prop('disabled', true);
+                    $('#card-field-submit-button').addClass('paypal-button-disabled');
                     var status = '';
                     var payerAction = '';
 
@@ -405,14 +764,65 @@ else
                             displayBarNotification('Order is ' + status, 'error', 0)
                         }
                     }
+                    $('#card-field-submit-button').prop('disabled', false);
+                    $('#card-field-submit-button').removeClass('paypal-button-disabled');
                 } else if (cardFields.isEligible()) {
-                    //let the script handle card fields, when customer enters payment info
-                    cardFields.submit().catch((error) => {
-                        displayBarNotification(error.message, 'error', 0)
-                    });
+                    $('#card-field-submit-button').prop('disabled', true);
+                    $('#card-field-submit-button').addClass('paypal-button-disabled');
+
+                    var proceedWithSubmit = function () {
+                        displayAjaxLoading(true);
+                        waitingPayPal = true;
+
+                        cardFields.submit().catch(function (error) {
+                            displayAjaxLoading(false);
+                            waitingPayPal = false;
+                            $('#card-field-submit-button').prop('disabled', false);
+                            $('#card-field-submit-button').removeClass('paypal-button-disabled');
+
+                            var errorMsg = (error && (error.message || error.details?.issue || error.toString())) || '';
+                            var lower = errorMsg.toLowerCase();
+                            var handled = false;
+
+                            if (lower.indexOf('number') !== -1 || lower.indexOf('card number') !== -1 || lower.indexOf('invalid_number') !== -1 || lower.indexOf('card_number') !== -1) {
+                                showFieldError('cardNumberField', 'The card number is invalid or could not be processed.');
+                                handled = true;
+                            }
+                            if (lower.indexOf('cvv') !== -1 || lower.indexOf('security code') !== -1 || lower.indexOf('cvv2') !== -1 || lower.indexOf('invalid_cvv') !== -1) {
+                                showFieldError('cardCvvField', 'The security code (CVV) is incorrect.');
+                                handled = true;
+                            }
+                            if (lower.indexOf('expir') !== -1 || lower.indexOf('invalid_expiry') !== -1 || lower.indexOf('expired_card') !== -1) {
+                                showFieldError('cardExpiryField', 'The card is expired or expiration date is invalid.');
+                                handled = true;
+                            }
+                            if (lower.indexOf('name') !== -1 || lower.indexOf('invalid_name') !== -1) {
+                                showFieldError('cardNameField', 'The cardholder name is invalid.');
+                                handled = true;
+                            }
+
+                            if (!handled) {
+                                $('#card-form-general-error').html('<i class="fa fa-exclamation-circle" style="margin-right: 6px;"></i> ' + (errorMsg || 'Unable to process your card. Please check your details or try another card.')).show();
+                            }
+                        });
+                    };
+
+                    if (typeof cardFields.getState === 'function') {
+                        cardFields.getState().then(function (state) {
+                            var hasErrors = validateAllFields(state);
+                            if (hasErrors) {
+                                $('#card-field-submit-button').prop('disabled', false);
+                                $('#card-field-submit-button').removeClass('paypal-button-disabled');
+                                return;
+                            }
+                            proceedWithSubmit();
+                        }).catch(function () {
+                            proceedWithSubmit();
+                        });
+                    } else {
+                        proceedWithSubmit();
+                    }
                 }
-                $('#card-field-submit-button').prop('disabled', false);
-                $('#card-field-submit-button').removeClass('paypal-button-disabled');
             });
         }
 
@@ -456,12 +866,14 @@ else
 
     function changeSavedCard(value) {
         if (value > 0) {
+            $('#new-card-fields-container').hide();
             $('#card-number-field-container').hide();
             $('#card-expiry-field-container').hide();
             $('#card-cvv-field-container').hide();
             $('#card-name-field-container').hide();
             $('#card-vault').hide();
         } else {
+            $('#new-card-fields-container').show();
             $('#card-number-field-container').show();
             $('#card-expiry-field-container').show();
             $('#card-cvv-field-container').show();
@@ -765,6 +1177,33 @@ else
                 userFriendlyMessage = 'There was an issue processing your PayPal payment. Please try again or contact us.';
             }
         }
+
+        if ($('#card-number-field-container').length > 0 && $('#card-number-field-container').is(':visible')) {
+            var lower = msg.toLowerCase();
+            if (lower.indexOf('number') !== -1 || lower.indexOf('card number') !== -1 || lower.indexOf('invalid_number') !== -1) {
+                if (typeof showFieldError === 'function') {
+                    showFieldError('cardNumberField', 'The card number is invalid.');
+                    return;
+                }
+            }
+            if (lower.indexOf('cvv') !== -1 || lower.indexOf('security code') !== -1 || lower.indexOf('invalid_cvv') !== -1) {
+                if (typeof showFieldError === 'function') {
+                    showFieldError('cardCvvField', 'The security code (CVV) is incorrect.');
+                    return;
+                }
+            }
+            if (lower.indexOf('expir') !== -1 || lower.indexOf('invalid_expiry') !== -1) {
+                if (typeof showFieldError === 'function') {
+                    showFieldError('cardExpiryField', 'The expiration date is invalid.');
+                    return;
+                }
+            }
+            if ($('#card-form-general-error').length > 0) {
+                $('#card-form-general-error').html('<i class="fa fa-exclamation-circle" style="margin-right: 6px;"></i> ' + (userFriendlyMessage || 'Unable to process card.')).show();
+                return;
+            }
+        }
+
         displayBarNotification(userFriendlyMessage, 'error', 0);
     };
 
