@@ -21,11 +21,11 @@
 <link rel="stylesheet" href="~/Plugins/Payments.PayPalCommerce/Content/styles.css" />
 @if (Model.Placement == ButtonPlacement.PaymentMethod && !string.IsNullOrEmpty(Model.Script.ClientToken) && !string.IsNullOrEmpty(Model.Script.UserToken))
 {
-    <script asp-location="Auto" src="@Model.Script.Url" data-page-type="@pageType" data-sdk-client-token="@Model.Script.ClientToken" data-client-token="@Model.Script.ClientToken" data-user-id-token="@Model.Script.UserToken" data-partner-attribution-id="@PayPalCommerceDefaults.PartnerHeader.Value"></script>
+    <script asp-location="Auto" src="@Model.Script.Url" data-page-type="@pageType" data-client-token="@Model.Script.ClientToken" data-user-id-token="@Model.Script.UserToken" data-partner-attribution-id="@PayPalCommerceDefaults.PartnerHeader.Value"></script>
 }
 else if (Model.Placement == ButtonPlacement.PaymentMethod && !string.IsNullOrEmpty(Model.Script.ClientToken))
 {
-    <script asp-location="Auto" src="@Model.Script.Url" data-page-type="@pageType" data-sdk-client-token="@Model.Script.ClientToken" data-client-token="@Model.Script.ClientToken" data-partner-attribution-id="@PayPalCommerceDefaults.PartnerHeader.Value"></script>
+    <script asp-location="Auto" src="@Model.Script.Url" data-page-type="@pageType" data-client-token="@Model.Script.ClientToken" data-partner-attribution-id="@PayPalCommerceDefaults.PartnerHeader.Value"></script>
 }
 else if (!string.IsNullOrEmpty(Model.Script.UserToken))
 {
