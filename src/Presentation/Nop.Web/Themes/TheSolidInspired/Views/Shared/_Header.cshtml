@@ -37,7 +37,6 @@
     .header-modern {
         width: 100% !important;
         background: #fff !important;
-        contain: layout style !important;
     }
 
     /* Announcement Bar CLS Prevention: fixed height & line-height so font loading never shifts layout */
@@ -79,7 +78,7 @@
         }
     }
 
-    /* Utility Bar CLS Prevention: fixed height so font loading doesn't shift */
+    /* Utility Bar: Space-between layout (social on left, actions on right) */
     .header-utility {
         background: var(--dark-grey, #2e3842) !important;
         color: #fff !important;
@@ -90,12 +89,32 @@
         font-weight: 500 !important;
         letter-spacing: 1px !important;
         box-sizing: border-box !important;
-        display: flex !important;
-        align-items: center !important;
+        width: 100% !important;
+        display: block !important;
     }
 
     .header-utility .utility-container {
+        max-width: 1400px !important;
+        margin: 0 auto !important;
+        padding: 0 40px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
         min-height: 18px !important;
+    }
+
+    .header-utility .utility-social {
+        display: flex !important;
+        align-items: center !important;
+        gap: 15px !important;
+    }
+
+    .header-utility .utility-actions {
+        display: flex !important;
+        align-items: center !important;
+        gap: 20px !important;
     }
 
     @@media (max-width: 768px) {
@@ -112,7 +131,8 @@
         }
     }
 
-    .header-modern .header-main-area {
+    /* Standard (Un-scrolled) Header Logo Area */
+    .header-modern:not(.sticky-shrink) .header-main-area {
         max-width: var(--max-width, 1300px);
         margin: 0 auto;
         padding: 20px 40px;
@@ -120,7 +140,7 @@
         box-sizing: border-box;
     }
 
-    .header-logo-row {
+    .header-modern:not(.sticky-shrink) .header-logo-row {
         display: flex !important;
         flex-direction: row !important;
         justify-content: center !important;
@@ -131,7 +151,7 @@
         box-sizing: border-box !important;
     }
 
-    .header-logo {
+    .header-modern:not(.sticky-shrink) .header-logo {
         text-align: center !important;
         flex: 0 0 auto !important;
         display: flex !important;
@@ -140,13 +160,13 @@
         min-height: 180px !important;
     }
 
-    .header-logo a {
+    .header-modern:not(.sticky-shrink) .header-logo a {
         display: inline-flex !important;
         align-items: center !important;
         justify-content: center !important;
     }
 
-    .header-logo img {
+    .header-modern:not(.sticky-shrink) .header-logo img {
         max-height: 180px !important;
         max-width: 90% !important;
         width: auto !important;
@@ -157,43 +177,115 @@
     }
 
     @@media (max-width: 1250px) {
-        .header-logo-row,
-        .header-logo {
+        .header-modern:not(.sticky-shrink) .header-logo-row,
+        .header-modern:not(.sticky-shrink) .header-logo {
             min-height: 120px !important;
         }
-        .header-logo img {
+        .header-modern:not(.sticky-shrink) .header-logo img {
             max-height: 120px !important;
         }
     }
 
     @@media (max-width: 1024px) {
-        .header-logo-row,
-        .header-logo {
+        .header-modern:not(.sticky-shrink) .header-logo-row,
+        .header-modern:not(.sticky-shrink) .header-logo {
             min-height: 80px !important;
         }
-        .header-logo img {
+        .header-modern:not(.sticky-shrink) .header-logo img {
             max-height: 80px !important;
         }
     }
 
     @@media (max-width: 768px) {
-        .header-logo-row,
-        .header-logo {
+        .header-modern:not(.sticky-shrink) .header-logo-row,
+        .header-modern:not(.sticky-shrink) .header-logo {
             min-height: 55px !important;
         }
-        .header-logo img {
+        .header-modern:not(.sticky-shrink) .header-logo img {
             max-height: 55px !important;
         }
     }
 
     @@media (max-width: 480px) {
-        .header-logo-row,
-        .header-logo {
+        .header-modern:not(.sticky-shrink) .header-logo-row,
+        .header-modern:not(.sticky-shrink) .header-logo {
             min-height: 50px !important;
         }
-        .header-logo img {
+        .header-modern:not(.sticky-shrink) .header-logo img {
             max-height: 50px !important;
         }
+    }
+
+    /* Sticky Shrink: folded header on scroll */
+    .header-modern.sticky-shrink {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        width: 100% !important;
+        box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08) !important;
+        z-index: 9999 !important;
+    }
+
+    .header-modern.sticky-shrink .header-utility {
+        padding: 6px 0 !important;
+        min-height: 32px !important;
+    }
+
+    .header-modern.sticky-shrink .header-main-area {
+        max-width: var(--max-width, 1300px) !important;
+        margin: 0 auto !important;
+        padding: 8px 40px !important;
+        position: relative !important;
+        box-sizing: border-box !important;
+    }
+
+    .header-modern.sticky-shrink .header-logo-row {
+        display: flex !important;
+        flex-direction: row !important;
+        justify-content: flex-start !important;
+        align-items: center !important;
+        width: 100% !important;
+        min-height: 50px !important;
+        height: auto !important;
+        margin-bottom: 0 !important;
+        position: relative !important;
+        box-sizing: border-box !important;
+    }
+
+    .header-modern.sticky-shrink .header-logo {
+        text-align: left !important;
+        flex: 0 0 auto !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        min-height: 50px !important;
+        height: auto !important;
+        padding: 0 !important;
+    }
+
+    .header-modern.sticky-shrink .header-logo img {
+        max-height: 48px !important;
+        width: auto !important;
+        height: auto !important;
+        aspect-ratio: auto !important;
+        transition: all 0.3s ease !important;
+    }
+
+    .header-modern.sticky-shrink .header-search-cart {
+        position: absolute !important;
+        right: 40px !important;
+        top: 50% !important;
+        transform: translateY(-50%) !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 20px !important;
+        z-index: 10 !important;
+    }
+
+    .header-modern.sticky-shrink .main-nav-row {
+        border-top: none !important;
+        padding-top: 0 !important;
     }
 
     /* Product Image Wrapper & Swiper CLS Prevention */

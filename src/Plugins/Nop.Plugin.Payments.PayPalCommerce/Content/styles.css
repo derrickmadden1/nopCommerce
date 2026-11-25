@@ -469,8 +469,8 @@ input[type=submit] {
 }
 
 .paypal-field-input-wrapper {
-  height: 48px;
-  padding: 0 12px;
+  height: 50px;
+  padding: 0 14px;
   background: #ffffff;
   border: 1px solid #cbd5e1;
   border-radius: 6px;
@@ -524,7 +524,7 @@ input[type=submit] {
 }
 
 .paypal-select-card {
-  height: 48px;
+  height: 50px;
   width: 100%;
   padding: 8px 12px;
   border: 1px solid #cbd5e1;

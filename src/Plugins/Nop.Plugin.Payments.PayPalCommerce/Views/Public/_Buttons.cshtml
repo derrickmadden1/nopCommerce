@@ -186,20 +186,24 @@ else
         text-align: left;
     }
     .paypal-field-input-wrapper {
-        height: 48px;
-        padding: 0 12px;
+        height: 50px;
+        padding: 0 14px;
         background: #ffffff;
         border: 1px solid #cbd5e1;
         border-radius: 6px;
         box-sizing: border-box;
         display: flex;
-        align-items: center;
+        align-items: stretch;
         transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
     }
     .paypal-field-input-wrapper iframe {
         height: 100% !important;
         width: 100% !important;
         border: none !important;
+        background: transparent !important;
+        display: block !important;
+        flex: 1 1 auto !important;
+        align-self: stretch !important;
     }
     .paypal-field-input-wrapper:hover {
         border-color: #94a3b8;
@@ -486,22 +490,41 @@ else
         if ($('#@paypalCardContainer').length > 0) {
             var cardStyle = {
                 'input': {
-                    'font-size': '15px',
+                    'font-size': '16px',
                     'font-family': 'Montserrat, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
                     'color': '#1e293b',
                     'border': 'none',
                     'outline': 'none',
                     'box-shadow': 'none',
                     'background': 'transparent',
-                    'padding': '0',
-                    'width': '100%',
-                    'height': '100%'
+                    'padding': '12px 0',
+                    'line-height': '24px',
+                    'height': '48px'
+                },
+                ':focus': {
+                    'border': 'none',
+                    'outline': 'none',
+                    'box-shadow': 'none'
+                },
+                'input:focus': {
+                    'border': 'none',
+                    'outline': 'none',
+                    'box-shadow': 'none'
                 },
                 '::placeholder': {
                     'color': '#94a3b8'
                 },
                 '.invalid': {
-                    'color': '#e53e3e'
+                    'color': '#e53e3e',
+                    'border': 'none',
+                    'outline': 'none',
+                    'box-shadow': 'none'
+                },
+                'input.invalid': {
+                    'color': '#e53e3e',
+                    'border': 'none',
+                    'outline': 'none',
+                    'box-shadow': 'none'
                 },
                 '.valid': {
                     'color': '#16a34a'
