@@ -476,8 +476,7 @@ input[type=submit] {
   border-radius: 6px;
   box-sizing: border-box;
   display: flex;
-  align-items: stretch;
-  cursor: text;
+  align-items: center;
   position: relative;
   transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
 }
@@ -488,8 +487,6 @@ input[type=submit] {
   border: none !important;
   background: transparent !important;
   display: block !important;
-  flex: 1 1 auto !important;
-  align-self: stretch !important;
 }
 
 .paypal-field-input-wrapper:hover {

@@ -498,31 +498,30 @@ else
                     'border': 'none',
                     'outline': 'none',
                     'box-shadow': 'none',
-                    'background': 'transparent'
+                    'background': 'transparent',
+                    'padding': '0',
+                    'width': '100%',
+                    'height': '100%'
                 },
                 ':focus': {
-                    'color': '#1e293b',
-                    'outline': 'none',
                     'border': 'none',
-                    'box-shadow': 'none'
+                    'outline': 'none',
+                    'box-shadow': 'none',
+                    'color': '#1e293b'
+                },
+                '::placeholder': {
+                    'color': '#94a3b8'
                 },
                 '.invalid': {
                     'color': '#e53e3e',
-                    'outline': 'none',
                     'border': 'none',
+                    'outline': 'none',
                     'box-shadow': 'none'
                 },
                 '.valid': {
                     'color': '#16a34a'
                 }
             };
-
-            $(document).on('click', '.paypal-field-input-wrapper', function () {
-                var $iframe = $(this).find('iframe');
-                if ($iframe.length) {
-                    $iframe[0].focus();
-                }
-            });
 
             function getFieldElements(fieldName) {
                 switch (fieldName) {
@@ -1603,6 +1602,9 @@ else
     }
 
     async function getGooglePayConfig() {
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            return { allowedPaymentMethods: [], merchantInfo: {} };
+        }
         if (!googlePayConfig) {
             try {
                 googlePayConfig = await paypal.Googlepay().config();
@@ -1617,6 +1619,9 @@ else
     }
 
     async function onGooglePayLoaded() {
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            return;
+        }
         try {
             var { allowedPaymentMethods } = await getGooglePayConfig();
             if (!allowedPaymentMethods || allowedPaymentMethods.length === 0) return;
