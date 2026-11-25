@@ -1,4 +1,4 @@
-﻿using FluentMigrator;
+using FluentMigrator;
 using Nop.Data;
 using Nop.Data.Extensions;
 using Nop.Data.Migrations;
@@ -53,7 +53,13 @@ public class AdvancedCardsMigration : MigrationBase
             ["Plugins.Payments.PayPalCommerce.Card.Button"] = "Pay now with Card",
             ["Plugins.Payments.PayPalCommerce.Card.New"] = "Pay by new card",
             ["Plugins.Payments.PayPalCommerce.Card.Prefix"] = "Pay by",
+            ["Plugins.Payments.PayPalCommerce.Card.CVV"] = "Security code (CVV)",
+            ["Plugins.Payments.PayPalCommerce.Card.Expiry"] = "Expiration date",
+            ["Plugins.Payments.PayPalCommerce.Card.Name"] = "Cardholder name",
+            ["Plugins.Payments.PayPalCommerce.Card.Number"] = "Card number",
             ["Plugins.Payments.PayPalCommerce.Card.Save"] = "Save your card",
+            ["Plugins.Payments.PayPalCommerce.Card.SavedCard"] = "Saved card",
+            ["Plugins.Payments.PayPalCommerce.Card.SelectSavedCard"] = "Saved card",
             ["Plugins.Payments.PayPalCommerce.Configuration"] = "Configuration",
             ["Plugins.Payments.PayPalCommerce.Fields.CustomerAuthenticationRequired"] = "Use 3D Secure",
             ["Plugins.Payments.PayPalCommerce.Fields.CustomerAuthenticationRequired.Hint"] = "3D Secure enables you to authenticate card holders through card issuers. It reduces the likelihood of fraud when you use supported cards and improves transaction performance. A successful 3D Secure authentication can shift liability for chargebacks due to fraud from you to the card issuer.",

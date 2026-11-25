@@ -30,21 +30,24 @@ else
 @if (settings.UseCardFields)
 {
     var lblCardNumber = T("Plugins.Payments.PayPalCommerce.Card.Number").Text;
-    if (string.IsNullOrEmpty(lblCardNumber) || lblCardNumber.StartsWith("Plugins.")) { lblCardNumber = "Card number"; }
+    if (string.IsNullOrEmpty(lblCardNumber) || lblCardNumber.IndexOf("plugins.", StringComparison.OrdinalIgnoreCase) != -1) { lblCardNumber = "Card number"; }
 
     var lblCardExpiry = T("Plugins.Payments.PayPalCommerce.Card.Expiry").Text;
-    if (string.IsNullOrEmpty(lblCardExpiry) || lblCardExpiry.StartsWith("Plugins.")) { lblCardExpiry = "Expiration date"; }
+    if (string.IsNullOrEmpty(lblCardExpiry) || lblCardExpiry.IndexOf("plugins.", StringComparison.OrdinalIgnoreCase) != -1) { lblCardExpiry = "Expiration date"; }
 
     var lblCardCvv = T("Plugins.Payments.PayPalCommerce.Card.CVV").Text;
-    if (string.IsNullOrEmpty(lblCardCvv) || lblCardCvv.StartsWith("Plugins.")) { lblCardCvv = "Security code (CVV)"; }
+    if (string.IsNullOrEmpty(lblCardCvv) || lblCardCvv.IndexOf("plugins.", StringComparison.OrdinalIgnoreCase) != -1) { lblCardCvv = "Security code (CVV)"; }
 
     var lblCardName = T("Plugins.Payments.PayPalCommerce.Card.Name").Text;
-    if (string.IsNullOrEmpty(lblCardName) || lblCardName.StartsWith("Plugins.")) { lblCardName = "Cardholder name"; }
+    if (string.IsNullOrEmpty(lblCardName) || lblCardName.IndexOf("plugins.", StringComparison.OrdinalIgnoreCase) != -1) { lblCardName = "Cardholder name"; }
+
+    var lblSavedCard = T("Plugins.Payments.PayPalCommerce.Card.SelectSavedCard").Text;
+    if (string.IsNullOrEmpty(lblSavedCard) || lblSavedCard.IndexOf("plugins.", StringComparison.OrdinalIgnoreCase) != -1) { lblSavedCard = "Saved card"; }
 
     <div id="@paypalCardContainer" class="paypal-card-container">
         <div id="saved-cards-container" style="display: none">
             <div class="paypal-card-form-group">
-                <label for="saved-cards" class="paypal-field-label">@T("Plugins.Payments.PayPalCommerce.Card.Prefix") @T("Plugins.Payments.PayPalCommerce.Card.SelectSavedCard", "Saved Card")</label>
+                <label for="saved-cards" class="paypal-field-label">@lblSavedCard</label>
                 <select id="saved-cards" name="saved-cards" class="card_field paypal-select-card" onchange="changeSavedCard(this.value);"></select>
             </div>
         </div>
@@ -75,7 +78,7 @@ else
                 </div>
             </div>
 
-            <div id="card-vault" class="card-vault card_field" style="display: none">
+            <div id="card-vault" class="card-vault" style="display: none">
                 <input type="checkbox" id="vault" name="vault" checked="checked" disabled="disabled" />
                 <label for="vault">@T("Plugins.Payments.PayPalCommerce.Card.Save")</label>
             </div>
@@ -125,7 +128,14 @@ else
                 'input': {
                     'font-size': '15px',
                     'font-family': 'Montserrat, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                    'color': '#1e293b'
+                    'color': '#1e293b',
+                    'border': 'none',
+                    'outline': 'none',
+                    'box-shadow': 'none',
+                    'background': 'transparent',
+                    'padding': '0',
+                    'width': '100%',
+                    'height': '100%'
                 },
                 '::placeholder': {
                     'color': '#94a3b8'
