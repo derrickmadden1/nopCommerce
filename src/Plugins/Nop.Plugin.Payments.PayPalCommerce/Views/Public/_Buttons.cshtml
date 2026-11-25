@@ -12,8 +12,8 @@
     var pageType = Model.Placement switch
     {
         ButtonPlacement.Cart => "cart",
-        ButtonPlacement.Product => "product",
-        ButtonPlacement.PaymentMethod => "payment",
+        ButtonPlacement.Product => "product-details",
+        ButtonPlacement.PaymentMethod => "checkout",
         _ => null
     };
 }
