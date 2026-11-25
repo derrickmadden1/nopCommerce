@@ -16,12 +16,18 @@
     position: relative;
     display: block; /* Hidden on mobile */
     overflow: hidden;
+    width: 100%;
+    min-height: 380px;
+    aspect-ratio: 1920 / 800;
+    background-color: #f7f9f7;
 }
 
 .banner-bg-image {
     width: 100%;
     height: auto;
+    aspect-ratio: 1920 / 800;
     display: block;
+    object-fit: cover;
 }
 
 /* Centered hero-style text overlay on top of background image */
@@ -234,12 +240,17 @@
     .mobile-hero {
         position: relative;
         text-align: center;
+        min-height: 220px;
+        aspect-ratio: 800 / 500;
+        background-color: #f7f9f7;
     }
 
     .mobile-hero img {
         width: 100%;
         height: auto;
+        aspect-ratio: 800 / 500;
         display: block;
+        object-fit: cover;
     }
 
     .mobile-text {
@@ -317,11 +328,15 @@
         justify-content: center;
         padding: 10px;
         cursor: pointer;
+        contain: layout aspect-ratio;
     }
 
     .mobile-card-image img {
         max-width: 100%;
         max-height: 100%;
+        width: auto;
+        height: auto;
+        aspect-ratio: 1 / 1;
         object-fit: contain;
         mix-blend-mode: multiply;
         transition: transform 0.3s ease;

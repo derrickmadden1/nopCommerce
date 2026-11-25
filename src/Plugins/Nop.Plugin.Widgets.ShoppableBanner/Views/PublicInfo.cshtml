@@ -7,12 +7,12 @@
 <div class="shoppable-banner-container">
     
     <div class="banner-desktop-wrapper">
-        <img src="@Model.BackgroundPictureUrl" alt="@Model.HeroTitle" class="banner-bg-image" />
+        <img src="@Model.BackgroundPictureUrl" alt="@Model.HeroTitle" class="banner-bg-image" width="1920" height="800" fetchpriority="high" loading="eager" decoding="async" />
         
         <div class="banner-text-overlay">
             <h2 class="banner-title">@Model.HeroTitle</h2>
             <p class="banner-subtitle">@Model.SubText</p>
-            <a href="@Url.RouteUrl("AllProducts")" class="btn-primary-outline banner-action-btn">Explore the Collection</a>
+            <a href="@Url.RouteUrl("AllProducts")" class="btn-primary-outline banner-action-btn" aria-label="Explore the full collection of handmade products">Explore the Collection</a>
         </div>
 
         @foreach (var hotspot in Model.Hotspots)
@@ -21,7 +21,7 @@
             <div class="hotspot-marker @(hasImage ? "has-image" : "")" style="left: @(hotspot.PositionX)%; top: @(hotspot.PositionY)%;" data-product-id="@hotspot.ProductId">
                 @if (hasImage)
                 {
-                    <img src="@hotspot.PictureUrl" class="hotspot-product-thumbnail" alt="@hotspot.ProductName" />
+                    <img src="@hotspot.PictureUrl" class="hotspot-product-thumbnail" alt="@hotspot.ProductName" width="64" height="64" loading="lazy" decoding="async" />
                     <div class="hotspot-pulse product-pulse"></div>
                 }
                 else
@@ -30,7 +30,7 @@
                 }
                 <div class="hotspot-tooltip">
                     <span class="hotspot-product-name">@hotspot.ProductName</span>
-                    <button type="button" class="btn btn-sm btn-action add-to-cart-hotspot" data-product-id="@hotspot.ProductId">
+                    <button type="button" class="btn btn-sm btn-action add-to-cart-hotspot" data-product-id="@hotspot.ProductId" aria-label="View @hotspot.ProductName details">
                         View Product
                     </button>
                 </div>
@@ -40,11 +40,11 @@
 
     <div class="banner-mobile-wrapper">
         <div class="mobile-hero">
-            <img src="@Model.BackgroundPictureUrl" alt="@Model.HeroTitle" />
+            <img src="@Model.BackgroundPictureUrl" alt="@Model.HeroTitle" width="800" height="500" fetchpriority="high" loading="eager" decoding="async" />
             <div class="mobile-text">
                 <h2>@Model.HeroTitle</h2>
                 <p>@(string.IsNullOrEmpty(Model.MobileSubText) ? Model.SubText : Model.MobileSubText)</p>
-                <a href="@Url.RouteUrl("AllProducts")" class="btn-primary-outline banner-action-btn">Explore the Collection</a>
+                <a href="@Url.RouteUrl("AllProducts")" class="btn-primary-outline banner-action-btn" aria-label="Explore the full collection of handmade products">Explore the Collection</a>
             </div>
         </div>
 
@@ -57,13 +57,13 @@
                         @if (!string.IsNullOrEmpty(product.PictureUrl))
                         {
                             <div class="mobile-card-image">
-                                <img src="@product.PictureUrl" alt="@product.ProductName" />
+                                <img src="@product.PictureUrl" alt="@product.ProductName" width="140" height="140" loading="lazy" decoding="async" />
                             </div>
                         }
                         <div class="mobile-card-details">
                             <span class="product-name">@product.ProductName</span>
                             <span class="product-price">@product.Price</span>
-                            <button type="button" class="btn btn-action add-to-cart-mobile" data-product-id="@product.ProductId">
+                            <button type="button" class="btn btn-action add-to-cart-mobile" data-product-id="@product.ProductId" aria-label="Shop @product.ProductName now">
                                 Shop Now
                             </button>
                         </div>

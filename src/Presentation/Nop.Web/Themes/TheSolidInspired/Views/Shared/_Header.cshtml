@@ -592,9 +592,8 @@
             @inject Nop.Services.Plugins.IPluginService pluginService
 
             @{
-                var descriptor = pluginService
-                .GetPluginDescriptorBySystemNameAsync<Nop.Services.Plugins.IPlugin>("Misc.MegaMenu")
-                .Result;
+                var descriptor = await pluginService
+                    .GetPluginDescriptorBySystemNameAsync<Nop.Services.Plugins.IPlugin>("Misc.MegaMenu");
 
                 var megaMenuInstalled = descriptor != null;
             }
@@ -622,7 +621,7 @@
 
                     if (hasValidUrl)
                     {
-                        <a href="@Url.RouteUrl("Category", new { SeName = category.SeName })" class="category-chip @(isCurrent ? "active" : "")">
+                        <a href="@Url.RouteUrl("Category", new { SeName = category.SeName })" class="category-chip @(isCurrent ? "active" : "")" aria-label="Shop @category.Name">
                             @category.Name
                         </a>
                     }

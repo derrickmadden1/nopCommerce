@@ -47,16 +47,16 @@
             </div>
             
             <div class="footer-payment-methods">
-                <i class="fab fa-cc-visa"></i>
-                <i class="fab fa-cc-mastercard"></i>
-                <i class="fab fa-cc-paypal"></i>
-                <i class="fab fa-cc-apple-pay"></i>
+                <i class="fab fa-cc-visa" aria-hidden="true" title="Visa"></i>
+                <i class="fab fa-cc-mastercard" aria-hidden="true" title="Mastercard"></i>
+                <i class="fab fa-cc-paypal" aria-hidden="true" title="PayPal"></i>
+                <i class="fab fa-cc-apple-pay" aria-hidden="true" title="Apple Pay"></i>
             </div>
 
             @if (!Model.HidePoweredByNopCommerce)
             {
                 <div class="footer-powered-by">
-                    Powered by <a href="@(OfficialSite.Main)" target="_blank">nopCommerce</a>
+                    Powered by <a href="@(OfficialSite.Main)" target="_blank" rel="noopener noreferrer" aria-label="Visit nopCommerce official eCommerce platform">nopCommerce</a>
                 </div>
                 <div class="footer-powered-by-add-text">
                     (with a little help from Derrick)
