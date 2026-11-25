@@ -687,165 +687,73 @@ public class PayPalSandboxCheckoutFlow : BaseCheckoutFlow
                     // Case 2B: Link a card screen ("Link a card")
                     else if (screenText.Contains("Link a card") || (screenText.Contains("Card number") && await targetFrame.Locator("button:has-text('Link Card'), button:has-text('Link')").CountAsync() > 0))
                     {
-                        TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] On 'Link a card' screen, checking for existing card or filling card inputs");
+                        TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] On 'Link a card' screen, filling test debit card details");
                         lastActionTime = DateTime.UtcNow;
 
                         try
                         {
-                            // 0. If an existing card option is present (e.g. Mastercard Credit ****6383), select it
-                            var existingCard = targetFrame.Locator("label:has-text('Mastercard'), label:has-text('Visa'), div:has-text('Mastercard'), div:has-text('Visa'), input[type='radio'][value*='6383']").First;
-                            if (await existingCard.CountAsync() == 0 || !await existingCard.IsVisibleAsync())
-                                existingCard = paypalPage.Locator("label:has-text('Mastercard'), label:has-text('Visa'), div:has-text('Mastercard'), div:has-text('Visa'), input[type='radio'][value*='6383']").First;
+                            // 1. Locate inputs directly via their specific PPUI attributes/IDs or index
+                            var cardNumInp = targetFrame.Locator("#text-input-card_number, input[name='card_number'], input[data-testid='cardnumber-input-field']").First;
+                            if (await cardNumInp.CountAsync() == 0 || !await cardNumInp.IsVisibleAsync())
+                                cardNumInp = targetFrame.Locator("input:not([type='hidden']):not([type='checkbox']):not([type='radio'])").Nth(0);
 
-                            if (await existingCard.CountAsync() > 0 && await existingCard.IsVisibleAsync())
+                            if (await cardNumInp.CountAsync() > 0 && await cardNumInp.IsVisibleAsync())
                             {
-                                TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Existing card found on Link a Card screen, selecting existing card...");
-                                await existingCard.ClickAsync(new() { Force = true });
-                                await Task.Delay(1500);
-
-                                var continueBtn = targetFrame.Locator("button:has-text('Continue'), [role='button']:has-text('Continue'), button:has-text('Next'), #payment-submit-btn").Last;
-                                if (await continueBtn.CountAsync() == 0 || !await continueBtn.IsVisibleAsync())
-                                    continueBtn = paypalPage.Locator("button:has-text('Continue'), [role='button']:has-text('Continue'), button:has-text('Next'), #payment-submit-btn").Last;
-
-                                if (await continueBtn.CountAsync() > 0 && await continueBtn.IsVisibleAsync())
-                                {
-                                    await continueBtn.ClickAsync(new() { Force = true });
-                                    await Task.Delay(3500);
-                                    continue;
-                                }
-                            }
-
-                            // 1. Fill card inputs across all frames
-                            foreach (var f in paypalPage.Frames)
-                            {
+                                var testDebitCard = GenerateTestDebitCard();
+                                TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Filling Card Number (Generated Visa Debit: {testDebitCard})");
+                                await cardNumInp.FocusAsync();
+                                await cardNumInp.ClickAsync(new() { Force = true });
+                                await cardNumInp.PressAsync("ControlOrMeta+A");
+                                await cardNumInp.PressAsync("Backspace");
                                 try
                                 {
-                                    var cardInp = f.Locator("input[autocomplete*='cc-number'], input[placeholder*='Card number' i], input[name*='cardNumber' i], input[id*='cardNumber' i], input[aria-label*='card number' i]").First;
-                                    if (await cardInp.CountAsync() == 0 || !await cardInp.IsVisibleAsync())
-                                        cardInp = f.Locator("input[name*='card' i]:not([name*='exp' i]):not([name*='cvv' i]):not([name*='date' i])").First;
-
-                                    if (await cardInp.CountAsync() > 0 && await cardInp.IsVisibleAsync())
-                                    {
-                                        TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Found Card Number input in frame {f.Url}, typing 4111111111111111");
-                                        await cardInp.ClickAsync();
-                                        await cardInp.PressAsync("ControlOrMeta+A");
-                                        await cardInp.PressAsync("Backspace");
-                                        await cardInp.PressSequentiallyAsync("4111111111111111", new() { Delay = 50 });
-                                        await Task.Delay(300);
-                                    }
-
-                                    var expInp = f.Locator("input[autocomplete*='cc-exp'], input[placeholder*='Expiry' i], input[placeholder*='MM' i], input[name*='exp' i], input[id*='exp' i], input[aria-label*='exp' i]").First;
-                                    if (await expInp.CountAsync() > 0 && await expInp.IsVisibleAsync())
-                                    {
-                                        TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Found Expiry input in frame {f.Url}, typing 1228");
-                                        await expInp.ClickAsync();
-                                        await expInp.PressAsync("ControlOrMeta+A");
-                                        await expInp.PressAsync("Backspace");
-                                        await expInp.PressSequentiallyAsync("1228", new() { Delay = 50 });
-                                        await Task.Delay(300);
-                                    }
-
-                                    var cvvInp = f.Locator("input[autocomplete*='csc'], input[placeholder*='CVV' i], input[placeholder*='CVC' i], input[name*='cvv' i], input[id*='cvv' i], input[name*='cvc' i], input[id*='cvc' i], input[name*='security' i], input[id*='security' i], input[aria-label*='cvv' i], input[aria-label*='cvc' i]").First;
-                                    if (await cvvInp.CountAsync() == 0 || !await cvvInp.IsVisibleAsync())
-                                        cvvInp = f.GetByLabel("CVV").First;
-                                    if (await cvvInp.CountAsync() == 0 || !await cvvInp.IsVisibleAsync())
-                                        cvvInp = f.Locator("label:has-text('CVV') ~ input, div:has-text('CVV') > input, input[name*='code' i]").First;
-
-                                    if (await cvvInp.CountAsync() > 0 && await cvvInp.IsVisibleAsync())
-                                    {
-                                        TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Found CVV input in frame {f.Url}, typing 123");
-                                        await cvvInp.ClickAsync();
-                                        await cvvInp.PressAsync("ControlOrMeta+A");
-                                        await cvvInp.PressAsync("Backspace");
-                                        await cvvInp.PressSequentiallyAsync("123", new() { Delay = 50 });
-                                        await Task.Delay(300);
-                                    }
-                                }
-                                catch (Exception exF)
-                                {
-                                    TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Frame input filling note ({f.Url}): {exF.Message}");
-                                }
-                            }
-
-                            // 2. Also run DOM evaluate across all frames to ensure inputs are populated and events dispatched
-                            foreach (var f in paypalPage.Frames)
-                            {
-                                try
-                                {
-                                    await f.EvaluateAsync(@"() => {
-                                        const inputs = Array.from(document.querySelectorAll('input:not([type=""hidden""]):not([type=""checkbox""]):not([type=""radio""])')).filter(i => i.offsetParent !== null);
-                                        for (const inp of inputs) {
-                                            const label = ((inp.getAttribute('aria-label') || '') + ' ' + (inp.placeholder || '') + ' ' + (inp.name || '') + ' ' + (inp.id || '')).toLowerCase();
-                                            const isExp = label.includes('exp') || label.includes('mm') || label.includes('expiry');
-                                            const isCvv = label.includes('cvv') || label.includes('cvc') || label.includes('security') || label.includes('csc');
-                                            const isCard = (label.includes('cardnumber') || label.includes('card-number') || label.includes('cc-number') || (label.includes('card') && !isExp && !isCvv) || label.includes('number')) && !label.includes('phone') && !isExp && !isCvv;
-
-                                            if (isCard && !inp.value) {
-                                                inp.focus();
-                                                inp.value = '4111111111111111';
-                                                inp.dispatchEvent(new Event('input', { bubbles: true }));
-                                                inp.dispatchEvent(new Event('change', { bubbles: true }));
-                                                inp.blur();
-                                            } else if (isExp && (!inp.value || inp.value.includes('41'))) {
-                                                inp.focus();
-                                                inp.value = '12/28';
-                                                inp.dispatchEvent(new Event('input', { bubbles: true }));
-                                                inp.dispatchEvent(new Event('change', { bubbles: true }));
-                                                inp.blur();
-                                            } else if (isCvv && !inp.value) {
-                                                inp.focus();
-                                                inp.value = '123';
-                                                inp.dispatchEvent(new Event('input', { bubbles: true }));
-                                                inp.dispatchEvent(new Event('change', { bubbles: true }));
-                                                inp.blur();
-                                            }
+                                    await targetFrame.EvaluateAsync(@"(sel) => {
+                                        const el = document.querySelector(sel);
+                                        if (el) {
+                                            el.value = '';
+                                            el.dispatchEvent(new Event('input', { bubbles: true }));
                                         }
-
-                                        // Fallback 1: If 3 or more text inputs exist and first has the test card, the 3rd is CVV
-                                        if (inputs.length >= 3 && inputs.some(i => (i.value || '').replace(/\s/g, '').includes('4111111111111111'))) {
-                                            const cvv = inputs[2];
-                                            if (!cvv.value) {
-                                                cvv.focus();
-                                                cvv.value = '123';
-                                                cvv.dispatchEvent(new Event('input', { bubbles: true }));
-                                                cvv.dispatchEvent(new Event('change', { bubbles: true }));
-                                                cvv.blur();
-                                            }
-                                        }
-
-                                        // Fallback 2: Look for label/element with text 'CVV'
-                                        const allEls = Array.from(document.querySelectorAll('label, div, span, p'));
-                                        const cvvEl = allEls.find(l => (l.innerText || '').trim().toUpperCase() === 'CVV');
-                                        if (cvvEl) {
-                                            let forId = cvvEl.getAttribute('for');
-                                            let targetInp = forId ? document.getElementById(forId) : null;
-                                            if (!targetInp) {
-                                                let p = cvvEl.parentElement;
-                                                for (let d = 0; d < 3 && p; d++) {
-                                                    targetInp = p.querySelector('input');
-                                                    if (targetInp) break;
-                                                    p = p.parentElement;
-                                                }
-                                            }
-                                            if (targetInp && !targetInp.value) {
-                                                targetInp.focus();
-                                                targetInp.value = '123';
-                                                targetInp.dispatchEvent(new Event('input', { bubbles: true }));
-                                                targetInp.dispatchEvent(new Event('change', { bubbles: true }));
-                                                targetInp.blur();
-                                            }
-                                        }
-                                    }");
+                                    }", "#text-input-card_number");
                                 }
                                 catch { }
+                                await cardNumInp.PressSequentiallyAsync(testDebitCard, new() { Delay = 40 });
+                                await Task.Delay(300);
                             }
 
-                            await Task.Delay(500);
+                            var expInp = targetFrame.Locator("#text-input-expiration_date, input[name='expiration_date'], input[id*='exp' i], input[name*='exp' i]").First;
+                            if (await expInp.CountAsync() == 0 || !await expInp.IsVisibleAsync())
+                                expInp = targetFrame.Locator("input:not([type='hidden']):not([type='checkbox']):not([type='radio'])").Nth(1);
 
-                            // 3. Click 'Link Card' button
-                            var linkBtn = targetFrame.Locator("button:has-text('Link Card'), button:has-text('Link card'), button:has-text('Link'), [role='button']:has-text('Link Card')").Last;
+                            if (await expInp.CountAsync() > 0 && await expInp.IsVisibleAsync())
+                            {
+                                TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Filling Expiry (1228)");
+                                await expInp.FocusAsync();
+                                await expInp.ClickAsync(new() { Force = true });
+                                await expInp.PressAsync("ControlOrMeta+A");
+                                await expInp.PressAsync("Backspace");
+                                await expInp.PressSequentiallyAsync("1228", new() { Delay = 40 });
+                                await Task.Delay(300);
+                            }
+
+                            var cvvInp = targetFrame.Locator("#text-input-cvv, input[name='cvv'], input[id*='cvv' i], input[name*='cvv' i]").First;
+                            if (await cvvInp.CountAsync() == 0 || !await cvvInp.IsVisibleAsync())
+                                cvvInp = targetFrame.Locator("input:not([type='hidden']):not([type='checkbox']):not([type='radio'])").Nth(2);
+
+                            if (await cvvInp.CountAsync() > 0 && await cvvInp.IsVisibleAsync())
+                            {
+                                TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] Filling CVV (123)");
+                                await cvvInp.FocusAsync();
+                                await cvvInp.ClickAsync(new() { Force = true });
+                                await cvvInp.PressAsync("ControlOrMeta+A");
+                                await cvvInp.PressAsync("Backspace");
+                                await cvvInp.PressSequentiallyAsync("123", new() { Delay = 40 });
+                                await Task.Delay(500);
+                            }
+
+                            // 2. Click 'Link Card' button
+                            var linkBtn = targetFrame.Locator("button:has-text('Link Card'), button:has-text('Link card'), button:has-text('Link'), [role='button']:has-text('Link Card'), [role='button']:has-text('Link')").Last;
                             if (await linkBtn.CountAsync() == 0 || !await linkBtn.IsVisibleAsync())
-                                linkBtn = paypalPage.Locator("button:has-text('Link Card'), button:has-text('Link card'), button:has-text('Link'), [role='button']:has-text('Link Card')").Last;
+                                linkBtn = paypalPage.Locator("button:has-text('Link Card'), button:has-text('Link card'), button:has-text('Link'), [role='button']:has-text('Link Card'), [role='button']:has-text('Link')").Last;
 
                             if (await linkBtn.CountAsync() > 0 && await linkBtn.IsVisibleAsync())
                             {
@@ -1222,5 +1130,35 @@ public class PayPalSandboxCheckoutFlow : BaseCheckoutFlow
         {
             TestContext.WriteLine($"[{DateTime.UtcNow:HH:mm:ss}] [PayLater] AddTestProductToCartWithHighQuantityAsync failed: {ex.Message}");
         }
+    }
+
+    private static string GenerateTestDebitCard()
+    {
+        var rng = new Random();
+        var prefixes = new[] { "401288", "492900", "453200", "415928" };
+        var prefix = prefixes[rng.Next(prefixes.Length)];
+        var digits = new int[16];
+        for (int i = 0; i < prefix.Length; i++)
+        {
+            digits[i] = prefix[i] - '0';
+        }
+        for (int i = prefix.Length; i < 15; i++)
+        {
+            digits[i] = rng.Next(0, 10);
+        }
+        int sum = 0;
+        for (int i = 0; i < 15; i++)
+        {
+            int d = digits[i];
+            if (i % 2 == 0)
+            {
+                d *= 2;
+                if (d > 9) d -= 9;
+            }
+            sum += d;
+        }
+        int checkDigit = (10 - (sum % 10)) % 10;
+        digits[15] = checkDigit;
+        return string.Concat(digits);
     }
 }
