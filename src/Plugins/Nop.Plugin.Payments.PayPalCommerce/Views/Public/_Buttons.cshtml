@@ -12,8 +12,8 @@
     var pageType = Model.Placement switch
     {
         ButtonPlacement.Cart => "cart",
-        ButtonPlacement.Product => "product-details",
-        ButtonPlacement.PaymentMethod => "checkout",
+        ButtonPlacement.Product => "product",
+        ButtonPlacement.PaymentMethod => "payment",
         _ => null
     };
 }
@@ -511,30 +511,17 @@ else
                     'font-size': '15px',
                     'font-family': 'Montserrat, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
                     'color': '#1e293b',
-                    'border': 'none',
-                    'outline': 'none',
-                    'box-shadow': 'none',
-                    'background': 'transparent',
                     'padding': '0 12px',
                     'line-height': '46px'
                 },
                 ':focus': {
-                    'border': 'none',
-                    'outline': 'none',
-                    'box-shadow': 'none',
                     'color': '#1e293b'
                 },
                 '::placeholder': {
                     'color': '#94a3b8'
                 },
-                ':placeholder': {
-                    'color': '#94a3b8'
-                },
                 '.invalid': {
-                    'color': '#e53e3e',
-                    'border': 'none',
-                    'outline': 'none',
-                    'box-shadow': 'none'
+                    'color': '#e53e3e'
                 },
                 '.valid': {
                     'color': '#16a34a'
@@ -709,25 +696,10 @@ else
 
             if (cardFields.isEligible()) {
                 var fieldPromises = [
-                    cardFields.NumberField({
-                        placeholder: 'Card number',
-                        style: cardStyle
-                    }).render('#card-number-field-container'),
-
-                    cardFields.ExpiryField({
-                        placeholder: 'MM / YY',
-                        style: cardStyle
-                    }).render('#card-expiry-field-container'),
-
-                    cardFields.CVVField({
-                        placeholder: 'CVV',
-                        style: cardStyle
-                    }).render('#card-cvv-field-container'),
-
-                    cardFields.NameField({
-                        placeholder: 'Name on card',
-                        style: cardStyle
-                    }).render('#card-name-field-container')
+                    cardFields.NumberField({ placeholder: 'Card number' }).render('#card-number-field-container'),
+                    cardFields.ExpiryField({ placeholder: 'MM / YY' }).render('#card-expiry-field-container'),
+                    cardFields.CVVField({ placeholder: 'CVV' }).render('#card-cvv-field-container'),
+                    cardFields.NameField({ placeholder: 'Name on card' }).render('#card-name-field-container')
                 ];
 
                 Promise.all(fieldPromises).then(function () {
