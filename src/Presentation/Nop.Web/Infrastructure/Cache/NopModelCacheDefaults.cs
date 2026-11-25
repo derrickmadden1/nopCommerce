@@ -302,4 +302,15 @@ public static partial class NopModelCacheDefaults
     /// </remarks>
     public static CacheKey MenuByTypeModelKey => new("Nop.pres.menu.bytype-{0}-{1}-{2}-{3}");
     public static string MenuPrefixCacheKey => "Nop.pres.menu";
+
+    /// <summary>
+    /// Key for llms.txt caching
+    /// </summary>
+    /// <remarks>
+    /// {0} : current store ID
+    /// {1} : language ID
+    /// {2} : is full content
+    /// </remarks>
+    public static CacheKey LlmsTextModelKey => new("Nop.pres.llms.text-{0}-{1}-{2}");
+    public static string LlmsTextPrefixCacheKey => "Nop.pres.llms.text";
 }

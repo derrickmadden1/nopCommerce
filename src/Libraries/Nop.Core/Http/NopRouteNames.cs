@@ -517,6 +517,16 @@ public static partial class NopRouteNames
         public const string ROBOTS_TXT = "robots.txt";
 
         /// <summary>
+        /// Gets the llms.txt (file result) route name
+        /// </summary>
+        public const string LLMS_TXT = "llms.txt";
+
+        /// <summary>
+        /// Gets the llms-full.txt (file result) route name
+        /// </summary>
+        public const string LLMS_FULL_TXT = "llms-full.txt";
+
+        /// <summary>
         /// Gets the sitemap.xml (file result) route name
         /// </summary>
         public const string SITEMAP_XML = "sitemap.xml";

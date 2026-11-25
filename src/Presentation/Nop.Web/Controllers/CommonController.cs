@@ -42,6 +42,7 @@ public partial class CommonController : BasePublicController
     protected readonly IHtmlFormatter _htmlFormatter;
     protected readonly ILanguageService _languageService;
     protected readonly ILocalizationService _localizationService;
+    protected readonly ILlmsModelFactory _llmsModelFactory;
     protected readonly ISitemapModelFactory _sitemapModelFactory;
     protected readonly IStoreContext _storeContext;
     protected readonly IThemeContext _themeContext;
@@ -68,6 +69,7 @@ public partial class CommonController : BasePublicController
         IHtmlFormatter htmlFormatter,
         ILanguageService languageService,
         ILocalizationService localizationService,
+        ILlmsModelFactory llmsModelFactory,
         ISitemapModelFactory sitemapModelFactory,
         IStoreContext storeContext,
         IThemeContext themeContext,
@@ -90,6 +92,7 @@ public partial class CommonController : BasePublicController
         _htmlFormatter = htmlFormatter;
         _languageService = languageService;
         _localizationService = localizationService;
+        _llmsModelFactory = llmsModelFactory;
         _sitemapModelFactory = sitemapModelFactory;
         _storeContext = storeContext;
         _themeContext = themeContext;
@@ -444,6 +447,24 @@ public partial class CommonController : BasePublicController
         var robotsFileContent = await _commonModelFactory.PrepareRobotsTextFileAsync();
 
         return Content(robotsFileContent, MimeTypes.TextPlain);
+    }
+
+    //ignore SEO friendly URLs checks
+    [CheckLanguageSeoCode(ignore: true)]
+    public virtual async Task<IActionResult> LlmsTextFile()
+    {
+        var content = await _llmsModelFactory.PrepareLlmsTextFileAsync(false);
+
+        return Content(content, MimeTypes.TextPlain, System.Text.Encoding.UTF8);
+    }
+
+    //ignore SEO friendly URLs checks
+    [CheckLanguageSeoCode(ignore: true)]
+    public virtual async Task<IActionResult> LlmsFullTextFile()
+    {
+        var content = await _llmsModelFactory.PrepareLlmsTextFileAsync(true);
+
+        return Content(content, MimeTypes.TextPlain, System.Text.Encoding.UTF8);
     }
 
     //available even when a store is closed
