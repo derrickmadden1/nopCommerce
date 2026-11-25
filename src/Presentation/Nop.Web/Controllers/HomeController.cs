@@ -1,14 +1,27 @@
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Http;
 using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Nop.Core;
+using Nop.Web.Factories;
 using Nop.Web.Framework.Mvc.Filters;
 
 namespace Nop.Web.Controllers;
 
 public partial class HomeController : BasePublicController
 {
+    protected readonly ILlmsModelFactory _llmsModelFactory;
+    protected readonly IStoreContext _storeContext;
+
+    public HomeController(ILlmsModelFactory llmsModelFactory, IStoreContext storeContext)
+    {
+        _llmsModelFactory = llmsModelFactory;
+        _storeContext = storeContext;
+    }
+
     [SaveLastContinueShoppingPage]
-    public virtual IActionResult Index()
+    public virtual async Task<IActionResult> Index()
     {
         Response.Headers["Vary"] = "Accept";
         var acceptHeaders = Request.GetTypedHeaders().Accept?.OrderByDescending(x => x.Quality ?? 1.0).ToList();
@@ -24,12 +37,13 @@ public partial class HomeController : BasePublicController
             {
                 if (preferred.MediaType.Value == "text/markdown" || preferred.MediaType.Value == "text/plain")
                 {
-                    var content = "# www.rosecottagecroft.co.uk\n\n> Rose Cottage Croft is an online store. Use these endpoints to browse products or get information about the shop.\n\n## Endpoints\n\n- `GET /` — Homepage. Contains categories, featured products, and site navigation.\n- `GET /search?q={query}` — Search the store for products matching the query.\n- `GET /contactus` — Contact information and form.\n\n## Authentication\n\nNo authentication is required to browse the store catalog.\n\n## Examples\n\nSearch for a product:\n\n```bash\ncurl https://www.rosecottagecroft.co.uk/search?q=widget\n```";
-                    return Content(content, preferred.MediaType.Value);
+                    var content = await _llmsModelFactory.PrepareLlmsTextFileAsync(false);
+                    return Content(content, preferred.MediaType.Value, Encoding.UTF8);
                 }
                 else if (preferred.MediaType.Value == "application/json")
                 {
-                    return Json(new { name = "www.rosecottagecroft.co.uk", description = "Rose Cottage Croft online store" });
+                    var store = await _storeContext.GetCurrentStoreAsync();
+                    return Json(new { name = store.Name, description = $"{store.Name} online store", url = store.Url });
                 }
             }
         }

@@ -111,6 +111,32 @@
 }
 
 .card-vault {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  margin-top: 14px !important;
+  margin-bottom: 14px !important;
+  padding: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  height: auto !important;
+  box-shadow: none !important;
+}
+
+.card-vault input[type="checkbox"] {
+  width: 18px !important;
+  height: 18px !important;
+  cursor: pointer !important;
+  margin: 0 !important;
+}
+
+.card-vault label {
+  font-size: 0.95rem !important;
+  font-weight: 500 !important;
+  color: #334155 !important;
+  cursor: pointer !important;
+  margin: 0 !important;
+  display: inline !important;
 }
 
 .paypal-button:hover {
@@ -411,4 +437,153 @@ input[type=submit] {
   background: none;
   border: none;
   width: 100%;
+}
+
+
+/* PayPal Custom Card Fields Styling */
+.paypal-card-container {
+  max-width: 480px;
+  margin: 15px auto 10px auto;
+  padding: 0;
+  text-align: left;
+}
+
+.paypal-card-form-group {
+  margin-bottom: 16px;
+  text-align: left;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.paypal-field-label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 6px;
+  letter-spacing: 0.2px;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.paypal-field-input-wrapper {
+  height: 48px;
+  padding: 0 12px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  position: relative;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.paypal-field-input-wrapper iframe {
+  height: 100% !important;
+  width: 100% !important;
+  border: none !important;
+  background: transparent !important;
+  display: block !important;
+}
+
+.paypal-field-input-wrapper:hover {
+  border-color: #94a3b8;
+}
+
+.paypal-field-input-wrapper.is-focused {
+  border-color: #0070ba !important;
+  box-shadow: 0 0 0 3px rgba(0, 112, 186, 0.15) !important;
+}
+
+.paypal-field-input-wrapper.has-error {
+  border-color: #e53e3e !important;
+  background-color: #fffdfd !important;
+  box-shadow: 0 0 0 3px rgba(229, 62, 62, 0.15) !important;
+}
+
+.paypal-field-error {
+  display: none;
+  color: #e53e3e;
+  font-size: 0.825rem;
+  font-weight: 500;
+  margin-top: 5px;
+  line-height: 1.35;
+  text-align: left;
+}
+
+.paypal-card-row {
+  display: flex;
+  gap: 14px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.paypal-card-half {
+  flex: 1;
+  min-width: 0;
+}
+
+.paypal-select-card {
+  height: 50px;
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  background-color: #ffffff;
+  color: #1e293b;
+  box-sizing: border-box;
+}
+
+#card-form-general-error {
+  display: none;
+  margin: 12px 0;
+  padding: 12px 16px;
+  border-radius: 6px;
+  border-left: 4px solid #e53e3e;
+  background-color: #fff5f5;
+  color: #c53030;
+  font-size: 0.9rem;
+  font-weight: 500;
+  line-height: 1.4;
+  text-align: left;
+}
+
+#card-field-submit-button.paypal-button {
+  width: 100% !important;
+  height: 48px !important;
+  background: #0070ba !important;
+  color: #ffffff !important;
+  border: none !important;
+  border-radius: 6px !important;
+  font-weight: 600 !important;
+  font-size: 1rem !important;
+  cursor: pointer !important;
+  margin-top: 10px !important;
+  box-shadow: 0 2px 6px rgba(0, 112, 186, 0.25) !important;
+  transition: background-color 0.2s, box-shadow 0.2s !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+#card-field-submit-button.paypal-button:hover {
+  background: #005ea6 !important;
+  box-shadow: 0 4px 12px rgba(0, 112, 186, 0.35) !important;
+}
+
+#card-field-submit-button.paypal-button:disabled,
+#card-field-submit-button.paypal-button-disabled {
+  opacity: 0.6 !important;
+  cursor: not-allowed !important;
+}
+
+@media (max-width: 600px) {
+  .paypal-card-row {
+    flex-direction: column;
+    gap: 0;
+  }
 }

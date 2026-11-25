@@ -107,6 +107,7 @@ public partial class NopStartup : INopStartup
         services.AddScoped<Factories.IReturnRequestModelFactory, Factories.ReturnRequestModelFactory>();
         services.AddScoped<Factories.IShoppingCartModelFactory, Factories.ShoppingCartModelFactory>();
         services.AddScoped<Factories.ISitemapModelFactory, Factories.SitemapModelFactory>();
+        services.AddScoped<Factories.ILlmsModelFactory, Factories.LlmsModelFactory>();
         services.AddScoped<Factories.ITopicModelFactory, Factories.TopicModelFactory>();
         services.AddScoped<Factories.IVendorModelFactory, Factories.VendorModelFactory>();
         services.AddScoped<Factories.IMenuModelFactory, Factories.MenuModelFactory>();

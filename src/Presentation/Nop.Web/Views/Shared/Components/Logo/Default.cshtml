@@ -3,9 +3,9 @@
     <img alt="@Model.StoreName"
          src="@Model.LogoPath"
          @(!string.IsNullOrEmpty(Model.SrcSet) ? Html.Raw($"srcset=\"{Model.SrcSet}\"") : null)
-         @(Model.Width.HasValue ? Html.Raw($"width=\"{Model.Width.Value}\"") : null)
-         @(Model.Height.HasValue ? Html.Raw($"height=\"{Model.Height.Value}\"") : null)
+         width="@(Model.Width ?? 1000)"
+         height="@(Model.Height ?? 200)"
          decoding="async"
-         loading="lazy"
-         fetchpriority="low">
+         loading="eager"
+         fetchpriority="high">
 </a>

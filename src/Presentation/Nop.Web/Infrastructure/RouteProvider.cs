@@ -679,6 +679,16 @@ public partial class RouteProvider : BaseRouteProvider, IRouteProvider
             pattern: $"robots.txt",
             defaults: new { controller = "Common", action = "RobotsTextFile" });
 
+        //llms.txt (file result)
+        endpointRouteBuilder.MapControllerRoute(name: NopRouteNames.Standard.LLMS_TXT,
+            pattern: $"llms.txt",
+            defaults: new { controller = "Common", action = "LlmsTextFile" });
+
+        //llms-full.txt (file result)
+        endpointRouteBuilder.MapControllerRoute(name: NopRouteNames.Standard.LLMS_FULL_TXT,
+            pattern: $"llms-full.txt",
+            defaults: new { controller = "Common", action = "LlmsFullTextFile" });
+
         //sitemap
         endpointRouteBuilder.MapControllerRoute(name: NopRouteNames.General.SITEMAP,
             pattern: $"{lang}/sitemap",

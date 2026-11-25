@@ -112,27 +112,47 @@ h6 {
 .announcement-bar {
   background: var(--brand-turquoise);
   color: #fff;
-  padding: 8px 0;
+  min-height: 34px;
+  height: 34px;
+  line-height: 18px;
+  padding: 8px 12px;
   text-align: center;
   font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 1px;
   text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.announcement-bar span {
+  display: inline-block;
+  line-height: 18px;
+  white-space: nowrap;
 }
 
 .header-utility {
   background: var(--dark-grey);
   color: #fff;
+  min-height: 38px;
+  line-height: 18px;
   padding: 10px 0;
   font-size: 0.7rem;
   font-weight: 500;
   letter-spacing: 1px;
+  box-sizing: border-box;
+  width: 100%;
 }
 
 .header-modern .utility-container {
   max-width: 1400px;
   margin: 0 auto;
   padding: 0 40px;
+  width: 100%;
+  box-sizing: border-box;
   display: flex !important;
   justify-content: space-between !important;
   align-items: center !important;
@@ -140,6 +160,7 @@ h6 {
 
 .header-modern .utility-social {
   display: flex;
+  align-items: center;
   gap: 15px;
 }
 
@@ -306,12 +327,13 @@ h6 {
 /* --- HIERARCHICAL MEGA MENU DROPDOWNS --- */
 
 /* MegaMenu Root - Actual plugin structure */
-.mega-menu-root {
+.main-nav-row .mega-menu-root {
   list-style: none;
   padding: 0;
   margin: 0;
   display: flex;
-  gap: 40px;
+  flex-wrap: nowrap;
+  gap: 32px;
   justify-content: center;
 }
 
@@ -320,14 +342,16 @@ h6 {
   position: relative;
 }
 
-.mega-menu-item>a {
+.main-nav-row .mega-menu-item>a {
   font-family: var(--heading-font);
   font-weight: 600;
   font-size: 0.9rem;
   text-transform: uppercase;
   letter-spacing: 1px;
   padding: 10px 0;
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
   transition: color 0.3s ease;
 }
 
@@ -435,16 +459,17 @@ h6 {
 }
 
 /* Indicator for items with subcategories */
-.mega-menu-item:has(.mega-menu-panel)>a::after {
+.main-nav-row .mega-menu-item:has(.mega-menu-panel)>a::after {
   content: '▼';
   font-size: 0.6rem;
-  margin-left: 8px;
+  margin-left: 6px;
   opacity: 0.6;
   display: inline-block;
+  flex-shrink: 0;
   transition: transform 0.3s ease;
 }
 
-.mega-menu-item:hover:has(.mega-menu-panel)>a::after {
+.main-nav-row .mega-menu-item:hover:has(.mega-menu-panel)>a::after {
   transform: rotate(180deg);
 }
 
