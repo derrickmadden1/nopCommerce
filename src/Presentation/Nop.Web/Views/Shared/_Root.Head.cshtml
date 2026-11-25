@@ -49,7 +49,11 @@
     await eventPublisher.PublishAsync(new PageRenderingEvent(NopHtml));
 
     var title = await NopHtml.GenerateTitleAsync();
-    var description = await @NopHtml.GenerateMetaDescriptionAsync();
+    var description = await NopHtml.GenerateMetaDescriptionAsync();
+    if (description is Microsoft.AspNetCore.Html.HtmlString hs && string.IsNullOrWhiteSpace(hs.Value))
+    {
+        description = new Microsoft.AspNetCore.Html.HtmlString("Rose Cottage Croft - handcrafted natural soaps, balms, lotions, and artisanal goods crafted with care from the Scottish Highlands.");
+    }
     var keywords = await NopHtml.GenerateMetaKeywordsAsync();
 }
 <!DOCTYPE html>
@@ -67,6 +71,7 @@
     <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" />
     <link rel="alternate" type="text/plain" title="llms.txt" href="/llms.txt" />
+    <link rel="alternate" type="text/plain" title="llms-full.txt" href="/llms-full.txt" />
     <meta property="og:image" content="https://rccstorageaccount.blob.core.windows.net/rosecottagestore/og-image.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -83,7 +88,7 @@
             {
                 foreach (var url in preloadList.Distinct())
                 {
-                                <text><link rel="preload" as="image" href="@url" importance="high" /></text>
+                    <text><link rel="preload" as="image" href="@url" fetchpriority="high" /></text>
                 }
             }
         }
@@ -124,11 +129,11 @@
 </head>
 <body>
     <nop-antiforgery-token />
-    <div id="seasonal-layer"></div>
-    <script src="~/js/seasonal-bg.js"></script>    
 
     @RenderBody()
 
+    <div id="seasonal-layer"></div>
+    <script src="~/js/seasonal-bg.js" defer></script>
     @NopHtml.GenerateScripts(ResourceLocation.Footer)
     @NopHtml.GenerateInlineScripts(ResourceLocation.Footer)
     @Html.Raw(commonSettings.FooterCustomHtml)

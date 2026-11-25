@@ -43,6 +43,12 @@ namespace Nop.Plugin.Widgets.ShoppableBanner.Components
             if (bgPicture != null)
             {
                 model.BackgroundPictureUrl = (await _pictureService.GetPictureUrlAsync(bgPicture)).Url;
+                if (!string.IsNullOrEmpty(model.BackgroundPictureUrl))
+                {
+                    var preloadList = HttpContext.Items["PreloadImageUrls"] as List<string> ?? new List<string>();
+                    preloadList.Add(model.BackgroundPictureUrl);
+                    HttpContext.Items["PreloadImageUrls"] = preloadList;
+                }
             }
 
             // Fetch live product data for each hotspot
@@ -74,7 +80,8 @@ namespace Nop.Plugin.Widgets.ShoppableBanner.Components
                         PositionX = hotspot.PositionX,
                         PositionY = hotspot.PositionY,
                         PictureUrl = pictureUrl,
-                        Price = formattedPrice
+                        Price = formattedPrice,
+                        ShowOnMobile = hotspot.ShowOnMobile
                     });
                 }
             }

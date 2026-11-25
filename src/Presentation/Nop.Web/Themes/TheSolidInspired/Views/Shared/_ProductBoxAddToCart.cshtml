@@ -25,7 +25,7 @@
     <div class="buttons">
         @if (Model.ComingSoon)
         {
-            <button type="button" class="button-2 product-box-add-to-cart-button disabled coming-soon-button" disabled="disabled">@T("Products.ComingSoon")</button>
+            <button type="button" class="button-2 product-box-add-to-cart-button disabled coming-soon-button" disabled="disabled" aria-label="@T("Products.ComingSoon"): @Model.Name">@T("Products.ComingSoon")</button>
         }
         else if (!Model.ProductPrice.DisableBuyButton)
         {
@@ -38,19 +38,19 @@
             {
                 addToCartText = T("ShoppingCart.PreOrder").Text;
             }
-            <button type="button" class="button-2 product-box-add-to-cart-button" onclick="AjaxCart.addproducttocart_catalog('@addtocartlink');return false;">@(addToCartText)</button>
+            <button type="button" class="button-2 product-box-add-to-cart-button" onclick="AjaxCart.addproducttocart_catalog('@addtocartlink');return false;" aria-label="@(addToCartText): @Model.Name">@(addToCartText)</button>
         }
         
         @if (!Model.ProductPrice.DisableAddToCompareListButton)
         {
-            <button type="button" class="button-2 add-to-compare-list-button" title="@T("ShoppingCart.AddToCompareList")" onclick="AjaxCart.addproducttocomparelist('@addtocomparelink');return false;">@T("ShoppingCart.AddToCompareList")</button>
+            <button type="button" class="button-2 add-to-compare-list-button" title="@T("ShoppingCart.AddToCompareList")" aria-label="@T("ShoppingCart.AddToCompareList"): @Model.Name" onclick="AjaxCart.addproducttocomparelist('@addtocomparelink');return false;">@T("ShoppingCart.AddToCompareList")</button>
         }
         
         @if (!Model.ProductPrice.DisableWishlistButton)
         {
             @await Html.PartialAsync("_MoveToWishlistModal", Model.ProductToWishlist)
 
-            <button type="button" class="button-2 add-to-wishlist-button" title="@T("ShoppingCart.AddToWishlist")" onclick="AjaxCart.addproducttocart_catalog('@addtowishlistlink');return false;">@T("ShoppingCart.AddToWishlist")</button>
+            <button type="button" class="button-2 add-to-wishlist-button" title="@T("ShoppingCart.AddToWishlist")" aria-label="@T("ShoppingCart.AddToWishlist"): @Model.Name" onclick="AjaxCart.addproducttocart_catalog('@addtowishlistlink');return false;">@T("ShoppingCart.AddToWishlist")</button>
         }
     </div>
 }

@@ -88,5 +88,7 @@ namespace Nop.Plugin.Widgets.ShoppableBanner.Models
         // Using decimals for percentages (e.g., 45.5 for 45.5%)
         public decimal PositionX { get; set; }
         public decimal PositionY { get; set; }
+
+        public bool ShowOnMobile { get; set; } = true;
     }
 }

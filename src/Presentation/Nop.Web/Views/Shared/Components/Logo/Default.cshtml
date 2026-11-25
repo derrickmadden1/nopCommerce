@@ -1,5 +1,5 @@
 ﻿@model LogoModel
-<a href="@Url.RouteUrl(NopRouteNames.General.HOMEPAGE)">
+<a href="@Url.RouteUrl(NopRouteNames.General.HOMEPAGE)" aria-label="@Model.StoreName homepage">
     <img alt="@Model.StoreName"
          src="@Model.LogoPath"
          @(!string.IsNullOrEmpty(Model.SrcSet) ? Html.Raw($"srcset=\"{Model.SrcSet}\"") : null)
