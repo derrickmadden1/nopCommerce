@@ -772,7 +772,7 @@
 <div id="mini-cart-panel" class="mini-cart-panel" style="display: none !important;">
     <div class="mini-cart-header" style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-shrink: 0; padding-bottom: 10px; border-bottom: 1px solid #eee;">
         <h3 style="margin:0;">Your Cart</h3>
-        <a href="javascript:void(0)" id="cart-close" onclick="closeCartPanel()" style="color: #1b1b1b; text-decoration: none; font-size: 2rem; font-weight: bold; line-height: 1;">&times;</a>
+        <button type="button" id="cart-close" onclick="closeCartPanel()" aria-label="Close cart panel" style="background: none; border: none; color: #1b1b1b; cursor: pointer; font-size: 2rem; font-weight: bold; line-height: 1; padding: 0;">&times;</button>
     </div>
     @await Component.InvokeAsync("FlyoutShoppingCart")
 </div>
@@ -780,7 +780,7 @@
 <div id="mobile-nav-panel" class="mobile-nav-panel" style="display: none !important;">
     <div class="mobile-nav-header">
         <h3>Menu</h3>
-        <a href="javascript:void(0)" id="mobile-nav-close" onclick="closeMobileNav()"><i class="fas fa-times"></i></a>
+        <button type="button" id="mobile-nav-close" onclick="closeMobileNav()" aria-label="Close navigation menu" style="background: none; border: none; color: #1b1b1b; cursor: pointer; font-size: 1.5rem; padding: 0;"><i class="fas fa-times" aria-hidden="true"></i></button>
     </div>
     <nav class="mobile-nav-content">
         @if (megaMenuInstalled)
