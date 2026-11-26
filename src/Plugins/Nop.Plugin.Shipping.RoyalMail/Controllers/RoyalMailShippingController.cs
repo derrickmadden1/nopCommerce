@@ -53,19 +53,15 @@ public class RoyalMailShippingController : BasePluginController
 
         var model = new ConfigurationModel
         {
-            UseSandbox = royalMailSettings.UseSandbox,
-            ClientId = royalMailSettings.ClientId,
-            ClientSecret = royalMailSettings.ClientSecret,
-            UseWebTrackingUrlFallback = royalMailSettings.UseWebTrackingUrlFallback,
+            WebTrackingUrlFormat = string.IsNullOrWhiteSpace(royalMailSettings.WebTrackingUrlFormat)
+                ? RoyalMailDefaults.WebTrackingUrlFormat
+                : royalMailSettings.WebTrackingUrlFormat,
             ActiveStoreScopeConfiguration = storeScope
         };
 
         if (storeScope > 0)
         {
-            model.UseSandbox_OverrideForStore = await _settingService.SettingExistsAsync(royalMailSettings, x => x.UseSandbox, storeScope);
-            model.ClientId_OverrideForStore = await _settingService.SettingExistsAsync(royalMailSettings, x => x.ClientId, storeScope);
-            model.ClientSecret_OverrideForStore = await _settingService.SettingExistsAsync(royalMailSettings, x => x.ClientSecret, storeScope);
-            model.UseWebTrackingUrlFallback_OverrideForStore = await _settingService.SettingExistsAsync(royalMailSettings, x => x.UseWebTrackingUrlFallback, storeScope);
+            model.WebTrackingUrlFormat_OverrideForStore = await _settingService.SettingExistsAsync(royalMailSettings, x => x.WebTrackingUrlFormat, storeScope);
         }
 
         return View("~/Plugins/Shipping.RoyalMail/Views/Configure.cshtml", model);
@@ -81,15 +77,11 @@ public class RoyalMailShippingController : BasePluginController
         var storeScope = await _storeContext.GetActiveStoreScopeConfigurationAsync();
         var royalMailSettings = await _settingService.LoadSettingAsync<RoyalMailSettings>(storeScope);
 
-        royalMailSettings.UseSandbox = model.UseSandbox;
-        royalMailSettings.ClientId = model.ClientId;
-        royalMailSettings.ClientSecret = model.ClientSecret;
-        royalMailSettings.UseWebTrackingUrlFallback = model.UseWebTrackingUrlFallback;
+        royalMailSettings.WebTrackingUrlFormat = string.IsNullOrWhiteSpace(model.WebTrackingUrlFormat)
+            ? RoyalMailDefaults.WebTrackingUrlFormat
+            : model.WebTrackingUrlFormat.Trim();
 
-        await _settingService.SaveSettingOverridablePerStoreAsync(royalMailSettings, x => x.UseSandbox, model.UseSandbox_OverrideForStore, storeScope, false);
-        await _settingService.SaveSettingOverridablePerStoreAsync(royalMailSettings, x => x.ClientId, model.ClientId_OverrideForStore, storeScope, false);
-        await _settingService.SaveSettingOverridablePerStoreAsync(royalMailSettings, x => x.ClientSecret, model.ClientSecret_OverrideForStore, storeScope, false);
-        await _settingService.SaveSettingOverridablePerStoreAsync(royalMailSettings, x => x.UseWebTrackingUrlFallback, model.UseWebTrackingUrlFallback_OverrideForStore, storeScope, false);
+        await _settingService.SaveSettingOverridablePerStoreAsync(royalMailSettings, x => x.WebTrackingUrlFormat, model.WebTrackingUrlFormat_OverrideForStore, storeScope, false);
 
         await _settingService.ClearCacheAsync();
 

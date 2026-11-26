@@ -1,4 +1,3 @@
-using Nop.Plugin.Shipping.RoyalMail.Services;
 using Nop.Services.Configuration;
 using Nop.Services.Helpers;
 using Nop.Services.Localization;
@@ -18,7 +17,7 @@ public class RoyalMailComputationMethod : BasePlugin, IShippingRateComputationMe
     private readonly ILocalizationService _localizationService;
     private readonly ISettingService _settingService;
     private readonly IWebHelper _webHelper;
-    private readonly RoyalMailService _royalMailService;
+    private readonly RoyalMailSettings _royalMailSettings;
 
     #endregion
 
@@ -27,12 +26,12 @@ public class RoyalMailComputationMethod : BasePlugin, IShippingRateComputationMe
     public RoyalMailComputationMethod(ILocalizationService localizationService,
         ISettingService settingService,
         IWebHelper webHelper,
-        RoyalMailService royalMailService)
+        RoyalMailSettings royalMailSettings)
     {
         _localizationService = localizationService;
         _settingService = settingService;
         _webHelper = webHelper;
-        _royalMailService = royalMailService;
+        _royalMailSettings = royalMailSettings;
     }
 
     #endregion
@@ -42,15 +41,10 @@ public class RoyalMailComputationMethod : BasePlugin, IShippingRateComputationMe
     /// <summary>
     /// Gets available shipping options
     /// </summary>
-    /// <param name="getShippingOptionRequest">A request for getting shipping options</param>
-    /// <returns>GetShippingOptionResponse</returns>
     public Task<GetShippingOptionResponse> GetShippingOptionsAsync(GetShippingOptionRequest getShippingOptionRequest)
     {
         ArgumentNullException.ThrowIfNull(getShippingOptionRequest);
-
-        var response = new GetShippingOptionResponse();
-        // Shipping rate calculation logic can be added here if desired.
-        return Task.FromResult(response);
+        return Task.FromResult(new GetShippingOptionResponse());
     }
 
     /// <summary>
@@ -64,10 +58,9 @@ public class RoyalMailComputationMethod : BasePlugin, IShippingRateComputationMe
     /// <summary>
     /// Gets associated shipment tracker
     /// </summary>
-    /// <returns>Shipment tracker</returns>
     public Task<IShipmentTracker> GetShipmentTrackerAsync()
     {
-        return Task.FromResult<IShipmentTracker>(new RoyalMailShipmentTracker(_royalMailService));
+        return Task.FromResult<IShipmentTracker>(new RoyalMailShipmentTracker(_royalMailSettings));
     }
 
     /// <summary>
@@ -83,27 +76,16 @@ public class RoyalMailComputationMethod : BasePlugin, IShippingRateComputationMe
     /// </summary>
     public override async Task InstallAsync()
     {
-        // Settings default
         var settings = new RoyalMailSettings
         {
-            UseSandbox = true,
-            ClientId = string.Empty,
-            ClientSecret = string.Empty,
-            UseWebTrackingUrlFallback = true
+            WebTrackingUrlFormat = RoyalMailDefaults.WebTrackingUrlFormat
         };
         await _settingService.SaveSettingAsync(settings);
 
-        // Locales
         await _localizationService.AddOrUpdateLocaleResourceAsync(new Dictionary<string, string>
         {
-            ["Plugins.Shipping.RoyalMail.Fields.UseSandbox"] = "Use Sandbox",
-            ["Plugins.Shipping.RoyalMail.Fields.UseSandbox.Hint"] = "Check to use Royal Mail sandbox API environment.",
-            ["Plugins.Shipping.RoyalMail.Fields.ClientId"] = "Client ID (API Key)",
-            ["Plugins.Shipping.RoyalMail.Fields.ClientId.Hint"] = "Enter your Royal Mail Developer Portal Client ID.",
-            ["Plugins.Shipping.RoyalMail.Fields.ClientSecret"] = "Client Secret",
-            ["Plugins.Shipping.RoyalMail.Fields.ClientSecret.Hint"] = "Enter your Royal Mail Developer Portal Client Secret.",
-            ["Plugins.Shipping.RoyalMail.Fields.UseWebTrackingUrlFallback"] = "Enable Web Tracking Fallback",
-            ["Plugins.Shipping.RoyalMail.Fields.UseWebTrackingUrlFallback.Hint"] = "Directs customers to Royal Mail's public web tracker if API events are unavailable."
+            ["Plugins.Shipping.RoyalMail.Fields.WebTrackingUrlFormat"] = "Web Tracking URL Format",
+            ["Plugins.Shipping.RoyalMail.Fields.WebTrackingUrlFormat.Hint"] = "The URL pattern used to redirect to Royal Mail's public tracking page. {0} will be replaced with the sanitized tracking number."
         });
 
         await base.InstallAsync();
@@ -114,10 +96,7 @@ public class RoyalMailComputationMethod : BasePlugin, IShippingRateComputationMe
     /// </summary>
     public override async Task UninstallAsync()
     {
-        // Settings
         await _settingService.DeleteSettingAsync<RoyalMailSettings>();
-
-        // Locales
         await _localizationService.DeleteLocaleResourcesAsync("Plugins.Shipping.RoyalMail");
 
         await base.UninstallAsync();
