@@ -717,16 +717,8 @@ h6 {
   transform: translateY(-10px);
 }
 
-.strip-image.img1 {
-  background-image: url('../images/life1.jpg');
-}
-
-.strip-image.img2 {
-  background-image: url('../images/life2.jpg');
-}
-
-.strip-image.img3 {
-  background-image: url('../images/life3.jpg');
+.strip-image {
+  background-color: #f7f9f7;
 }
 
 /* --- BRAND STORY --- */
