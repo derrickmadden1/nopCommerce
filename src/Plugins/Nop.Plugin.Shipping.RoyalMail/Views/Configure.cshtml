@@ -10,50 +10,26 @@
     <div class="cards-group">
         <div class="card card-default">
             <div class="card-header">
-                <i class="fas fa-shipping-fast"></i> Royal Mail API Settings
+                <i class="fas fa-shipping-fast"></i> Royal Mail Web Tracking Configuration
             </div>
             <div class="card-body">
-                <p class="text-muted">
-                    To receive live shipment status events, register an account at the <a href="https://developer.royalmail.net/" target="_blank" rel="noopener">Royal Mail Developer Portal</a> and generate your Client ID and Client Secret for the Tracking API.
-                </p>
-                <div class="form-group row">
-                    <div class="col-md-3">
-                        <nop-override-store-checkbox asp-for="UseSandbox_OverrideForStore" asp-input="UseSandbox" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
-                        <nop-label asp-for="UseSandbox" />
-                    </div>
-                    <div class="col-md-9">
-                        <nop-editor asp-for="UseSandbox" />
-                        <span asp-validation-for="UseSandbox"></span>
-                    </div>
+                <div class="callout callout-info">
+                    <h5><i class="icon fas fa-info-circle"></i> Direct Web Tracking Active</h5>
+                    <p>
+                        Shipment tracking numbers entered for Royal Mail shipments (e.g. <code>YD 0260 6106 9GB</code>) will automatically link directly to Royal Mail's official public tracking portal. Both customers and store administrators can click the tracking number to view full tracking history, signature confirmation, safeplace photos, and GPS delivery maps.
+                    </p>
+                    <p class="mb-0">
+                        <em>Note: Direct Tracking API access requires an enterprise OBA account posting 25k+ tracked items/year. Web tracking links do not require API access or credentials.</em>
+                    </p>
                 </div>
                 <div class="form-group row">
                     <div class="col-md-3">
-                        <nop-override-store-checkbox asp-for="ClientId_OverrideForStore" asp-input="ClientId" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
-                        <nop-label asp-for="ClientId" />
+                        <nop-override-store-checkbox asp-for="WebTrackingUrlFormat_OverrideForStore" asp-input="WebTrackingUrlFormat" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
+                        <nop-label asp-for="WebTrackingUrlFormat" />
                     </div>
                     <div class="col-md-9">
-                        <nop-editor asp-for="ClientId" />
-                        <span asp-validation-for="ClientId"></span>
-                    </div>
-                </div>
-                <div class="form-group row">
-                    <div class="col-md-3">
-                        <nop-override-store-checkbox asp-for="ClientSecret_OverrideForStore" asp-input="ClientSecret" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
-                        <nop-label asp-for="ClientSecret" />
-                    </div>
-                    <div class="col-md-9">
-                        <nop-editor asp-for="ClientSecret" value="@Model.ClientSecret" />
-                        <span asp-validation-for="ClientSecret"></span>
-                    </div>
-                </div>
-                <div class="form-group row">
-                    <div class="col-md-3">
-                        <nop-override-store-checkbox asp-for="UseWebTrackingUrlFallback_OverrideForStore" asp-input="UseWebTrackingUrlFallback" asp-store-scope="@Model.ActiveStoreScopeConfiguration" />
-                        <nop-label asp-for="UseWebTrackingUrlFallback" />
-                    </div>
-                    <div class="col-md-9">
-                        <nop-editor asp-for="UseWebTrackingUrlFallback" />
-                        <span asp-validation-for="UseWebTrackingUrlFallback"></span>
+                        <nop-editor asp-for="WebTrackingUrlFormat" />
+                        <span asp-validation-for="WebTrackingUrlFormat"></span>
                     </div>
                 </div>
                 <div class="form-group row">

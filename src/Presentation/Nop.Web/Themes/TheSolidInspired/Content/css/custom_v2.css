@@ -70,7 +70,7 @@ h6 {
 
 /* --- ADMINISTRATION Bar --- */
 .admin-header-links {
-  background: var(--dark-grey) !important;
+  background: var(--dark-grey, #1B1B1B) !important;
   padding: 10px 0 !important;
   text-align: center !important;
   border-bottom: 1px solid #333 !important;
@@ -78,6 +78,7 @@ h6 {
   display: flex !important;
   justify-content: center !important;
   align-items: center !important;
+  gap: 20px !important;
 }
 
 .admin-header-links ul {
@@ -92,11 +93,12 @@ h6 {
 
 .admin-header-links a {
   color: #fff !important;
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  padding: 0 10px;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 1px !important;
+  padding: 4px 10px !important;
+  display: inline-block !important;
 }
 
 /* --- HEADER RESTRUCTURE --- */
@@ -3429,7 +3431,7 @@ body {
 
 .select-address-btn {
   width: 100%;
-  background: var(--dark-grey) !important;
+  background: var(--dark-grey, #1B1B1B) !important;
   color: #fff !important;
   padding: 12px !important;
   border-radius: 6px !important;
@@ -3647,7 +3649,7 @@ body {
   justify-content: center;
   gap: 12px;
   padding: 18px 45px !important;
-  background: var(--dark-grey) !important;
+  background: var(--dark-grey, #1B1B1B) !important;
   color: #fff !important;
   border: none !important;
   border-radius: 4px;
@@ -4098,6 +4100,8 @@ body {
 
 .select-address-btn {
   width: 100%;
+  background: var(--dark-grey, #1B1B1B) !important;
+  color: #fff !important;
   padding: 12px !important;
   font-size: 0.85rem !important;
 }

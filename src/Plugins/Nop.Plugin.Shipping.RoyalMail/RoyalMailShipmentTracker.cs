@@ -1,5 +1,4 @@
 using Nop.Core.Domain.Shipping;
-using Nop.Plugin.Shipping.RoyalMail.Services;
 using Nop.Services.Shipping.Tracking;
 
 namespace Nop.Plugin.Shipping.RoyalMail;
@@ -11,15 +10,15 @@ public class RoyalMailShipmentTracker : IShipmentTracker
 {
     #region Fields
 
-    private readonly RoyalMailService _royalMailService;
+    private readonly RoyalMailSettings _royalMailSettings;
 
     #endregion
 
     #region Ctor
 
-    public RoyalMailShipmentTracker(RoyalMailService royalMailService)
+    public RoyalMailShipmentTracker(RoyalMailSettings royalMailSettings)
     {
-        _royalMailService = royalMailService;
+        _royalMailSettings = royalMailSettings;
     }
 
     #endregion
@@ -37,22 +36,29 @@ public class RoyalMailShipmentTracker : IShipmentTracker
         if (string.IsNullOrWhiteSpace(trackingNumber))
             return Task.FromResult(string.Empty);
 
-        var url = string.Format(RoyalMailDefaults.WebTrackingUrlFormat, Uri.EscapeDataString(trackingNumber.Trim()));
+        // Remove any spaces (e.g. "YD 0260 6106 9GB" -> "YD026061069GB") for reliable web tracking
+        var cleanTrackingNumber = trackingNumber.Replace(" ", "").Trim();
+
+        var format = string.IsNullOrWhiteSpace(_royalMailSettings?.WebTrackingUrlFormat)
+            ? RoyalMailDefaults.WebTrackingUrlFormat
+            : _royalMailSettings.WebTrackingUrlFormat;
+
+        var url = string.Format(format, Uri.EscapeDataString(cleanTrackingNumber));
         return Task.FromResult(url);
     }
 
     /// <summary>
-    /// Gets all shipment tracking events from Royal Mail API
+    /// Gets all shipment tracking events
     /// </summary>
     /// <param name="trackingNumber">Tracking number</param>
     /// <param name="shipment">Shipment</param>
     /// <returns>List of shipment status events</returns>
-    public async Task<IList<ShipmentStatusEvent>> GetShipmentEventsAsync(string trackingNumber, Shipment shipment = null)
+    public Task<IList<ShipmentStatusEvent>> GetShipmentEventsAsync(string trackingNumber, Shipment shipment = null)
     {
-        if (string.IsNullOrWhiteSpace(trackingNumber))
-            return new List<ShipmentStatusEvent>();
-
-        return await _royalMailService.GetShipmentEventsAsync(trackingNumber);
+        // Royal Mail Tracking API access is restricted to enterprise accounts posting 25k+ tracked items/yr.
+        // Returning an empty list bypasses unsupported API calls and prevents 401 Unauthorized errors in logs.
+        // Customers and store admins track shipments directly via the official web tracking link from GetUrlAsync.
+        return Task.FromResult<IList<ShipmentStatusEvent>>(new List<ShipmentStatusEvent>());
     }
 
     #endregion
