@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Azure;
 using Azure.AI.OpenAI;
 using Azure.Identity;
@@ -79,7 +80,7 @@ public class WinbackEmailGenerator
           "htmlBody": "full html email body here"
         }
         The HTML body should be clean, simple, mobile-friendly HTML.
-        IMPORTANT: The JSON must be strictly valid. Do NOT include any literal newlines or unescaped line breaks inside the JSON string values. The htmlBody must be a single continuous string or use properly escaped \n characters.
+        IMPORTANT: The JSON must be strictly valid. Do NOT use string concatenation or the '+' operator. Do NOT include any literal newlines or unescaped line breaks inside the JSON string values. The htmlBody value must be a single unbroken continuous string or use properly escaped \n characters.
         Include clickable HTML anchor links (<a href="...">) for products and store links where relevant.
         Always include an unsubscribe link in the footer using the provided Unsubscribe URL.
         Use British English spelling throughout.
@@ -175,6 +176,9 @@ public class WinbackEmailGenerator
                 .Replace("\\>", ">")
                 .Replace("\\'", "'")
                 .Trim();
+
+            // Repair any JavaScript/C#-style string concatenation emitted by the LLM (e.g. "part 1" + "part 2")
+            cleaned = Regex.Replace(cleaned, "\"\\s*\\+\\s*\"", "");
 
             var options = new JsonSerializerOptions 
             { 
