@@ -107,7 +107,9 @@
                         <span>@T("ShoppingCart.Totals.GiftCardInfo.Code", gc.CouponCode)</span>
                         @if (Model.IsEditable)
                         {
-                            <button type="submit" name="removegiftcard-@gc.Id" class="remove-gift-card-button"></button>
+                            <button type="submit" name="removegiftcard-@gc.Id" class="remove-gift-card-button" title="@T("Common.Remove")" aria-label="@T("Common.Remove")">
+                                <i class="fas fa-times" aria-hidden="true"></i>
+                            </button>
                         }
                         <span class="giftcard-remaining">@string.Format(T("ShoppingCart.Totals.GiftCardInfo.Remaining").Text, gc.Remaining)</span>
                     </td>
