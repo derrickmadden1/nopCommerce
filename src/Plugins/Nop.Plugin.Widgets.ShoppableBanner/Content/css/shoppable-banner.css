@@ -240,8 +240,6 @@
     .mobile-hero {
         position: relative;
         text-align: center;
-        min-height: 220px;
-        aspect-ratio: 800 / 500;
         background-color: #f7f9f7;
     }
 
@@ -254,6 +252,7 @@
     }
 
     .mobile-text {
+        text-align: center;
         padding: 35px 20px;
         background: #fdfdfd;
         border-bottom: 1px solid #eee;

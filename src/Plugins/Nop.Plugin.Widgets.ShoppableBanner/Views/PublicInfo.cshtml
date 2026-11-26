@@ -41,11 +41,11 @@
     <div class="banner-mobile-wrapper">
         <div class="mobile-hero">
             <img src="@Model.BackgroundPictureUrl" alt="@Model.HeroTitle" width="800" height="500" fetchpriority="high" loading="eager" decoding="async" />
-            <div class="mobile-text">
-                <h2>@Model.HeroTitle</h2>
-                <p>@(string.IsNullOrEmpty(Model.MobileSubText) ? Model.SubText : Model.MobileSubText)</p>
-                <a href="@Url.RouteUrl("AllProducts")" class="btn-primary-outline banner-action-btn" aria-label="Explore the full collection of handmade products">Explore the Collection</a>
-            </div>
+        </div>
+        <div class="mobile-text">
+            <h2>@Model.HeroTitle</h2>
+            <p>@(string.IsNullOrEmpty(Model.MobileSubText) ? Model.SubText : Model.MobileSubText)</p>
+            <a href="@Url.RouteUrl("AllProducts")" class="btn-primary-outline banner-action-btn" aria-label="Explore the full collection of handmade products">Explore the Collection</a>
         </div>
 
         @if (Model.Hotspots.Any(x => x.ShowOnMobile))
