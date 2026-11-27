@@ -1,5 +1,5 @@
 /* --- Global Container --- */
-.shoppable-banner-container, 
+.shoppable-banner-container,
 .shoppable-banner-container *,
 .quickview-modal,
 .quickview-modal * {
@@ -14,7 +14,8 @@
 /* --- Desktop Layout --- */
 .banner-desktop-wrapper {
     position: relative;
-    display: block; /* Hidden on mobile */
+    display: block;
+    /* Hidden on mobile */
     overflow: hidden;
     width: 100%;
     min-height: 380px;
@@ -87,14 +88,16 @@
     position: absolute;
     width: 24px;
     height: 24px;
-    transform: translate(-50%, -50%); /* Centers the dot exactly on the X/Y coordinate */
+    transform: translate(-50%, -50%);
+    /* Centers the dot exactly on the X/Y coordinate */
     z-index: 10;
     cursor: pointer;
     transition: transform 0.2s ease;
 }
 
 .hotspot-marker:hover {
-    z-index: 200; /* Bring hovered hotspot and tooltip above adjacent hotspots */
+    z-index: 200;
+    /* Bring hovered hotspot and tooltip above adjacent hotspots */
 }
 
 /* If the hotspot marker has a product image, style it larger */
@@ -117,10 +120,12 @@
     position: relative;
     z-index: 2;
     transition: transform 0.25s ease-in-out;
-    mix-blend-mode: multiply; /* Blends out white backgrounds to make them transparent */
+    mix-blend-mode: multiply;
+    /* Blends out white backgrounds to make them transparent */
     background: transparent !important;
     background-color: transparent !important;
-    border-radius: 50%; /* Crops any remaining white edge/background into a clean circle */
+    border-radius: 50%;
+    /* Crops any remaining white edge/background into a clean circle */
     overflow: hidden;
 }
 
@@ -144,13 +149,25 @@
 
 .hotspot-pulse.product-pulse {
     background-color: rgba(255, 255, 255, 0.2);
-    z-index: 1; /* behind product thumbnail (z-index: 2) */
+    z-index: 1;
+    /* behind product thumbnail (z-index: 2) */
 }
 
 @keyframes pulse {
-    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.5); }
-    70% { transform: scale(1); box-shadow: 0 0 0 12px rgba(255, 255, 255, 0); }
-    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
+    0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.5);
+    }
+
+    70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 12px rgba(255, 255, 255, 0);
+    }
+
+    100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+    }
 }
 
 /* Tooltip with transition and grace period */
@@ -163,14 +180,14 @@
     padding: 8px 12px;
     border-radius: 6px;
     border: 1px solid rgba(0, 0, 0, 0.06);
-    box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
     white-space: nowrap;
     margin-bottom: 10px;
     z-index: 100;
     display: flex;
     align-items: center;
     gap: 12px;
-    
+
     /* Smooth transition with hover grace period */
     opacity: 0;
     visibility: hidden;
@@ -183,7 +200,8 @@
     position: absolute;
     left: -30px;
     right: -30px;
-    bottom: -45px; /* bridges up to 40px gap and overlaps the dot */
+    bottom: -45px;
+    /* bridges up to 40px gap and overlaps the dot */
     height: 45px;
     background: transparent;
 }
@@ -205,7 +223,8 @@
     font-weight: 600 !important;
     font-size: 0.8rem !important;
     cursor: pointer !important;
-    background-color: #4a5d4e !important; /* premium dark sage green */
+    background-color: #4a5d4e !important;
+    /* premium dark sage green */
     color: #fff !important;
     border: none !important;
     border-radius: 4px !important;
@@ -233,9 +252,15 @@
 
 /* --- Responsive Breakpoint --- */
 @media (max-width: 768px) {
+
     /* Swap which view is visible */
-    .banner-desktop-wrapper { display: none; }
-    .banner-mobile-wrapper { display: block; }
+    .banner-desktop-wrapper {
+        display: none;
+    }
+
+    .banner-mobile-wrapper {
+        display: block;
+    }
 
     .mobile-hero {
         position: relative;
@@ -296,7 +321,8 @@
 
     .mobile-grid {
         display: grid;
-        grid-template-columns: 1fr 1fr; /* 2 columns */
+        grid-template-columns: 1fr 1fr;
+        /* 2 columns */
         gap: 15px;
         width: 100%;
     }
@@ -310,7 +336,8 @@
         display: flex;
         flex-direction: column;
         transition: transform 0.2s ease, box-shadow 0.2s ease;
-        min-width: 0; /* prevents horizontal expansion */
+        min-width: 0;
+        /* prevents horizontal expansion */
         cursor: pointer;
     }
 
@@ -375,7 +402,8 @@
     .mobile-product-card button.add-to-cart-mobile {
         width: 100% !important;
         padding: 10px 12px !important;
-        background-color: #4a5d4e !important; /* premium dark sage green */
+        background-color: #4a5d4e !important;
+        /* premium dark sage green */
         color: #fff !important;
         border: none !important;
         border-radius: 4px !important;
@@ -405,8 +433,10 @@
     max-width: 650px;
     width: 90%;
     background: #fff;
-    overflow: hidden; /* Constrain content size */
-    max-height: 85vh; /* Limit vertical space to 85% of screen */
+    overflow: hidden;
+    /* Constrain content size */
+    max-height: 85vh;
+    /* Limit vertical space to 85% of screen */
 }
 
 .quickview-modal[open] {
@@ -422,7 +452,8 @@
 .modal-content-wrapper {
     position: relative;
     padding: 24px;
-    overflow-y: auto; /* Enable scrollbar */
+    overflow-y: auto;
+    /* Enable scrollbar */
     flex-grow: 1;
 }
 
@@ -443,7 +474,8 @@
     align-items: center;
     justify-content: center;
     transition: all 0.2s ease-in-out;
-    z-index: 100 !important; /* Float above the scrolling content */
+    z-index: 100 !important;
+    /* Float above the scrolling content */
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
@@ -526,7 +558,8 @@
     font-weight: 600;
     font-size: 0.95rem;
     cursor: pointer;
-    background-color: #4a5d4e; /* premium dark sage green */
+    background-color: #4a5d4e;
+    /* premium dark sage green */
     color: #fff;
     border: none;
     border-radius: 4px;
@@ -576,7 +609,7 @@
         flex-direction: column;
         gap: 16px;
     }
-    
+
     .quickview-image-column {
         flex: 0 0 auto;
         max-width: 100%;

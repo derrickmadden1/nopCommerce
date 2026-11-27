@@ -5244,43 +5244,6 @@ body {
 .coupon-box .coupon-code {
   display: flex !important;
   justify-content: flex-start !important;
-}
-
-/* Duplicate block removed */
-
-/* 6. Main Cart Page & Discount Box Refinements */
-.cart-collaterals {
-  display: flex;
-  flex-direction: column;
-  gap: 30px;
-}
-
-.coupon-box {
-  background: transparent;
-  padding: 0;
-  border-radius: 0;
-  border: none;
-  margin-bottom: 30px;
-}
-
-.coupon-box,
-.coupon-box *,
-.coupon-box .title {
-  text-align: left !important;
-  margin-left: 0 !important;
-  padding-left: 0 !important;
-  justify-content: flex-start !important;
-}
-
-.coupon-box .title {
-  display: block !important;
-  width: 100% !important;
-  margin-bottom: 20px !important;
-}
-
-.coupon-box .coupon-code {
-  display: flex !important;
-  justify-content: flex-start !important;
   gap: 10px;
 }
 
@@ -5296,6 +5259,96 @@ body {
   color: #fff !important;
   padding: 10px 25px !important;
   border-radius: 4px;
+}
+
+.coupon-box .message-success {
+  margin-top: 10px !important;
+  color: #047857 !important;
+  font-size: 0.9rem !important;
+  font-weight: 500 !important;
+}
+
+.coupon-box .message-failure {
+  margin-top: 10px !important;
+  color: var(--brand-coral, #E5645A) !important;
+  font-size: 0.9rem !important;
+  font-weight: 500 !important;
+}
+
+.coupon-box .current-code {
+  display: inline-flex !important;
+  align-items: center !important;
+  margin-top: 12px !important;
+  padding: 6px 14px !important;
+  background-color: #f3f4f6 !important;
+  border: 1px solid #e5e7eb !important;
+  border-radius: 20px !important;
+  font-size: 0.875rem !important;
+  color: var(--dark-grey, #1B1B1B) !important;
+  gap: 8px !important;
+  max-width: 100%;
+}
+
+.coupon-box .current-code .applied-discount-code {
+  font-weight: 600 !important;
+  line-height: 1.4 !important;
+}
+
+.coupon-box .remove-discount-button,
+.remove-discount-button,
+.remove-gift-card-button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 24px !important;
+  height: 24px !important;
+  min-width: 24px !important;
+  min-height: 24px !important;
+  padding: 0 !important;
+  margin-left: 8px !important;
+  background-color: #e5e7eb !important;
+  color: #6b7280 !important;
+  border: none !important;
+  border-radius: 50% !important;
+  cursor: pointer !important;
+  font-size: 11px !important;
+  line-height: 1 !important;
+  text-align: center !important;
+  transition: all 0.2s ease !important;
+  vertical-align: middle !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.coupon-box .remove-discount-button:hover,
+.coupon-box .remove-discount-button:focus,
+.remove-discount-button:hover,
+.remove-discount-button:focus,
+.remove-gift-card-button:hover,
+.remove-gift-card-button:focus {
+  background-color: var(--brand-magenta, #B81D7D) !important;
+  color: #ffffff !important;
+  transform: scale(1.1);
+}
+
+.coupon-box .remove-discount-button i,
+.remove-discount-button i,
+.remove-gift-card-button i {
+  font-size: 11px !important;
+  color: inherit !important;
+  line-height: 1 !important;
+  display: inline-block !important;
+  pointer-events: none !important;
+}
+
+.coupon-box .remove-discount-button:empty::before,
+.remove-discount-button:empty::before,
+.remove-gift-card-button:empty::before {
+  content: "\00d7";
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1;
+  display: block;
 }
 
 /* 7. Order Totals Alignment */
@@ -5529,7 +5582,7 @@ body {
   font-weight: 800 !important;
   text-align: center !important;
   transform: rotate(45deg) !important;
-  box-shadow: 0 4px 12px rgba(217, 119, 6, 0.4), 0 1px 3px rgba(0,0,0,0.2) !important;
+  box-shadow: 0 4px 12px rgba(217, 119, 6, 0.4), 0 1px 3px rgba(0, 0, 0, 0.2) !important;
   z-index: 950 !important;
   display: block !important;
   line-height: 1.4 !important;
@@ -5553,7 +5606,7 @@ body {
   font-weight: bold !important;
   text-align: center !important;
   transform: rotate(45deg) !important;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.5) !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5) !important;
   z-index: 950 !important;
   display: block !important;
   line-height: 1.5 !important;
@@ -7030,8 +7083,8 @@ iframe[src*="songbird"] {
    DYNAMIC DUAL PREVIEW SHOWCASE
    ========================================================================== */
 
-.picture-gallery:has(.dynamic-dual-showcase) .picture > a,
-.picture-gallery:has(.dynamic-dual-showcase) .picture > img:not(.dual-card-img),
+.picture-gallery:has(.dynamic-dual-showcase) .picture>a,
+.picture-gallery:has(.dynamic-dual-showcase) .picture>img:not(.dual-card-img),
 .picture-gallery:has(.dynamic-dual-showcase) .picture-thumbs-wrapper {
   display: none !important;
 }
@@ -7382,6 +7435,7 @@ iframe[src*="songbird"] {
     transform: scale(0.6);
     opacity: 0;
   }
+
   to {
     transform: scale(1);
     opacity: 1;
@@ -7830,9 +7884,20 @@ iframe[src*="songbird"] {
     font-size: 0.9rem;
   }
 
-  .item-unit-price::before { content: "Price: "; color: #888; }
-  .item-qty::before { content: "Quantity: "; color: #888; }
-  .item-subtotal::before { content: "Subtotal: "; color: #888; }
+  .item-unit-price::before {
+    content: "Price: ";
+    color: #888;
+  }
+
+  .item-qty::before {
+    content: "Quantity: ";
+    color: #888;
+  }
+
+  .item-subtotal::before {
+    content: "Subtotal: ";
+    color: #888;
+  }
 
   .totals-table {
     max-width: 100%;
@@ -7880,6 +7945,11 @@ iframe[src*="songbird"] {
 }
 
 @keyframes btnSpin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }

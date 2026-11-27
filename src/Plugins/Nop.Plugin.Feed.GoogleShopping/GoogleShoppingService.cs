@@ -457,11 +457,18 @@ public class GoogleShoppingService : BasePlugin, IMiscPlugin
                 }
 
                 //brand [brand] - Brand of the item
-                var defaultManufacturer = (await _manufacturerService.GetProductManufacturersByProductIdAsync(product.Id)).FirstOrDefault();
-                if (defaultManufacturer != null)
+                var defaultManufacturer = (await _manufacturerService.GetProductManufacturersByProductIdAsync(product.Id, showHidden: true)).FirstOrDefault();
+                var brandName = defaultManufacturer != null
+                    ? (await _manufacturerService.GetManufacturerByIdAsync(defaultManufacturer.ManufacturerId))?.Name
+                    : null;
+
+                if (string.IsNullOrWhiteSpace(brandName))
+                    brandName = store.Name;
+
+                if (!string.IsNullOrWhiteSpace(brandName))
                 {
                     writer.WriteStartElement("g", "brand", googleBaseNamespace);
-                    writer.WriteCData((await _manufacturerService.GetManufacturerByIdAsync(defaultManufacturer.ManufacturerId))?.Name);
+                    writer.WriteCData(brandName);
                     writer.WriteFullEndElement(); // g:brand
                 }
 
